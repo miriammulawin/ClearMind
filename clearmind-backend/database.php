@@ -1,9 +1,8 @@
 <?php
-
 $host = "localhost";    
-$db   = "clearmind"; 
+$db   = "ClearMindWebsite"; 
 $user = "root";          
-$pass = "";             
+$pass = "liezel11";             
 $charset = "utf8mb4";    
 
 try { 
@@ -16,9 +15,9 @@ try {
 
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    echo "✅ Database connected successfully!";
+    echo "Database connected successfully!";
 } catch (PDOException $e) {
-    // Handle connection errors
-    echo "❌ Connection failed: " . $e->getMessage();
+
+    echo "Connection failed: " . $e->getMessage();
 }
 ?>
