@@ -3,12 +3,15 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./Login";
 import AdminDashboard from "./AdminDashboard";
 
+
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      </Routes>
+    </Router>
   );
 }
 export default App;
