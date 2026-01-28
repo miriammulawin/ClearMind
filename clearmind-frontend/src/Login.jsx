@@ -24,8 +24,8 @@ function Login() {
               <Image src={logo_login} alt="Logo" fluid style={{ maxWidth: "100%", height: "auto" }} />
             </div>
             {/* header login */}
-            <h2 className="text-center mb-2">LOG IN</h2>
-            <p className="text-center mb-4">
+            <h2 className="text-center mb-2" style={{color: "#542982" }}>LOG IN</h2>
+            <p className="text-center mb-4" style={{color: "#542982" }}>
               Log in to continue your journey toward a clearer, healthier mind.
             </p>
 

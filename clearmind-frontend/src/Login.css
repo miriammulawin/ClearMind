@@ -2,18 +2,6 @@
 body {
   font-family: 'Poppins', sans-serif;
   color: #EBD8EA;
+  
 }
 
-span{
-  font-size: 30px;
-}
-
-Form.Check{
-  border: 1px solid #542982;
-}
-
-.custom-checkbox .form-check-input {
-  border: 2px solid #4CAF50;   /* custom border color */
-  border-radius: 4px;           /* optional rounding */
-  accent-color: #4CAF50;        /* color of the check when checked */
-}
