@@ -8,7 +8,7 @@ body {
 .card-custom{
   width: 25rem;
   border: 2px solid #542982 !important;
-  border-radius: 12px;    
+  border-radius: 25px;    
   margin: 1.5rem;
 }
 
@@ -27,7 +27,7 @@ Form{
 
 .custom-field{
   border: 2px solid #542982;
-  font-size: 12px; 
+  font-size: 12px;
 }
 
 .login-text-field{
@@ -54,6 +54,7 @@ Form{
 .btn-login{
   background-color: #542982;
   border: none;
+  border-radius: 25px;  
   &:hover{
     background-color: #783bb5;
     border: none;
