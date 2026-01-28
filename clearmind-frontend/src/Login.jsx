@@ -87,6 +87,8 @@ function Login() {
             <Button className="btn-login w-100">
               Login
             </Button>
+            <p className="register-text text-center m-2" > Don’t have an account? <a className="register-link" href="/register">Register.</a>
+            </p>
           </Form>
         </Card.Body>
       </Card>

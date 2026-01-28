@@ -59,6 +59,16 @@ Form{
     border: none;
   }
 }
+
+.register-text{
+  font-size: 12px;
+  color: #646465;
+}
+
+.register-link{
+  color: #542982;
+}
+
 /* to hide the default show password  */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
