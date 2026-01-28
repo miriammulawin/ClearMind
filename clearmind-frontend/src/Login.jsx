@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Container, Row, Col, Form, Button, Image } from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -18,20 +19,20 @@ function Login() {
     <Container fluid className="vh-100 d-flex justify-content-center align-items-center">
       <Row className="w-100 justify-content-center">
         <Col xs={12} sm={10} md={8} lg={6}>
-          <div className="card pt-4 px-5 pb-2 rounded-5" style={{ border: "3px solid #A276D0", borderRadius: "2rem" }}>
+          <div className="card pt-4 px-5 pb-2 rounded-5" >
             {/* logo */}
             <div className="text-center mb-4">
               <Image src={logo_login} alt="Logo" fluid style={{ maxWidth: "100%", height: "auto" }} />
             </div>
             {/* header login */}
-            <p className="text-center mb-4 fs-5" style={{color: "#542982" }}>
+            <p className="text-center mb-4 fs-5" >
               Log in to continue your journey toward a clearer, healthier mind.
             </p>
 
             <Form onSubmit={handleLogin}>
               {/* Email */}
               <Form.Group className="mb-3" controlId="email">
-                <Form.Label className="fs-5" style={{color: "#542982" }}>Email <span className="text-danger">*</span></Form.Label>
+                <Form.Label className="fs-5" >Email <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type="email"
                   placeholder="Enter email"
@@ -40,7 +41,7 @@ function Login() {
                   autoComplete="email"
                   required
                   size="lg"
-                  style={{ border: "2px solid #542982" }} 
+                  className="custom-field"
                 />
               </Form.Group>
 
@@ -55,7 +56,7 @@ function Login() {
                   autoComplete="current-password"
                   required
                   size="lg"
-                  style={{ border: "2px solid #542982" }}
+                  className="custom-field"
                 />
                 <span
                   onClick={() => setShowPassword(!showPassword)}
