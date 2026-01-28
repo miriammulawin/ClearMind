@@ -18,6 +18,11 @@
   
 }
 
+.dashboard-card h5 {
+  font-weight: bolder;
+  color: #2e104e;
+  margin: 0;
+}
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -29,8 +34,8 @@
 }
 
 .card-header h5 {
-  font-weight: 600;
-  color: #4D227C;
+  font-weight: bolder;
+  color: #2e104e;
   margin: 0;
 }
 
@@ -94,7 +99,12 @@
   align-items: center;
   gap: 0.5rem; 
   font-size: 1.2rem;
+  color: #4D227C;
 
+}
+
+.appointment-items p{
+    color: #555555a8;
 }
 
 .appointment-icon {
@@ -103,7 +113,7 @@
 }
 
 .container-fluid {
-background-color: white !important;
+background-color: white;
 }
 .patients-table {
   width: 100%;
@@ -120,6 +130,11 @@ background-color: white !important;
 .patients-table th {
   color: #4D227C;
   font-weight: 600;
+}
+
+.patients-table td {
+  color: #4d4952;
+ 
 }
 
 .table-responsive {
@@ -186,6 +201,8 @@ background-color: white !important;
 
   .card-header h5 {
     font-size: 1rem;
+    font-weight: 600;
+    color: #2e104e;
   }
 
   .appointment-icon-text {

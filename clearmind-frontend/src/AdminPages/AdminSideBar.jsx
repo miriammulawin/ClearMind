@@ -12,7 +12,13 @@ import logo from "../assets/CMPS_Logo.png";
 
 function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(initialActiveMenu);
+  const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [tooltip, setTooltip] = useState({
+    text: "",
+    x: 0,
+    y: 0,
+    visible: false,
+  });
   const navigate = useNavigate();
 
   const menus = [
