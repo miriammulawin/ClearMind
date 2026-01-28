@@ -1,105 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-
-.container-fluid{
-    background-color: #E1D8EB !important;
-    font-family: 'Poppins', sans-serif;
+body {
+  font-family: 'Poppins', sans-serif;
+  color: #EBD8EA;
 }
 
-.text-color{
-    color: #4E237C;
+span{
+  font-size: 30px;
 }
 
-.card{
-    border: 3px solid #A276D0;   
+Form.Check{
+  border: 1px solid #542982;
 }
 
-.input-large {
-    font-size: 30px;
-    padding: 20px, 10px; 
-    border: 2px solid #4E237C;
-}
-
-.form-check-input{
-    font-size: 30px;
-    border: 2px solid #4E237C;
-    &:checked{
-        background-color: #4E237C;
-    }
-}
-
-.btn{
-    background-color: #4E237C;
-    font-size: 30px;
-    padding: 10px 20px;
-    color: #ffff;
-    &:hover{
-        background-color: #402063;
-        color: #ffff;
-    }
-}
-
-label{
-    font-size: 30px;
-    color: #4E237C; 
-}
-
-.form-check-label{
-    font-size: 20px;
-    text-indent: 20px;
-     color: #605F61; 
-    
-}
-
-.clickable-text{
-    color: #4E237C; 
-}
-
-
-/* Responsiveness */
-@media (max-width: 1440px) {
-  .card {
-    max-width: 700px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .card {
-    max-width: 600px;
-  }
-}
-
-@media (max-width: 768px) {
-  .card {
-    max-width: 90%;
-    padding: 2rem;
-  }
-
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  h6 {
-    font-size: 0.9rem;
-  }
-
-  .custom-checkbox {
-    width: 18px;
-    height: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  h2 {
-    font-size: 1.3rem;
-  }
-
-  h6 {
-    font-size: 0.8rem;
-  }
-
-  .custom-checkbox {
-    width: 16px;
-    height: 16px;
-  }
+.custom-checkbox .form-check-input {
+  border: 2px solid #4CAF50;   /* custom border color */
+  border-radius: 4px;           /* optional rounding */
+  accent-color: #4CAF50;        /* color of the check when checked */
 }
