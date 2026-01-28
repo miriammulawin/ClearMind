@@ -289,7 +289,9 @@ h2{
   color: #4E237C;
 }
 
-
+.form-check-input{
+  background-color: #4D7212;
+}
 
 @media screen and (max-width: 900px) {
   .top-navbar {
