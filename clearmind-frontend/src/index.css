@@ -247,7 +247,7 @@ body {
 }
 
 .top-icon {
-  font-size: 1.6rem;
+  font-size: 5rem;
   color: #5b2d8b;
   cursor: pointer;
   transition: 0.2s ease;
@@ -329,7 +329,13 @@ body {
     cursor: pointer;
     color: #4E237C;
   }
+  
+ 
+  }
 
+  .doctor-text{
+     color: #4E237C;
+  }
   .search-box {
     width: 100%;
   }
@@ -337,4 +343,4 @@ body {
   .search-box input {
     font-size: 0.9rem;
   }
-}
+
