@@ -60,7 +60,7 @@ function Login() {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: "absolute",
-                  top: "72%",
+                  top: "74%",
                   right: "15px",
                   transform: "translateY(-50%)",
                   cursor: "pointer",
