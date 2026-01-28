@@ -18,14 +18,13 @@ function Login() {
     <Container fluid className="vh-100 d-flex justify-content-center align-items-center">
       <Row className="w-100 justify-content-center">
         <Col xs={12} sm={10} md={8} lg={6}>
-          <div className="card p-4 rounded-5" style={{ border: "3px solid #A276D0", borderRadius: "2rem" }}>
+          <div className="card pt-4 px-5 pb-5 rounded-5" style={{ border: "3px solid #A276D0", borderRadius: "2rem" }}>
             {/* logo */}
             <div className="text-center mb-4">
               <Image src={logo_login} alt="Logo" fluid style={{ maxWidth: "100%", height: "auto" }} />
             </div>
             {/* header login */}
-            <h2 className="text-center mb-2" style={{color: "#542982" }}>LOG IN</h2>
-            <p className="text-center mb-4" style={{color: "#542982" }}>
+            <p className="text-center mb-4 fs-5" style={{color: "#542982" }}>
               Log in to continue your journey toward a clearer, healthier mind.
             </p>
 
