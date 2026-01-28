@@ -85,7 +85,9 @@ function Login() {
             </Form.Group>
 
             <Button className="btn-login w-100">
-              LOG IN
+              <b>
+                LOG IN
+              </b>
             </Button>
             <p className="register-text text-center m-2" > Don’t have an account? <a className="register-link" href="/register">Register.</a>
             </p>
