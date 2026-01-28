@@ -1,25 +1,66 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Poppins', sans-serif !important;
   color: #EBD8EA;
   
 }
 
-p{
+.card-custom{
+  width: 25rem;
+  border: 2px solid #542982 !important;
+  border-radius: 12px;    
+  margin: 1.5rem;
+}
+
+.logo{
+  max-width: 90%;
+}
+
+.span-tagline{
   color: #542982;
+  font-size: 0.57rem;
 }
 
-.card{
-  border: 3px solid #A276D0; 
-  
-}
-
-.form-label{
+Form{
   color: #542982;
 }
 
 .custom-field{
   border: 2px solid #542982;
- 
+  font-size: 12px; 
 }
 
+.login-text-field{
+  font-size: 13px; 
+}
+
+.terms-check{
+  font-size: 12px;
+  color: #646465;
+}
+
+.terms-condi{
+  color: #542982;
+}
+
+.form-check-input{
+  border: 2px solid #542982;
+  &:checked{
+    border: 2px solid #542982;
+    background-color: #542982;
+  }
+}
+
+.btn-login{
+  background-color: #542982;
+  border: none;
+  &:hover{
+    background-color: #783bb5;
+    border: none;
+  }
+}
+/* to hide the default show password  */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
