@@ -23,14 +23,14 @@ body {
   padding: 2rem;
   background-color: white;
   height: 90vh;
-  border-radius: 2%;
+  border-radius: 1%;
   margin: 2rem;
 }
 
-/* Sidebar */
 .sidebar-container {
   height: 100vh;
   transition: 0.35s ease;
+  overflow: visible; 
 }
 
 .sidebar {
@@ -40,8 +40,12 @@ body {
   display: flex;
   flex-direction: column;
   transition: width 0.35s ease;
-  overflow: hidden;
+  overflow-x: hidden;  
+  overflow-y: hidden;
 }
+
+
+
 
 .sidebar-header {
   display: flex;
@@ -106,8 +110,10 @@ body {
 .sidebar-menu {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
 }
+
 
 .sidebar-menu::-webkit-scrollbar {
   width: 6px;
@@ -124,9 +130,10 @@ body {
   padding: 1rem 2rem;
   border-radius: 6px;
   cursor: pointer;
-  position: relative;
+  position: relative; 
   transition: all 0.25s ease;
 }
+
 
 .menu-item:hover {
   background: #f0e6ff;
@@ -153,22 +160,45 @@ body {
 }
 
 .menu-tooltip {
-  position: absolute;
-  left: 85px;
+  position: absolute;  /* ✅ absolute outside menu-item */
+  left: 100%;          /* appear right outside sidebar */
+  top: 50%;
+  transform: translate(10px, -50%);
   background: #4e237c;
   color: white;
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
   opacity: 0;
-  transform: translateX(-10px);
   pointer-events: none;
   transition: 0.2s ease;
   white-space: nowrap;
   z-index: 999;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
-/* Collapsed sidebar */
+/* optional arrow */
+.menu-tooltip::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #4e237c transparent transparent;
+}
+
+
+.sidebar-container:not(.collapsed) .menu-tooltip {
+  display: none;
+}
+
+/* show tooltip on hover when collapsed */
+.sidebar-container.collapsed .menu-item:hover .menu-tooltip {
+  opacity: 1;
+}
+
 .sidebar-container.collapsed .sidebar {
   width: 80px;
 }
@@ -180,8 +210,8 @@ body {
 }
 
 .sidebar-container.collapsed .profile-pic {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   margin: auto;
 }
 
@@ -207,8 +237,9 @@ body {
 
 .sidebar-container.collapsed .menu-item:hover .menu-tooltip {
   opacity: 1;
-  transform: translateX(0);
+  transform: translate(10px, -50%);
 }
+
 
 .sidebar-container.collapsed .sidebar-header {
   justify-content: center;
@@ -249,7 +280,7 @@ body {
 }
 
 .top-icon {
-  font-size: 3rem;
+  font-size: 1.6rem;
   color: #5b2d8b;
   cursor: pointer;
   margin-bottom: 1rem;
@@ -267,7 +298,6 @@ body {
   background: white;
   border: 2px solid #5b2d8b;
   border-radius: 25px;
-  margin-bottom: 1rem;
   padding: 0.3rem 1rem;
   width: 260px;
 }
@@ -276,12 +306,12 @@ body {
   border: none;
   outline: none;
   flex: 1;
-  font-size: 1rem;
+  font-size: 1.1rem;
   background: transparent;
 }
 
 .search-icon {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   color: #5b2d8b;
 }
 
@@ -352,4 +382,4 @@ h2{
   .search-box input {
     font-size: 0.9rem;
   }
-
+}

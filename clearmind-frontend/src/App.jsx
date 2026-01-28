@@ -17,6 +17,7 @@ function App() {
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts"element={<CreateAccounts/>} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        
       </Routes>
     </Router>
   );
