@@ -85,6 +85,7 @@ body {
 .profile-name {
   margin: 0;
   font-weight: bold;
+  color: #4E237C;
 }
 
 .profile-contact {
@@ -228,6 +229,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+ 
   padding: 0 2rem;
   box-sizing: border-box;
 }
@@ -247,9 +249,10 @@ body {
 }
 
 .top-icon {
-  font-size: 5rem;
+  font-size: 3rem;
   color: #5b2d8b;
   cursor: pointer;
+  margin-bottom: 1rem;
   transition: 0.2s ease;
 }
 
@@ -264,6 +267,7 @@ body {
   background: white;
   border: 2px solid #5b2d8b;
   border-radius: 25px;
+  margin-bottom: 1rem;
   padding: 0.3rem 1rem;
   width: 260px;
 }
@@ -281,6 +285,9 @@ body {
   color: #5b2d8b;
 }
 
+h2{
+  color: #4E237C;
+}
 
 
 

@@ -13,7 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         {/* for testing lang yung client */}
-        <Route path="/" element={<ClientHome />} />
+        <Route path="/client-home" element={<ClientHome />} />
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts"element={<CreateAccounts/>} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
