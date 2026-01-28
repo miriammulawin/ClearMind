@@ -1,70 +1,103 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./Login.css"
+import { Container, Row, Col, Form, Button, Image } from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import "./Login.css";
 
 function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
+  const handleLogin = (e) => {
+    e.preventDefault();
+    console.log({ email, password });
+  };
+
   return (
-    <div className="container-fluid vh-100 d-flex justify-content-center align-items-center bg-light ">
-      <div className="card shadow-sm pt-4 pb-5 rounded-5" style={{ width: "100%", maxWidth: "800px" }}>
+    <Container fluid className="vh-100 d-flex justify-content-center align-items-center">
+      <Row className="w-100 justify-content-center">
+        <Col xs={12} sm={10} md={8} lg={6}>
+          <div className="card pt-4 px-5 pb-2 rounded-5" >
+            {/* logo */}
+            <div className="text-center mb-4">
+              <Image src={logo_login} alt="Logo" fluid style={{ maxWidth: "100%", height: "auto" }} />
+            </div>
+            {/* header login */}
+            <p className="text-center mb-4 fs-5" >
+              Log in to continue your journey toward a clearer, healthier mind.
+            </p>
 
-        <div className="d-flex justify-content-center">
-          <img src={logo_login} alt="Logo" className="img-fluid" style={{ maxWidth: '553px', maxheight: 'auto' }} />
-        </div>
+            <Form onSubmit={handleLogin}>
+              {/* Email */}
+              <Form.Group className="mb-3" controlId="email">
+                <Form.Label className="fs-5" >Email <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                  size="lg"
+                  className="custom-field"
+                />
+              </Form.Group>
 
-        <div className="d-flex justify-content-center align-items-center" >
-          <div style={{ maxWidth: '550px', width: '100%' }}>
-            <h2 className="text-center text-color mb-4">LOG IN</h2>
-        <h6 className="text-center text-color mb-4">Log in to continue your journey toward a clearer, healthier mind.</h6>
+              {/* Password */}
+              <Form.Group className="mb-3" controlId="password" style={{ position: "relative" }}>
+                <Form.Label style={{ fontSize: "25px", color: "#542982" }}>Password <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                  size="lg"
+                  className="custom-field"
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    top: "70%",
+                    right: "15px",
+                    transform: "translateY(-50%)",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    fontSize: "1.2rem"
+                  }}
+                >
+                   {showPassword ? <FaEye /> : <FaEyeSlash />}
+                </span>
+              </Form.Group>
 
-          <div className="position-relative mb-3">
-            <label className="form-label">
-              Email <span className="text-danger">*</span>
-            </label>
-            <input
-              type="email"
-              className="form-control input-large"
-              placeholder="Enter email"
-            />
-          </div>
-          
-          <div className="mb-3">
-            <label className="form-label">
-                Password <span className="text-danger">*</span>
-            </label>
-            <input
-              type="password"
-              className="form-control input-large"
-              placeholder="Enter password"
-            />
-          </div>
+              <Form.Group className="mb-3 custom-checkbox" controlId="termsCheck">
+                <Form.Check 
+                  type="checkbox"
+                  label={<>I agree to the <a href="/terms"style={{ color: "#542982"}}>Terms & Conditions</a> <span className="text-danger">*</span></>}
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  required
+                  
+                />
+              </Form.Group>
 
-          <div className="d-flex align-items-center">
-            <input 
-              className="form-check-input" 
-              type="checkbox" 
-              id="termsCheck"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-            />
-            <label className="form-check-label" htmlFor="termsCheck">
-              I agree to the <a className="clickable-text" href="/terms">Terms & Conditions.</a>
-              <span className="text-danger"> *</span>
-            </label>
+              {/* Login button */}
+              <Button type="submit" variant="primary" size="lg" className="w-100 rounded-4" style={{ backgroundColor: "#542982", border:"none"}}>
+                LOG IN
+              </Button>
+              <p className="text-center m-2 fs-5" style={{color: "#444345" }}>
+              Don’t have an account? <a href="/register" style={{color: "#542982" }}>Register.</a>
+              </p>
+            </Form>
           </div>
-            
-          <button className="btn btn-large rounded-4 w-100 my-3">
-            LOG IN
-          </button>
-          </div>
-        </div>
-        
-      </div>
-    </div>
-   )
+        </Col>
+      </Row>
+    </Container>
+  );
 }
 
 export default Login;

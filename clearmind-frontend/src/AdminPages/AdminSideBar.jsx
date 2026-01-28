@@ -10,15 +10,9 @@ import { BiSolidUserCircle } from "react-icons/bi";
 
 import logo from "../assets/CMPS_Logo.png";
 
-function AdminSideBar() {
+function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
-  const [tooltip, setTooltip] = useState({
-    text: "",
-    x: 0,
-    y: 0,
-    visible: false,
-  });
+  const [activeMenu, setActiveMenu] = useState(initialActiveMenu);
   const navigate = useNavigate();
 
   const menus = [
@@ -28,11 +22,7 @@ function AdminSideBar() {
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/patients" },
     { name: "Clinic", icon: <FaClinicMedical />, path: "/clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/billing" },
-    {
-      name: "Manage Account",
-      icon: <MdManageAccounts />,
-      path: "/manage-account",
-    },
+    { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage-account" },
     { name: "My Profile", icon: <BiSolidUserCircle />, path: "/my-profile" },
   ];
 
