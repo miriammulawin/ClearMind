@@ -12,6 +12,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        {/* for testing lang yung client */}
         <Route path="/" element={<ClientHome />} />
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts"element={<CreateAccounts/>} />
