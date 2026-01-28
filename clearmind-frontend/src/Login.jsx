@@ -39,7 +39,7 @@ function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   required
-                  size="md"
+                  size="lg"
                   style={{ border: "2px solid #542982" }} 
                 />
               </Form.Group>
@@ -76,7 +76,7 @@ function Login() {
               <Form.Group className="mb-3 custom-checkbox" controlId="termsCheck">
                 <Form.Check 
                   type="checkbox"
-                  label={<>I agree to the <a href="/terms"  style={{ color: "#542982"}}>Terms & Conditions</a> <span className="text-danger">*</span></>}
+                  label={<>I agree to the <a href="/terms"style={{ color: "#542982"}}>Terms & Conditions</a> <span className="text-danger">*</span></>}
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
                   required
@@ -88,6 +88,9 @@ function Login() {
               <Button type="submit" variant="primary" size="lg" className="w-100 rounded-4" style={{ backgroundColor: "#542982", border:"none"}}>
                 LOG IN
               </Button>
+              <p className="text-center m-2 fs-5" style={{color: "#444345" }}>
+              Don’t have an account? <a href="/register" style={{color: "#542982" }}>Register.</a>
+              </p>
             </Form>
           </div>
         </Col>
