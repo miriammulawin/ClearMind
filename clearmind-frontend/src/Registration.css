@@ -1,0 +1,54 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+body {
+  background-color: #e1d8eb !important;
+  font-family: "Poppins", sans-serif;
+}
+
+.registration-card {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  border: 3px solid #a276d0 !important;
+  border-radius: 25px !important;
+}
+
+.registration-header {
+  color: #4b2c85;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.custom-input {
+  border-radius: 10px !important;
+  border: 1px solid #c0b0e0 !important;
+  padding: 10px 15px !important;
+}
+
+.btn-register {
+  background-color: #939393 !important;
+  color: white !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  letter-spacing: 1px;
+  border: none !important;
+  transition: 0.3s ease;
+  white-space: nowrap; /* Prevents text wrap on small screens */
+}
+
+.btn-register:hover {
+  background-color: #7a7a7a !important;
+}
+
+.small-text {
+  font-size: 0.85rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+/* Fix for mobile screens so text stays on one line */
+@media (max-width: 400px) {
+  .small-text {
+    font-size: 0.75rem;
+    white-space: normal;
+  }
+}

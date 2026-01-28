@@ -10,9 +10,9 @@ import { BiSolidUserCircle } from "react-icons/bi";
 
 import logo from "../assets/CMPS_Logo.png";
 
-function AdminSideBar() {
+function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [activeMenu, setActiveMenu] = useState(initialActiveMenu);
   const navigate = useNavigate();
 
   const menus = [
@@ -22,23 +22,18 @@ function AdminSideBar() {
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/patients" },
     { name: "Clinic", icon: <FaClinicMedical />, path: "/clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/billing" },
-    {
-      name: "Manage Account",
-      icon: <MdManageAccounts />,
-      path: "/manage-account",
-    },
+    { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage-account" },
     { name: "My Profile", icon: <BiSolidUserCircle />, path: "/my-profile" },
   ];
 
   const handleMenuClick = (item) => {
     setActiveMenu(item.name);
-    navigate(item.path); 
+    navigate(item.path);
   };
 
   return (
     <div className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar">
-    
         <div className="sidebar-header">
           <img src={logo} alt="Logo" className="sidebar-logo" />
           <FiMenu
@@ -47,7 +42,6 @@ function AdminSideBar() {
           />
         </div>
 
- 
         <div className="profile-section">
           <div className="profile-pic"></div>
           <div className="profile-info">
@@ -56,7 +50,6 @@ function AdminSideBar() {
             <FiEdit className="edit-icon" />
           </div>
         </div>
-
 
         <div className="sidebar-menu">
           {menus.map((item) => (
