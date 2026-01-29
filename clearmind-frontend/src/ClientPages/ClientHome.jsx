@@ -5,11 +5,14 @@ import { FaEye, FaEyeSlash, FaLock} from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import "./ClientStyle/ClientHome.css"
 import ClientHeader from "./ClientComponents/ClientHeader";
+import ClientFooter from "./ClientComponents/ClientFooter";
 
 function ClientHome() {
     return (
         <div>
             <ClientHeader />
+
+            <ClientFooter />
         </div>
     );
 }
