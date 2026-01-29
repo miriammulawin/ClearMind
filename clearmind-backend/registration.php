@@ -1,98 +1,55 @@
 <?php
-// Allow CORS from your frontend
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Credentials: true");
-
-// Handle preflight request
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-
 require 'database.php';
 
-// =======================
-// GET INPUT DATA
-// =======================
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Sanitize & assign
-$first_name = trim($data['first_name'] ?? '');
-$last_name  = trim($data['last_name'] ?? '');
-$dob        = $data['date_of_birth'] ?? null;
+$first_name = trim($data['first_name']);
+$last_name  = trim($data['last_name']);
+$middle     = $data['middle_initial'] ?? null;
 $sex        = $data['sex'] ?? null;
-$phone      = trim($data['phone'] ?? '');
-$email      = trim($data['email'] ?? '');
-$password   = $data['password'] ?? '';
+$dob        = $data['date_of_birth'] ?? null;
+$email      = trim($data['email_address']);
+$phone      = $data['phone'] ?? null;
+$address    = $data['address'] ?? null;
+$password   = password_hash($data['password'], PASSWORD_DEFAULT);
 
-// =======================
-// BASIC VALIDATION
-// =======================
-if (!$first_name || !$last_name || !$email || !$password) {
-    http_response_code(400);
-    echo json_encode(["status" => "error", "message" => "Required fields are missing"]);
-    exit;
-}
-
-// =======================
-// HASH PASSWORD
-// =======================
-$hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-// =======================
-// AUTO CALCULATE AGE
-// =======================
+// Auto-calculate age
 $age = null;
 if ($dob) {
-    $dob_date = date_create($dob);
-    $today = date_create('today');
-    $age = date_diff($dob_date, $today)->y;
+    $age = date_diff(date_create($dob), date_create('today'))->y;
 }
 
-// =======================
-// CHECK IF EMAIL EXISTS
-// =======================
-$stmt = $pdo->prepare("SELECT client_id FROM clients WHERE email = ?");
+// Check if email exists
+$stmt = $pdo->prepare("SELECT client_id FROM client WHERE  email_address = ?");
 $stmt->execute([$email]);
+
 if ($stmt->rowCount() > 0) {
     http_response_code(409);
-    echo json_encode(["status" => "error", "message" => "Email already registered"]);
+    echo json_encode(["error" => "Email already registered"]);
     exit;
 }
 
-// =======================
-// INSERT CLIENT INTO DATABASE
-// =======================
+// Insert client
 $insert = $pdo->prepare("
-    INSERT INTO clients
-    (first_name, last_name, date_of_birth, sex, age, phone, email, password)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO client
+    (first_name, last_name, middle_initial, sex, date_of_birth, age, email_address, phone, address, password)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");
 
-try {
-    $insert->execute([
-        $first_name,
-        $last_name,
-        $dob,
-        $sex,
-        $age,
-        $phone,
-        $email,
-        $hashed_password
-    ]);
+$insert->execute([
+    $first_name,
+    $last_name,
+    $middle,
+    $sex,
+    $dob,
+    $age,
+    $email,
+    $phone,
+    $address,
+    $password
+]);
 
-    echo json_encode([
-        "status" => "success",
-        "message" => "Client registered successfully"
-    ]);
-
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode([
-        "status" => "error",
-        "message" => "Database error: " . $e->getMessage()
-    ]);
-}
+echo json_encode([
+    "status" => "success",
+    "message" => "Client registered successfully"
+]);
