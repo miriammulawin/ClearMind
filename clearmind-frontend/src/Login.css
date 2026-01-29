@@ -28,10 +28,58 @@ Form{
 .custom-field{
   border: 2px solid #542982;
   font-size: 12px;
+  padding: 7px;
 }
 
-.login-text-field{
-  font-size: 13px; 
+.input-icon-wrapper {
+  position: relative;
+  width: 100%;
+
+}
+
+/* Left icon (Email and Lock) */
+.input-icon-left {
+  position: absolute;
+  left: 12px;
+  top: 47%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  font-size: 1.2rem;
+  pointer-events: none;
+  z-index: 10;
+  color: #542982;
+}
+
+/* Right icon (Eye toggle) */
+.input-icon-right {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  user-select: none;
+  font-size: 1.2rem;
+  color: #6c757d;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  color: #542982;
+}
+
+.input-icon-right:hover {
+  color: #495057;
+}
+
+/* Input field with left icon */
+.input-with-icon {
+  padding-left: 40px !important;
+}
+
+
+.login-text{
+  font-size: 13px;
 }
 
 .terms-check{
@@ -52,13 +100,23 @@ Form{
 }
 
 .btn-login{
+  color: white;
   background-color: #542982;
-  border: none;
+  border: 2px solid #542982;
   border-radius: 25px;  
+
   &:hover{
+    color: white;
     background-color: #783bb5;
-    border: none;
+    border: 2px solid #783bb5;
   }
+
+  &:active{
+    background-color: #3e1d63;
+    border: 2px solid #542982;
+
+  }
+  
 }
 
 .register-text{
