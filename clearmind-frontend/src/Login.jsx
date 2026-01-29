@@ -26,7 +26,7 @@ function Login() {
   return (
     <Container
       fluid
-      className="vh-100 d-flex justify-content-center align-items-center bg-transparent"
+      className="background vh-100 d-flex justify-content-center align-items-center"
     >
       <Card className="vw-100% card-custom d-flex justify-content-center align-items-center p-4 ">
         <Card.Body>

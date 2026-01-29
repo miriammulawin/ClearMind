@@ -1,8 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-body {
+body{
+  height: 100%;
   font-family: 'Poppins', sans-serif !important;
-  color: #E1D8EB;
-  
+}
+
+.background {
+  background-color: #E1D8EB !important;
 }
 
 .card-custom{

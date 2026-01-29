@@ -8,6 +8,8 @@ import { BsPersonLinesFill } from "react-icons/bs";
 import { MdManageAccounts } from "react-icons/md";
 import { BiSolidUserCircle } from "react-icons/bi";
 
+
+import "../index.css";
 import logo from "../assets/CMPS_Logo.png";
 
 function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
