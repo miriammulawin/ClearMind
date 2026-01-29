@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import axios from "axios"; // make sure axios is installed: npm install axios
 import "./Registration.css";
 import logo_registration from "./assets/CMPS_Logo.png";
 
@@ -20,6 +21,9 @@ function Registration() {
 
   const [errors, setErrors] = useState({});
 
+  // =====================
+  // HANDLE INPUT CHANGE
+  // =====================
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -28,11 +32,12 @@ function Registration() {
     }));
 
     // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  // =====================
+  // VALIDATE FORM
+  // =====================
   const validateForm = () => {
     const newErrors = {};
 
@@ -57,193 +62,198 @@ function Registration() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // =====================
+  // HANDLE SUBMIT
+  // =====================
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      // Here you would normally send data to backend
-      console.log("Form submitted:", formData);
+    if (!validateForm()) return;
 
-      // Example: redirect to login after success
-      alert("Registration successful! (demo)");
-      navigate("/"); // or "/login"
+    const payload = {
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      date_of_birth: formData.dob,
+      sex: formData.sex,
+      phone: formData.contactNo,
+      email: formData.email,
+      password: formData.password,
+    };
+
+    try {
+      const response = await axios.post(
+        "http://localhost/ClearMind/clearmind-backend/registration.php",
+        payload,
+        {
+          withCredentials: true, // allow cookies if needed
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      alert(response.data.message || "Registration successful!");
+      navigate("/"); // redirect to login page
+
+    } catch (error) {
+      if (error.response) {
+        alert(error.response.data.message || "Registration failed");
+      } else {
+        alert("Server error. Please try again.");
+      }
     }
   };
 
+  // =====================
+  // JSX
+  // =====================
   return (
     <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
       <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
-        {/* Logo */}
+
         <div className="text-center mb-4">
-          <img
-            src={logo_registration}
-            alt="ClearMind Logo"
-            className="img-fluid"
-            style={{ maxWidth: "280px" }}
-          />
+          <img src={logo_registration} alt="ClearMind Logo" className="img-fluid" style={{ maxWidth: "280px" }} />
         </div>
 
-        {/* Card */}
-        <div className="card registration-card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div className="card registration-card shadow-lg border-0 rounded-4">
           <div className="card-body p-4 p-md-5">
             <h3 className="text-center fw-bold mb-4" style={{ color: "#4E237C" }}>
               REGISTRATION
             </h3>
 
             <form onSubmit={handleSubmit} noValidate>
+
+              {/* Name */}
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <input
                     type="text"
                     name="firstName"
-                    className={`form-control custom-input ${errors.firstName ? "is-invalid" : ""}`}
+                    className={`form-control ${errors.firstName ? "is-invalid" : ""}`}
                     placeholder="First Name *"
                     value={formData.firstName}
                     onChange={handleChange}
                   />
-                  {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
+                  <div className="invalid-feedback">{errors.firstName}</div>
                 </div>
 
                 <div className="col-md-6 mb-3">
                   <input
                     type="text"
                     name="lastName"
-                    className={`form-control custom-input ${errors.lastName ? "is-invalid" : ""}`}
+                    className={`form-control ${errors.lastName ? "is-invalid" : ""}`}
                     placeholder="Last Name *"
                     value={formData.lastName}
                     onChange={handleChange}
                   />
-                  {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
+                  <div className="invalid-feedback">{errors.lastName}</div>
                 </div>
               </div>
 
+              {/* DOB & Sex */}
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <input
                     type="date"
                     name="dob"
-                    className={`form-control custom-input ${errors.dob ? "is-invalid" : ""}`}
+                    className={`form-control ${errors.dob ? "is-invalid" : ""}`}
                     value={formData.dob}
                     onChange={handleChange}
                   />
-                  {errors.dob && <div className="invalid-feedback">{errors.dob}</div>}
+                  <div className="invalid-feedback">{errors.dob}</div>
                 </div>
 
                 <div className="col-md-6 mb-3">
                   <select
                     name="sex"
-                    className={`form-select custom-input ${errors.sex ? "is-invalid" : ""}`}
+                    className={`form-select ${errors.sex ? "is-invalid" : ""}`}
                     value={formData.sex}
                     onChange={handleChange}
                   >
                     <option value="" disabled>Sex *</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
                   </select>
-                  {errors.sex && <div className="invalid-feedback">{errors.sex}</div>}
+                  <div className="invalid-feedback">{errors.sex}</div>
                 </div>
               </div>
 
+              {/* Contact */}
               <div className="mb-3">
                 <input
                   type="tel"
                   name="contactNo"
-                  className={`form-control custom-input ${errors.contactNo ? "is-invalid" : ""}`}
+                  className={`form-control ${errors.contactNo ? "is-invalid" : ""}`}
                   placeholder="Contact No. *"
                   value={formData.contactNo}
                   onChange={handleChange}
                 />
-                {errors.contactNo && <div className="invalid-feedback">{errors.contactNo}</div>}
+                <div className="invalid-feedback">{errors.contactNo}</div>
               </div>
 
+              {/* Email */}
               <div className="mb-3">
                 <input
                   type="email"
                   name="email"
-                  className={`form-control custom-input ${errors.email ? "is-invalid" : ""}`}
+                  className={`form-control ${errors.email ? "is-invalid" : ""}`}
                   placeholder="Email *"
                   value={formData.email}
                   onChange={handleChange}
                 />
-                {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                <div className="invalid-feedback">{errors.email}</div>
               </div>
 
+              {/* Password */}
               <div className="mb-3">
                 <input
                   type="password"
                   name="password"
-                  className={`form-control custom-input ${errors.password ? "is-invalid" : ""}`}
+                  className={`form-control ${errors.password ? "is-invalid" : ""}`}
                   placeholder="Password *"
                   value={formData.password}
                   onChange={handleChange}
                 />
-                {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                <div className="invalid-feedback">{errors.password}</div>
               </div>
 
+              {/* Confirm Password */}
               <div className="mb-4">
                 <input
                   type="password"
                   name="confirmPassword"
-                  className={`form-control custom-input ${errors.confirmPassword ? "is-invalid" : ""}`}
+                  className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
                   placeholder="Confirm Password *"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
-                {errors.confirmPassword && (
-                  <div className="invalid-feedback">{errors.confirmPassword}</div>
-                )}
+                <div className="invalid-feedback">{errors.confirmPassword}</div>
               </div>
 
-              {/* Terms Checkbox */}
-              <div className="mb-4 d-flex align-items-center justify-content-center gap-2">
+              {/* Terms */}
+              <div className="mb-4 text-center">
                 <input
                   type="checkbox"
                   name="agreeTerms"
-                  className={`form-check-input custom-checkbox ${errors.agreeTerms ? "is-invalid" : ""}`}
-                  id="terms"
                   checked={formData.agreeTerms}
                   onChange={handleChange}
-                />
-                <label className="form-check-label small-text mb-0" htmlFor="terms">
-                  I agree to the{" "}
-                  <a href="#" className="purple-link text-decoration-underline">
-                    Terms and Conditions
-                  </a>
-                </label>
+                />{" "}
+                I agree to the Terms and Conditions
+                <div className="text-danger small">{errors.agreeTerms}</div>
               </div>
-              {errors.agreeTerms && (
-                <div className="text-danger text-center small mb-3">{errors.agreeTerms}</div>
-              )}
 
-              {/* Submit Button */}
-              <div className="d-grid mb-4">
-                <button
-                  type="submit"
-                  className="btn btn-register shadow-sm"
-                  style={{
-                    backgroundColor: "#4E237C",
-                    color: "white",
-                    fontWeight: 600,
-                    padding: "12px",
-                    borderRadius: "10px",
-                  }}
-                >
-                  REGISTRATION
+              {/* Submit */}
+              <div className="d-grid mb-3">
+                <button className="btn btn-register" type="submit">
+                  REGISTER
                 </button>
               </div>
 
-              {/* Login link */}
-              <div className="text-center small-text">
+              <div className="text-center">
                 Already have an account?{" "}
-                <button
-                  type="button"
-                  className="btn btn-link purple-link fw-bold p-0 text-decoration-none"
-                  onClick={() => navigate("/")}
-                >
+                <button type="button" className="btn btn-link" onClick={() => navigate("/")}>
                   Log In
                 </button>
               </div>
+
             </form>
           </div>
         </div>
