@@ -2,9 +2,20 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Registration.css";
 import logo_registration from "../assets/CMPS_Logo.png";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaUser,
+  FaCalendarAlt,
+  FaPhone,
+  FaEnvelope,
+  FaLock,
+} from "react-icons/fa";
 
 function Registration() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -88,97 +99,224 @@ function Registration() {
           <h3 className="form-title">REGISTRATION</h3>
 
           <form onSubmit={handleSubmit} noValidate>
-            <input
-              type="text"
-              name="firstName"
-              className={`form-input ${errors.firstName ? "error" : ""}`}
-              placeholder="First Name *"
-              value={formData.firstName}
-              onChange={handleChange}
-            />
-            {errors.firstName && (
-              <span className="error-text">{errors.firstName}</span>
-            )}
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaUser />
+                </span>
 
-            <input
-              type="text"
-              name="lastName"
-              className={`form-input ${errors.lastName ? "error" : ""}`}
-              placeholder="Last Name *"
-              value={formData.lastName}
-              onChange={handleChange}
-            />
-            {errors.lastName && (
-              <span className="error-text">{errors.lastName}</span>
-            )}
+                <input
+                  type="text"
+                  name="firstName"
+                  className={`form-control border-start-0 ${
+                    errors.firstName ? "is-invalid" : ""
+                  }`}
+                  placeholder="First Name *"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <input
-              type="date"
-              name="dob"
-              className={`form-input ${errors.dob ? "error" : ""}`}
-              placeholder="Date of Birth *"
-              value={formData.dob}
-              onChange={handleChange}
-            />
-            {errors.dob && <span className="error-text">{errors.dob}</span>}
+              {errors.firstName && (
+                <div className="invalid-feedback d-block">
+                  {errors.firstName}
+                </div>
+              )}
+            </div>
 
-            <select
-              name="sex"
-              className={`form-input ${errors.sex ? "error" : ""}`}
-              value={formData.sex}
-              onChange={handleChange}
-            >
-              <option value="">Sex *</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-            </select>
-            {errors.sex && <span className="error-text">{errors.sex}</span>}
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaUser />
+                </span>
 
-            <input
-              type="tel"
-              name="contactNo"
-              className={`form-input ${errors.contactNo ? "error" : ""}`}
-              placeholder="Contact No. *"
-              value={formData.contactNo}
-              onChange={handleChange}
-            />
-            {errors.contactNo && (
-              <span className="error-text">{errors.contactNo}</span>
-            )}
+                <input
+                  type="text"
+                  name="lastName"
+                  className={`form-control border-start-0 ${
+                    errors.lastName ? "is-invalid" : ""
+                  }`}
+                  placeholder="Last Name *"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <input
-              type="email"
-              name="email"
-              className={`form-input ${errors.email ? "error" : ""}`}
-              placeholder="Email *"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {errors.email && <span className="error-text">{errors.email}</span>}
+              {errors.lastName && (
+                <div className="invalid-feedback d-block">
+                  {errors.lastName}
+                </div>
+              )}
+            </div>
 
-            <input
-              type="password"
-              name="password"
-              className={`form-input ${errors.password ? "error" : ""}`}
-              placeholder="Password *"
-              value={formData.password}
-              onChange={handleChange}
-            />
-            {errors.password && (
-              <span className="error-text">{errors.password}</span>
-            )}
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaCalendarAlt />
+                </span>
 
-            <input
-              type="password"
-              name="confirmPassword"
-              className={`form-input ${errors.confirmPassword ? "error" : ""}`}
-              placeholder="Confirm Password *"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-            />
-            {errors.confirmPassword && (
-              <span className="error-text">{errors.confirmPassword}</span>
-            )}
+                <input
+                  type="date"
+                  name="dob"
+                  className={`form-control border-start-0 ${
+                    errors.dob ? "is-invalid" : ""
+                  }`}
+                  value={formData.dob}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {errors.dob && (
+                <div className="invalid-feedback d-block">{errors.dob}</div>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaUser />
+                </span>
+
+                <select
+                  name="sex"
+                  className={`form-select border-start-0 ${
+                    errors.sex ? "is-invalid" : ""
+                  }`}
+                  value={formData.sex}
+                  onChange={handleChange}
+                >
+                  <option value="">Sex *</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+              </div>
+
+              {errors.sex && (
+                <div className="invalid-feedback d-block">{errors.sex}</div>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaPhone />
+                </span>
+
+                <input
+                  type="tel"
+                  name="contactNo"
+                  className={`form-control border-start-0 ${
+                    errors.contactNo ? "is-invalid" : ""
+                  }`}
+                  placeholder="Contact No. *"
+                  value={formData.contactNo}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {errors.contactNo && (
+                <div className="invalid-feedback d-block">
+                  {errors.contactNo}
+                </div>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="input-group">
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaEnvelope />
+                </span>
+
+                <input
+                  type="email"
+                  name="email"
+                  className={`form-control border-start-0 ${
+                    errors.email ? "is-invalid" : ""
+                  }`}
+                  placeholder="Email *"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {errors.email && (
+                <div className="invalid-feedback d-block">{errors.email}</div>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="input-group">
+                {/* LEFT LOCK ICON */}
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaLock />
+                </span>
+
+                {/* PASSWORD INPUT */}
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  className={`form-control border-start-0 border-end-0 ${
+                    errors.password ? "is-invalid" : ""
+                  }`}
+                  placeholder="Password *"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+
+                {/* RIGHT EYE TOGGLE */}
+                <span
+                  className="input-group-text bg-white border-start-0 input-icon"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEye /> : <FaEyeSlash />}
+                </span>
+              </div>
+
+              {/* VALIDATION */}
+              {errors.password && (
+                <div className="invalid-feedback d-block">
+                  {errors.password}
+                </div>
+              )}
+            </div>
+
+            <div className="mb-3">
+              <div className="input-group">
+                {/* LEFT LOCK ICON */}
+                <span className="input-group-text bg-white border-end-0 input-icon">
+                  <FaLock />
+                </span>
+
+                {/* PASSWORD INPUT */}
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  className={`form-control border-start-0 border-end-0 ${
+                    errors.confirmPassword ? "is-invalid" : ""
+                  }`}
+                  placeholder="Confirm Password *"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
+
+                {/* RIGHT EYE TOGGLE */}
+                <span
+                  className="input-group-text bg-white border-start-0 input-icon"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
+                </span>
+              </div>
+
+              {/* VALIDATION */}
+              {errors.confirmPassword && (
+                <div className="invalid-feedback d-block">
+                  {errors.confirmPassword}
+                </div>
+              )}
+            </div>
 
             <div className="checkbox-container">
               <input
