@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Container, Card, Row, Col, Form, Button, Image } from "react-bootstrap";
-
 import { useNavigate, useLocation } from "react-router-dom";
 
 import "../ClientStyle/ClientFooter.css";
