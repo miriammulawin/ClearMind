@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Container, Card, Row, Col, Form, Button, Image } from "react-bootstrap";
+
+import { useNavigate, useLocation } from "react-router-dom";
+
 import "../ClientStyle/ClientFooter.css";
 import { GoHomeFill } from "react-icons/go";
 import { FaCalendarCheck } from "react-icons/fa";
@@ -8,33 +11,34 @@ import { BiSolidUserCircle } from "react-icons/bi";
 
 
 function ClientFooter() {
-    const [active, setActive] = useState("home");
-    
-    return (
-        <div> 
-            <nav className="bottom-nav">
-                <button className={`nav-item ${active === "home" ? "active" : ""}`} onClick={() => setActive("home")}>
-                    <GoHomeFill />
-                <span>Home</span>
-                </button>
-                
-                <button className={`nav-item ${active === "appointments" ? "active" : ""}`} onClick={() => setActive("appointments")}>
-                    <FaCalendarCheck />
-                <span>Appointments</span>
-                </button>
-                
-                <button className={`nav-item ${active === "messages" ? "active" : ""}`} onClick={() => setActive("messages")}>
-                    <AiFillMessage />
-                <span>Messages</span>
-                </button>
-                
-                <button className={`nav-item ${active === "account" ? "active" : ""}`}onClick={() => setActive("account")}>
-                    <BiSolidUserCircle />
-                <span>Account</span>
-                </button>
-            </nav>
-        </div>
-    );
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menus = [
+    { name: "Home", icon: <GoHomeFill />, path: "/client-home" },
+    { name: "Appointments", icon: <FaCalendarCheck />, path: "/client-appointment" },
+    { name: "Messages", icon: <AiFillMessage />, path: "/client-messages" },
+    { name: "Account", icon: <BiSolidUserCircle />, path: "/client-account" },
+  ];
+
+  return (
+    <nav className="bottom-nav">
+      {menus.map((menu) => {
+        const isActive = location.pathname.startsWith(menu.path);
+
+        return (
+          <button
+            key={menu.name}
+            className={`nav-item ${isActive ? "active" : ""}`}
+            onClick={() => navigate(menu.path)}
+          >
+            {menu.icon}
+            <span>{menu.name}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
 }
 
 export default ClientFooter;
