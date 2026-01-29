@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // <-- import useLocation
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { RiDashboardFill } from "react-icons/ri";
 import { FaUserPlus, FaCalendarDays } from "react-icons/fa6";
@@ -12,19 +12,24 @@ import logo from "../assets/CMPS_Logo.png";
 
 function AdminSideBar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [tooltip, setTooltip] = useState({
     text: "",
     x: 0,
     y: 0,
     visible: false,
   });
+
   const navigate = useNavigate();
+  const location = useLocation(); // <-- get current route
 
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin-dashboard" },
     { name: "Create Accounts", icon: <FaUserPlus />, path: "/create-accounts" },
-    { name: "Appointment", icon: <FaCalendarDays />, path: "/appointment" },
+    {
+      name: "Appointment",
+      icon: <FaCalendarDays />,
+      path: "/admin-appointment",
+    },
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/patients" },
     { name: "Clinic", icon: <FaClinicMedical />, path: "/clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/billing" },
@@ -37,7 +42,6 @@ function AdminSideBar() {
   ];
 
   const handleMenuClick = (item) => {
-    setActiveMenu(item.name);
     navigate(item.path);
   };
 
@@ -66,14 +70,16 @@ function AdminSideBar() {
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`menu-item ${activeMenu === item.name ? "active" : ""}`}
+                className={`menu-item ${
+                  location.pathname === item.path ? "active" : ""
+                }`} // <-- highlight based on URL
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
                     text: item.name,
-                    x: rect.right + 10, // 10px gap to the right
+                    x: rect.right + 10,
                     y: rect.top + rect.height / 2,
                     visible: true,
                   });
@@ -88,7 +94,6 @@ function AdminSideBar() {
         </div>
       </div>
 
-      {/* Tooltip rendered outside sidebar */}
       {tooltip.visible && (
         <div
           style={{
