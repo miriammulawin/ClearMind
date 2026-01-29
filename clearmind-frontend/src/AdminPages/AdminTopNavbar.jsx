@@ -1,6 +1,7 @@
 import { FiLogOut, FiSearch } from "react-icons/fi";
 import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
+import "../index.css";
 
 function AdminTopNavbar({ activeMenu }) {
   return (
