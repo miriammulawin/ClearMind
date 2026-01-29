@@ -1,5 +1,20 @@
 <?php
-require 'db_con.php';
+require 'database.php';
+
+// =======================
+// CORS HEADERS (MUST BE FIRST)
+// =======================
+header("Access-Control-Allow-Origin: http://localhost:5173");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Credentials: true");
+header("Content-Type: application/json");
+
+// Handle preflight request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -20,7 +35,7 @@ if ($dob) {
 }
 
 // Check if email exists
-$stmt = $pdo->prepare("SELECT client_id FROM clients WHERE email_address = ?");
+$stmt = $pdo->prepare("SELECT client_id FROM client WHERE email_address = ?");
 $stmt->execute([$email]);
 
 if ($stmt->rowCount() > 0) {
@@ -31,7 +46,7 @@ if ($stmt->rowCount() > 0) {
 
 // Insert client
 $insert = $pdo->prepare("
-    INSERT INTO clients
+    INSERT INTO client
     (first_name, last_name, middle_initial, sex, date_of_birth, age, email_address, phone, address, password)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ");

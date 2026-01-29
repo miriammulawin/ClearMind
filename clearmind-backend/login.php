@@ -1,9 +1,9 @@
 <?php
+// =======================
 // CORS CONFIGURATION
+// =======================
 if (isset($_SERVER['HTTP_ORIGIN'])) {
-    $allowed_origins = [
-        'http://localhost:5173'
-    ];
+    $allowed_origins = ['http://localhost:5173'];
 
     if (in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
         header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 header("Content-Type: application/json; charset=UTF-8");
 session_start();
-include 'database.php'; 
+require 'database.php';
 
 // =======================
 // LOGGING FUNCTION
@@ -40,8 +40,7 @@ $data = json_decode(file_get_contents("php://input"), true);
 $email = trim($data['email'] ?? '');
 $password = trim($data['password'] ?? '');
 
-if (empty($email) || empty($password)) {
-    logLogin($email ?: 'EMPTY', 'UNKNOWN', 'FAILED');
+if (!$email || !$password) {
     echo json_encode([
         "success" => false,
         "message" => "Email and password are required."
@@ -50,82 +49,51 @@ if (empty($email) || empty($password)) {
 }
 
 // =======================
-// LOGIN FUNCTION (PDO)
+// LOGIN FUNCTION
 // =======================
-function loginUser($pdo, $table, $emailColumn, $passwordColumn) {
+function attemptLogin($pdo, $table, $emailColumn, $passwordColumn, $roleName) {
     global $email, $password;
 
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE $emailColumn = :email LIMIT 1");
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user[$passwordColumn])) {
-        return $user;
+    if (!$user) return null;
+
+    if (!password_verify($password, $user[$passwordColumn])) {
+        echo json_encode([
+            "success" => false,
+            "message" => "Incorrect password."
+        ]);
+        exit();
     }
-    return false;
-}
 
-// =======================
-// CHECK ADMIN
-// =======================
-$user = loginUser($pdo, "admin", "email", "password");
-if ($user) {
-    $_SESSION['role'] = "Admin";
-    $_SESSION['email'] = $user['email'];
+    $_SESSION['role'] = $roleName;
+    $_SESSION['email'] = $email;
 
-    logLogin($email, 'Admin', 'SUCCESS');
+    logLogin($email, $roleName, 'SUCCESS');
 
     echo json_encode([
         "success" => true,
-        "role" => "Admin",
-        "user" => $user
+        "role" => $roleName
     ]);
     exit();
 }
 
 // =======================
-// CHECK DOCTOR
+// ROLE CHECKS
 // =======================
-$user = loginUser($pdo, "doctors", "email_address", "password");
-if ($user) {
-    $_SESSION['role'] = "Doctor";
-    $_SESSION['email'] = $user['email_address'];
-
-    logLogin($email, 'Doctor', 'SUCCESS');
-
-    echo json_encode([
-        "success" => true,
-        "role" => "Doctor",
-        "user" => $user
-    ]);
-    exit();
-}
+attemptLogin($pdo, "admin", "email", "password", "Admin");
+attemptLogin($pdo, "doctors", "email_address", "password", "Doctor");
+attemptLogin($pdo, "client", "email_address", "password", "Client");
 
 // =======================
-// CHECK CLIENT
-// =======================
-$user = loginUser($pdo, "client", "email_address", "password");
-if ($user) {
-    $_SESSION['role'] = "Client";
-    $_SESSION['email'] = $user['email_address'];
-
-    logLogin($email, 'Client', 'SUCCESS');
-
-    echo json_encode([
-        "success" => true,
-        "role" => "Client",
-        "user" => $user
-    ]);
-    exit();
-}
-
-// =======================
-// INVALID CREDENTIALS
+// EMAIL NOT FOUND
 // =======================
 logLogin($email, 'UNKNOWN', 'FAILED');
 
 echo json_encode([
     "success" => false,
-    "message" => "Invalid credentials. Please try again."
+    "message" => "Email does not exist."
 ]);
 exit();
