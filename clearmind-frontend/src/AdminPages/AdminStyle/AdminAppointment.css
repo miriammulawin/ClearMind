@@ -1,0 +1,31 @@
+
+.rbc-event {
+  border-radius: 16px !important;
+  padding: 4px 8px !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  color: #fff !important;
+  margin-bottom: 4px !important;
+}
+
+.rbc-calendar {
+  background-color: #ffffff;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  padding: 10px;
+}
+
+.rbc-header {
+  background-color: #4D227C;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+
+.rbc-today {
+  background-color: rgba(34, 59, 124, 0.582) !important;
+  border-radius: 8px;
+}
