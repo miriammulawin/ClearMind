@@ -5,9 +5,6 @@ import CreateAccounts from "./AdminPages/CreateAccounts"
 import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
 
-
-
-
 function App() {
   return (
     <Router>
