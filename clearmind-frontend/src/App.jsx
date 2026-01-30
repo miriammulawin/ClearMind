@@ -4,6 +4,8 @@ import Login from "./Login";
 import CreateAccounts from "./AdminPages/CreateAccounts";
 import Registration from "./ClientPages/Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
+import DoctorAccounts from "./AdminPages/DoctorAccounts";
+
 
 function App() {
   return (
@@ -12,7 +14,9 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts" element={<CreateAccounts />} />
+        <Route path="/create-doctors" element={<DoctorAccounts />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+       
       </Routes>
     </Router>
   );
