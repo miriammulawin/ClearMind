@@ -6,7 +6,7 @@ const ClientAppointmentTab = () => {
   const [activeTab, setActiveTab] = useState('services');
 
   return (
-    <div className="tab-navigation-wrapper">
+    <div className="tab-navigation-wrapper d-flex justify-content-center align-items-center">
       <Nav variant="tabs" className="custom-tabs">
         <Nav.Item>
           <Nav.Link 
