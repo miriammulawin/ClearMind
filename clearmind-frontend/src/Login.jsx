@@ -12,113 +12,103 @@ import logo_login from "./assets/CMPS_Logo.png";
 import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import "./Login.css";
-import { useNavigate } from "react-router-dom"; // For redirect
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-
-
-
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-   const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => {
+      setError("");
+    }, 1500);
+  };
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError("");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!email.trim() || !password.trim()) {
+      showError("Please enter both email and password");
+      return;
+    }
 
-  // ===============================
-  // Local Validation
-  // ===============================
-  if (!email.trim() || !password.trim()) {
-    setError("Please enter both email and password.");
-    return;
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError("Please enter a valid email address");
+      return;
+    }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    setError("Please enter a valid email address.");
-    return;
-  }
+    if (!agreed) {
+      showError("You must agree to the Terms & Conditions");
+      return;
+    }
 
-  if (!agreed) {
-    setError("You must agree to the Terms & Conditions.");
-    return;
-  }
-
-  try {
-    const response = await axios.post(
-      "http://localhost/ClearMind/clearmind-backend/login.php",
-      { email, password },
-      {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const response = await axios.post(
+        "http://localhost/ClearMind/clearmind-backend/login.php",
+        { email, password },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
+      );
+
+      const data = response.data;
+
+      if (data.success) {
+        toast.success(`Login Successful !`, {
+          duration: 1500,
+          style: {
+            background: "#E2F7E3",
+            border: "1px solid #91C793",
+            color: "#2E7D32",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            textAlign: "center",
+            maxWidth: "320px",
+            borderRadius: "10px",
+            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+          },
+          iconTheme: {
+            primary: "#2E7D32",
+            secondary: "#E2F7E3",
+          },
+        });
+        setTimeout(() => {
+          switch (data.role) {
+            case "Admin":
+              navigate("/admin-dashboard");
+              break;
+            case "Doctor":
+              navigate("/doctor-dashboard");
+              break;
+            case "Client":
+              navigate("/client-dashboard");
+              break;
+            default:
+              navigate("/");
+          }
+        }, 1500);
+      } else {
+        setError(data.message || "Login failed.");
       }
-    );
-
-    const data = response.data;
-
-    if (data.success) {
-      // ===============================
-      // React Hot Toast Success
-      // ===============================
-      toast.success(`Welcome, ${data.role}!`, {
-        duration: 1500,
-        style: {
-          background: "#E2F7E3",
-          border: "1px solid #91C793",
-          color: "#2E7D32",
-          fontWeight: 600,
-          fontSize: "0.95rem",
-          textAlign: "center",
-          maxWidth: "320px",
-          borderRadius: "10px",
-          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
-        },
-        iconTheme: {
-          primary: "#2E7D32",
-          secondary: "#E2F7E3",
-        },
-      });
-
-      // ===============================
-      // Role-based Redirect after toast
-      // ===============================
-      setTimeout(() => {
-        switch (data.role) {
-          case "Admin":
-            navigate("/admin-dashboard");
-            break;
-          case "Doctor":
-            navigate("/doctor-dashboard");
-            break;
-          case "Client":
-            navigate("/client-dashboard");
-            break;
-          default:
-            navigate("/");
-        }
-      }, 1500); // wait for toast to finish
-    } else {
-      setError(data.message || "Login failed.");
+    } catch (error) {
+      if (error.response) {
+        showError(error.response.data?.message || "Login failed.");
+      } else {
+        showError("Server error. Please try again later.");
+      }
     }
-  } catch (error) {
-    if (error.response) {
-      setError(error.response.data?.message || "Login failed.");
-    } else {
-      setError("Server error. Please try again later.");
-    }
-  }
-};
-
-
+  };
 
   return (
     <Container
@@ -142,7 +132,7 @@ const handleLogin = async (e) => {
               </span>
             </Row>
           </Container>
-          <Form>
+          <Form onSubmit={handleLogin}>
             <Form.Group className="mb-2" controlId="email">
               <Form.Label className="login-text">
                 Email <span className="text-danger">*</span>
@@ -211,20 +201,20 @@ const handleLogin = async (e) => {
                 className="terms-check"
               />
             </Form.Group>
-
-                        {/* Error message */}
             {error && (
               <Row className="mb-2">
+                {" "}
                 <Col>
+                  {" "}
                   <small className="text-danger d-block text-center">
-                    {error}
-                  </small>
-                </Col>
+                    {" "}
+                    {error}{" "}
+                  </small>{" "}
+                </Col>{" "}
               </Row>
             )}
 
-
-            <Button variant="none" onClick={handleLogin} className="btn-login w-100">
+            <Button type="submit" variant="none" className="btn-login w-100">
               <b>LOG IN</b>
             </Button>
             <p className="register-text text-center m-2">
