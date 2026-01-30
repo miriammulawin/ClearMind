@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./Login";
 import CreateAccounts from "./AdminPages/CreateAccounts"
@@ -8,6 +8,9 @@ import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
 import ClientMessages from "./ClientPages/ClientMessages";
 import ClientAccount from "./ClientPages/ClientAccount";
+import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
+import UpcomingTab from "./ClientPages/ClientComponents/UpcomingTab";
+import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
 
 function App() {
   return (
@@ -18,7 +21,14 @@ function App() {
         <Route path="/create-accounts"element={<CreateAccounts/>} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/client-home" element={<ClientHome />} />
-        <Route path="/client-appointment" element={<ClientAppointment />} />
+
+        <Route path="/client-appointment" element={<ClientAppointment />}>
+          <Route index element={<Navigate to="client-services" replace />} />
+          <Route path="client-services" element={<ServicesTab />} />
+          <Route path="client-upcoming" element={<UpcomingTab />} />
+          <Route path="client-history" element={<HistoryTab />} />
+        </Route>
+        
         <Route path="/client-messages" element={<ClientMessages />} />
         <Route path="/client-account" element={<ClientAccount />} />
 
