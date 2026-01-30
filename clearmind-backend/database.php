@@ -2,7 +2,7 @@
 $host = "localhost";    
 $db   = "ClearMindWebsite"; 
 $user = "root";          
-$pass = "liezel11";             
+$pass = "root";             
 $charset = "utf8mb4";    
 
 try { 

@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Container, Card, Row, Col, Form, Button, Image } from "react-bootstrap";
+import { Container, Card, Row, Col, Form, Button, Image, Alert } from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
 import { FaEye, FaEyeSlash, FaLock} from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import "./Login.css";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 
 function Login() {
@@ -11,10 +14,97 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => {
+      setError("");
+    }, 3000); 
+  };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log({ email, password });
+    setError("");
+    
+    // Validate empty fields
+    if (!email.trim() || !password.trim()) {
+      showError("Please enter both email and password");
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showError("Please enter a valid email address");
+      return;
+    }
+
+    // Validate terms agreement
+    if (!agreed) {
+      showError("You must agree to the Terms & Conditions");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost/ClearMind/clearmind-backend/login.php",
+        { email, password },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = response.data;
+
+      if (data.success) {
+        toast.success(`Login Successful !`, {
+          duration: 1500,
+          style: {
+            background: "#E2F7E3",
+            border: "1px solid #91C793",
+            color: "#2E7D32",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            textAlign: "center",
+            maxWidth: "320px",
+            borderRadius: "10px",
+            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+          },
+          iconTheme: {
+            primary: "#2E7D32",
+            secondary: "#E2F7E3",
+          },
+        });
+        setTimeout(() => {
+          switch (data.role) {
+            case "Admin":
+              navigate("/admin-dashboard");
+              break;
+            case "Doctor":
+              navigate("/doctor-dashboard");
+              break;
+            case "Client":
+              navigate("/client-dashboard");
+              break;
+            default:
+              navigate("/");
+          }
+        }, 1500);
+      } else {
+        showError(data.message || "Login failed.");
+      }
+    } catch (error) {
+      if (error.response) {
+        showError(error.response.data?.message || "Login failed.");
+      } else {
+        showError("Server error. Please try again later.");
+      }
+    }
   };
 
   return (
@@ -37,7 +127,8 @@ function Login() {
                   </p>
                 </Col>
               </Row>
-              <Form onSubmit={handleLogin} className="login-form">
+              {/* REMOVE noValidate ATTRIBUTE TO DISABLE HTML5 VALIDATION */}
+              <Form onSubmit={handleLogin} className="login-form" noValidate>
                 <Form.Group className="mb-3" controlId="email">
                   <Form.Label className="form-label-custom">
                     Email <span className="text-danger">*</span>
@@ -50,8 +141,8 @@ function Login() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       autoComplete="email"
-                      required
                       className="input-field"
+                      // REMOVED: required attribute
                     />
                   </div>
                 </Form.Group>
@@ -68,8 +159,8 @@ function Login() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
-                      required
                       className="input-field"
+                      // REMOVED: required attribute
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -98,10 +189,22 @@ function Login() {
                     }
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
-                    required
                     className="terms-checkbox"
+                    // REMOVED: required attribute
                   />
                 </Form.Group>
+                {error && (
+                  <Row className="mb-2">
+                    {" "}
+                    <Col>
+                      {" "}
+                      <small className="text-danger d-block text-center">
+                        {" "}
+                        {error}{" "}
+                      </small>{" "}
+                    </Col>{" "}
+                  </Row>
+                )}
 
                 <Button 
                   variant="primary" 

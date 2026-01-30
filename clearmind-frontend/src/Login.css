@@ -219,6 +219,7 @@ body {
   color: #783bb5;
 }
 
+
 /* Hide password reveal buttons */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
