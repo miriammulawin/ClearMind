@@ -1,41 +1,131 @@
-import React from 'react';
-import AdminSideBar from './AdminSideBar';
-import AdminTopNavbar from './AdminTopNavbar';  
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import AdminSideBar from "./AdminSideBar";
+import AdminTopNavbar from "./AdminTopNavbar";
+import "./AdminStyle/CreateAccount.css";
+import { FiX } from "react-icons/fi";
 
 function CreateAccounts() {
-
-  const [activeMenu, setActiveMenu] = React.useState("Create Accounts");
+  const [activeMenu, setActiveMenu] = useState("Create Accounts");
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
 
   return (
     <div className="admin-layout">
-      <AdminSideBar 
-        activeMenu={activeMenu} 
-        setActiveMenu={setActiveMenu} 
-      />
+      <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
-        <div className="admin-content">
-          <h3 className='doctor-text'>Doctor's Account</h3>
-          <div style={{ marginTop: '2rem' }}>
-            <p>This is where your account creation form will go...</p>
-        
-            <div className="card p-4 mt-4 shadow-m">
-              <h4>New Doctor / Staff Account</h4>
-              <div className="row mt-3">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Full Name</label>
-                  <input type="text" className="form-control" placeholder="Juan Dela Cruz" />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Email</label>
-                  <input type="email" className="form-control" placeholder="example@clinic.com" />
-                </div>
-              </div>
-              <button className="btn btn-primary mt-3">Create Account</button>
-            </div>
+        <div className="admin-content create-accounts-page">
+          <div className="create-accounts-header">
+            <h3 className="create-accounts-title">Doctor&apos;s Account</h3>
+            <button
+              className="create-btn"
+              onClick={() => setShowDoctorModal(true)}
+            >
+              Create <i className="bi bi-plus-lg" />
+            </button>
+          </div>
+
+          <div className="create-accounts-card">
+            <table className="create-accounts-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Specialization</th>
+                  <th>Email Address</th>
+                  <th>Mobile No.</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Liezel Paciente</td>
+                  <td>Psychologist</td>
+                  <td>paciente@gmail.com</td>
+                  <td>09123456767</td>
+                  <td>
+                    <div className="status-switch form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        defaultChecked
+                      />
+                    </div>
+                  </td>
+                  <td>
+                    <button className="view-btn">View</button>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td>2</td>
+                  <td>Brian Dela Cruz</td>
+                  <td>Psychologist</td>
+                  <td>briandelacruz@gmail.com</td>
+                  <td>09123456767</td>
+                  <td>
+                    <div className="status-switch form-check form-switch">
+                      <input className="form-check-input" type="checkbox" />
+                    </div>
+                  </td>
+                  <td>
+                    <button className="view-btn">View</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="create-pagination">
+            <p>Page 1 of 3</p>
+            <ul>
+              <li>‹</li>
+              <li className="active">1</li>
+              <li>2</li>
+              <li>3</li>
+              <li>›</li>
+            </ul>
           </div>
         </div>
       </div>
+
+      {showDoctorModal && (
+        <div className="doctor-modal-overlay">
+          <div className="doctor-modal-lg">
+            <div className="doctor-modal-header">
+              <h2>Create Doctor Account</h2>
+              <button
+                className="doctor-close-btn"
+                onClick={() => setShowDoctorModal(false)}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="doctor-modal-body">
+              <div className="doctor-modal-section">
+                <h4>Personal Information</h4>
+                <div className="doctor-form-grid">
+                  <input placeholder="First Name" />
+                  <input placeholder="Last Name" />
+                  <input placeholder="Middle Initial" />
+                  <input placeholder="Sex" />
+                  <input type="date" />
+                  <input placeholder="Contact Number" />
+                  <input placeholder="Specialization" />
+                  <input placeholder="Email Address" />
+                </div>
+              </div>
+            </div>
+
+            <div className="doctor-modal-footer">
+              <button className="doctor-save-btn">Create Account</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

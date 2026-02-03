@@ -1,0 +1,109 @@
+.admin-content {
+  padding: 24px;
+  background-color: #ffffff; /* subtle light background */
+  min-height: 100vh;
+}
+
+.clinic-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+
+.clinic-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #4D227C; 
+}/* keep original color */
+.add-clinic-btn {
+  background: #1f6aa5; /* keep original color */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-clinic-btn span {
+  margin-left: 6px;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.add-clinic-btn:hover {
+  background: #174f7c; /* original hover */
+}
+
+.clinic-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 50px;
+  padding: 0px 30px 0px 30px;
+}
+
+.clinic-card {
+  background:#4e237c0a; /* keep original */
+  border: 1px solid #33145067; /* original border */
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(77, 34, 124, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clinic-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(77, 34, 124, 0.15);
+}
+
+.clinic-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.clinic-card-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4d227c; /* keep original */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clinic-icon {
+  font-size: 18px;
+}
+
+.edit-btn {
+  background: transparent;
+  border: 1px solid #4d227c; /* original */
+  color: #4d227c;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.edit-btn:hover {
+  background: #4d227c; /* original hover */
+  color: white;
+}
+
+.clinic-card-body p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #333; /* original text color */
+}
+
+.clinic-card-body strong {
+  color: #4d227c; /* original */
+}

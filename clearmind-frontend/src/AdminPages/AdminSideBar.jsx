@@ -22,7 +22,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   });
 
   const navigate = useNavigate();
-  const location = useLocation(); // <-- get current route
+  const location = useLocation();
 
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin-dashboard" },
@@ -33,7 +33,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
       path: "/admin-appointment",
     },
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/patients" },
-    { name: "Clinic", icon: <FaClinicMedical />, path: "/clinic" },
+    { name: "Clinic", icon: <FaClinicMedical />, path: "/admin-clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/billing" },
     { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage-account" },
     { name: "My Profile", icon: <BiSolidUserCircle />, path: "/my-profile" },
@@ -70,7 +70,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
                 key={item.name}
                 className={`menu-item ${
                   location.pathname === item.path ? "active" : ""
-                }`} // <-- highlight based on URL
+                }`} 
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
