@@ -14,11 +14,14 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
- 
+        <Route path="/patients" element={<AdminPatient />} />
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts" element={<CreateAccounts />} />
+        <Route path="/create-accounts" element={<CreateAccounts />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-
+        <Route path="/create-doctors" element={<DoctorAccount />} />
+        <Route path="/admin-appointment" element={<AdminAppointment />} />
+        <Route path="/admin-clinic" element={<AdminClinic />} />
       </Routes>
     </Router>
   );
