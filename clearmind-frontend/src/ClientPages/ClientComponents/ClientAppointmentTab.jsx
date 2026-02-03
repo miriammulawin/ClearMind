@@ -12,9 +12,9 @@ const ClientAppointmentTab = () => {
 
   // Determine active tab based on current route
   const getActiveTab = () => {
-    if (location.pathname.includes('/client-services')) return 'services';
-    if (location.pathname.includes('/client-upcoming')) return 'upcoming';
-    if (location.pathname.includes('/client-history')) return 'history';
+    if (location.pathname.includes('/services')) return 'services';
+    if (location.pathname.includes('/upcoming')) return 'upcoming';
+    if (location.pathname.includes('/history')) return 'history';
     return 'services';
   };
 
@@ -22,7 +22,7 @@ const ClientAppointmentTab = () => {
   const activeTab = getActiveTab();
 
   const handleTabChange = (tab) => {
-    navigate(`/client-appointment/${tab}`);
+    navigate(`/client/appointment/${tab}`);
   };
 
   return (
@@ -32,7 +32,7 @@ const ClientAppointmentTab = () => {
           <Nav.Link 
             eventKey="services" 
             active={activeTab === 'services'}
-            onClick={() => handleTabChange('client-services')}
+            onClick={() => handleTabChange('services')}
             >
             Services
           </Nav.Link>
@@ -42,7 +42,7 @@ const ClientAppointmentTab = () => {
           <Nav.Link 
             eventKey="upcoming" 
             active={activeTab === 'upcoming'}
-            onClick={() => handleTabChange('client-upcoming')}
+            onClick={() => handleTabChange('upcoming')}
           >
             Upcoming
           </Nav.Link>
@@ -52,7 +52,7 @@ const ClientAppointmentTab = () => {
           <Nav.Link 
             eventKey="history" 
             active={activeTab === 'history'}
-            onClick={() => handleTabChange('client-history')}
+            onClick={() => handleTabChange('history')}
           >
             History
           </Nav.Link>

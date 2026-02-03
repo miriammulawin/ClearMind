@@ -20,17 +20,17 @@ function App() {
         <Route path="/register" element={<Registration />} />
         <Route path="/create-accounts"element={<CreateAccounts/>} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/client-home" element={<ClientHome />} />
+        <Route path="/client/home" element={<ClientHome />} />
 
-        <Route path="/client-appointment" element={<ClientAppointment />}>
-          <Route index element={<Navigate to="client-services" replace />} />
-          <Route path="client-services" element={<ServicesTab />} />
-          <Route path="client-upcoming" element={<UpcomingTab />} />
-          <Route path="client-history" element={<HistoryTab />} />
+        <Route path="/client/appointment" element={<ClientAppointment />}>
+          <Route index element={<Navigate to="services" replace />} />
+          <Route path="services" element={<ServicesTab />} />
+          <Route path="upcoming" element={<UpcomingTab />} />
+          <Route path="history" element={<HistoryTab />} />
         </Route>
         
-        <Route path="/client-messages" element={<ClientMessages />} />
-        <Route path="/client-account" element={<ClientAccount />} />
+        <Route path="/client/messages" element={<ClientMessages />} />
+        <Route path="/client/account" element={<ClientAccount />} />
 
       </Routes>
     </Router>

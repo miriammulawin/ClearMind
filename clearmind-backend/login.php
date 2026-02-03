@@ -1,30 +1,44 @@
 <?php
-// CORS CONFIGURATION
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    $allowed_origins = [
-        'http://localhost:5173'
-    ];
+// CORS CONFIGURATION - MUST BE FIRST!
+header("Access-Control-Allow-Origin: http://localhost:5173");
+header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Access-Control-Max-Age: 3600");
 
-    if (in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
-        header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
-        header("Access-Control-Allow-Credentials: true");
-        header("Access-Control-Allow-Methods: POST, OPTIONS");
-        header("Access-Control-Allow-Headers: Content-Type, Authorization");
-    }
-}
-
+// Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    echo json_encode(["success" => true]);
-    exit();
+    http_response_code(204);
+    exit(0);
 }
 
 header("Content-Type: application/json; charset=UTF-8");
-session_start();
-include 'database.php'; 
 
-// =======================
+// Start session AFTER headers
+session_start();
+
+// Database connection inline (to avoid include issues)
+$host = "localhost";    
+$db   = "ClearMindWebsite"; 
+$user = "root";          
+$pass = "root";             
+$charset = "utf8mb4";    
+
+try { 
+    $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,      
+        PDO::ATTR_EMULATE_PREPARES   => false,                  
+    ];
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(["success" => false, "message" => "Database connection error"]);
+    exit();
+}
+
 // LOGGING FUNCTION
-// =======================
 function logLogin($email, $role, $status) {
     $logFile = __DIR__ . '/login.logs';
     $timestamp = date("Y-m-d H:i:s");
@@ -33,9 +47,7 @@ function logLogin($email, $role, $status) {
     file_put_contents($logFile, $logEntry, FILE_APPEND);
 }
 
-// =======================
 // GET INPUT
-// =======================
 $data = json_decode(file_get_contents("php://input"), true);
 $email = trim($data['email'] ?? '');
 $password = trim($data['password'] ?? '');
@@ -49,9 +61,7 @@ if (empty($email) || empty($password)) {
     exit();
 }
 
-// =======================
 // LOGIN FUNCTION (PDO)
-// =======================
 function loginUser($pdo, $table, $emailColumn, $passwordColumn) {
     global $email, $password;
 
@@ -65,9 +75,7 @@ function loginUser($pdo, $table, $emailColumn, $passwordColumn) {
     return false;
 }
 
-// =======================
 // CHECK ADMIN
-// =======================
 $user = loginUser($pdo, "admin", "email", "password");
 if ($user) {
     $_SESSION['role'] = "Admin";
@@ -83,9 +91,7 @@ if ($user) {
     exit();
 }
 
-// =======================
 // CHECK DOCTOR
-// =======================
 $user = loginUser($pdo, "doctors", "email_address", "password");
 if ($user) {
     $_SESSION['role'] = "Doctor";
@@ -101,9 +107,7 @@ if ($user) {
     exit();
 }
 
-// =======================
 // CHECK CLIENT
-// =======================
 $user = loginUser($pdo, "client", "email_address", "password");
 if ($user) {
     $_SESSION['role'] = "Client";
@@ -119,9 +123,7 @@ if ($user) {
     exit();
 }
 
-// =======================
 // INVALID CREDENTIALS
-// =======================
 logLogin($email, 'UNKNOWN', 'FAILED');
 
 echo json_encode([
@@ -129,3 +131,4 @@ echo json_encode([
     "message" => "Invalid credentials. Please try again."
 ]);
 exit();
+?>
