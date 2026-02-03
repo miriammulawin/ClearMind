@@ -9,6 +9,8 @@ import AdminPatient from "./AdminPages/AdminPatient";
 import DoctorAccount from "./AdminPages/DoctorAccount";
 import AdminClinic from "./AdminPages/AdminClinic";
 
+import DoctorAppointment from "./DoctorPages/DoctorAppointment";
+
 function App() {
   return (
     <Router>
@@ -22,6 +24,8 @@ function App() {
         <Route path="/create-doctors" element={<DoctorAccount />} />
         <Route path="/admin-appointment" element={<AdminAppointment />} />
         <Route path="/admin-clinic" element={<AdminClinic />} />
+
+        <Route path="/doctor/appointment" element={<DoctorAppointment />} />
       </Routes>
     </Router>
   );
