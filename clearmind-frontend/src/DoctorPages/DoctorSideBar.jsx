@@ -40,7 +40,7 @@ function DoctorSideBar() {
     {
       name: "My Profile",
       icon: <BiSolidUserCircle />,
-      path: "/doctor-profile",
+      path: "/doctor/profile",
     },
   ];
 
