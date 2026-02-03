@@ -25,17 +25,17 @@ function DoctorSideBar() {
     {
       name: "Appointment",
       icon: <FaCalendarDays />,
-      path: "/doctor-appointment",
+      path: "/doctor/appointment",
     },
     {
       name: "Patients",
       icon: <BsPersonLinesFill />,
-      path: "/doctor-patients",
+      path: "/doctor/patient",
     },
     {
       name: "Billing",
       icon: <FaMoneyCheck />,
-      path: "/doctor-billing",
+      path: "/doctor/billing",
     },
     {
       name: "My Profile",

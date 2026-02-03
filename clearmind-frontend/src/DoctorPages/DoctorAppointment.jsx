@@ -20,14 +20,10 @@ const localizer = dateFnsLocalizer({
 });
 
 function DoctorAppointment() {
-  const [activeMenu, setActiveMenu] = useState("");
+  const [activeMenu, setActiveMenu] = useState("Appointment");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    setActiveMenu("Appointment");
-  }, []);
 
   const [events, setEvents] = useState([
     {
