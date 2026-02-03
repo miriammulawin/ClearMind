@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Toaster } from "react-hot-toast"; 
 import Login from "./Login";
 import CreateAccounts from "./AdminPages/CreateAccounts"
 import Registration from "./Registration";
@@ -14,12 +15,14 @@ import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
 
 function App() {
   return (
+    <>
+    <Toaster position="top-center" /> 
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Registration />} />
-        <Route path="/create-accounts"element={<CreateAccounts/>} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/create/accounts"element={<CreateAccounts/>} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/client/home" element={<ClientHome />} />
 
         <Route path="/client/appointment" element={<ClientAppointment />}>
@@ -34,6 +37,8 @@ function App() {
 
       </Routes>
     </Router>
+    </>
+    
   );
 }
 export default App;

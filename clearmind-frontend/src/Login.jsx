@@ -62,7 +62,7 @@ function Login() {
       const data = response.data;
 
       if (data.success) {
-        toast.success(`Login Successful !`, {
+        toast.success("Login Successful !", {
           duration: 1500,
           style: {
             background: "#E2F7E3",
@@ -83,13 +83,13 @@ function Login() {
         setTimeout(() => {
           switch (data.role) {
             case "Admin":
-              navigate("/admin-dashboard");
+              navigate("/admin/dashboard");
               break;
             case "Doctor":
-              navigate("/doctor-dashboard");
+              navigate("/doctor/dashboard");
               break;
             case "Client":
-              navigate("/client-dashboard");
+              navigate("/client/home");
               break;
             default:
               navigate("/");
