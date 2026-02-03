@@ -14,10 +14,11 @@ try {
     ];
 
     $pdo = new PDO($dsn, $user, $pass, $options);
-
-    echo "Database connected successfully!";
 } catch (PDOException $e) {
-
-    echo "Connection failed: " . $e->getMessage();
+    http_response_code(500);
+    echo json_encode([
+        "success" => false,
+        "message" => "Database connection failed."
+    ]);
+    exit();
 }
-?>

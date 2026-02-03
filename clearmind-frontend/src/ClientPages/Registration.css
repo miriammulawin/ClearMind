@@ -1,0 +1,141 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Registration Container */
+.registration-container {
+  background-color: #e1d8eb;
+  min-height: 100vh;
+}
+
+/* Left Panel - Welcome Section */
+.left-panel {
+  background: linear-gradient(135deg, #4e237c 0%, #6b3fa0 100%);
+  color: white;
+}
+
+/* Form Title */
+.form-title {
+  color: #4e237c;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Input Icon Wrapper */
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon-left {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4e237c;
+  z-index: 10;
+  font-size: 1rem;
+}
+
+.input-icon-right {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4e237c;
+  z-index: 10;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.input-with-icon {
+  padding-left: 2.5rem;
+  border-radius: 10px;
+  border: 1px solid #c0b0e0;
+}
+
+.input-with-icon:focus {
+  border-color: #4e237c;
+  box-shadow: 0 0 0 0.2rem rgba(78, 35, 124, 0.25);
+}
+
+/* Checkbox */
+.custom-checkbox .form-check-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.custom-checkbox .form-check-input:checked {
+  background-color: #4e237c;
+  border-color: #4e237c;
+}
+
+.custom-checkbox .form-check-input:focus {
+  border-color: #4e237c;
+  box-shadow: 0 0 0 0.2rem rgba(78, 35, 124, 0.25);
+}
+
+.custom-checkbox .form-check-label {
+  font-size: 15px;
+  color: #555;
+  cursor: pointer;
+}
+
+.terms-link {
+  color: #4e237c;
+  text-decoration: underline;
+}
+
+.terms-link:hover {
+  text-decoration: underline;
+}
+
+/* Submit Button */
+.submit-btn {
+  background: #4e237c;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  transition: all 0.3s ease;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+.submit-btn:hover {
+  background: #3a1a5e;
+  transform: translateY(-2px);
+}
+
+/* Link Button */
+.link-button {
+  background: none;
+  border: none;
+  color: #4e237c;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: "Poppins", sans-serif;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* Card Styling */
+.registration-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Password reveal/clear icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
