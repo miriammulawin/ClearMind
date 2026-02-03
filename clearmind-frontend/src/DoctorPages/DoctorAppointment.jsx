@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
@@ -20,10 +20,14 @@ const localizer = dateFnsLocalizer({
 });
 
 function DoctorAppointment() {
-  const [activeMenu, setActiveMenu] = useState("Appointment");
+  const [activeMenu, setActiveMenu] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    setActiveMenu("Appointment");
+  }, []);
 
   const [events, setEvents] = useState([
     {
