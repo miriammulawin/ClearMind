@@ -5,13 +5,7 @@ import Login from "./Login";
 import CreateAccounts from "./AdminPages/CreateAccounts"
 import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
-import ClientHome from "./ClientPages/ClientHome";
-import ClientAppointment from "./ClientPages/ClientAppointment";
-import ClientMessages from "./ClientPages/ClientMessages";
-import ClientAccount from "./ClientPages/ClientAccount";
-import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
-import UpcomingTab from "./ClientPages/ClientComponents/UpcomingTab";
-import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
+
 
 function App() {
   return (
