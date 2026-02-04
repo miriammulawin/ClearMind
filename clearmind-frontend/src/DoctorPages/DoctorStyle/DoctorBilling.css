@@ -1,0 +1,87 @@
+.billing-container .btn-primary {
+  background: #4D227C;
+  color: white;
+  border: 1px solid #4D227C;
+}
+
+.billing-container .btn-primary:hover {
+  background: #4D227C;
+  color: white;
+  border: 1px solid #4D227C;
+  opacity: 0.9;
+}
+
+.billing-container .btn-primary:focus,
+.billing-container .btn-primary:active {
+  background: #4D227C !important;
+  color: white !important;
+  border: 1px solid #4D227C !important;
+  box-shadow: none !important;
+}
+
+.billing-container .btn-outline-secondary {
+  background: #ffffff;
+  color: #4D227C;
+  border: 1px solid #4D227C;
+}
+
+.billing-container .btn-outline-secondary:hover {
+  background: #ffffff;
+  color: #4D227C;
+  border: 1px solid #4D227C;
+  opacity: 0.9;
+}
+
+.billing-container .btn-outline-secondary:focus,
+.billing-container .btn-outline-secondary:active {
+  background: #ffffff !important;
+  color: #4D227C !important;
+  border: 1px solid #4D227C !important;
+  box-shadow: none !important;
+}
+
+.billing-container .cursor-pointer {
+  cursor: pointer;
+}
+
+.billing-container .fs-7 {
+  font-size: 0.875rem;
+}
+
+.billing-container .table thead {
+  background-color: #4D227C;
+}
+
+.billing-container .table thead th {
+  background-color: #4D227C;
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+text-align:center;
+}
+
+.billing-container .table tbody td {
+  text-align: center;
+}
+
+/* Status text styling */
+.billing-container .status {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.billing-container .status.cleared {
+  color: #22c55e;
+}
+
+.billing-container .status.unsettled {
+  color: #f59e0b;
+}
+
+.billing-container .status.void {
+  color: #ef4444;
+}
+
+.billing-container .table tbody td {
+  color: #333333;
+}
