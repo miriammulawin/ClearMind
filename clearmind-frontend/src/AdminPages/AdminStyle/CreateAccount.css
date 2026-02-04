@@ -178,6 +178,15 @@
   color: #1f6aa5;
 }
 
+ .form-label {
+  color:#4D227C;
+  font-weight: 500;
+}
+
+.form-control{
+  color:#333;
+}
+
 .doctor-modal-body {
   padding: 24px;
   max-height: 70vh;

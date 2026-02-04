@@ -356,7 +356,7 @@ function Registration() {
                   <button
                     type="button"
                     className="link-button"
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/login")}
                   >
                     Log In
                   </button>

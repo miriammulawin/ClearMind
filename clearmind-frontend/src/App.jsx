@@ -6,6 +6,11 @@ import CreateAccounts from "./AdminPages/CreateAccounts"
 import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
 
+import DoctorAppointment from "./DoctorPages/DoctorAppointment";
+import DoctorPatient from "./DoctorPages/DoctorPatient";
+import DoctorBilling from "./DoctorPages/DoctorBilling";
+import DoctorProfile from "./DoctorPages/DoctorProfile"
+
 
 function App() {
   return (
@@ -17,18 +22,12 @@ function App() {
         <Route path="/register" element={<Registration />} />
         <Route path="/create/accounts"element={<CreateAccounts/>} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/client/home" element={<ClientHome />} />
-
-        <Route path="/client/appointment" element={<ClientAppointment />}>
-          <Route index element={<Navigate to="services" replace />} />
-          <Route path="services" element={<ServicesTab />} />
-          <Route path="upcoming" element={<UpcomingTab />} />
-          <Route path="history" element={<HistoryTab />} />
-        </Route>
         
-        <Route path="/client/messages" element={<ClientMessages />} />
-        <Route path="/client/account" element={<ClientAccount />} />
 
+       <Route path="/doctor/appointment" element={<DoctorAppointment />} />
+         <Route path="/doctor/patient" element={<DoctorPatient />} />
+        <Route path="/doctor/billing" element={<DoctorBilling />} />
+         <Route path="/doctor/profile" element={<DoctorProfile />} />
       </Routes>
     </Router>
     </>

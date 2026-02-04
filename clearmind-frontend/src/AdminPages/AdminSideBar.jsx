@@ -26,7 +26,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
 
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin-dashboard" },
-    { name: "Create Accounts", icon: <FaUserPlus />, path: "/create-accounts" },
+    { name: "Create Accounts", icon: <FaUserPlus />, path: "/create/accounts" },
     {
       name: "Appointment",
       icon: <FaCalendarDays />,
