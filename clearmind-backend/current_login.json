@@ -10,5 +10,11 @@
         "role": "Client",
         "email": "juany@gmail.com",
         "login_time": "2026-02-04 07:07:59"
+    },
+    "Doctor": {
+        "user_id": 1,
+        "role": "Doctor",
+        "email": "briandelacruz@gmail.com",
+        "login_time": "2026-02-04 08:24:02"
     }
 }

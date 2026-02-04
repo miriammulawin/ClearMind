@@ -6,7 +6,8 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
-import "./DoctorStyle/DoctorAppointment.css"; // reuse the same CSS
+import AccountSetupModal from "./AccountSetUpModal";
+import "./DoctorStyle/DoctorAppointment.css";
 import { FiX } from "react-icons/fi";
 
 const locales = { "en-US": enUS };
@@ -24,6 +25,7 @@ function DoctorAppointment() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [showModal, setShowModal] = useState(false);
+  const [showAccountSetup, setShowAccountSetup] = useState(false);
 
   const [events, setEvents] = useState([
     {
@@ -53,6 +55,18 @@ function DoctorAppointment() {
     endTime: "",
   });
 
+  const [patientSex, setPatientSex] = useState("");
+
+  // useEffect(() => {
+  //   const completed = localStorage.getItem("accountSetupCompleted");
+  //   if (!completed) setShowAccountSetup(true);
+  // }, []);
+
+  useEffect(() => {
+  setShowAccountSetup(true);
+}, []);
+
+
   const handleAddEvent = () => {
     if (
       !newEvent.title ||
@@ -71,34 +85,31 @@ function DoctorAppointment() {
       ...events,
       { title: newEvent.title, start, end, allDay: false },
     ]);
+
     setShowModal(false);
     setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
+    setPatientSex("");
+  };
+
+  const handleAccountSetupClose = () => {
+    localStorage.setItem("accountSetupCompleted", "true");
+    setShowAccountSetup(false);
   };
 
   return (
     <div className="admin-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+
       <div className="admin-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
+
         <div className="admin-content" style={{ padding: "20px" }}>
-          <br />
           <div className="appointment-card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
               <h3>Appointments Calendar</h3>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  className="btn-create"
-                  onClick={() => setShowModal(true)}
-                >
-                  + Create Appointment
-                </button>
-              </div>
+              <button className="btn-create" onClick={() => setShowModal(true)}>
+                + Create Appointment
+              </button>
             </div>
 
             <Calendar
@@ -111,70 +122,54 @@ function DoctorAppointment() {
               views={["month", "week", "day", "agenda"]}
               startAccessor="start"
               endAccessor="end"
-              style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
-              eventPropGetter={(event) => {
-                let backgroundColor;
-                if (event.title.includes("Online Clinic"))
-                  backgroundColor = "#4D227C";
-                else if (event.title.includes("New Year's Day"))
-                  backgroundColor = "#7A92D1";
-                else backgroundColor = "#4D227C";
-
-                return {
-                  style: {
-                    backgroundColor,
-                    color: "#fff",
-                    borderRadius: "16px",
-                    padding: "4px 8px",
-                    fontWeight: 500,
-                    marginBottom: "4px",
-                    fontSize: "13px",
-                  },
-                };
-              }}
+              style={{ height: 600, marginTop: 20 }}
             />
           </div>
         </div>
       </div>
 
+      {/* CREATE APPOINTMENT MODAL */}
       {showModal && (
         <div className="appointment-modal-overlay">
           <div className="appointment-modal-lg">
             <div className="modal-header">
               <h2>New Appointment</h2>
-
               <span className="modal-date">
                 {newEvent.date
                   ? format(new Date(newEvent.date), "MMMM d, yyyy")
                   : format(new Date(), "MMMM d, yyyy")}
               </span>
 
-              <button
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <button className="close-btn" onClick={() => setShowModal(false)}>
                 <FiX />
               </button>
             </div>
 
             <div className="modal-body">
+              {/* PATIENT INFO */}
               <div className="modal-section">
                 <h4>Patient Information</h4>
+
                 <div className="form-grid">
                   <input placeholder="Patient First Name" />
                   <input placeholder="Patient Last Name" />
                   <input placeholder="Patient Middle Initial" />
                   <input placeholder="Patient Age" />
-                  <input placeholder="Patient Sex" />
+
+                  {/* ✅ FIXED SELECT */}
+                  <select
+                    className="form-select"
+                    value={patientSex}
+                    onChange={(e) => setPatientSex(e.target.value)}
+                    required
+                  >
+                    <option value="" disabled hidden>
+                      Patient Sex
+                    </option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+
                   <input placeholder="Patient Contact No." />
                 </div>
 
@@ -189,6 +184,7 @@ function DoctorAppointment() {
                       <input type="radio" name="ptype" /> New Patient
                     </label>
                   </div>
+
                   <div>
                     <strong>Patient Classification</strong>
                     <br />
@@ -205,8 +201,10 @@ function DoctorAppointment() {
                 </div>
               </div>
 
+              {/* SCHEDULE */}
               <div className="modal-section">
                 <h4>Consultation Schedule</h4>
+
                 <div className="schedule-row">
                   <input
                     type="date"
@@ -215,43 +213,41 @@ function DoctorAppointment() {
                       setNewEvent({ ...newEvent, date: e.target.value })
                     }
                   />
+
                   <div className="time-input-wrapper">
                     <input
                       type="time"
                       value={newEvent.startTime}
                       onChange={(e) =>
-                        setNewEvent({ ...newEvent, startTime: e.target.value })
+                        setNewEvent({
+                          ...newEvent,
+                          startTime: e.target.value,
+                        })
                       }
                     />
                     <label>Start Time</label>
                   </div>
+
                   <div className="time-input-wrapper">
                     <input
                       type="time"
                       value={newEvent.endTime}
                       onChange={(e) =>
-                        setNewEvent({ ...newEvent, endTime: e.target.value })
+                        setNewEvent({
+                          ...newEvent,
+                          endTime: e.target.value,
+                        })
                       }
                     />
                     <label>End Time</label>
                   </div>
                 </div>
-                <div className="radio-group" style={{ marginTop: "15px" }}>
-                  <div>
-                    <strong>Schedule Visit</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="visit" /> Schedule Visit
-                    </label>
-                    <label>
-                      <input type="radio" name="visit" /> Virtual Consult
-                    </label>
-                  </div>
-                </div>
               </div>
 
+              {/* PAYMENT */}
               <div className="modal-section">
                 <h4>Payment Details</h4>
+
                 <div className="payment-form-grid">
                   <input placeholder="Paid Amount" />
                   <input placeholder="Reference Number" />
@@ -269,6 +265,12 @@ function DoctorAppointment() {
           </div>
         </div>
       )}
+
+      {/* ACCOUNT SETUP MODAL */}
+      <AccountSetupModal
+        showModal={showAccountSetup}
+        onClose={handleAccountSetupClose}
+      />
     </div>
   );
 }
