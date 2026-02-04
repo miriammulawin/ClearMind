@@ -1,40 +1,44 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Toaster } from "react-hot-toast"; 
 import Login from "./Login";
-import CreateAccounts from "./AdminPages/CreateAccounts";
-import Registration from "./ClientPages/Registration";
+import CreateAccounts from "./AdminPages/CreateAccounts"
+import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
-import AdminAppointment from "./AdminPages/AdminAppointment";
-import AdminPatient from "./AdminPages/AdminPatient";
-import DoctorAccount from "./AdminPages/DoctorAccount";
-import AdminClinic from "./AdminPages/AdminClinic";
-
-
-import DoctorAppointment from "./DoctorPages/DoctorAppointment";
-import DoctorPatient from "./DoctorPages/DoctorPatient";
-import DoctorBilling from "./DoctorPages/DoctorBilling";
-import DoctorProfile from "./DoctorPages/DoctorProfile";
+import ClientHome from "./ClientPages/ClientHome";
+import ClientAppointment from "./ClientPages/ClientAppointment";
+import ClientMessages from "./ClientPages/ClientMessages";
+import ClientAccount from "./ClientPages/ClientAccount";
+import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
+import UpcomingTab from "./ClientPages/ClientComponents/UpcomingTab";
+import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
 
 function App() {
   return (
+    <>
+    <Toaster position="top-center" /> 
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/patients" element={<AdminPatient />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Registration />} />
-        <Route path="/create-accounts" element={<CreateAccounts />} />
-        <Route path="/create-accounts" element={<CreateAccounts />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/create-doctors" element={<DoctorAccount />} />
-        <Route path="/admin-appointment" element={<AdminAppointment />} />
-        <Route path="/admin-clinic" element={<AdminClinic />} />
+        <Route path="/create/accounts"element={<CreateAccounts/>} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/client/home" element={<ClientHome />} />
 
-         <Route path="/doctor/appointment" element={<DoctorAppointment />} />
-         <Route path="/doctor/patient" element={<DoctorPatient />} />
-        <Route path="/doctor/billing" element={<DoctorBilling />} />
-         <Route path="/doctor/profile" element={<DoctorProfile />} />
+        <Route path="/client/appointment" element={<ClientAppointment />}>
+          <Route index element={<Navigate to="services" replace />} />
+          <Route path="services" element={<ServicesTab />} />
+          <Route path="upcoming" element={<UpcomingTab />} />
+          <Route path="history" element={<HistoryTab />} />
+        </Route>
+        
+        <Route path="/client/messages" element={<ClientMessages />} />
+        <Route path="/client/account" element={<ClientAccount />} />
+
       </Routes>
     </Router>
+    </>
+    
   );
 }
 export default App;
