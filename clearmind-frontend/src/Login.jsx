@@ -1,16 +1,7 @@
 import { useState } from "react";
-import {
-  Container,
-  Card,
-  Row,
-  Col,
-  Form,
-  Button,
-  Image,
-} from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Image } from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
-import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
-import { MdEmail } from "react-icons/md";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./Login.css";
 
 function Login() {
@@ -25,34 +16,23 @@ function Login() {
   };
 
   return (
-    <Container
-      fluid
-      className="vh-100 d-flex justify-content-center align-items-center bg-transparent"
-    >
-      <Card className="vw-100% card-custom d-flex justify-content-center align-items-center px-4 ">
-        <Card.Body>
-          <Container>
-            <Row>
-              <Col>
-                <Image
-                  src={logo_login}
-                  fluid
-                  className="logo d-block mx-auto"
-                />
-              </Col>
-              <span className="span-tagline text-center">
-                Log in to continue your journey toward a clearer, healthier
-                mind.
-              </span>
-            </Row>
-          </Container>
-          <Form>
-            <Form.Group className="mb-2" controlId="email">
-              <Form.Label className="login-text">
-                Email <span className="text-danger">*</span>
-              </Form.Label>
-              <div className="input-icon-wrapper">
-                <MdEmail className="input-icon-left" />
+    <Container fluid className="vh-100 d-flex justify-content-center align-items-center">
+      <Row className="w-100 justify-content-center">
+        <Col xs={12} sm={10} md={8} lg={6}>
+          <div className="card pt-4 px-5 pb-2 rounded-5" >
+            {/* logo */}
+            <div className="text-center mb-4">
+              <Image src={logo_login} alt="Logo" fluid style={{ maxWidth: "100%", height: "auto" }} />
+            </div>
+            {/* header login */}
+            <p className="text-center mb-4 fs-5" >
+              Log in to continue your journey toward a clearer, healthier mind.
+            </p>
+
+            <Form onSubmit={handleLogin}>
+              {/* Email */}
+              <Form.Group className="mb-3" controlId="email">
+                <Form.Label className="fs-5" >Email <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type="email"
                   placeholder="Enter email"
@@ -60,23 +40,14 @@ function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   required
-                  size="sm"
-                  className="custom-field input-with-icon"
+                  size="lg"
+                  className="custom-field"
                 />
-              </div>
-            </Form.Group>
+              </Form.Group>
 
-            {/* passoword */}
-            <Form.Group
-              className="mb-2"
-              controlId="password"
-              style={{ position: "relative" }}
-            >
-              <Form.Label className="login-text">
-                Password <span className="text-danger">*</span>
-              </Form.Label>
-              <div className="input-icon-wrapper">
-                <FaLock className="input-icon-left" />
+              {/* Password */}
+              <Form.Group className="mb-3" controlId="password" style={{ position: "relative" }}>
+                <Form.Label style={{ fontSize: "25px", color: "#542982" }}>Password <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
@@ -84,51 +55,47 @@ function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   required
-                  size="sm"
-                  className="custom-field input-with-icon"
+                  size="lg"
+                  className="custom-field"
                 />
                 <span
                   onClick={() => setShowPassword(!showPassword)}
-                  className="input-icon-right"
+                  style={{
+                    position: "absolute",
+                    top: "70%",
+                    right: "15px",
+                    transform: "translateY(-50%)",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    fontSize: "1.2rem"
+                  }}
                 >
-                  {showPassword ? <FaEye /> : <FaEyeSlash />}
+                   {showPassword ? <FaEye /> : <FaEyeSlash />}
                 </span>
-              </div>
-            </Form.Group>
+              </Form.Group>
 
-            {/* terms check */}
-            <Form.Group className="mb-3 custom-checkbox" controlId="termsCheck">
-              <Form.Check
-                type="checkbox"
-                label={
-                  <>
-                    I agree to the{" "}
-                    <a className="terms-condi" href="/terms">
-                      Terms & Conditions
-                    </a>{" "}
-                    <span className="text-danger">*</span>
-                  </>
-                }
-                checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
-                required
-                className="terms-check"
-              />
-            </Form.Group>
+              <Form.Group className="mb-3 custom-checkbox" controlId="termsCheck">
+                <Form.Check 
+                  type="checkbox"
+                  label={<>I agree to the <a href="/terms"style={{ color: "#542982"}}>Terms & Conditions</a> <span className="text-danger">*</span></>}
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  required
+                  
+                />
+              </Form.Group>
 
-            <Button variant="none" className="btn-login w-100">
-              <b>LOG IN</b>
-            </Button>
-            <p className="register-text text-center m-2">
-              {" "}
-              Don’t have an account?{" "}
-              <a className="register-link" href="/register">
-                Register.
-              </a>
-            </p>
-          </Form>
-        </Card.Body>
-      </Card>
+              {/* Login button */}
+              <Button type="submit" variant="primary" size="lg" className="w-100 rounded-4" style={{ backgroundColor: "#542982", border:"none"}}>
+                LOG IN
+              </Button>
+              <p className="text-center m-2 fs-5" style={{color: "#444345" }}>
+              Don’t have an account? <a href="/register" style={{color: "#542982" }}>Register.</a>
+              </p>
+            </Form>
+          </div>
+        </Col>
+      </Row>
     </Container>
   );
 }
