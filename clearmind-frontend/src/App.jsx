@@ -9,6 +9,12 @@ import AdminPatient from "./AdminPages/AdminPatient";
 import DoctorAccount from "./AdminPages/DoctorAccount";
 import AdminClinic from "./AdminPages/AdminClinic";
 
+
+import DoctorAppointment from "./DoctorPages/DoctorAppointment";
+import DoctorPatient from "./DoctorPages/DoctorPatient";
+import DoctorBilling from "./DoctorPages/DoctorBilling";
+import DoctorProfile from "./DoctorPages/DoctorProfile";
+
 function App() {
   return (
     <Router>
@@ -22,6 +28,11 @@ function App() {
         <Route path="/create-doctors" element={<DoctorAccount />} />
         <Route path="/admin-appointment" element={<AdminAppointment />} />
         <Route path="/admin-clinic" element={<AdminClinic />} />
+
+         <Route path="/doctor/appointment" element={<DoctorAppointment />} />
+         <Route path="/doctor/patient" element={<DoctorPatient />} />
+        <Route path="/doctor/billing" element={<DoctorBilling />} />
+         <Route path="/doctor/profile" element={<DoctorProfile />} />
       </Routes>
     </Router>
   );
