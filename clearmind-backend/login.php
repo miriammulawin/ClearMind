@@ -4,7 +4,6 @@
 // =======================
 if (isset($_SERVER['HTTP_ORIGIN'])) {
     $allowed_origins = ['http://localhost:5173'];
-
     if (in_array($_SERVER['HTTP_ORIGIN'], $allowed_origins)) {
         header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
         header("Access-Control-Allow-Credentials: true");
@@ -34,6 +33,23 @@ function logLogin($email, $role, $status) {
 }
 
 // =======================
+// STORE CURRENT LOGIN PER ROLE
+// =======================
+function storeCurrentLogin($userId, $role, $email) {
+    $file = __DIR__ . '/current_login.json';
+    $data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+    
+    $data[$role] = [
+        'user_id' => $userId,
+        'role' => $role,
+        'email' => $email,
+        'login_time' => date("Y-m-d H:i:s")
+    ];
+
+    file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT));
+}
+
+// =======================
 // GET INPUT
 // =======================
 $data = json_decode(file_get_contents("php://input"), true);
@@ -51,7 +67,7 @@ if (!$email || !$password) {
 // =======================
 // LOGIN FUNCTION
 // =======================
-function attemptLogin($pdo, $table, $emailColumn, $passwordColumn, $roleName) {
+function attemptLogin($pdo, $table, $emailColumn, $passwordColumn, $roleName, $idColumn) {
     global $email, $password;
 
     $stmt = $pdo->prepare("SELECT * FROM $table WHERE $emailColumn = :email LIMIT 1");
@@ -68,14 +84,21 @@ function attemptLogin($pdo, $table, $emailColumn, $passwordColumn, $roleName) {
         exit();
     }
 
+    // Correct ID column
+    $userId = $user[$idColumn] ?? $user['ad_username']; // fallback for Admin username
+
     $_SESSION['role'] = $roleName;
     $_SESSION['email'] = $email;
+    $_SESSION['user_id'] = $userId;
 
     logLogin($email, $roleName, 'SUCCESS');
+    storeCurrentLogin($userId, $roleName, $email);
 
     echo json_encode([
         "success" => true,
-        "role" => $roleName
+        "role" => $roleName,
+        "user_id" => $userId,
+        "email" => $email
     ]);
     exit();
 }
@@ -83,9 +106,10 @@ function attemptLogin($pdo, $table, $emailColumn, $passwordColumn, $roleName) {
 // =======================
 // ROLE CHECKS
 // =======================
-attemptLogin($pdo, "admin", "email", "password", "Admin");
-attemptLogin($pdo, "doctors", "email_address", "password", "Doctor");
-attemptLogin($pdo, "client", "email_address", "password", "Client");
+// Note: Admin primary key is ad_username, Doctor is doctors_id, Client is client_id
+attemptLogin($pdo, "admin", "email", "password", "Admin", "ad_username");
+attemptLogin($pdo, "doctors", "email_address", "password", "Doctor", "doctors_id");
+attemptLogin($pdo, "client", "email_address", "password", "Client", "client_id");
 
 // =======================
 // EMAIL NOT FOUND

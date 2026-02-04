@@ -1,0 +1,14 @@
+{
+    "Admin": {
+        "user_id": "Admin101",
+        "role": "Admin",
+        "email": "brian.admin@clearmind.com",
+        "login_time": "2026-02-04 08:18:51"
+    },
+    "Client": {
+        "user_id": null,
+        "role": "Client",
+        "email": "juany@gmail.com",
+        "login_time": "2026-02-04 07:07:59"
+    }
+}

@@ -86,13 +86,13 @@ function Login() {
               navigate("/admin/dashboard");
               break;
             case "Doctor":
-              navigate("/doctor/dashboard");
+              navigate("/doctor/appointment");
               break;
             case "Client":
               navigate("/client/home");
               break;
             default:
-              navigate("/");
+              navigate("/login");
           }
         }, 1500);
       } else {

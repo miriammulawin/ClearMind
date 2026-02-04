@@ -178,13 +178,13 @@
   color: #1f6aa5;
 }
 
- .form-label {
-  color:#4D227C;
+.form-label {
+  color:#4D227C !important;
   font-weight: 500;
 }
 
-.form-control{
-  color:#333;
+.form-control {
+  color:#333 !important;
 }
 
 .doctor-modal-body {
@@ -249,3 +249,4 @@
 .doctor-save-btn:hover {
   background: #174f7c;
 }
+
