@@ -25,7 +25,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const location = useLocation();
 
   const menus = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin-dashboard" },
+    { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin/dashboard" },
     { name: "Create Accounts", icon: <FaUserPlus />, path: "/create/accounts" },
     {
       name: "Appointment",
