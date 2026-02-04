@@ -14,7 +14,7 @@ function ClientFooter() {
 
   const menus = [
     { name: "Home", icon: <GoHomeFill />, path: "/client/home" },
-    { name: "Appointments", icon: <FaCalendarCheck />, path: "/client/appointment/services" },
+    { name: "Appointments", icon: <FaCalendarCheck />, path: "/client/appointment" },
     { name: "Messages", icon: <AiFillMessage />, path: "/client/messages" },
     { name: "Account", icon: <BiSolidUserCircle />, path: "/client/account" },
   ];

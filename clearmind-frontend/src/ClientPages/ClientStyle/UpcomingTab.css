@@ -1,0 +1,324 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+.upcoming-container {
+  font-family: 'Poppins', sans-serif;
+  max-width: 768px;
+  margin: 0 auto;
+  height: calc(100vh - 200px); 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.header-section {
+  flex-shrink: 0; 
+}
+
+.title-upcoming {
+  color: #5B2C91; 
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.label-filter {
+  color: #5B2C91;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Status Dropdown */
+.status-dropdown {
+  display: flex;
+  align-items: center;
+}
+
+.status-dropdown .dropdown-toggle {
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
+  border-radius: 10px;
+  padding: 6px 20px;
+  font-weight: bold;
+  font-size: 1rem;
+  min-width: 140px;
+}
+
+.status-dropdown .dropdown-toggle:hover,
+.status-dropdown .dropdown-toggle:focus {
+  background-color: #5B2C91;
+  color: white;
+  border-color: #5B2C91;
+}
+
+.status-dropdown .dropdown-menu {
+  border: 2px solid #5B2C91;
+  border-radius: 12px;
+  padding: 0.5rem 0;
+  min-width: 140px;
+}
+
+.status-dropdown .dropdown-item {
+  color: #5B2C91;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+.status-dropdown .dropdown-item:hover {
+  background-color: #f0e6ff;
+}
+
+.status-dropdown .dropdown-item.active {
+  background-color: #5B2C91;
+  color: white;
+}
+
+/* Appointments List - SCROLLABLE */
+.appointments-list {
+  margin: 5px ;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding-right: 8px;
+  height: auto;
+  
+}
+
+/* Custom Scrollbar */
+.appointments-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.appointments-list::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.appointments-list::-webkit-scrollbar-thumb {
+  background: #5B2C91;
+  border-radius: 10px;
+}
+
+.appointments-list::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
+
+/* No Appointments State */
+.no-appointments {
+  background-color: white;
+  height: 100%;
+  border-radius: 25px;
+  border: 2px solid #5B2C91;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  padding: 2rem;
+}
+
+.no-appointments .calendar-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-appointments p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Appointment Card */
+.appointment-card {
+  background-color: white;
+  border: 2px solid #5B2C91;
+  border-radius: 20px;
+  margin-bottom: 15px;
+  transition: box-shadow 0.3s ease;
+}
+
+.appointment-card:hover {
+  box-shadow: 0 4px 12px rgba(91, 44, 145, 0.15);
+}
+
+.appointment-card .card-body {
+  padding: 1.25rem;
+}
+
+.appointment-details {
+  display: flex;
+  flex-direction: column;
+  
+}
+
+.appointment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-row .label {
+  color: #6c757d;
+  font-weight: 500;
+  min-width: 130px;
+}
+
+.info-row .value {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+.info-row .date-value {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+.hr-upcodming {
+  border: 2px solid #694c95;
+}
+
+.info-row .service-type {
+  background-color: #f0e6ff;
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
+  padding: 4px 16px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.info-row .doctor-name {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+.status-badge {
+  margin-left: auto;
+  background-color: #f0e6ff;
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
+  padding: 4px 16px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.consultation-type {
+  background-color: #f0e6ff;
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  width: fit-content;
+  margin-top: 0.5rem;
+}
+
+.consultation-type .video-icon {
+  margin-right: 6px;
+  font-size: 1rem;
+}
+
+.view-details-btn {
+  border: 2px solid #5B2C91;
+  color: white;
+  border-radius: 20px;
+  padding: 8px 24px;
+  font-weight: 600;
+  background: #5B2C91;
+  align-self: flex-end;
+  transition: all 0.3s ease;
+}
+
+.view-details-btn:hover {
+  background-color: #f0e6ff;
+  color: #5B2C91;
+  border: 2px solid #5B2C91;
+}
+
+/* Responsive Design */
+@media (max-width: 577px) {
+  .upcoming-container {
+    padding: 1rem;
+
+  }
+
+  .title-upcoming {
+    font-size: 1.3rem;
+  }
+
+  .label-filter {
+    display: none;
+  }
+
+  .status-dropdown .dropdown-toggle {
+    font-size: 0.9rem;
+    padding: 5px 15px;
+    min-width: 120px;
+  }
+  
+  .appointment-details {
+    gap: 1rem;
+  }
+
+  .appointment-card .card-body {
+    padding: 1rem;
+  }
+
+  .info-row {
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .info-row .label {
+    min-width: 110px;
+    font-size: 0.8rem;
+  }
+
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 3px 12px;
+  }
+
+  .consultation-type {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .view-details-btn {
+    font-size: 0.85rem;
+    padding: 6px 20px;
+    width: 100%;
+  }
+
+  .appointments-list{
+    height: 100%;
+  }
+
+  .no-appointments {
+    max-height: auto;
+  }
+
+  .no-appointments .calendar-icon {
+    font-size: 3rem;
+  }
+
+  .no-appointments p {
+    font-size: 0.9rem;
+  }
+
+  .appointments-list {
+    padding-right: 4px;
+    /* max-height: 340px; */
+    height: auto;
+  }
+
+  .appointments-list::-webkit-scrollbar {
+    width: 6px;
+  }
+}
