@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 /* ============================================ */
-/* BASE STYLES - Optimized for 1920x1080 */
+/* BASE STYLES */
 /* ============================================ */
 
 body {
@@ -14,20 +14,25 @@ body {
 .login-container {
   background-color: transparent;
   padding: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Bootstrap Col with max-width constraint */
 .login-col {
-  max-width: 420px; /* Base size for 1920x1080 */
+  max-width: 420px;
+  width: 100%;
 }
 
 /* Card styling */
 .card-custom {
-  
   border: 2px solid #542982 !important;
   border-radius: 20px;
   background-color: white;
   width: 100%;
+  box-shadow: 0 4px 6px rgba(84, 41, 130, 0.1);
 }
 
 /* Responsive card body padding */
@@ -36,7 +41,6 @@ body {
 }
 
 /* Logo section */
-
 .logo-img {
   max-width: 70%;
   height: auto;
@@ -45,10 +49,11 @@ body {
 
 .tagline-text {
   color: #542982;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   line-height: 1.4;
   margin: 0;
   padding: 0 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Form */
@@ -57,7 +62,7 @@ body {
 }
 
 .form-label-custom {
-  font-size: 0.813rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #542982;
   margin-bottom: 0.4rem;
@@ -66,8 +71,8 @@ body {
 /* Input fields */
 .input-field {
   border: 2px solid #542982 !important;
-  font-size: 0.813rem;
-  padding: 0.6rem 0.875rem;
+  font-size: 0.875rem;
+  padding: 0.65rem 0.875rem;
   border-radius: 8px;
   transition: all 0.2s ease;
   height: auto;
@@ -81,7 +86,7 @@ body {
 
 .input-field::placeholder {
   color: #999;
-  font-size: 0.813rem;
+  font-size: 0.875rem;
 }
 
 /* Input icon wrapper */
@@ -92,7 +97,7 @@ body {
 
 .input-icon-left {
   position: absolute;
-  left: 11px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #542982;
@@ -103,7 +108,7 @@ body {
 
 .input-icon-right {
   position: absolute;
-  right: 11px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
@@ -134,18 +139,23 @@ body {
 
 /* Checkbox styling */
 .terms-checkbox {
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   color: #646465;
-  line-height: 1.5;
-  
+  line-height: 1.6;
+}
+
+.terms-checkbox .form-check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .terms-checkbox .form-check-input {
   border: 2px solid #542982 !important;
-  margin-top: 0.2rem;
+  margin-top: 0.3rem;
   cursor: pointer;
-  width: 0.8rem;
-  height: 0.8rem;
+  width: 1rem;
+  height: 1rem;
   flex-shrink: 0;
 }
 
@@ -163,7 +173,6 @@ body {
   text-decoration: none;
   font-weight: 500;
   text-decoration: underline !important;
-  
 }
 
 .terms-link:hover,
@@ -178,8 +187,8 @@ body {
   background-color: #542982 !important;
   border: 2px solid #542982 !important;
   border-radius: 20px;
-  padding: 0.625rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   transition: all 0.2s ease;
   letter-spacing: 0.3px;
@@ -202,7 +211,7 @@ body {
 
 /* Register text */
 .register-text {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #646465;
   margin-top: 0.5rem;
 }
@@ -219,7 +228,6 @@ body {
   color: #783bb5;
 }
 
-
 /* Hide password reveal buttons */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
@@ -230,10 +238,60 @@ input[type="password"]::-ms-clear {
 /* RESPONSIVE BREAKPOINTS */
 /* ============================================ */
 
-/* YOUR VIEWPORT: 1336x618 */
-@media (max-width: 1366px) {
+/* Large Desktops - 1920px and above */
+@media (min-width: 1920px) {
   .login-col {
-    max-width: 360px; /* Smaller for your viewport */
+    max-width: 480px;
+  }
+  
+  .card-body-responsive {
+    padding: 2.5rem;
+  }
+  
+  .logo-img {
+    max-width: 65%;
+  }
+  
+  .tagline-text {
+    font-size: 0.95rem;
+  }
+  
+  .form-label-custom {
+    font-size: 0.95rem;
+  }
+  
+  .input-field {
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+  }
+  
+  .input-field::placeholder {
+    font-size: 0.95rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.95rem ;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+  
+  .login-button {
+    font-size: 1.05rem;
+    padding: 0.8rem 1.2rem;
+  }
+  
+  .register-text {
+    font-size: 0.9rem;
+  }
+}
+
+/* Desktop - 1366px to 1919px */
+@media (min-width: 1366px) and (max-width: 1919px) {
+  .login-col {
+    max-width: 420px;
   }
   
   .card-body-responsive {
@@ -241,13 +299,192 @@ input[type="password"]::-ms-clear {
   }
   
   .logo-img {
-    max-width: 80%;
-    margin-bottom: 0.625rem;
+    max-width: 70%;
+  }
+  
+  .tagline-text {
+    font-size: 0.85rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.9rem ;
+  }
+}
+
+/* Small Desktop / Large Laptop - 1024px to 1365px */
+@media (min-width: 1024px) and (max-width: 1365px) {
+  .login-col {
+    max-width: 400px;
+  }
+  
+  .card-body-responsive {
+    padding: 1.75rem;
+  }
+  
+  .logo-img {
+    max-width: 70%;
+  }
+  
+  .tagline-text {
+    font-size: 0.8rem;
+  }
+  
+  .form-label-custom {
+    font-size: 0.85rem;
+  }
+  
+  .input-field {
+    font-size: 0.85rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.9rem ;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+  
+  .login-button {
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablets - 768px to 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .login-col {
+    max-width: 420px;
+  }
+  
+  .card-body-responsive {
+    padding: 2rem;
+  }
+  
+  .logo-img {
+    max-width: 65%;
+  }
+  
+  .tagline-text {
+    font-size: 0.85rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.8rem;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* Large Mobile / Small Tablet - 577px to 767px */
+@media (min-width: 577px) and (max-width: 767px) {
+  .login-col {
+    max-width: 450px;
+  }
+  
+  .card-custom {
+    margin: 1rem;
+  }
+  
+  .card-body-responsive {
+    padding: 2rem;
+  }
+  
+  .logo-img {
+    max-width: 70%;
+  }
+  
+  .tagline-text {
+    font-size: 0.8rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.75rem;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+}
+
+/* Mobile - 451px to 576px */
+@media (min-width: 451px) and (max-width: 576px) {
+  .login-col {
+    max-width: 400px;
+  }
+  
+  .card-custom {
+    border-radius: 18px;
+    margin: 0.75rem;
+  }
+  
+  .card-body-responsive {
+    padding: 1.75rem;
+  }
+  
+  .logo-img {
+    max-width: 70%;
   }
   
   .tagline-text {
     font-size: 0.75rem;
-    margin-bottom: 0;
+  }
+  
+  .form-label-custom {
+    font-size: 0.8rem;
+  }
+  
+  .input-field {
+    font-size: 0.8rem;
+  }
+  
+  .terms-checkbox {
+    font-size: 0.7rem;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-top: 0.25rem;
+  }
+  
+  .login-button {
+    font-size: 0.85rem;
+  }
+  
+  .register-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* Small Mobile - 376px to 450px */
+@media (min-width: 376px) and (max-width: 450px) {
+  .login-col {
+    max-width: 360px;
+  }
+  
+  .card-custom {
+    border-radius: 16px;
+    margin: 0.5rem;
+  }
+  
+  .card-body-responsive {
+    padding: 1.5rem 1.25rem;
+  }
+  
+  .logo-img {
+    max-width: 70%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tagline-text {
+    font-size: 0.7rem;
+    padding: 0 0.25rem;
+    margin-bottom: 1.25rem;
   }
   
   .form-label-custom {
@@ -265,15 +502,7 @@ input[type="password"]::-ms-clear {
   
   .input-icon-left,
   .input-icon-right {
-    font-size: 1rem;
-  }
-  
-  .input-icon-left {
-    left: 10px;
-  }
-  
-  .input-icon-right {
-    right: 10px;
+    font-size: 0.9rem;
   }
   
   .input-field {
@@ -282,183 +511,80 @@ input[type="password"]::-ms-clear {
   }
   
   .terms-checkbox {
-    font-size: 0.7rem;
-  }
-  
-  .login-button {
-    font-size: 1rem;
-    padding: 0.575rem 0.875rem;
-  }
-  
-  .register-text {
-    font-size: 0.7rem;
-  }
-}
-
-/* Tablets */
-@media (max-width: 991px) {
-  .login-col {
-    max-width: 380px;
-  }
-}
-
-/* Small tablets and large phones */
-@media (max-width: 768px) {
-  .login-col {
-    max-width: 450px;
-  }
-  
-  .card-body-responsive {
-     padding: 3rem;
-  }
-}
-
-/* Mobile devices - 576px and below */
-@media (max-width: 577px) {
-  .login-col {
-    max-width: 400px;
-  }
-  
-  .card-custom {
-    border-radius: 18px;
-    margin: 0.5rem;
-  }
-  
-  .card-body-responsive {
-     padding: 2rem;
-  }
-  
-  .logo-img {
-    max-width: 75%;
-  }
-  
-  .tagline-text {
-    font-size: 0.7rem;
-  }
-}
-
-/* iPhone 14 Pro Max and similar - 430px */
-@media (max-width: 452px) {
-  .login-col {
-    max-width: 340px;
-    /* background-color: #3e1d63; */
-  }
-
-  .card-custom {
-    border-radius: 16px;
-    margin: 0.5rem;
-  }
-  
-  .card-body-responsive {
-    margin: 1rem;
-    padding: 1rem 0.875rem;
-  }
-  
-  .logo-img {
-    max-width: 75%;
-    margin-bottom: 0.5rem;
-  }
-  
-  .tagline-text {
-    font-size: 0.675rem;
-    padding: 0 0.25rem;
-  }
-  
-  .form-label-custom {
-    font-size: 0.7rem;
-  }
-
-  .terms-checkbox {
-    font-size: 0.5rem;
-    color: #646465;
-    line-height: 2.2 !important;
-    text-indent:2px;
-  }
-  
-  .input-field {
-    font-size: 0.7rem;
-    padding: 0.5rem 0.7rem;
-  }
-  
-  .input-icon-left,
-  .input-icon-right {
-    font-size: 0.9rem;
-  }
-  
-  .terms-checkbox {
     font-size: 0.65rem;
+    line-height: 1.5;
   }
   
   .terms-checkbox .form-check-input {
-    width: 0.95rem;
-    height: 0.95rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    margin-top: 0.2rem;
   }
   
   .login-button {
-    font-size: 0.775rem;
-    padding: 0.55rem 0.875rem;
+    font-size: 0.8rem;
+    padding: 0.6rem 0.9rem;
   }
   
   .register-text {
-    font-size: 0.65rem;
-  }
-}
-@media (max-width: 391px) {
-  .login-col {
-    max-width: 320px;
+    font-size: 0.7rem;
   }
 }
 
-
-/* Standard mobile - 375px (iPhone 12/13/14) */
+/* Extra Small Mobile - 320px to 375px */
 @media (max-width: 375px) {
+  .login-col {
+    max-width: 340px;
+  }
+  
   .card-custom {
     border-radius: 16px;
-    margin: 0.375rem;
+    margin: 0.5rem;
   }
   
   .card-body-responsive {
-    padding: 0.875rem 0.75rem;
+    padding: 1.25rem 1rem;
   }
   
   .logo-img {
-    max-width: 55%;
+    max-width: 65%;
     margin-bottom: 0.5rem;
   }
   
   .tagline-text {
     font-size: 0.65rem;
     line-height: 1.3;
-  }
-  
-  .logo-section {
     margin-bottom: 1rem;
   }
   
   .form-label-custom {
-    font-size: 0.675rem;
+    font-size: 0.7rem;
     margin-bottom: 0.35rem;
   }
   
   .input-field {
-    font-size: 0.675rem;
-    padding: 0.475rem 0.65rem;
+    font-size: 0.7rem;
+    padding: 0.5rem 0.7rem;
     border-radius: 6px;
   }
   
+  .input-field::placeholder {
+    font-size: 0.7rem;
+  }
+  
   .input-icon-left {
-    left: 9px;
+    left: 10px;
     font-size: 0.875rem;
   }
   
   .input-icon-right {
-    right: 9px;
+    right: 10px;
     font-size: 0.875rem;
   }
   
   .input-field {
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    padding-left: 2.15rem !important;
+    padding-right: 2.15rem !important;
   }
   
   .mb-3 {
@@ -466,37 +592,43 @@ input[type="password"]::-ms-clear {
   }
   
   .terms-checkbox {
-    font-size: 0.625rem;
+    font-size: 0.6rem;
+    line-height: 1.4;
   }
   
   .terms-checkbox .form-check-input {
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-top: 0.15rem;
   }
   
   .login-button {
     font-size: 0.75rem;
-    padding: 0.5rem 0.825rem;
+    padding: 0.55rem 0.85rem;
     margin-bottom: 0.625rem;
   }
   
   .register-text {
-    font-size: 0.625rem;
+    font-size: 0.65rem;
   }
 }
 
-/* Very small devices - 360px and below */
-@media (max-width: 360px) {
+/* Very Small Devices - 320px and below */
+@media (max-width: 320px) {
+  .login-col {
+    max-width: 300px;
+  }
+  
   .card-body-responsive {
-    padding: 0.75rem 0.625rem;
+    padding: 1rem 0.75rem;
   }
   
   .logo-img {
-    max-width: 52%;
+    max-width: 60%;
   }
   
   .tagline-text {
-    font-size: 0.625rem;
+    font-size: 0.6rem;
   }
   
   .input-field {
@@ -508,29 +640,41 @@ input[type="password"]::-ms-clear {
   .input-icon-right {
     font-size: 0.85rem;
   }
+  
+  .terms-checkbox {
+    font-size: 0.55rem;
+    line-height: 1.3;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-top: 0.1rem;
+  }
+  
+  .login-button {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 /* Landscape mode for mobile */
 @media (max-height: 600px) and (orientation: landscape) {
   .login-container {
-    padding: 0.5rem 0;
+    padding: 1rem 0;
   }
   
   .card-body-responsive {
-    padding: 0.875rem 1rem;
+    padding: 1rem;
   }
   
   .logo-img {
-    max-width: 45%;
-    margin-bottom: 0.375rem;
-  }
-  
-  .tagline-text {
-    font-size: 0.65rem;
+    max-width: 50%;
     margin-bottom: 0.5rem;
   }
   
-  .logo-section {
+  .tagline-text {
+    font-size: 0.7rem;
     margin-bottom: 0.75rem;
   }
   
@@ -538,91 +682,16 @@ input[type="password"]::-ms-clear {
     margin-bottom: 0.625rem !important;
   }
   
+  .terms-checkbox {
+    font-size: 0.7rem;
+  }
+  
+  .terms-checkbox .form-check-input {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+  
   .login-button {
     margin-bottom: 0.5rem;
-  }
-}
-
-/* ============================================ */
-/* LARGE SCREENS - Controlled Growth */
-/* ============================================ */
-
-/* 1920x1080 and slightly above */
-@media (min-width: 1920px) and (max-width: 2559px) {
-  .login-col {
-    max-width: 420px; /* Base size maintained */
-  }
-  
-  .card-body-responsive {
-    padding: 1.75rem 1.5rem;
-  }
-  
-  .logo-img {
-    max-width: 72%;
-  }
-  
-  .tagline-text {
-    font-size: 0.85rem;
-  }
-  
-  .form-label-custom {
-    font-size: 0.85rem;
-  }
-  
-  .input-field {
-    font-size: 0.85rem;
-    padding: 0.65rem 0.95rem;
-  }
-  
-  .input-icon-left,
-  .input-icon-right {
-    font-size: 1.05rem;
-  }
-  
-  .login-button {
-    font-size: 0.9rem;
-    padding: 0.675rem 1.05rem;
-  }
-}
-
-/* 2K screens and above - Maximum size cap */
-@media (min-width: 2560px) {
-  .login-col {
-    max-width: 460px; /* Maximum cap */
-  }
-  
-  .card-body-responsive {
-    padding: 2rem 1.75rem;
-  }
-  
-  .logo-img {
-    max-width: 75%;
-  }
-  
-  .tagline-text {
-    font-size: 0.925rem;
-  }
-  
-  .form-label-custom {
-    font-size: 0.925rem;
-  }
-  
-  .input-field {
-    font-size: 0.925rem;
-    padding: 0.7rem 1rem;
-  }
-  
-  .input-icon-left,
-  .input-icon-right {
-    font-size: 1.15rem;
-  }
-  
-  .login-button {
-    font-size: 0.975rem;
-    padding: 0.725rem 1.125rem;
-  }
-  
-  .register-text {
-    font-size: 0.825rem;
   }
 }
