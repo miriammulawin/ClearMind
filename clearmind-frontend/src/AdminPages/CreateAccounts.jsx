@@ -91,41 +91,94 @@ function CreateAccounts() {
         </div>
       </div>
 
-      {showDoctorModal && (
-        <div className="doctor-modal-overlay">
-          <div className="doctor-modal-lg">
-            <div className="doctor-modal-header">
-              <h2>Create Doctor Account</h2>
-              <button
-                className="doctor-close-btn"
-                onClick={() => setShowDoctorModal(false)}
-              >
-                <FiX />
-              </button>
+{showDoctorModal && (
+  <div
+    className="doctor-modal-overlay"
+    onClick={() => setShowDoctorModal(false)}
+  >
+    <div
+      className="doctor-modal-lg"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="doctor-modal-header">
+        <h2>Create Doctor Account</h2>
+        <button
+          className="doctor-close-btn"
+          onClick={() => setShowDoctorModal(false)}
+        >
+          <FiX />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="doctor-modal-body">
+        <form>
+          <div className="row g-3">
+            <div className="col-md-4">
+              <label className="form-label">First Name</label>
+              <input type="text" className="form-control input-violet" />
             </div>
 
-            <div className="doctor-modal-body">
-              <div className="doctor-modal-section">
-                <h4>Personal Information</h4>
-                <div className="doctor-form-grid">
-                  <input placeholder="First Name" />
-                  <input placeholder="Last Name" />
-                  <input placeholder="Middle Initial" />
-                  <input placeholder="Sex" />
-                  <input type="date" />
-                  <input placeholder="Contact Number" />
-                  <input placeholder="Specialization" />
-                  <input placeholder="Email Address" />
-                </div>
-              </div>
+            <div className="col-md-4">
+              <label className="form-label">Last Name</label>
+              <input type="text" className="form-control input-violet" />
             </div>
 
-            <div className="doctor-modal-footer">
-              <button className="doctor-save-btn">Create Account</button>
+            <div className="col-md-4">
+              <label className="form-label">M.I</label>
+              <input type="text" className="form-control input-violet" />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Sex</label>
+              <select className="form-select input-violet">
+                <option value="">Select Sex</option>
+                <option>Female</option>
+                <option>Male</option>
+              </select>
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Date of Birth</label>
+              <input type="date" className="form-control input-violet" />
+            </div>
+
+            <div className="col-md-4">
+              <label className="form-label">Email Address</label>
+              <input type="email" className="form-control input-violet" />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Contact Number</label>
+              <input type="tel" className="form-control input-violet" />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Address</label>
+              <input type="text" className="form-control input-violet" />
             </div>
           </div>
-        </div>
-      )}
+
+          {/* Footer */}
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowDoctorModal(false)}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary create-btn">
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
