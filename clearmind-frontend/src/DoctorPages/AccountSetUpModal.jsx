@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FiX, FiPlus } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 function AccountSetupModal({ showModal, onClose, onComplete }) {
   const [formData, setFormData] = useState({
@@ -67,79 +68,85 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
 
     try {
       const data = new FormData();
-      
-      if (formData.profilePicture) {
-        data.append('profile_pic', formData.profilePicture);
-      }
-      if (formData.certificateImage) {
-        data.append('cert_image', formData.certificateImage);
-      }
 
-      data.append('description', formData.description);
-      data.append('professional_title', formData.professionalTitle);
-      data.append('years_of_experience', formData.yearsOfExperience);
-      data.append('license_number', formData.licenseNumber);
+      if (formData.profilePicture) data.append("profile_pic", formData.profilePicture);
+      if (formData.certificateImage) data.append("cert_image", formData.certificateImage);
 
-      specializationList.forEach(item => {
-        data.append('specialization[]', item);
-      });
+      data.append("description", formData.description);
+      data.append("professional_title", formData.professionalTitle);
+      data.append("years_of_experience", formData.yearsOfExperience);
+      data.append("license_number", formData.licenseNumber);
 
-      subSpecializationList.forEach(item => {
-        data.append('sub_spec_id[]', item);
-      });
+      specializationList.forEach((item) => data.append("specialization[]", item));
+      subSpecializationList.forEach((item) => data.append("sub_spec_id[]", item));
+      boardCertificateList.forEach((item) => data.append("board_cert_id[]", item));
+      servicesList.forEach((item) => data.append("service_id[]", item));
 
-      boardCertificateList.forEach(item => {
-        data.append('board_cert_id[]', item);
-      });
-
-      servicesList.forEach(item => {
-        data.append('service_id[]', item);
-      });
-
-      // UPDATE THIS URL TO YOUR ACTUAL PATH
-      const response = await fetch('http://localhost/ClearMind/clearmind-backend/setup_doctor_profile.php', {
-        method: 'POST',
-        body: data,
-      });
+      const response = await fetch(
+        "http://localhost/ClearMind/clearmind-backend/setup_doctor_profile.php",
+        {
+          method: "POST",
+          body: data,
+        }
+      );
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        console.log('Success:', result);
-        alert('Profile updated successfully!');
+        toast.success("Profile updated successfully!", {
+          duration: 1500,
+          position: "top-center",
+          style: {
+            background: "#E2F7E3",
+            border: "1px solid #91C793",
+            color: "#2E7D32",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            textAlign: "center",
+            maxWidth: "320px",
+            borderRadius: "10px",
+            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+          },
+          iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+        });
         
+        // Pass updated profile data back to parent component - NO REFRESH NEEDED!
         if (onComplete) {
-          onComplete();
+          const profileData = {
+            description: formData.description,
+            professionalTitle: formData.professionalTitle,
+            yearsOfExperience: formData.yearsOfExperience,
+            licenseNumber: formData.licenseNumber,
+            specialization: result.data?.specializations || specializationList,
+            subSpecialization: result.data?.sub_specializations || subSpecializationList,
+            boardCertificate: result.data?.board_certificates || boardCertificateList,
+            services: result.data?.services || servicesList,
+            profilePicture: result.data?.profile_pic_path || null,
+            certificateImage: result.data?.certificate_path || null,
+          };
+          onComplete(profileData);
         }
         
         onClose();
       } else {
-        setError(result.message || 'Failed to update profile');
-        if (result.errors) {
-          setError(result.errors.join(', '));
-        }
+        setError(result.message || (result.errors ? result.errors.join(", ") : "Failed to update profile"));
       }
     } catch (err) {
-      console.error('Upload error:', err);
-      setError('Network error. Please try again.');
+      console.error("Upload error:", err);
+      setError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSkip = () => {
-    onClose();
-  };
+  const handleSkip = () => onClose();
 
   if (!showModal) return null;
 
   return (
     <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2 p-sm-3"
-      style={{
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        zIndex: 1050,
-      }}
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2"
+      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
     >
       <div
         className="bg-white d-flex flex-column"
@@ -152,19 +159,12 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
           boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
         }}
       >
-        {/* Header - Fixed */}
+        {/* Header */}
         <div
-          className="position-relative px-3 px-sm-4 py-3 border-bottom flex-shrink-0"
-          style={{
-            borderTopLeftRadius: "24px",
-            borderTopRightRadius: "24px",
-            backgroundColor: "#fff",
-          }}
+          className="position-relative px-4 py-3 border-bottom flex-shrink-0"
+          style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px", backgroundColor: "#fff" }}
         >
-          <h3
-            className="m-0 fw-bold text-center"
-            style={{ color: "#4D227C", paddingTop: "12px", fontSize: "clamp(1.25rem, 4vw, 1.75rem)" }}
-          >
+          <h3 className="m-0 fw-bold text-center" style={{ color: "#4D227C" }}>
             Account Setup
           </h3>
           <button
@@ -178,73 +178,31 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
           </button>
         </div>
 
-        {/* Body - Scrollable */}
-        <div 
-          className="px-3 px-sm-4 py-3 flex-grow-1" 
-          style={{ 
-            overflowY: "auto",
-            overflowX: "hidden"
-          }}
-        >
-          {/* Error Display */}
+        {/* Body */}
+        <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               {error}
-              <button 
-                type="button" 
-                className="btn-close" 
-                onClick={() => setError(null)}
-                aria-label="Close"
-              ></button>
+              <button type="button" className="btn-close" onClick={() => setError(null)} aria-label="Close"></button>
             </div>
           )}
 
           <div className="row g-3">
-            {/* Profile Picture Upload */}
-            <div className="col-12">
-              <div className="position-relative">
-                <input
-                  type="text"
-                  placeholder="Upload Profile Picture"
-                  readOnly
-                  value={formData.profilePicture ? formData.profilePicture.name : ""}
-                  className="form-control"
-                  style={{
-                    borderColor: "#d1d5db",
-                    borderRadius: "12px",
-                    paddingRight: "90px",
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange("profilePicture", e.target.files[0])}
-                  className="d-none"
-                  id="profilePictureInput"
-                />
-                <button
-                  type="button"
-                  className="btn position-absolute"
-                  style={{
-                    backgroundColor: "#C4B5D6",
-                    color: "#000000",
-                    top: "0",
-                    right: "0",
-                    height: "40px",
-                    borderRadius: "0 12px 12px 0",
-                    border: "none",
-                    padding: "0 15px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  onClick={() => document.getElementById("profilePictureInput").click()}
-                  disabled={isLoading}
-                >
-                  Browse
-                </button>
-              </div>
-            </div>
+            {/* Profile Picture */}
+            <FileInput
+              label="Profile Picture"
+              file={formData.profilePicture}
+              onFileChange={(file) => handleFileChange("profilePicture", file)}
+              isLoading={isLoading}
+            />
+
+            {/* Certificate */}
+            <FileInput
+              label="Certificate Image"
+              file={formData.certificateImage}
+              onFileChange={(file) => handleFileChange("certificateImage", file)}
+              isLoading={isLoading}
+            />
 
             {/* Description */}
             <div className="col-12">
@@ -253,14 +211,7 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
                 value={formData.description}
                 onChange={(e) => handleInputChange("description", e.target.value)}
                 className="form-control"
-                style={{ 
-                  borderColor: "#d1d5db", 
-                  borderRadius: "12px", 
-                  minHeight: "60px",
-                  resize: "none",
-                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                }}
-                rows="2"
+                style={{ borderRadius: "12px", minHeight: "60px", resize: "none" }}
                 disabled={isLoading}
               />
             </div>
@@ -273,13 +224,7 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
                 value={formData.professionalTitle}
                 onChange={(e) => handleInputChange("professionalTitle", e.target.value)}
                 className="form-control"
-                style={{ 
-                  borderColor: "#d1d5db", 
-                  borderRadius: "12px", 
-                  height: "40px",
-                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                }}
-                required
+                style={{ borderRadius: "12px", height: "40px" }}
                 disabled={isLoading}
               />
             </div>
@@ -292,16 +237,10 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
                 value={formData.yearsOfExperience}
                 onChange={(e) => handleInputChange("yearsOfExperience", e.target.value)}
                 className="form-control"
-                style={{ 
-                  borderColor: "#d1d5db", 
-                  borderRadius: "12px", 
-                  height: "40px",
-                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                }}
-                required
-                disabled={isLoading}
+                style={{ borderRadius: "12px", height: "40px" }}
                 min="0"
                 max="70"
+                disabled={isLoading}
               />
             </div>
             <div className="col-12 col-sm-6">
@@ -311,421 +250,76 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
                 value={formData.licenseNumber}
                 onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
                 className="form-control"
-                style={{ 
-                  borderColor: "#d1d5db", 
-                  borderRadius: "12px", 
-                  height: "40px",
-                  fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                }}
-                required
+                style={{ borderRadius: "12px", height: "40px" }}
                 disabled={isLoading}
               />
             </div>
 
-            {/* Specialization */}
-            <div className="col-12">
-              <div className="d-flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Specialization *"
-                  value={formData.specialization}
-                  onChange={(e) => handleInputChange("specialization", e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addToList("specialization", setSpecializationList, specializationList);
-                    }
-                  }}
-                  className="form-control"
-                  style={{ 
-                    borderColor: "#d1d5db", 
-                    borderRadius: "12px", 
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  required
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="btn text-white flex-shrink-0"
-                  style={{
-                    backgroundColor: "#4D227C",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={() => addToList("specialization", setSpecializationList, specializationList)}
-                  disabled={isLoading}
-                >
-                  <FiPlus size={18} />
-                </button>
-              </div>
-              {specializationList.length > 0 && (
-                <div className="mt-2 d-flex flex-wrap gap-2">
-                  {specializationList.map((item, index) => (
-                    <span
-                      key={index}
-                      className="badge d-inline-flex align-items-center gap-2"
-                      style={{ 
-                        backgroundColor: "#4D227C", 
-                        fontSize: "clamp(0.813rem, 2vw, 0.938rem)", 
-                        padding: "6px 12px",
-                        fontWeight: "400",
-                      }}
-                    >
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setSpecializationList, specializationList, index)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: "0",
-                          cursor: "pointer",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: "1",
-                        }}
-                        aria-label="Remove"
-                      >
-                        <FiX size={16} strokeWidth={2} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Specialization Lists */}
+            <ListInput
+              label="Specialization *"
+              value={formData.specialization}
+              onChange={(val) => handleInputChange("specialization", val)}
+              list={specializationList}
+              add={() => addToList("specialization", setSpecializationList, specializationList)}
+              remove={(i) => removeFromList(setSpecializationList, specializationList, i)}
+              isLoading={isLoading}
+            />
 
-            {/* Sub-specialization */}
-            <div className="col-12">
-              <div className="d-flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Sub-specialization"
-                  value={formData.subSpecialization}
-                  onChange={(e) => handleInputChange("subSpecialization", e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addToList("subSpecialization", setSubSpecializationList, subSpecializationList);
-                    }
-                  }}
-                  className="form-control"
-                  style={{ 
-                    borderColor: "#d1d5db", 
-                    borderRadius: "12px", 
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="btn text-white flex-shrink-0"
-                  style={{
-                    backgroundColor: "#4D227C",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={() => addToList("subSpecialization", setSubSpecializationList, subSpecializationList)}
-                  disabled={isLoading}
-                >
-                  <FiPlus size={18} />
-                </button>
-              </div>
-              {subSpecializationList.length > 0 && (
-                <div className="mt-2 d-flex flex-wrap gap-2">
-                  {subSpecializationList.map((item, index) => (
-                    <span
-                      key={index}
-                      className="badge d-inline-flex align-items-center gap-2"
-                      style={{ 
-                        backgroundColor: "#4D227C", 
-                        fontSize: "clamp(0.813rem, 2vw, 0.938rem)", 
-                        padding: "6px 12px",
-                        fontWeight: "400",
-                      }}
-                    >
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setSubSpecializationList, subSpecializationList, index)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: "0",
-                          cursor: "pointer",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: "1",
-                        }}
-                        aria-label="Remove"
-                      >
-                        <FiX size={16} strokeWidth={2} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ListInput
+              label="Sub-specialization"
+              value={formData.subSpecialization}
+              onChange={(val) => handleInputChange("subSpecialization", val)}
+              list={subSpecializationList}
+              add={() => addToList("subSpecialization", setSubSpecializationList, subSpecializationList)}
+              remove={(i) => removeFromList(setSubSpecializationList, subSpecializationList, i)}
+              isLoading={isLoading}
+            />
 
-            {/* Board Certificate */}
-            <div className="col-12">
-              <div className="d-flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Board Certificate"
-                  value={formData.boardCertificate}
-                  onChange={(e) => handleInputChange("boardCertificate", e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addToList("boardCertificate", setBoardCertificateList, boardCertificateList);
-                    }
-                  }}
-                  className="form-control"
-                  style={{ 
-                    borderColor: "#d1d5db", 
-                    borderRadius: "12px", 
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="btn text-white flex-shrink-0"
-                  style={{
-                    backgroundColor: "#4D227C",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={() => addToList("boardCertificate", setBoardCertificateList, boardCertificateList)}
-                  disabled={isLoading}
-                >
-                  <FiPlus size={18} />
-                </button>
-              </div>
-              {boardCertificateList.length > 0 && (
-                <div className="mt-2 d-flex flex-wrap gap-2">
-                  {boardCertificateList.map((item, index) => (
-                    <span
-                      key={index}
-                      className="badge d-inline-flex align-items-center gap-2"
-                      style={{ 
-                        backgroundColor: "#4D227C", 
-                        fontSize: "clamp(0.813rem, 2vw, 0.938rem)", 
-                        padding: "6px 12px",
-                        fontWeight: "400",
-                      }}
-                    >
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setBoardCertificateList, boardCertificateList, index)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: "0",
-                          cursor: "pointer",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: "1",
-                        }}
-                        aria-label="Remove"
-                      >
-                        <FiX size={16} strokeWidth={2} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ListInput
+              label="Board Certificate"
+              value={formData.boardCertificate}
+              onChange={(val) => handleInputChange("boardCertificate", val)}
+              list={boardCertificateList}
+              add={() => addToList("boardCertificate", setBoardCertificateList, boardCertificateList)}
+              remove={(i) => removeFromList(setBoardCertificateList, boardCertificateList, i)}
+              isLoading={isLoading}
+            />
 
-            {/* My Services */}
-            <div className="col-12">
-              <div className="d-flex gap-2">
-                <input
-                  type="text"
-                  placeholder="My Services"
-                  value={formData.myServices}
-                  onChange={(e) => handleInputChange("myServices", e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addToList("myServices", setServicesList, servicesList);
-                    }
-                  }}
-                  className="form-control"
-                  style={{ 
-                    borderColor: "#d1d5db", 
-                    borderRadius: "12px", 
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  className="btn text-white flex-shrink-0"
-                  style={{
-                    backgroundColor: "#4D227C",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onClick={() => addToList("myServices", setServicesList, servicesList)}
-                  disabled={isLoading}
-                >
-                  <FiPlus size={18} />
-                </button>
-              </div>
-              {servicesList.length > 0 && (
-                <div className="mt-2 d-flex flex-wrap gap-2">
-                  {servicesList.map((item, index) => (
-                    <span
-                      key={index}
-                      className="badge d-inline-flex align-items-center gap-2"
-                      style={{ 
-                        backgroundColor: "#4D227C", 
-                        fontSize: "clamp(0.813rem, 2vw, 0.938rem)", 
-                        padding: "6px 12px",
-                        fontWeight: "400",
-                      }}
-                    >
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeFromList(setServicesList, servicesList, index)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: "0",
-                          cursor: "pointer",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: "1",
-                        }}
-                        aria-label="Remove"
-                      >
-                        <FiX size={16} strokeWidth={2} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Upload Certificate Image */}
-            <div className="col-12">
-              <div className="position-relative">
-                <input
-                  type="text"
-                  placeholder="Upload Certificate Image"
-                  readOnly
-                  value={formData.certificateImage ? formData.certificateImage.name : ""}
-                  className="form-control"
-                  style={{
-                    borderColor: "#d1d5db",
-                    borderRadius: "12px",
-                    paddingRight: "90px",
-                    height: "40px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange("certificateImage", e.target.files[0])}
-                  className="d-none"
-                  id="certificateImageInput"
-                />
-                <button
-                  type="button"
-                  className="btn position-absolute"
-                  style={{
-                    backgroundColor: "#C4B5D6",
-                    color: "#000000",
-                    top: "0",
-                    right: "0",
-                    height: "40px",
-                    borderRadius: "0 12px 12px 0",
-                    border: "none",
-                    padding: "0 15px",
-                    fontSize: "clamp(0.875rem, 2vw, 1rem)",
-                  }}
-                  onClick={() => document.getElementById("certificateImageInput").click()}
-                  disabled={isLoading}
-                >
-                  Browse
-                </button>
-              </div>
-            </div>
+            <ListInput
+              label="My Services"
+              value={formData.myServices}
+              onChange={(val) => handleInputChange("myServices", val)}
+              list={servicesList}
+              add={() => addToList("myServices", setServicesList, servicesList)}
+              remove={(i) => removeFromList(setServicesList, servicesList, i)}
+              isLoading={isLoading}
+            />
           </div>
         </div>
 
-        {/* Footer - Fixed */}
-        <div
-          className="d-flex align-items-center justify-content-center px-3 px-sm-4 py-3 border-top flex-shrink-0 position-relative"
-          style={{
-            borderBottomLeftRadius: "24px",
-            borderBottomRightRadius: "24px",
-            backgroundColor: "#fff",
-          }}
-        >
+        {/* Footer */}
+        <div className="d-flex align-items-center justify-content-center px-4 py-3 border-top flex-shrink-0 position-relative">
           <button
             type="button"
-            className="btn text-white fw-semibold px-4 px-sm-5 py-2 d-flex align-items-center justify-content-center gap-2"
-            style={{
-              backgroundColor: "#4D227C",
-              borderRadius: "12px",
-              fontSize: "clamp(0.875rem, 2vw, 1rem)",
-            }}
+            className="btn text-white fw-semibold px-4 py-2"
+            style={{ backgroundColor: "#4D227C", borderRadius: "12px" }}
             onClick={handleUpload}
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Uploading...
               </>
             ) : (
-              'Upload'
+              "Upload"
             )}
           </button>
           <button
             type="button"
             className="btn btn-link text-decoration-none position-absolute"
-            style={{
-              color: "#4D227C",
-              padding: "0",
-              fontSize: "clamp(0.875rem, 2vw, 1rem)",
-              whiteSpace: "nowrap",
-              right: "20px",
-            }}
+            style={{ right: "20px", color: "#4D227C" }}
             onClick={handleSkip}
             disabled={isLoading}
           >
@@ -738,3 +332,101 @@ function AccountSetupModal({ showModal, onClose, onComplete }) {
 }
 
 export default AccountSetupModal;
+
+// ================== Helper Components ==================
+
+const FileInput = ({ label, file, onFileChange, isLoading }) => {
+  const inputId = label.replace(/\s+/g, "") + "Input";
+  return (
+    <div className="col-12">
+      <div className="position-relative">
+        <input
+          type="text"
+          placeholder={`Upload ${label}`}
+          readOnly
+          value={file ? file.name : ""}
+          className="form-control"
+          style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
+        />
+        <input
+          type="file"
+          accept="image/*"
+          id={inputId}
+          className="d-none"
+          onChange={(e) => onFileChange(e.target.files[0])}
+        />
+        <button
+          type="button"
+          className="btn position-absolute"
+          style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
+          onClick={() => document.getElementById(inputId).click()}
+          disabled={isLoading}
+        >
+          Browse
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ListInput = ({ label, value, onChange, list, add, remove, isLoading }) => (
+  <div className="col-12">
+    <div className="d-flex gap-2">
+      <input
+        type="text"
+        placeholder={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            add();
+          }
+        }}
+        className="form-control"
+        style={{ borderRadius: "12px", height: "40px" }}
+        disabled={isLoading}
+      />
+      <button
+        type="button"
+        className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
+        style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
+        onClick={add}
+        disabled={isLoading}
+      >
+        <FiPlus size={18} />
+      </button>
+    </div>
+    {list.length > 0 && (
+      <div className="mt-2 d-flex flex-wrap gap-2">
+        {list.map((item, i) => (
+          <span
+            key={i}
+            className="badge d-inline-flex align-items-center gap-2"
+            style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
+          >
+            {item}
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              style={{ 
+                background: "none", 
+                border: "none", 
+                color: "white", 
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0",
+                lineHeight: "1"
+              }}
+              aria-label="Remove"
+            >
+              <FiX size={16} strokeWidth={2} />
+            </button>
+          </span>
+        ))}
+      </div>
+    )}
+  </div>
+);
