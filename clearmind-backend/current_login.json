@@ -3,18 +3,18 @@
         "user_id": "Admin101",
         "role": "Admin",
         "email": "brian.admin@clearmind.com",
-        "login_time": "2026-02-04 08:18:51"
+        "login_time": "2026-02-05 04:56:02"
     },
     "Client": {
-        "user_id": null,
+        "user_id": 2,
         "role": "Client",
-        "email": "juany@gmail.com",
-        "login_time": "2026-02-04 07:07:59"
+        "email": "Liezel@gmail.com",
+        "login_time": "2026-02-05 04:03:40"
     },
     "Doctor": {
         "user_id": 1,
         "role": "Doctor",
-        "email": "briandelacruz@gmail.com",
-        "login_time": "2026-02-04 08:24:02"
+        "email": "pacienteliezel04@gmail.com",
+        "login_time": "2026-02-05 06:16:28"
     }
 }

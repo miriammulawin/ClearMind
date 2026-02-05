@@ -16,3 +16,15 @@
 [2026-02-04 07:56:56] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
 [2026-02-04 08:18:51] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
 [2026-02-04 08:24:02] EMAIL: briandelacruz@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-04 10:04:57] EMAIL: briandelacruz@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-04 10:22:09] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
+[2026-02-05 02:54:02] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
+[2026-02-05 02:56:43] EMAIL: briandelacruz@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-05 03:37:00] EMAIL: aleyziealliana@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-05 03:37:43] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
+[2026-02-05 03:39:43] EMAIL: arac880@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-05 03:56:20] EMAIL: ara@example.com | ROLE: UNKNOWN | STATUS: FAILED | IP: ::1
+[2026-02-05 04:03:40] EMAIL: Liezel@gmail.com | ROLE: Client | STATUS: SUCCESS | IP: ::1
+[2026-02-05 04:56:02] EMAIL: brian.admin@clearmind.com | ROLE: Admin | STATUS: SUCCESS | IP: ::1
+[2026-02-05 04:58:27] EMAIL: pacienteliezel04@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
+[2026-02-05 06:16:28] EMAIL: pacienteliezel04@gmail.com | ROLE: Doctor | STATUS: SUCCESS | IP: ::1
