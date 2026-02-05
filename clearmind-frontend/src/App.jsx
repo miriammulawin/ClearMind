@@ -7,11 +7,12 @@ import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
 import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
-import ClientMessages from "./ClientPages/ClientMessages";
-import ClientAccount from "./ClientPages/ClientAccount";
 import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
 import UpcomingTab from "./ClientPages/ClientComponents/UpcomingTab";
 import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
+import ClientMessages from "./ClientPages/ClientMessages";
+import ClientProfile from "./ClientPages/ClientProfile";
+
 
 function App() {
   return (
@@ -33,7 +34,7 @@ function App() {
         </Route>
         
         <Route path="/client/messages" element={<ClientMessages />} />
-        <Route path="/client/account" element={<ClientAccount />} />
+        <Route path="/client/profile" element={<ClientProfile />} />
 
       </Routes>
     </Router>
