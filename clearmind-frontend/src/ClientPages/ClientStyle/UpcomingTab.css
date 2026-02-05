@@ -21,12 +21,6 @@
   margin: 0;
 }
 
-.label-filter {
-  color: #5B2C91;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 /* Status Dropdown */
 .status-dropdown {
   display: flex;
@@ -35,7 +29,8 @@
 
 .status-dropdown .dropdown-toggle {
   border: 2px solid #5B2C91;
-  color: #5B2C91;
+  color: white;
+  background: #5B2C91;
   border-radius: 10px;
   padding: 6px 20px;
   font-weight: bold;
@@ -74,13 +69,12 @@
 
 /* Appointments List - SCROLLABLE */
 .appointments-list {
-  margin: 5px ;
+  margin: 5px;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
   padding-right: 8px;
   height: auto;
-  
 }
 
 /* Custom Scrollbar */
@@ -105,7 +99,7 @@
 /* No Appointments State */
 .no-appointments {
   background-color: white;
-  height: 100%;
+  height: 95%;
   border-radius: 25px;
   border: 2px solid #5B2C91;
   display: flex;
@@ -134,6 +128,7 @@
   border-radius: 20px;
   margin-bottom: 15px;
   transition: box-shadow 0.3s ease;
+  position: relative;
 }
 
 .appointment-card:hover {
@@ -144,10 +139,40 @@
   padding: 1.25rem;
 }
 
+/* Status Badge on Upper Right - Base Style */
+.status-badge-upcoming {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Custom Blue for Confirmed - rgb(30, 58, 138) = #1E3A8A */
+.bg-info {
+  background-color: #a8bffd !important;
+  color: white !important;
+}
+
+/* Custom Yellow for Pending - #EDC200 */
+.bg-warning {
+  background-color: #fff5b5 !important;
+  color: rgb(130, 130, 130) !important;
+}
+
+/* Custom Orange for Rescheduled - retain original */
+.bg-orange {
+  background-color: #FFCE99 !important;
+  color: white !important;
+}
+
 .appointment-details {
   display: flex;
   flex-direction: column;
-  
 }
 
 .appointment-info {
@@ -178,7 +203,7 @@
   font-weight: 600;
 }
 
-.hr-upcodming {
+.hr-upcoming {
   border: 2px solid #694c95;
 }
 
@@ -197,29 +222,15 @@
   font-weight: 600;
 }
 
-.status-badge {
-  margin-left: auto;
-  background-color: #f0e6ff;
-  border: 2px solid #5B2C91;
-  color: #5B2C91;
-  padding: 4px 16px;
-  border-radius: 15px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
 .consultation-type {
-  background-color: #f0e6ff;
-  border: 2px solid #5B2C91;
   color: #5B2C91;
-  padding: 8px 12px;
   border-radius: 8px;
   font-weight: 500;
   width: fit-content;
-  margin-top: 0.5rem;
+  font-weight: 700;
 }
 
-.consultation-type .video-icon {
+.appointment-icon {
   margin-right: 6px;
   font-size: 1rem;
 }
@@ -243,17 +254,15 @@
 
 /* Responsive Design */
 @media (max-width: 577px) {
+  .header-section{
+    flex-direction: row !important;
+  }
   .upcoming-container {
     padding: 1rem;
-
   }
 
   .title-upcoming {
     font-size: 1.3rem;
-  }
-
-  .label-filter {
-    display: none;
   }
 
   .status-dropdown .dropdown-toggle {
@@ -270,6 +279,13 @@
     padding: 1rem;
   }
 
+  .status-badge-upcoming {
+    top: 10px;
+    right: 10px;
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+
   .info-row {
     font-size: 0.85rem;
     flex-wrap: wrap;
@@ -278,11 +294,6 @@
   .info-row .label {
     min-width: 110px;
     font-size: 0.8rem;
-  }
-
-  .status-badge {
-    font-size: 0.75rem;
-    padding: 3px 12px;
   }
 
   .consultation-type {
@@ -296,7 +307,7 @@
     width: 100%;
   }
 
-  .appointments-list{
+  .appointments-list {
     height: 100%;
   }
 
@@ -310,11 +321,11 @@
 
   .no-appointments p {
     font-size: 0.9rem;
+    text-align: center;
   }
 
   .appointments-list {
     padding-right: 4px;
-    /* max-height: 340px; */
     height: auto;
   }
 

@@ -1,10 +1,12 @@
 /* ClientAppointmentServices.css */
 .appointment-services-container {
-  max-height: 84%;
+  /* max-height: 84%; */
   max-width: 768px;
   display: flex;
   flex-direction: column;
   background-color: transparent;
+  height: calc(100vh - 230px); 
+  margin-bottom: 30px;
 }
 
 .services-heading {
@@ -18,8 +20,7 @@
   background-color: transparent;
   flex: 1;
   overflow-y: auto;
-  background-color: transparent; 
-  padding: 0px 30px !important;
+  background-color: transparent; ;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   padding-right: 22px !important; /* Add space for scrollbar */
 }
@@ -162,9 +163,9 @@
   }
   
   .scrollable-body {
-    padding: 16px 12px;
+    /* padding: 16px 12px; */
     margin-top: -5px;
-    padding-right: 8px !important; /* Adjust for mobile scrollbar */
+    padding-right: 20px !important; /* Adjust for mobile scrollbar */
   }
   
   /* Mobile scrollbar */
@@ -178,7 +179,6 @@
   }
   
   .accordion-item-custom {
-    margin-bottom: 10px;
     border-radius: 6px;
   }
   

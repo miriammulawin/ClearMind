@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Card, Button, Dropdown } from 'react-bootstrap';
+import { Container, Card, Button, Dropdown, Badge } from 'react-bootstrap';
 import { FaCalendarTimes, FaVideo, FaClinicMedical } from "react-icons/fa";
 import "../ClientStyle/UpcomingTab.css"
 
@@ -28,10 +28,19 @@ const UpcomingTab = () => {
     const messages = {
       'Pending': 'You have no pending appointments.',
       'Confirmed': 'You have no confirmed appointments.',
-      'Scheduled': 'You have no scheduled appointments.',
       'Rescheduled': 'You have no rescheduled appointments.'
     };
     return messages[status] || 'You have no upcoming appointments.';
+  };
+
+  // Helper function to get status badge variant
+  const getStatusBadgeVariant = (status) => {
+    const variants = {
+      'Pending': 'warning',      // Yellow
+      'Confirmed': 'info',        // Light Blue
+      'Rescheduled': 'orange'     // Orange (custom)
+    };
+    return variants[status] || 'secondary';
   };
   
   // Sample data - replace with your actual data from API
@@ -52,7 +61,7 @@ const UpcomingTab = () => {
       serviceType: 'Psychiatric Assessment',
       doctor: 'Maria Santos',
       type: 'Online Consultation',
-      status: 'Pending'
+      status: 'Confirmed'
     },
     {
       id: 3,
@@ -61,13 +70,21 @@ const UpcomingTab = () => {
       serviceType: 'Mental Health Certification',
       doctor: 'Pedro Reyes',
       type: 'Online Consultation',
+      status: 'Rescheduled'
+    },
+    {
+      id: 4,
+      time: '2:00 P.M.',
+      date: 'January 29, 2026',
+      serviceType: 'Follow-up Consultation',
+      doctor: 'Ana Rodriguez',
+      type: 'Clinic - CMPS',
       status: 'Pending'
     }
-    // Add more for testing scroll
   ];
 
-  const statusOptions = ['Pending', 'Confirmed', 'Scheduled', 'Rescheduled'];
-
+  const statusOptions = ['Pending', 'Confirmed', 'Rescheduled'];
+  
   // Filter appointments based on selected status
   const filteredAppointments = appointments.filter(
     apt => apt.status === selectedStatus
@@ -81,7 +98,6 @@ const UpcomingTab = () => {
         </h5>
         
         <Dropdown className="status-dropdown">
-          <span className='label-filter me-2'>Status Filter:</span>
           <Dropdown.Toggle variant="outline-purple" id="dropdown-status">
             {selectedStatus}
           </Dropdown.Toggle>
@@ -109,12 +125,18 @@ const UpcomingTab = () => {
           filteredAppointments.map((appointment) => (
             <Card key={appointment.id} className='appointment-card'>
               <Card.Body>
+                <Badge 
+                  bg={getStatusBadgeVariant(appointment.status)} 
+                  className='status-badge-upcoming'
+                >
+                  {appointment.status}
+                </Badge>
+
                 <div className='appointment-details'>
                   <div className='appointment-info'>
                     <div className='info-row'>
                       <span className='label'>Time:</span>
                       <span className='value'>{appointment.time}</span>
-                      <span className='status-badge'>{appointment.status}</span>
                     </div>
                     <div className='info-row'>
                       <span className='label'>Date:</span>
@@ -122,7 +144,11 @@ const UpcomingTab = () => {
                         {appointment.date} ({getDayOfWeek(appointment.date)})
                       </span>
                     </div>
-                    <hr className='hr-upcodming' />
+                    <hr className='hr-upcoming' />
+                    <div className='info-row consultation-type'>
+                      {getAppointmentIcon(appointment.type)}
+                      <span>{appointment.type}</span>
+                    </div>
                     <div className='info-row'>
                       <span className='label'>Type of Service:</span>
                       <span className='value service-type'>{appointment.serviceType}</span>
@@ -130,10 +156,6 @@ const UpcomingTab = () => {
                     <div className='info-row'>
                       <span className='label'>Assigned Doctor:</span>
                       <span className='value doctor-name'>{appointment.doctor}</span>
-                    </div>
-                    <div className='info-row consultation-type'>
-                      {getAppointmentIcon(appointment.type)}
-                      <span>{appointment.type}</span>
                     </div>
                   </div>
                   
