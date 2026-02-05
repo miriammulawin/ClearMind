@@ -190,12 +190,6 @@ function DoctorSideBar() {
                   className="profile-name" 
                   style={{ 
                     margin: 0, 
-                    fontSize: "1rem",
-                    fontWeight: "600",
-                    color: "#333",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
                   }}
                 >
                   {isLoading ? "Loading..." : profile.name}
