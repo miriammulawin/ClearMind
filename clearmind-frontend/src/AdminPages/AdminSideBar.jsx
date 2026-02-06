@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // <-- import useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { RiDashboardFill } from "react-icons/ri";
 import { FaUserPlus, FaCalendarDays } from "react-icons/fa6";
@@ -36,7 +36,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
     { name: "Clinic", icon: <FaClinicMedical />, path: "/admin-clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/billing" },
     { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage-account" },
-    { name: "My Profile", icon: <BiSolidUserCircle />, path: "/my-profile" },
+    { name: "My Profile", icon: <BiSolidUserCircle />, path: "/admin-profile" },
   ];
 
   const handleMenuClick = (item) => {
@@ -60,7 +60,11 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
             <div className="profile-info">
               <h5 className="profile-name">Admin101</h5>
               <p className="profile-contact">admin@gmail.com · 09123456767</p>
-              <FiEdit className="edit-icon" />
+              <FiEdit
+                className="edit-icon"
+                onClick={() => navigate("/admin-profile")}
+                style={{ cursor: "pointer" }}
+              />
             </div>
           </div>
 
@@ -70,7 +74,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
                 key={item.name}
                 className={`menu-item ${
                   location.pathname === item.path ? "active" : ""
-                }`} 
+                }`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;

@@ -239,11 +239,9 @@ function AdminDashboard() {
         <AdminTopNavbar activeMenu={activeMenu} />
 
         <div className="admin-content">
-
-       
+          <div className="container-fluid">
             <div className="row g-4">
-
-              {/* Today's Appointments */}
+        
               <div className="col-md-6">
                 <div className="dashboard-card">
                   <div className="card-header">
@@ -272,7 +270,7 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Consultation Requests */}
+ 
               <div className="col-md-6">
                 <div className="dashboard-card">
                   <div className="card-header">
@@ -292,19 +290,19 @@ function AdminDashboard() {
                           <strong>Time:</strong> 2:00 PM
                         </p>
                       </div>
-                      <button className="verify-btn">Verify</button>
+                      <button className="btn-view">View</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Patients Table */}
+    
             <div className="row mt-4">
               <div className="col-12">
                 <div className="dashboard-card">
                   <div className="card-header">
-                    <h5>Total Patients</h5>
+                    <h5>Total's Patients</h5>
                     <div className="card-date">
                       <span>{patientsData.length}</span>
                     </div>
@@ -354,7 +352,7 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Charts */}
+
             <div className="row mt-4">
               <div className="col-md-6">
                 <div className="dashboard-card">
@@ -380,7 +378,7 @@ function AdminDashboard() {
           </div>
         </div>
       </div>
-    
+    </div>
   );
 }
 

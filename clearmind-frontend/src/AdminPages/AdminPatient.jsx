@@ -119,7 +119,7 @@ function AdminPatient() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className="admin-content" style={{ padding: "20px" }}>
           <div className="patient-card">
-            {/* TABS */}
+       
             <div className="patient-tabs">
               <button
                 className={activeTab === "patients" ? "tab-active" : ""}
@@ -142,7 +142,7 @@ function AdminPatient() {
               </button>
             </div>
 
-            {/* TABLE */}
+     
             <div className="patient-table-wrapper">
               <table className="patient-table">
                 <thead>
@@ -191,7 +191,7 @@ function AdminPatient() {
               </table>
             </div>
 
-            {/* PAGINATION */}
+
             <div className="pagination">
               <button
                 disabled={currentPage === 1}
@@ -222,7 +222,7 @@ function AdminPatient() {
         </div>
       </div>
 
-      {/* MODAL */}
+
       {showModal && selectedPatient && (
         <div
           className="patient-modal-overlay"
@@ -232,7 +232,7 @@ function AdminPatient() {
             className="patient-modal-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* HEADER */}
+
             <div className="modal-header">
               <h2>Patient Details</h2>
               <div
@@ -257,7 +257,7 @@ function AdminPatient() {
               </div>
             </div>
 
-            {/* BODY */}
+
             <div className="modal-body">
               <div
                 className="modal-section"
@@ -339,7 +339,7 @@ function AdminPatient() {
               </div>
             </div>
 
-            {/* FOOTER */}
+
             <div className="modal-footer">
               <button
                 className="btn-completed"
@@ -352,7 +352,7 @@ function AdminPatient() {
         </div>
       )}
 
-      {/* IMAGE ZOOM */}
+
       {zoomImage && (
         <div
           className="patient-modal-overlay"

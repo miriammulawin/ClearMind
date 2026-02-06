@@ -88,9 +88,10 @@ function AdminAppointment() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                marginTop: "-18px",
               }}
             >
-              <h3>Appointments Calendar</h3>
+              <h3>Appointment Calendar</h3>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
                   className="btn-create"
@@ -98,7 +99,6 @@ function AdminAppointment() {
                 >
                   + Create Appointment
                 </button>
-            
               </div>
             </div>
 
@@ -143,26 +143,12 @@ function AdminAppointment() {
           <div className="appointment-modal-lg">
             <div className="modal-header">
               <h2>New Appointment</h2>
-
               <span className="modal-date">
                 {newEvent.date
                   ? format(new Date(newEvent.date), "MMMM d, yyyy")
                   : format(new Date(), "MMMM d, yyyy")}
               </span>
-
-              <button
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <button className="close-btn" onClick={() => setShowModal(false)}>
                 <FiX />
               </button>
             </div>
@@ -182,26 +168,29 @@ function AdminAppointment() {
                 <div className="radio-group">
                   <div>
                     <strong>Patient Type</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="ptype" /> Existing Patient
-                    </label>
-                    <label>
-                      <input type="radio" name="ptype" /> New Patient
-                    </label>
+                    <div>
+                      <label>
+                        <input type="radio" name="ptype" /> Existing Patient
+                      </label>
+                      <label>
+                        <input type="radio" name="ptype" /> New Patient
+                      </label>
+                    </div>
                   </div>
+
                   <div>
                     <strong>Patient Classification</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="class" /> PWD
-                    </label>
-                    <label>
-                      <input type="radio" name="class" /> Senior Citizen
-                    </label>
-                    <label>
-                      <input type="radio" name="class" /> Regular
-                    </label>
+                    <div>
+                      <label>
+                        <input type="radio" name="class" /> PWD
+                      </label>
+                      <label>
+                        <input type="radio" name="class" /> Senior Citizen
+                      </label>
+                      <label>
+                        <input type="radio" name="class" /> Regular
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -217,6 +206,7 @@ function AdminAppointment() {
                     }
                   />
                   <div className="time-input-wrapper">
+                    <label>Start Time</label>
                     <input
                       type="time"
                       value={newEvent.startTime}
@@ -224,9 +214,9 @@ function AdminAppointment() {
                         setNewEvent({ ...newEvent, startTime: e.target.value })
                       }
                     />
-                    <label>Start Time</label>
                   </div>
                   <div className="time-input-wrapper">
+                    <label>End Time</label>
                     <input
                       type="time"
                       value={newEvent.endTime}
@@ -234,19 +224,19 @@ function AdminAppointment() {
                         setNewEvent({ ...newEvent, endTime: e.target.value })
                       }
                     />
-                    <label>End Time</label>
                   </div>
                 </div>
-                <div className="radio-group" style={{ marginTop: "15px" }}>
+                <div className="radio-group" style={{ marginTop: "20px" }}>
                   <div>
                     <strong>Schedule Visit</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="visit" /> Schedule Visit
-                    </label>
-                    <label>
-                      <input type="radio" name="visit" /> Virtual Consult
-                    </label>
+                    <div>
+                      <label>
+                        <input type="radio" name="visit" /> Schedule Visit
+                      </label>
+                      <label>
+                        <input type="radio" name="visit" /> Virtual Consult
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -263,7 +253,7 @@ function AdminAppointment() {
             </div>
 
             <div className="modal-footer">
-              <button className="btn-add" onClick={handleAddEvent}>
+              <button className="btn-create" onClick={handleAddEvent}>
                 Add Appointment
               </button>
             </div>

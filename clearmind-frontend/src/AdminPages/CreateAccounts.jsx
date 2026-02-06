@@ -16,13 +16,15 @@ function CreateAccounts() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className="admin-content create-accounts-page">
           <div className="create-accounts-header">
-            <h3 className="create-accounts-title">Doctor&apos;s Account</h3>
+            <h3 className="create-accounts-title">Doctors Account</h3>
+
             <button
-              className="create-btn"
+              className="btn-create"
               onClick={() => setShowDoctorModal(true)}
             >
-              Create <i className="bi bi-plus-lg" />
+              + Create Account
             </button>
+          
           </div>
 
           <div className="create-accounts-card">

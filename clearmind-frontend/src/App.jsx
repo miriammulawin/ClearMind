@@ -8,6 +8,9 @@ import AdminAppointment from "./AdminPages/AdminAppointment";
 import AdminPatient from "./AdminPages/AdminPatient";
 import DoctorAccount from "./AdminPages/DoctorAccount";
 import AdminClinic from "./AdminPages/AdminClinic";
+import ManageAccounts from "./AdminPages/ManageAccounts";
+import AdminProfile from "./AdminPages/AdminProfile";
+import AdminMessages from "./AdminPages/AdminMessages";
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
         <Route path="/create-doctors" element={<DoctorAccount />} />
         <Route path="/admin-appointment" element={<AdminAppointment />} />
         <Route path="/admin-clinic" element={<AdminClinic />} />
+        <Route path="/manage-account" element={<ManageAccounts />} />
+        <Route path="/admin-profile" element={<AdminProfile />} />
+        <Route path ="/admin-messages" element={<AdminMessages />} />
       </Routes>
     </Router>
   );
