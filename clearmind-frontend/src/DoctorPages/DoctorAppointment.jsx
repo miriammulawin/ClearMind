@@ -7,7 +7,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
 import "./DoctorStyle/DoctorAppointment.css"; // reuse the same CSS
-import { FiX } from "react-icons/fi";
+import { FiX, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const locales = { "en-US": enUS };
 
@@ -19,11 +19,22 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
 function DoctorAppointment() {
   const [activeMenu, setActiveMenu] = useState("Appointment");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [showModal, setShowModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const [events, setEvents] = useState([
     {
@@ -53,6 +64,19 @@ function DoctorAppointment() {
     endTime: "",
   });
 
+  // Schedule state: each day can have multiple time slots
+  const [weeklySchedule, setWeeklySchedule] = useState({
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+    Sunday: [],
+  });
+
+  const [selectedDay, setSelectedDay] = useState("Monday");
+
   const handleAddEvent = () => {
     if (
       !newEvent.title ||
@@ -75,6 +99,47 @@ function DoctorAppointment() {
     setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
   };
 
+  const handleAddTimeSlot = () => {
+    setWeeklySchedule({
+      ...weeklySchedule,
+      [selectedDay]: [
+        ...weeklySchedule[selectedDay],
+        { startTime: "", endTime: "" },
+      ],
+    });
+  };
+
+  const handleRemoveTimeSlot = (dayName, index) => {
+    setWeeklySchedule({
+      ...weeklySchedule,
+      [dayName]: weeklySchedule[dayName].filter((_, i) => i !== index),
+    });
+  };
+
+  const handleTimeSlotChange = (dayName, index, field, value) => {
+    const updatedSlots = [...weeklySchedule[dayName]];
+    updatedSlots[index][field] = value;
+    setWeeklySchedule({
+      ...weeklySchedule,
+      [dayName]: updatedSlots,
+    });
+  };
+
+  const handleSaveSchedule = () => {
+    // Validate that all time slots are filled
+    for (const day of DAYS_OF_WEEK) {
+      for (const slot of weeklySchedule[day]) {
+        if (!slot.startTime || !slot.endTime) {
+          alert("Please fill in all time slots or remove empty ones");
+          return;
+        }
+      }
+    }
+
+    alert("Schedule saved successfully!");
+    setShowScheduleModal(false);
+  };
+
   return (
     <div className="admin-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -92,6 +157,26 @@ function DoctorAppointment() {
             >
               <h3>Appointments Calendar</h3>
               <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  className="btn-create"
+                  onClick={() => setShowScheduleModal(true)}
+                  style={{
+                    backgroundColor: "#8B4545",
+                    color: "#fff",
+                    border: "2px solid #8B4545",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "transparent";
+                    e.target.style.color = "#8B4545";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "#8B4545";
+                    e.target.style.color = "#fff";
+                  }}
+                >
+                  + Add Schedule
+                </button>
                 <button
                   className="btn-create"
                   onClick={() => setShowModal(true)}
@@ -137,6 +222,7 @@ function DoctorAppointment() {
         </div>
       </div>
 
+      {/* Create Appointment Modal */}
       {showModal && (
         <div className="appointment-modal-overlay">
           <div className="appointment-modal-lg">
@@ -264,6 +350,252 @@ function DoctorAppointment() {
             <div className="modal-footer">
               <button className="btn-add" onClick={handleAddEvent}>
                 Add Appointment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Schedule Modal */}
+      {showScheduleModal && (
+        <div className="appointment-modal-overlay">
+          <div className="appointment-modal-lg">
+            <div className="modal-header">
+              <h2>Add Weekly Schedule</h2>
+              <button
+                className="close-btn"
+                onClick={() => setShowScheduleModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="modal-section">
+                <h4>Select Day of the Week</h4>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    marginBottom: "20px",
+                  }}
+                >
+                  {DAYS_OF_WEEK.map((day) => (
+                    <button
+                      key={day}
+                      onClick={() => setSelectedDay(day)}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "8px",
+                        border:
+                          selectedDay === day
+                            ? "2px solid #4D227C"
+                            : "1px solid #ddd",
+                        backgroundColor:
+                          selectedDay === day ? "#4D227C" : "#fff",
+                        color: selectedDay === day ? "#fff" : "#333",
+                        cursor: "pointer",
+                        fontWeight: selectedDay === day ? "600" : "400",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: "20px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    <h4>Time Slots for {selectedDay}</h4>
+                    <button
+                      onClick={handleAddTimeSlot}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "8px",
+                        border: "none",
+                        backgroundColor: "#4D227C",
+                        color: "#fff",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      <FiPlus /> Add Time Slot
+                    </button>
+                  </div>
+
+                  {weeklySchedule[selectedDay].length === 0 ? (
+                    <div
+                      style={{
+                        padding: "20px",
+                        textAlign: "center",
+                        color: "#666",
+                        backgroundColor: "#f5f5f5",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      No time slots added for {selectedDay}. Click "Add Time
+                      Slot" to get started.
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      {weeklySchedule[selectedDay].map((slot, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            alignItems: "center",
+                            padding: "12px",
+                            backgroundColor: "#f9f9f9",
+                            borderRadius: "8px",
+                            border: "1px solid #e0e0e0",
+                          }}
+                        >
+                          <span style={{ fontWeight: "500", minWidth: "80px" }}>
+                            Slot {index + 1}:
+                          </span>
+                          <input
+                            type="time"
+                            value={slot.startTime}
+                            placeholder="- Start Time"
+                            onChange={(e) =>
+                              handleTimeSlotChange(
+                                selectedDay,
+                                index,
+                                "startTime",
+                                e.target.value,
+                              )
+                            }
+                            style={{
+                              padding: "10px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid #ddd",
+                              fontSize: "14px",
+                              minWidth: "150px",
+                            }}
+                          />
+                          <span style={{ fontWeight: "500" }}>to</span>
+                          <input
+                            type="time"
+                            value={slot.endTime}
+                            placeholder="- End Time"
+                            onChange={(e) =>
+                              handleTimeSlotChange(
+                                selectedDay,
+                                index,
+                                "endTime",
+                                e.target.value,
+                              )
+                            }
+                            style={{
+                              padding: "10px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid #ddd",
+                              fontSize: "14px",
+                              minWidth: "150px",
+                            }}
+                          />
+                          <button
+                            onClick={() =>
+                              handleRemoveTimeSlot(selectedDay, index)
+                            }
+                            style={{
+                              padding: "8px",
+                              borderRadius: "6px",
+                              border: "none",
+                              backgroundColor: "#ff4444",
+                              color: "#fff",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Summary of all days with schedules */}
+                <div
+                  style={{
+                    marginTop: "30px",
+                    padding: "15px",
+                    backgroundColor: "#f0f0f0",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <h4 style={{ marginBottom: "10px" }}>Schedule Summary</h4>
+                  {DAYS_OF_WEEK.map(
+                    (day) =>
+                      weeklySchedule[day].length > 0 && (
+                        <div key={day} style={{ marginBottom: "8px" }}>
+                          <strong>{day}:</strong>{" "}
+                          {weeklySchedule[day].map((slot, idx) => {
+                            // Convert 24-hour format to 12-hour format with AM/PM
+                            const formatTime = (time) => {
+                              if (!time) return "";
+                              const [hours, minutes] = time.split(":");
+                              const hour = parseInt(hours);
+                              const ampm = hour >= 12 ? "PM" : "AM";
+                              const displayHour = hour % 12 || 12;
+                              return `${displayHour}:${minutes} ${ampm}`;
+                            };
+
+                            return (
+                              <span key={idx}>
+                                {formatTime(slot.startTime)} -{" "}
+                                {formatTime(slot.endTime)}
+                                {idx < weeklySchedule[day].length - 1
+                                  ? ", "
+                                  : ""}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ),
+                  )}
+                  {DAYS_OF_WEEK.every(
+                    (day) => weeklySchedule[day].length === 0,
+                  ) && (
+                    <div style={{ color: "#666" }}>No schedules added yet.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-add" onClick={handleSaveSchedule}>
+                Save Schedule
               </button>
             </div>
           </div>
