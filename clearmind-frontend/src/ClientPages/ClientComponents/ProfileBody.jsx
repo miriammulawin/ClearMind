@@ -1,28 +1,53 @@
 import React, { useState } from 'react';
-import { Container, Card, ListGroup } from 'react-bootstrap';
+import { Container, Card, ListGroup, Modal, Button } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../ClientStyle/ProfileBody.css';
+import "../ClientStyle/ProfileBody.css"
 import { LuHandHeart } from "react-icons/lu";
 import { LuBookOpenText } from "react-icons/lu";
 import { MdOutlineShield } from "react-icons/md";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { IoLogOutOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
-import logo_login_single from "../../assets/CMPS_Logo.png";
-
-
+import { Image } from "react-bootstrap";
+import logo_login from "../../assets/CMPS_Logo.png";
 
 export default function ProfilePage() {
-  const [showFooter, setShowFooter] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowLogoutModal(false);
+  };
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    console.log('Logging out...');
+    setShowLogoutModal(false);
+    // Redirect to login page
+    navigate('/login');
+  };
+
+  const handleMenuClick = (item) => {
+    if (item.action) {
+      item.action();
+    } else if (item.link) {
+      navigate(item.link);
+    }
+  };
 
   const menuItems = [
-    { icon: <LuHandHeart />, label: 'Help', link: '/help' },
-    { icon: <LuBookOpenText />, label: 'Terms and Conditions', link: '/terms' },
-    { icon: <MdOutlineShield />, label: 'Privacy Policy', link: '/privacy' },
-    { icon: <IoMdInformationCircleOutline />, label: 'About', link: '/about' },
-    { icon: <IoLogOutOutline />, label: 'Log Out', link: '/logout' }
+    { icon: <LuHandHeart />, label: 'Help', link: '/client/help' },
+    { icon: <LuBookOpenText />, label: 'Terms and Conditions', link: '/client/terms-and-conditions' },
+    { icon: <MdOutlineShield />, label: 'Privacy Policy', link: '/client/privacy-policy' },
+    { icon: <IoMdInformationCircleOutline />, label: 'About', link: '/client/about' },
+    { icon: <IoLogOutOutline />, label: 'Log Out', action: handleLogoutClick }
   ];
- 
+  
   return (
     <div className="profile-page-container">
         <Container fluid className="p-0 profile-container">
@@ -58,6 +83,8 @@ export default function ProfilePage() {
                     key={index}
                     className="menu-item"
                     action
+                    onClick={() => handleMenuClick(item)}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="menu-item-content">
                       <span className="menu-icon">{item.icon}</span>
@@ -72,12 +99,47 @@ export default function ProfilePage() {
 
           {/* Branding Footer */}
           <div className="branding-section">
-            <p className="branding-text">It's okay to ask for help.</p>
+            <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
             <div className="branding-logo">
-             
+               <Image src={logo_login} className="logo-image" />
             </div>
+            <p className="branding-year">Est. 2024</p>
           </div>
         </Container>
+
+        {/* Logout Modal */}
+        <Modal 
+          show={showLogoutModal} 
+          onHide={handleCloseModal}
+          centered
+          className="logout-modal"
+        >
+          <Modal.Body className="text-center p-4">
+            <div className="mb-3">
+              <IoLogOutOutline size={40} className="text-custom" />
+            </div>
+            <h5 className="mb-3">Log out ?</h5>
+            <p className="text-muted mb-4">
+              Are you sure you want to log out your account?
+            </p>
+            <div className="d-flex gap-3 justify-content-center">
+              <Button 
+                variant="outline-secondary" 
+                onClick={handleCloseModal}
+                className="px-4"
+              >
+                CANCEL
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleLogout}
+                className="px-4"
+              >
+                LOG OUT
+              </Button>
+            </div>
+          </Modal.Body>
+        </Modal>
     </div>
   );
 }

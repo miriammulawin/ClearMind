@@ -1,0 +1,169 @@
+.appointment-details-container {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.back-button {
+  color: #6B46C1;
+  text-decoration: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.back-button:hover {
+  color: #553C9A;
+  text-decoration: none;
+}
+
+.details-card {
+  border: 2px solid #6B46C1;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.details-header {
+  background-color: #E9D5FF;
+  border-bottom: 2px solid #6B46C1;
+  padding: 16px 20px;
+}
+
+.details-header h4 {
+  color: #6B46C1;
+  font-weight: 700;
+  margin: 0;
+  font-size: 18px;
+}
+
+.details-body {
+  padding: 24px;
+  background-color: #FDFBFF;
+}
+
+.status-badge-details {
+  font-size: 13px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.details-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #4A5568;
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  gap: 20px;
+}
+
+.detail-label {
+  color: #718096;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: #2D3748;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #E2E8F0;
+  margin: 20px 0;
+}
+
+.receipt-link {
+  color: #6B46C1;
+  text-decoration: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  justify-content: flex-end;
+}
+
+.receipt-link:hover {
+  color: #553C9A;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: #E53E3E;
+  border: 2px solid #E53E3E;
+  border-radius: 8px;
+  padding: 10px 40px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.cancel-button:hover {
+  background-color: #E53E3E;
+  color: white;
+}
+
+/* Badge color overrides */
+.badge.bg-warning {
+ background-color: #fff5b5 !important;
+  color: rgb(130, 130, 130) !important;
+}
+
+.badge.bg-info {
+   background-color: #a8bffd !important;
+  color: white !important;
+}
+
+.badge.bg-orange {
+  background-color: #FFCE99 !important;
+  color: white !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .detail-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .detail-label {
+    min-width: auto;
+  }
+  
+  .detail-value {
+    text-align: left;
+  }
+  
+  .receipt-link {
+    justify-content: flex-start;
+  }
+}

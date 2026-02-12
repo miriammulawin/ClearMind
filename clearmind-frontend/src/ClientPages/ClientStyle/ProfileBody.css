@@ -1,25 +1,23 @@
 /* Container Styles */
 .profile-page-container {
-  background-color: #e8e3f0;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .profile-container,
 .profile-container-full {
-  max-width: 480px;
+  max-width: 80%;
   margin: 0 auto;
-  background-color: #e8e3f0;
-  min-height: 100vh;
-  padding-bottom: 20px;
+  background-color: transparent;
+  padding-bottom: 100px;
 }
 
 .profile-container-full {
-  padding-bottom: 80px; /* Space for footer */
+  padding-bottom: 120px; 
 }
 
 /* Profile Header */
 .profile-header {
-  background-color: #e8e3f0;
+  background-color: transparent;
   padding: 20px;
 }
 
@@ -97,12 +95,11 @@
 /* Menu Section */
 .menu-section {
   padding: 0 20px 20px 20px;
+  
 }
 
 .menu-card {
-  border-radius: 15px;
   border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
@@ -112,9 +109,10 @@
   align-items: center;
   padding: 16px 20px;
   border: none;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #c1bfbf;
   cursor: pointer;
   transition: background-color 0.2s;
+  border-radius: 0px !important;
 }
 
 .menu-item:last-child {
@@ -122,7 +120,7 @@
 }
 
 .menu-item:hover {
-  background-color: #f9f7fc;
+  background-color: #e0d3f9 !important;
 }
 
 .menu-item-content {
@@ -152,125 +150,88 @@
 /* Branding Section */
 .branding-section {
   text-align: center;
-  padding: 40px 20px 20px 20px;
+  padding: 10px 20px 100px 20px; 
 }
 
 .branding-text {
-  color: #5e4b8b;
   font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 20px;
+  font-weight: 600;
+  color: #4a3968;
+  margin: 0px;
 }
 
 .branding-logo {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 10px;
 }
 
-.logo-butterfly {
-  font-size: 48px;
-  transform: rotate(-10deg);
+.logo-image {
+  max-width: 280px;
+  height: auto;
+  width: 100%;
 }
 
-.logo-text h4 {
-  color: #5e4b8b;
-  font-weight: 700;
-  font-size: 24px;
+.branding-year {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a3968;
   margin: 0;
 }
 
-.logo-text p {
-  color: #5e4b8b;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  margin: 5px 0;
-}
-
-.logo-text small {
-  color: #5e4b8b;
-  font-size: 10px;
-}
-
-/* Bottom Navigation Footer */
-.bottom-nav-footer {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 480px;
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  padding: 15px 0;
-  background-color: white;
-  border-top: 1px solid #ddd;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.nav-item {
-  background: none;
+.logout-modal .modal-content {
+  border-radius: 15px;
   border: none;
-  text-align: center;
-  cursor: pointer;
-  color: #999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 15px;
-  transition: color 0.2s;
 }
 
-.nav-item:hover {
-  color: #5e4b8b;
+.logout-modal .modal-body {
+  padding: 2rem;
 }
 
-.nav-item.active {
-  color: #5e4b8b;
+.logout-modal h5 {
   font-weight: 600;
+  color: #333;
 }
 
-.nav-icon {
-  font-size: 24px;
+.logout-modal .text-muted {
+  color: #6c757d !important;
+  font-size: 0.95rem;
 }
 
-.nav-item small {
-  font-size: 11px;
+.logout-modal .btn-outline-secondary {
+  border-color: #cd0707;
+  color: #cd0707;
+  font-weight: 500;
+  border-radius: 8px;
 }
 
-/* Demo Toggle Button */
-.demo-toggle {
-  text-align: center;
-  padding: 20px;
+.logout-modal .btn-outline-secondary:hover {
+  background-color: #cd0707;
+  border-color: #ddd;
+  color: #ddd;
 }
 
-.toggle-btn {
-  background-color: #5e4b8b;
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 12px 30px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.logout-modal .btn-primary {
+  background-color: #5a3e9f;
+  border-color: #5a3e9f;
+  font-weight: 500;
+  border-radius: 8px;
 }
 
-.toggle-btn:hover {
-  background-color: #4a3a6f;
+.logout-modal .btn-primary:hover {
+  background-color: #4a2e8f;
+  border-color: #4a2e8f;
 }
+
+.text-custom{
+  color: #4a2e8f;
+}
+
 
 /* Mobile Responsiveness */
 @media (max-width: 480px) {
   .profile-container,
   .profile-container-full {
-    max-width: 100%;
-  }
-  
-  .bottom-nav-footer {
     max-width: 100%;
   }
 }

@@ -1,0 +1,26 @@
+.client-appointment-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: white;
+}
+
+.tab-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sticky-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background-color: white;
+}

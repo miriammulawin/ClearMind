@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Card, Button, Dropdown, Badge } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaVideo, FaClinicMedical } from "react-icons/fa";
+import MOCK_APPOINTMENTS from '../../../src/MockData/MockAppointment.js';
 import "../ClientStyle/UpcomingTab.css"
 
+
 const UpcomingTab = () => {
+  const navigate = useNavigate();
   const [selectedStatus, setSelectedStatus] = useState('Pending');
   
   // Helper function to get day of the week
@@ -20,7 +24,7 @@ const UpcomingTab = () => {
     } else if (type === 'Online Consultation') {
       return <FaVideo className='appointment-icon' />;
     }
-    return <FaVideo className='appointment-icon' />; // default
+    return <FaVideo className='appointment-icon' />;
   };
   
   // Helper function to get empty state message based on status
@@ -32,64 +36,29 @@ const UpcomingTab = () => {
     };
     return messages[status] || 'You have no upcoming appointments.';
   };
-
+  
   // Helper function to get status badge variant
   const getStatusBadgeVariant = (status) => {
     const variants = {
-      'Pending': 'warning',      // Yellow
-      'Confirmed': 'info',        // Light Blue
-      'Rescheduled': 'orange'     // Orange (custom)
+      'Pending': 'warning',
+      'Confirmed': 'info',
+      'Rescheduled': 'orange'
     };
     return variants[status] || 'secondary';
   };
   
-  // Sample data - replace with your actual data from API
-  const appointments = [
-    {
-      id: 1,
-      time: '9:00 A.M.',
-      date: 'February 19, 2026',
-      serviceType: 'Psychotherapy and Counseling',
-      doctor: 'Juan Dela Cruz',
-      type: 'Clinic - CMPS',
-      status: 'Pending'
-    },
-    {
-      id: 2,
-      time: '10:00 A.M.',
-      date: 'January 27, 2026',
-      serviceType: 'Psychiatric Assessment',
-      doctor: 'Maria Santos',
-      type: 'Online Consultation',
-      status: 'Confirmed'
-    },
-    {
-      id: 3,
-      time: '11:00 A.M.',
-      date: 'January 28, 2026',
-      serviceType: 'Mental Health Certification',
-      doctor: 'Pedro Reyes',
-      type: 'Online Consultation',
-      status: 'Rescheduled'
-    },
-    {
-      id: 4,
-      time: '2:00 P.M.',
-      date: 'January 29, 2026',
-      serviceType: 'Follow-up Consultation',
-      doctor: 'Ana Rodriguez',
-      type: 'Clinic - CMPS',
-      status: 'Pending'
-    }
-  ];
-
+  // Handler for View Details button
+  const handleViewDetails = (appointmentId) => {
+    navigate(`/client/appointment/upcoming/${appointmentId}`);
+  };
+  
   const statusOptions = ['Pending', 'Confirmed', 'Rescheduled'];
   
   // Filter appointments based on selected status
-  const filteredAppointments = appointments.filter(
+  const filteredAppointments = MOCK_APPOINTMENTS.filter(
     apt => apt.status === selectedStatus
   );
-
+  
   return (
     <Container className="py-4 upcoming-container">
       <div className="d-flex justify-content-between align-items-center mb-3 header-section">
@@ -114,7 +83,7 @@ const UpcomingTab = () => {
           </Dropdown.Menu>
         </Dropdown>
       </div>
-
+      
       <div className='appointments-list'>
         {filteredAppointments.length === 0 ? (
           <div className='no-appointments'>
@@ -131,7 +100,7 @@ const UpcomingTab = () => {
                 >
                   {appointment.status}
                 </Badge>
-
+                
                 <div className='appointment-details'>
                   <div className='appointment-info'>
                     <div className='info-row'>
@@ -159,7 +128,11 @@ const UpcomingTab = () => {
                     </div>
                   </div>
                   
-                  <Button variant="outline-purple" className='view-details-btn'>
+                  <Button 
+                    variant="outline-purple" 
+                    className='view-details-btn'
+                    onClick={() => handleViewDetails(appointment.id)}
+                  >
                     VIEW DETAILS
                   </Button>
                 </div>
