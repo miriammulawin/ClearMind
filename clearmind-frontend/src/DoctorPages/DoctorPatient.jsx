@@ -117,13 +117,13 @@ function DoctorPatient() {
   };
 
   return (
-    <div className="admin-layout">
+    <div className="layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
-      <div className="admin-main">
+      <div className="main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
-        <div className="admin-content" style={{ padding: "20px" }}>
+        <div className="content" style={{ padding: "20px" }}>
           <div className="patient-card">
             {/* TABS */}
             <div className="patient-tabs">
