@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Row, Col, Form, Button, Image } from "react-bootstrap";
 import "./Registration.css";
-import logo_registration from "../assets/CMPS_Logo.png";
+import logo_registration from "./assets/CMPS_Logo.png";
 import {
   FaEye,
   FaEyeSlash,
@@ -356,7 +356,7 @@ function Registration() {
                   <button
                     type="button"
                     className="link-button"
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/login")}
                   >
                     Log In
                   </button>

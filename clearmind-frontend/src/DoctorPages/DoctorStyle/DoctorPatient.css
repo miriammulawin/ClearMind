@@ -94,34 +94,38 @@
   margin-right: 6px;
 }
 
-.patient-table-wrapper td{
-  color: #4d4952;
-}
 .btn-view {
   background: #7341A8;
   color: #fff;
   width: 90px;
   border: 1px solid #7341A8;
-   transition: all 0.3s ease;
 }
 
 .btn-view:hover {
-  background: #ffffff !important;
-  color:  #7341A8;
+  background: #fff;
+  color: #7341A8;
   border: 1px solid #7341A8;
-   transition: all 0.3s ease;
 }
 
+.btn-completed {
+  background-color: #4D227C;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
 
-
-
-
+.btn-completed:hover:not(:disabled) {
+  background-color: #3a1a66;
+}
 
 .btn-completed:disabled {
-  background-color: #445c9163;
-  color: #2b223499;
+  background-color: #ccc;
   cursor: not-allowed;
-  border-radius: 8px;
 }
 
 
@@ -170,11 +174,6 @@
   background: #005892;
   color: white;
   cursor: pointer;
-  border: none;
-  color: white;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  border-radius: 8px;
 }
 
 .btn-completed:not(:disabled):hover {
@@ -189,17 +188,15 @@
   color: #fff;
   width: 90px;
   border: 1px solid #4A965B;
-    transition: all 0.3s ease;
 }
 
 .btn-confirm:hover {
   background: #fff;
   color:#4A965B;
   border: 1px solid #4A965B;
-   transition: all 0.3s ease;
 }
 
-
+/* MODAL */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -209,15 +206,11 @@
   justify-content: center;
   z-index: 999;
 }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
 .modal-card {
   background: #fff;
   width: 420px;
- 
+  padding: 24px;
   border-radius: 14px;
   position: relative;
   animation: scaleIn 0.2s ease;
@@ -271,22 +264,9 @@
   flex-direction: column;
   border-radius: 12px;
   background-color: #fff;
-padding: 0;
+  padding: 20px;
   position: relative;
-animation: modalSlideIn 0.3s ease;
 }
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 
 .modal-header {
   position: sticky;
@@ -315,6 +295,11 @@ animation: modalSlideIn 0.3s ease;
   margin-top: 15px;
 }
 
-.modal-section p{
-  color: #4D227C;
+.patient-table-wrapper td{
+  color: #333333;
+}
+
+.modal-section{
+      color: #333333 !important;
+
 }

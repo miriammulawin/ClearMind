@@ -65,7 +65,7 @@ function ManageAccounts() {
     },
   ]);
 
-  // Custom roles
+
   const allRoles = [
     "Add Clinic",
     "Edit Appointment",

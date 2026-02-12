@@ -147,7 +147,7 @@ function AdminClinic() {
     setClinics([...clinics, newClinic]);
     setShowModal(false);
 
-    // Reset form
+ 
     setClinicForm({
       name: "",
       blk: "",

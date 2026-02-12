@@ -82,7 +82,7 @@ function AdminAppointment() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className="admin-content" style={{ padding: "20px" }}>
           <br />
-          <div className="appointment-card">
+  
             <div
               style={{
                 display: "flex",
@@ -134,7 +134,7 @@ function AdminAppointment() {
                 };
               }}
             />
-          </div>
+  
         </div>
       </div>
 

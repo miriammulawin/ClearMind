@@ -1,18 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
-import { RiDashboardFill } from "react-icons/ri";
-import { FaUserPlus, FaCalendarDays } from "react-icons/fa6";
-import { FaClinicMedical, FaMoneyCheck } from "react-icons/fa";
+import { FaCalendarDays } from "react-icons/fa6";
+import { FaMoneyCheck } from "react-icons/fa";
 import { BsPersonLinesFill } from "react-icons/bs";
-import { MdManageAccounts } from "react-icons/md";
 import { BiSolidUserCircle } from "react-icons/bi";
-
 
 import "../index.css";
 import logo from "../assets/CMPS_Logo.png";
 
-function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
+function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [tooltip, setTooltip] = useState({
     text: "",
@@ -25,18 +22,26 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const location = useLocation();
 
   const menus = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin/dashboard" },
-    { name: "Create Accounts", icon: <FaUserPlus />, path: "/create/accounts" },
     {
       name: "Appointment",
       icon: <FaCalendarDays />,
-      path: "/admin/appointment",
+      path: "/doctor/appointment",
     },
-    { name: "Patients", icon: <BsPersonLinesFill />, path: "/admin/patients" },
-    { name: "Clinic", icon: <FaClinicMedical />, path: "/admin/clinic" },
-    { name: "Billing", icon: <FaMoneyCheck />, path: "/admin/billing" },
-    { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage/account" },
-    { name: "My Profile", icon: <BiSolidUserCircle />, path: "/admin/profile" },
+    {
+      name: "Patients",
+      icon: <BsPersonLinesFill />,
+      path: "/doctor/patient",
+    },
+    {
+      name: "Billing",
+      icon: <FaMoneyCheck />,
+      path: "/doctor/billing",
+    },
+    {
+      name: "My Profile",
+      icon: <BiSolidUserCircle />,
+      path: "/doctor/profile",
+    },
   ];
 
   const handleMenuClick = (item) => {
@@ -58,13 +63,9 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
           <div className="profile-section">
             <div className="profile-pic"></div>
             <div className="profile-info">
-              <h5 className="profile-name">Admin101</h5>
-              <p className="profile-contact">admin@gmail.com · 09123456767</p>
-              <FiEdit
-                className="edit-icon"
-                onClick={() => navigate("/admin/profile")}
-                style={{ cursor: "pointer" }}
-              />
+              <h5 className="profile-name">Jinky C. Malabanan</h5>
+              <p className="profile-contact">PRC License No.: PSY-0123456</p>
+              <FiEdit className="edit-icon" />
             </div>
           </div>
 
@@ -121,4 +122,4 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   );
 }
 
-export default AdminSideBar;
+export default DoctorSideBar;

@@ -113,7 +113,7 @@
 }
 
 .container-fluid {
-background-color: white !important;
+background-color: white;
 }
 .patients-table {
   width: 100%;
