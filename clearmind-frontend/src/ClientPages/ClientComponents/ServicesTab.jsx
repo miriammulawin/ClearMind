@@ -1,11 +1,26 @@
 import React, { useState } from 'react';
 import { Accordion, Button } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "../ClientStyle/ServicesTab.css";
 
-
 const ClientAppointmentServices = () => {
+  const navigate = useNavigate();
   const [activeKey, setActiveKey] = useState('0');
+
+  // Handler for Continue button
+  const handleContinue = (serviceTitle) => {
+    // Only allow booking for Psychotherapy and Counseling
+    if (serviceTitle === 'Psychotherapy and Counseling') {
+      // Navigate to book appointment page
+      navigate('/client/appointment/book-appointment', { 
+        state: { selectedService: serviceTitle } 
+      });
+    } else {
+      // Show alert for other services
+      alert(`${serviceTitle} booking will be available soon. This feature is currently under development.`);
+    }
+  };
 
   const services = [
     {
@@ -36,7 +51,7 @@ const ClientAppointmentServices = () => {
     {
       id: '5',
       title: 'Mental Health Certification',
-      description: 'CThe purpose of a Mental Health Certification is to provide an official document issued by a licensed mental health professional confirming an individual’s mental health status. It is often used for employment, academic, legal, or medical purposes to verify psychological fitness, treatment progress, or readiness for certain activities.'
+      description: 'The purpose of a Mental Health Certification is to provide an official document issued by a licensed mental health professional confirming an individual’s mental health status. It is often used for employment, academic, legal, or medical purposes to verify psychological fitness, treatment progress, or readiness for certain activities.'
     }
   ];
 
@@ -47,10 +62,7 @@ const ClientAppointmentServices = () => {
       </h5>
       {/* Scrollable Body */}
       <div className="scrollable-body">
-        <Accordion 
-          activeKey={activeKey} 
-          onSelect={(key) => setActiveKey(key)}
-        >
+        <Accordion>
           {services.map((service) => (
             <Accordion.Item 
               key={service.id} 
@@ -66,7 +78,10 @@ const ClientAppointmentServices = () => {
                 <p className="service-description">
                   {service.description}
                 </p>
-                <Button className="continue-button">
+                <Button 
+                  className="continue-button"
+                  onClick={() => handleContinue(service.title)}
+                >
                   CONTINUE
                 </Button>
               </Accordion.Body>

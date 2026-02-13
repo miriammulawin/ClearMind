@@ -7,7 +7,7 @@
   height: calc(100vh - 200px); 
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .header-section {

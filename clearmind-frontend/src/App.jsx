@@ -17,6 +17,8 @@ import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndCondition
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentDetails";
+import BookAppointment from "./ClientPages/ClientComponents/BookAppointment";
+import BookAppointmentForm from './ClientPages/ClientComponents/BookAppointmentForm';
 
 
 function App() {
@@ -34,6 +36,8 @@ function App() {
         <Route path="/client/appointment" element={<ClientAppointment />}>
           <Route index element={<Navigate to="services" replace />} />
           <Route path="services" element={<ServicesTab />} />
+          <Route path="book-appointment" element={<BookAppointment />} />
+          <Route path="book-form" element={<BookAppointmentForm />} />
           <Route path="upcoming" element={<UpcomingTab />} />
           <Route path="history" element={<HistoryTab />} />
           <Route path="upcoming/:id" element={<AppointmentDetails />} />
