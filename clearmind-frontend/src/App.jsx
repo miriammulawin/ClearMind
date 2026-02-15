@@ -1,14 +1,19 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Toaster } from "react-hot-toast"; 
+import { Toaster } from "react-hot-toast";
 
 import Login from "./Login";
 import Registration from "./Registration";
 
+import DoctorDashboard from "./DoctorPages/DoctorDashboard";
 import DoctorAppointment from "./DoctorPages/DoctorAppointment";
 import DoctorPatient from "./DoctorPages/DoctorPatient";
-import DoctorBilling from "./DoctorPages/DoctorBilling";
-import DoctorProfile from "./DoctorPages/DoctorProfile"
+import DoctorProfile from "./DoctorPages/DoctorProfile";
 
 import CreateAccounts from "./AdminPages/CreateAccounts";
 import AdminDashboard from "./AdminPages/AdminDashboard";
@@ -29,7 +34,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Registration />} />
           <Route path="/create/accounts" element={<CreateAccounts />} />
-          
+
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/manage/account" element={<ManageAccounts />} />
           <Route path="/admin/profile" element={<AdminProfile />} />
@@ -39,9 +44,9 @@ function App() {
           <Route path="/admin/appointment" element={<AdminAppointment />} />
           <Route path="/admin/billing" element={<AdminBilling />} />
 
+          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/doctor/appointment" element={<DoctorAppointment />} />
           <Route path="/doctor/patient" element={<DoctorPatient />} />
-          <Route path="/doctor/billing" element={<DoctorBilling />} />
           <Route path="/doctor/profile" element={<DoctorProfile />} />
         </Routes>
       </Router>

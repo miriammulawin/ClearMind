@@ -5,6 +5,7 @@ import { FaCalendarDays } from "react-icons/fa6";
 import { FaMoneyCheck } from "react-icons/fa";
 import { BsPersonLinesFill } from "react-icons/bs";
 import { BiSolidUserCircle } from "react-icons/bi";
+import { RiDashboardFill } from "react-icons/ri";
 
 import "../index.css";
 import logo from "../assets/CMPS_Logo.png";
@@ -22,6 +23,7 @@ function DoctorSideBar() {
   const location = useLocation();
 
   const menus = [
+    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
     {
       name: "Appointment",
       icon: <FaCalendarDays />,
@@ -31,11 +33,6 @@ function DoctorSideBar() {
       name: "Patients",
       icon: <BsPersonLinesFill />,
       path: "/doctor/patient",
-    },
-    {
-      name: "Billing",
-      icon: <FaMoneyCheck />,
-      path: "/doctor/billing",
     },
     {
       name: "My Profile",

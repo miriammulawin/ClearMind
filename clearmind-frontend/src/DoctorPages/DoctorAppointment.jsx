@@ -6,7 +6,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
-import "./DoctorStyle/DoctorAppointment.css"; // reuse the same CSS
+import "./DoctorStyle/DoctorAppointment.css";
 import { FiX, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const locales = { "en-US": enUS };
@@ -64,7 +64,6 @@ function DoctorAppointment() {
     endTime: "",
   });
 
-  // Schedule state: each day can have multiple time slots
   const [weeklySchedule, setWeeklySchedule] = useState({
     Monday: [],
     Tuesday: [],
@@ -104,7 +103,7 @@ function DoctorAppointment() {
       ...weeklySchedule,
       [selectedDay]: [
         ...weeklySchedule[selectedDay],
-        { startTime: "", endTime: "" },
+        { startTime: "", endTime: "", clinicType: "" },
       ],
     });
   };
@@ -126,11 +125,14 @@ function DoctorAppointment() {
   };
 
   const handleSaveSchedule = () => {
-
     for (const day of DAYS_OF_WEEK) {
       for (const slot of weeklySchedule[day]) {
         if (!slot.startTime || !slot.endTime) {
           alert("Please fill in all time slots or remove empty ones");
+          return;
+        }
+        if (!slot.clinicType) {
+          alert("Please select a clinic type for all time slots");
           return;
         }
       }
@@ -141,11 +143,11 @@ function DoctorAppointment() {
   };
 
   return (
-    <div className="doctor-layout">
+    <div className="admin-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-      <div className="doctor-main">
+      <div className="admin-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
-        <div className="doctor-content" style={{ padding: "20px" }}>
+        <div className="admin-content" style={{ padding: "20px" }}>
           <br />
           <div className="appointment-card">
             <div
@@ -224,7 +226,23 @@ function DoctorAppointment() {
 
       {/* Create Appointment Modal */}
       {showModal && (
-        <div className="appointment-modal-overlay">
+        <div
+          className="appointment-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+            overflowY: "auto",
+          }}
+        >
           <div className="appointment-modal-lg">
             <div className="modal-header">
               <h2>New Appointment</h2>
@@ -358,7 +376,23 @@ function DoctorAppointment() {
 
       {/* Add Schedule Modal */}
       {showScheduleModal && (
-        <div className="appointment-modal-overlay">
+        <div
+          className="appointment-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+            overflowY: "auto",
+          }}
+        >
           <div className="appointment-modal-lg">
             <div className="modal-header">
               <h2>Add Weekly Schedule</h2>
@@ -469,76 +503,168 @@ function DoctorAppointment() {
                           key={index}
                           style={{
                             display: "flex",
-                            gap: "10px",
-                            alignItems: "center",
-                            padding: "12px",
+                            flexDirection: "column",
+                            gap: "16px",
+                            padding: "16px",
                             backgroundColor: "#f9f9f9",
                             borderRadius: "8px",
                             border: "1px solid #e0e0e0",
                           }}
                         >
-                          <span style={{ fontWeight: "500", minWidth: "80px" }}>
-                            Slot {index + 1}:
-                          </span>
-                          <input
-                            type="time"
-                            value={slot.startTime}
-                            placeholder="- Start Time"
-                            onChange={(e) =>
-                              handleTimeSlotChange(
-                                selectedDay,
-                                index,
-                                "startTime",
-                                e.target.value,
-                              )
-                            }
+                          <div
                             style={{
-                              padding: "10px 12px",
-                              borderRadius: "6px",
-                              border: "1px solid #ddd",
-                              fontSize: "14px",
-                              minWidth: "150px",
-                            }}
-                          />
-                          <span style={{ fontWeight: "500" }}>to</span>
-                          <input
-                            type="time"
-                            value={slot.endTime}
-                            placeholder="- End Time"
-                            onChange={(e) =>
-                              handleTimeSlotChange(
-                                selectedDay,
-                                index,
-                                "endTime",
-                                e.target.value,
-                              )
-                            }
-                            style={{
-                              padding: "10px 12px",
-                              borderRadius: "6px",
-                              border: "1px solid #ddd",
-                              fontSize: "14px",
-                              minWidth: "150px",
-                            }}
-                          />
-                          <button
-                            onClick={() =>
-                              handleRemoveTimeSlot(selectedDay, index)
-                            }
-                            style={{
-                              padding: "8px",
-                              borderRadius: "6px",
-                              border: "none",
-                              backgroundColor: "#ff4444",
-                              color: "#fff",
-                              cursor: "pointer",
                               display: "flex",
+                              gap: "10px",
                               alignItems: "center",
-                              justifyContent: "center",
                             }}
                           >
-                            <FiTrash2 />
-                          </button>
+                            <span
+                              style={{ fontWeight: "500", minWidth: "80px" }}
+                            >
+                              Slot {index + 1}:
+                            </span>
+                            <input
+                              type="time"
+                              value={slot.startTime}
+                              placeholder="- Start Time"
+                              onChange={(e) =>
+                                handleTimeSlotChange(
+                                  selectedDay,
+                                  index,
+                                  "startTime",
+                                  e.target.value,
+                                )
+                              }
+                              style={{
+                                padding: "10px 12px",
+                                borderRadius: "6px",
+                                border: "1px solid #ddd",
+                                fontSize: "14px",
+                                minWidth: "150px",
+                              }}
+                            />
+                            <span style={{ fontWeight: "500" }}>to</span>
+                            <input
+                              type="time"
+                              value={slot.endTime}
+                              placeholder="- End Time"
+                              onChange={(e) =>
+                                handleTimeSlotChange(
+                                  selectedDay,
+                                  index,
+                                  "endTime",
+                                  e.target.value,
+                                )
+                              }
+                              style={{
+                                padding: "10px 12px",
+                                borderRadius: "6px",
+                                border: "1px solid #ddd",
+                                fontSize: "14px",
+                                minWidth: "150px",
+                              }}
+                            />
+                            <button
+                              onClick={() =>
+                                handleRemoveTimeSlot(selectedDay, index)
+                              }
+                              style={{
+                                padding: "8px",
+                                borderRadius: "6px",
+                                border: "none",
+                                backgroundColor: "#ff4444",
+                                color: "#fff",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </div>
+
+                          {/* Clinic Type Radio Buttons */}
+                          <div style={{ paddingLeft: "90px" }}>
+                            <h5
+                              style={{
+                                marginBottom: "10px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                color: "#333",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                              }}
+                            >
+                              Clinic Type
+                            </h5>
+                            <div style={{ display: "flex", gap: "20px" }}>
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  color: "#555",
+                                }}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`clinicType-${selectedDay}-${index}`}
+                                  value="online"
+                                  checked={slot.clinicType === "online"}
+                                  onChange={(e) =>
+                                    handleTimeSlotChange(
+                                      selectedDay,
+                                      index,
+                                      "clinicType",
+                                      e.target.value,
+                                    )
+                                  }
+                                  style={{
+                                    width: "16px",
+                                    height: "16px",
+                                    accentColor: "#4D227C",
+                                    cursor: "pointer",
+                                  }}
+                                />
+                                <span>Online Clinic</span>
+                              </label>
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  color: "#555",
+                                }}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`clinicType-${selectedDay}-${index}`}
+                                  value="physical"
+                                  checked={slot.clinicType === "physical"}
+                                  onChange={(e) =>
+                                    handleTimeSlotChange(
+                                      selectedDay,
+                                      index,
+                                      "clinicType",
+                                      e.target.value,
+                                    )
+                                  }
+                                  style={{
+                                    width: "16px",
+                                    height: "16px",
+                                    accentColor: "#4D227C",
+                                    cursor: "pointer",
+                                  }}
+                                />
+                                <span>Physical Clinic</span>
+                              </label>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -561,7 +687,6 @@ function DoctorAppointment() {
                         <div key={day} style={{ marginBottom: "8px" }}>
                           <strong>{day}:</strong>{" "}
                           {weeklySchedule[day].map((slot, idx) => {
-                            // Convert 24-hour format to 12-hour format with AM/PM
                             const formatTime = (time) => {
                               if (!time) return "";
                               const [hours, minutes] = time.split(":");
@@ -571,10 +696,18 @@ function DoctorAppointment() {
                               return `${displayHour}:${minutes} ${ampm}`;
                             };
 
+                            const clinicTypeLabel =
+                              slot.clinicType === "online"
+                                ? " (Online Clinic)"
+                                : slot.clinicType === "physical"
+                                  ? " (Physical Clinic)"
+                                  : "";
+
                             return (
                               <span key={idx}>
                                 {formatTime(slot.startTime)} -{" "}
                                 {formatTime(slot.endTime)}
+                                {clinicTypeLabel}
                                 {idx < weeklySchedule[day].length - 1
                                   ? ", "
                                   : ""}
