@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { Container, Card, Row, Col, Form, Button, Image, Alert } from "react-bootstrap";
+import {
+  Container,
+  Card,
+  Row,
+  Col,
+  Form,
+  Button,
+  Image,
+  Alert,
+} from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
-import { FaEye, FaEyeSlash, FaLock} from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosClient from "./api/axiosClient";
 import toast from "react-hot-toast";
-
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -16,18 +24,18 @@ function Login() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  
+
   const showError = (message) => {
     setError(message);
     setTimeout(() => {
       setError("");
-    }, 3000); 
+    }, 3000);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    
+
     // Validate empty fields
     if (!email.trim() || !password.trim()) {
       showError("Please enter both email and password");
@@ -46,22 +54,22 @@ function Login() {
       showError("You must agree to the Terms & Conditions");
       return;
     }
-
     try {
-      const response = await axios.post(
-        "http://localhost/ClearMind/clearmind-backend/login.php",
-        { email, password },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      const data = response.data;
+      const { data } = await axiosClient.post("/login", {
+        email,
+        password,
+      });
 
       if (data.success) {
+        // Store data with consistent keys (matching what logout expects)
+        localStorage.setItem("AUTH_TOKEN", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("user_id", data.user_id);
+        localStorage.setItem("email", data.email);
+        
+        console.log("Role from backend:", data.role);
+        console.log("Navigating to:", data.role);
+
         toast.success("Login Successful !", {
           duration: 1500,
           style: {
@@ -80,18 +88,23 @@ function Login() {
             secondary: "#E2F7E3",
           },
         });
+
         setTimeout(() => {
           switch (data.role) {
             case "Admin":
+              console.log("Redirecting to admin dashboard...");
               navigate("/admin/dashboard");
               break;
             case "Doctor":
+              console.log("Redirecting to doctor appointment...");
               navigate("/doctor/appointment");
               break;
             case "Client":
+              console.log("Redirecting to client home...");
               navigate("/client/home");
               break;
             default:
+              console.log("Unknown role, redirecting to login...");
               navigate("/login");
           }
         }, 1500);
@@ -99,11 +112,11 @@ function Login() {
         showError(data.message || "Login failed.");
       }
     } catch (error) {
-      if (error.response) {
-        showError(error.response.data?.message || "Login failed.");
-      } else {
-        showError("Server error. Please try again later.");
-      }
+      console.error("Login error:", error);
+      showError(
+        error.response?.data?.message ||
+          "Server error. Please try again later.",
+      );
     }
   };
 
@@ -115,15 +128,16 @@ function Login() {
             <Card.Body className="card-body-responsive">
               <Row className="g-0">
                 <Col xs={12} className="text-center logo-section">
-                  <Image 
-                    src={logo_login} 
-                    fluid 
-                    className="logo-img d-block mx-auto" 
+                  <Image
+                    src={logo_login}
+                    fluid
+                    className="logo-img d-block mx-auto"
                   />
                 </Col>
                 <Col xs={12} className="text-center">
                   <p className="tagline-text">
-                    Log in to continue your journey toward a clearer, healthier mind.
+                    Log in to continue your journey toward a clearer, healthier
+                    mind.
                   </p>
                 </Col>
               </Row>
@@ -134,7 +148,7 @@ function Login() {
                     Email <span className="text-danger">*</span>
                   </Form.Label>
                   <div className="input-icon-wrapper">
-                    <MdEmail className="input-icon-left"/>
+                    <MdEmail className="input-icon-left" />
                     <Form.Control
                       type="email"
                       placeholder="Enter email"
@@ -146,13 +160,13 @@ function Login() {
                     />
                   </div>
                 </Form.Group>
-                
+
                 <Form.Group className="mb-3" controlId="password">
                   <Form.Label className="form-label-custom">
                     Password <span className="text-danger">*</span>
                   </Form.Label>
                   <div className="input-icon-wrapper">
-                    <FaLock className="input-icon-left"/>
+                    <FaLock className="input-icon-left" />
                     <Form.Control
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter password"
@@ -167,23 +181,27 @@ function Login() {
                       className="input-icon-right"
                       role="button"
                       tabIndex={0}
-                      onKeyPress={(e) => e.key === 'Enter' && setShowPassword(!showPassword)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && setShowPassword(!showPassword)
+                      }
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
                       {showPassword ? <FaEye /> : <FaEyeSlash />}
                     </span>
                   </div>
                 </Form.Group>
-                
+
                 <Form.Group className="mb-3" controlId="termsCheck">
-                  <Form.Check 
+                  <Form.Check
                     type="checkbox"
                     label={
                       <>
-                        I agree to the{' '}
+                        I agree to the{" "}
                         <a className="terms-link" href="/terms">
                           Terms & Conditions
-                        </a>{' '}
+                        </a>{" "}
                         <span className="text-danger">*</span>
                       </>
                     }
@@ -206,16 +224,16 @@ function Login() {
                   </Row>
                 )}
 
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   type="submit"
                   className="login-button w-100"
                 >
                   LOG IN
                 </Button>
-                
+
                 <p className="register-text text-center mb-0">
-                  Don't have an account?{' '}
+                  Don't have an account?{" "}
                   <a className="register-link" href="/register">
                     Register.
                   </a>

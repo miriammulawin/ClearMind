@@ -2,11 +2,11 @@ import { FiLogOut, FiSearch } from "react-icons/fi";
 import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import toast from "react-hot-toast";
-import axios from "axios";
+import axiosClient from "../api/axiosClient"; 
 import { useNavigate } from "react-router-dom";
 import "../index.css";
 
-function AdminTopNavbar({ activeMenu }) {
+function DoctorTopNavbar({ activeMenu }) {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -73,11 +73,16 @@ function AdminTopNavbar({ activeMenu }) {
 
   const performLogout = async () => {
     try {
-      await axios.post(
-        "http://localhost/ClearMind/clearmind-backend/logout.php",
-        {},
-        { withCredentials: true }
-      );
+      // Call Laravel logout endpoint using axiosClient
+      // axiosClient automatically adds the Bearer token from localStorage
+      await axiosClient.post("/logout");
+
+      // Clear all localStorage items
+      localStorage.removeItem("AUTH_TOKEN");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("email");
 
       // Success toast
       toast.success("Logged out successfully!", {
@@ -106,7 +111,15 @@ function AdminTopNavbar({ activeMenu }) {
       }, 500);
     } catch (error) {
       console.error("Logout failed:", error);
-      toast.error("Logout failed. Please try again later.", {
+      
+      // Even if API fails, clear local storage and redirect
+      localStorage.removeItem("AUTH_TOKEN");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("email");
+
+      toast.error("Logout completed. Please login again.", {
         duration: 2000,
         position: "top-center",
         style: {
@@ -125,6 +138,10 @@ function AdminTopNavbar({ activeMenu }) {
           secondary: "#FFEBEE",
         },
       });
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 500);
     }
   };
 
@@ -153,4 +170,4 @@ function AdminTopNavbar({ activeMenu }) {
   );
 }
 
-export default AdminTopNavbar;
+export default DoctorTopNavbar;

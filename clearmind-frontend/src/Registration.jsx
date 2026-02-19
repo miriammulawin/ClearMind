@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, Row, Col, Form, Button, Image } from "react-bootstrap";
 import "./Registration.css";
 import logo_registration from "./assets/CMPS_Logo.png";
+import axiosClient from "./api/axiosClient";
 import {
   FaEye,
   FaEyeSlash,
@@ -69,14 +70,38 @@ function Registration() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted:", formData);
-      alert("Registration successful!");
-      navigate("/");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+
+  try {
+    const { data } = await axiosClient.post("/register", {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      dob: formData.dob,
+      sex: formData.sex,
+      contactNo: formData.contactNo,
+      email: formData.email,
+      password: formData.password,
+      password_confirmation: formData.confirmPassword,
+      role: "Client", 
+    });
+
+    if (data.token) {
+      localStorage.setItem("AUTH_TOKEN", data.token);
     }
-  };
+
+    alert("Registration successful!");
+    navigate("/login");
+  } catch (error) {
+    if (error.response?.data?.errors) {
+      setErrors(error.response.data.errors);
+    } else {
+      alert(error.response?.data?.message || "Registration failed");
+    }
+  }
+};
+
 
   return (
     <div className="registration-container vh-100 d-flex justify-content-center align-items-center p-2">
