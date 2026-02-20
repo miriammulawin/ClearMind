@@ -39,27 +39,11 @@ class DatabaseSeeder extends Seeder
         );
 
         // Client user
-        User::firstOrCreate(
-            ['email' => 'client@clearmind.com'],
-            [
-                'first_name' => 'John',
-                'last_name'  => 'Doe',
-                'dob'        => '2000-03-20',
-                'sex'        => 'male',
-                'contact_no' => '09222222222',
-                'password'   => Hash::make('client123'),
-                'role'       => 'Client',
-            ]
-        );
-
-        $this->command->info('Seed users created successfully!');
-        $this->command->table(
-            ['Role', 'Email', 'Password'],
-            [
-                ['Admin',  'admin@clearmind.com',  'admin123'],
-                ['Doctor', 'doctor@clearmind.com', 'doctor123'],
-                ['Client', 'client@clearmind.com', 'client123'],
-            ]
-        );
+        User::factory()->count(100)->create([
+        'role' => 'Client',
+        'password' => Hash::make('client123'),
+    ]);
+       
+    $this->command->info('Admin, Doctor, and 100 Clients created successfully!');
     }
 }
