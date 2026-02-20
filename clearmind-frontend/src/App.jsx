@@ -14,6 +14,7 @@ import DoctorDashboard from "./DoctorPages/DoctorDashboard";
 import DoctorAppointment from "./DoctorPages/DoctorAppointment";
 import DoctorPatient from "./DoctorPages/DoctorPatient";
 import DoctorProfile from "./DoctorPages/DoctorProfile";
+import DoctorMessages from "./DoctorPages/DoctorMessages";
 
 import CreateAccounts from "./AdminPages/CreateAccounts";
 import AdminDashboard from "./AdminPages/AdminDashboard";
@@ -48,6 +49,7 @@ function App() {
           <Route path="/doctor/appointment" element={<DoctorAppointment />} />
           <Route path="/doctor/patient" element={<DoctorPatient />} />
           <Route path="/doctor/profile" element={<DoctorProfile />} />
+          <Route path="/doctor/messages" element={<DoctorMessages />} />
         </Routes>
       </Router>
     </>

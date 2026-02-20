@@ -146,7 +146,7 @@ function DoctorTopNavbar({ activeMenu }) {
       <div className="top-navbar-right">
         <AiFillMessage
           className="top-icon"
-          onClick={() => navigate("/admin/messages")}
+          onClick={() => navigate("/doctor/messages")}
           style={{ cursor: "pointer" }}
         />
 
