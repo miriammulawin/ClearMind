@@ -38,12 +38,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Client user
-        User::factory()->count(100)->create([
-        'role' => 'Client',
-        'password' => Hash::make('client123'),
-    ]);
-       
-    $this->command->info('Admin, Doctor, and 100 Clients created successfully!');
+
+
+    User::factory()->count(1000)->create();
+    $this->command->info('Admin, Doctor, and 1000 Clients created successfully!');
     }
 }

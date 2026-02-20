@@ -41,7 +41,7 @@ class User extends Authenticatable
 {
     return [
         'email_verified_at' => 'datetime',
-        'dob'               => 'date',
+        'dob' =>            'date:Y-m-d',
         'is_active'         => 'boolean',
         'password'          => 'hashed',
     ];
