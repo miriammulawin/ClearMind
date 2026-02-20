@@ -4,8 +4,8 @@ import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "axios";
 
+import axiosClient from "../axiosClient";  
 import "../index.css";
 import "./AdminStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
@@ -60,80 +60,70 @@ function AdminTopNavbar({ activeMenu }) {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
+  // ── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+      confirmButtonColor: "#a276d0",
+      cancelButtonColor: "#6c757d",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You will be logged out.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Yes, logout",
-        cancelButtonText: "Cancel",
-        reverseButtons: true,
-      });
-
-      if (result.isConfirmed) {
-        await axios.post(
-          "http://localhost/ClearMind/clearmind-backend/logout.php",
-          {},
-          { withCredentials: true },
-        );
-
-        Swal.fire({
-          icon: "success",
-          title: "Logged out successfully!",
-          showConfirmButton: false,
-          timer: 1500,
-          toast: true,
-          position: "top-end",
-        });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      }
+      // Call Laravel logout → revokes the Bearer token on the server
+      await axiosClient.post("/logout");
     } catch (error) {
-      console.error("Logout failed:", error);
+      // Even if the API call fails, we still clear local storage
+      console.error("Logout API error:", error);
+    } finally {
+      // Always clear localStorage regardless of API result
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+
       Swal.fire({
-        icon: "error",
-        title: "Logout failed",
-        text: "Please try again later.",
+        icon: "success",
+        title: "Logged out successfully!",
+        showConfirmButton: false,
+        timer: 1500,
+        toast: true,
+        position: "top-end",
       });
+
+      setTimeout(() => navigate("/"), 1500);
     }
   };
 
+  // ── Notification Helpers ─────────────────────────────────────────────────
   const markAsRead = (id) => {
     setNotifications(
-      notifications.map((notif) =>
-        notif.id === id ? { ...notif, isRead: true } : notif,
-      ),
+      notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(
-      notifications.map((notif) => ({ ...notif, isRead: true })),
-    );
+    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
   };
 
   const deleteNotification = (id) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id));
+    setNotifications(notifications.filter((n) => n.id !== id));
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case "appointment":
-        return "📅";
-      case "payment":
-        return "💰";
-      case "reminder":
-        return "⏰";
-      case "message":
-        return "💬";
-      case "cancelled":
-        return "❌";
-      default:
-        return "🔔";
+      case "appointment": return "📅";
+      case "payment":     return "💰";
+      case "reminder":    return "⏰";
+      case "message":     return "💬";
+      case "cancelled":   return "❌";
+      default:            return "🔔";
     }
   };
 
@@ -150,6 +140,7 @@ function AdminTopNavbar({ activeMenu }) {
           style={{ cursor: "pointer" }}
         />
 
+        {/* ── Notifications ─────────────────────────────────────────── */}
         <div className="notification-container">
           <IoNotifications
             className="top-icon"
@@ -171,10 +162,7 @@ function AdminTopNavbar({ activeMenu }) {
                   <h3>Notifications</h3>
                   <div className="notification-header-actions">
                     {unreadCount > 0 && (
-                      <button
-                        className="mark-all-read-btn"
-                        onClick={markAllAsRead}
-                      >
+                      <button className="mark-all-read-btn" onClick={markAllAsRead}>
                         Mark all as read
                       </button>
                     )}
@@ -194,9 +182,7 @@ function AdminTopNavbar({ activeMenu }) {
                     notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`notification-item ${
-                          !notif.isRead ? "unread" : ""
-                        }`}
+                        className={`notification-item ${!notif.isRead ? "unread" : ""}`}
                         onClick={() => markAsRead(notif.id)}
                       >
                         <div className="notification-icon">
@@ -205,9 +191,7 @@ function AdminTopNavbar({ activeMenu }) {
                         <div className="notification-content">
                           <h4>{notif.title}</h4>
                           <p>{notif.message}</p>
-                          <span className="notification-time">
-                            {notif.time}
-                          </span>
+                          <span className="notification-time">{notif.time}</span>
                         </div>
                         <button
                           className="delete-notification-btn"
@@ -241,11 +225,13 @@ function AdminTopNavbar({ activeMenu }) {
           )}
         </div>
 
+        {/* ── Search ────────────────────────────────────────────────── */}
         <div className="search-box">
           <input type="text" placeholder="Search" />
           <FiSearch className="search-icon" />
         </div>
 
+        {/* ── Logout ────────────────────────────────────────────────── */}
         <FiLogOut
           className="top-icon"
           style={{ cursor: "pointer" }}
