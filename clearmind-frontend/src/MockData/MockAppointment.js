@@ -94,6 +94,42 @@ export const MOCK_APPOINTMENTS = [
     homeAddress: 'Cabuyao City',
     paymentMode: 'Cash',
     receiptUrl: '#'
+  },
+  {
+    id: 6,
+    time: '3:00 P.M.',
+    date: 'February 21 2026',
+    serviceType: 'Initial Consultation',
+    doctor: 'Dr. Santos',
+    type: 'Online Consultation',
+    status: 'Confirmed',
+    patientName: 'Juan Dela Cruz',
+    classification: 'Regular',
+    sex: 'Male',
+    dateOfBirth: '09/01/2003',
+    contactNumber: '+63 9XXXXXXXXX',
+    email: 'example@gmail.com',
+    homeAddress: 'Cabuyao City',
+    paymentMode: 'Cash',
+    receiptUrl: '#'
+  },
+   {
+    id: 7,
+    time: '3:00 P.M.',
+    date: 'February 22 2026',
+    serviceType: 'Initial Consultation',
+    doctor: 'Dr. Santos',
+    type: 'Online Consultation',
+    status: 'Confirmed',
+    patientName: 'Juan Dela Cruz',
+    classification: 'Regular',
+    sex: 'Male',
+    dateOfBirth: '09/01/2003',
+    contactNumber: '+63 9XXXXXXXXX',
+    email: 'example@gmail.com',
+    homeAddress: 'Cabuyao City',
+    paymentMode: 'Cash',
+    receiptUrl: '#'
   }
 ];
 

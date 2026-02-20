@@ -2,77 +2,67 @@ import React, { useState } from 'react';
 import { Container, Card, Button, Dropdown, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaVideo, FaClinicMedical } from "react-icons/fa";
-import MOCK_APPOINTMENTS from '../../../src/MockData/MockAppointment.js';
-import "../ClientStyle/UpcomingTab.css"
-
+import MOCK_APPOINTMENTS from '../../MockData/MockAppointment.js';
+import "../ClientStyle/UpcomingTab.css";
 
 const UpcomingTab = () => {
   const navigate = useNavigate();
-  const [selectedStatus, setSelectedStatus] = useState('Pending');
-  
-  // Helper function to get day of the week
+
+  // No more Pending here — only Confirmed and Rescheduled
+  const [selectedStatus, setSelectedStatus] = useState('Confirmed');
+
   const getDayOfWeek = (dateString) => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const date = new Date(dateString);
     return days[date.getDay()];
   };
-  
-  // Helper function to determine icon based on appointment type
+
   const getAppointmentIcon = (type) => {
     if (type === 'Clinic - CMPS') {
       return <FaClinicMedical className='appointment-icon' />;
-    } else if (type === 'Online Consultation') {
-      return <FaVideo className='appointment-icon' />;
     }
     return <FaVideo className='appointment-icon' />;
   };
-  
-  // Helper function to get empty state message based on status
+
   const getEmptyMessage = (status) => {
     const messages = {
-      'Pending': 'You have no pending appointments.',
       'Confirmed': 'You have no confirmed appointments.',
-      'Rescheduled': 'You have no rescheduled appointments.'
+      'Rescheduled': 'You have no rescheduled appointments.',
     };
     return messages[status] || 'You have no upcoming appointments.';
   };
-  
-  // Helper function to get status badge variant
+
   const getStatusBadgeVariant = (status) => {
     const variants = {
-      'Pending': 'warning',
       'Confirmed': 'info',
-      'Rescheduled': 'orange'
+      'Rescheduled': 'orange',
     };
     return variants[status] || 'secondary';
   };
-  
-  // Handler for View Details button
+
   const handleViewDetails = (appointmentId) => {
     navigate(`/client/appointment/upcoming/${appointmentId}`);
   };
-  
-  const statusOptions = ['Pending', 'Confirmed', 'Rescheduled'];
-  
-  // Filter appointments based on selected status
+
+  // Only Confirmed and Rescheduled — Pending is handled by PendingTab
+  const statusOptions = ['Confirmed', 'Rescheduled'];
+
   const filteredAppointments = MOCK_APPOINTMENTS.filter(
-    apt => apt.status === selectedStatus
+    (apt) => apt.status === selectedStatus
   );
-  
+
   return (
     <Container className="py-4 upcoming-container">
       <div className="d-flex justify-content-between align-items-center mb-3 header-section">
-        <h5 className='title-upcoming'>
-          SCHEDULED APPOINTMENTS
-        </h5>
-        
+        <h5 className='title-upcoming'>SCHEDULED APPOINTMENTS</h5>
+
         <Dropdown className="status-dropdown">
           <Dropdown.Toggle variant="outline-purple" id="dropdown-status">
             {selectedStatus}
           </Dropdown.Toggle>
           <Dropdown.Menu>
             {statusOptions.map((status) => (
-              <Dropdown.Item 
+              <Dropdown.Item
                 key={status}
                 active={selectedStatus === status}
                 onClick={() => setSelectedStatus(status)}
@@ -83,7 +73,7 @@ const UpcomingTab = () => {
           </Dropdown.Menu>
         </Dropdown>
       </div>
-      
+
       <div className='appointments-list'>
         {filteredAppointments.length === 0 ? (
           <div className='no-appointments'>
@@ -94,13 +84,13 @@ const UpcomingTab = () => {
           filteredAppointments.map((appointment) => (
             <Card key={appointment.id} className='appointment-card'>
               <Card.Body>
-                <Badge 
-                  bg={getStatusBadgeVariant(appointment.status)} 
+                <Badge
+                  bg={getStatusBadgeVariant(appointment.status)}
                   className='status-badge-upcoming'
                 >
                   {appointment.status}
                 </Badge>
-                
+
                 <div className='appointment-details'>
                   <div className='appointment-info'>
                     <div className='info-row'>
@@ -127,9 +117,9 @@ const UpcomingTab = () => {
                       <span className='value doctor-name'>{appointment.doctor}</span>
                     </div>
                   </div>
-                  
-                  <Button 
-                    variant="outline-purple" 
+
+                  <Button
+                    variant="outline-purple"
                     className='view-details-btn'
                     onClick={() => handleViewDetails(appointment.id)}
                   >

@@ -1,0 +1,378 @@
+/* ─── Page Layout ───────────────────────────────────────── */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f5f0fc;
+}
+
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.stickyFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.bodyWrapper {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 14px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background-color: transparent;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 35px !important;
+}
+
+/* Custom Scrollbar */
+.bodyWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bodyWrapper::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.bodyWrapper::-webkit-scrollbar-thumb {
+  background: #d8c5ee;
+  border-radius: 10px;
+}
+
+.bodyWrapper::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
+
+/* ─── Carousel ──────────────────────────────────────────── */
+.hcWrap {
+  width: 100%;
+}
+
+.hcHeading {
+  font-size: clamp(0.85rem, 2.5vw, 1.25rem);
+  font-weight: 700;
+  color: #542982;
+  text-align: center;
+  line-height: 1.45;
+  margin: 0 0 14px;
+  padding: 0 12px;
+}
+
+.hcViewport {
+  overflow: hidden;
+  padding: 4px 32px;
+}
+
+.hcTrack {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.hcSlide {
+  flex: 0 0 calc(100% - 64px);
+  width: calc(100% - 64px);
+  height: clamp(110px, 18vw, 200px);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 3px 14px rgba(84, 41, 130, 0.12);
+}
+
+.hcDots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.hcDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #cbb8e8;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.hcDotActive {
+  background: #542982;
+  transform: scale(1.35);
+}
+
+/* ─── Next Available Session ────────────────────────────── */
+.huWrap {
+  width: 100%;
+}
+
+.huSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.huTitle {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 700;
+  color: #542982;
+}
+
+.huCount {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 700;
+  color: #542982;
+}
+
+.huEarliestLabel {
+  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+  font-weight: 700;
+  color: #2d1a47;
+  margin: 0 0 10px;
+}
+
+.huBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Empty state */
+.huEmpty {
+  padding: 28px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #9b7ec8;
+  font-size: clamp(0.78rem, 2vw, 0.95rem);
+  text-align: center;
+  border: 1.5px solid #b89dda;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.huEmptyIcon {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  color: #c3a6e8;
+}
+
+.huEmpty p {
+  margin: 0;
+}
+
+/* ─── Appointment Card ───────────────────────────────────── */
+.huCard {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 14px);
+  background: #fff;
+  border: 1.5px solid #e0d0f5;
+  border-radius: 14px;
+  padding: clamp(10px, 2.5vw, 16px) clamp(10px, 2.5vw, 18px);
+  box-shadow: 0 2px 8px rgba(84, 41, 130, 0.06);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Left accent strip */
+.huCardAccent {
+  width: 4px;
+  min-width: 4px;
+  height: clamp(38px, 8vw, 54px);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* Main info */
+.huCardInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.huCardDate {
+  font-size: clamp(0.7rem, 1.8vw, 0.86rem);
+  color: #888;
+  font-weight: 500;
+}
+
+.huCardService {
+  font-size: clamp(0.78rem, 2vw, 1rem);
+  font-weight: 700;
+  color: #2d1a47;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.huCardDoctor {
+  font-size: clamp(0.68rem, 1.7vw, 0.84rem);
+  color: #7c5aaa;
+  font-weight: 500;
+}
+
+/* Right side: badge + icon + button */
+.huCardRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.huBadge {
+  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 3px clamp(7px, 1.8vw, 11px);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+.huIconType {
+  color: #b89dda;
+  font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+}
+
+.huViewDetailsBtn {
+  border: 1.5px solid #542982;
+  background: transparent;
+  color: #542982;
+  border-radius: 20px;
+  padding: clamp(3px, 0.8vw, 6px) clamp(8px, 2vw, 14px);
+  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+.huViewDetailsBtn:hover {
+  background: #542982;
+  color: #fff;
+}
+
+/* ─── View All Appointments Button ──────────────────────── */
+.huViewAllRow {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.huViewAllBtn {
+  width: clamp(200px, 70%, 360px);
+  background: #3D1278;
+  color: #fff;
+  border: none;
+  border-radius: 28px;
+  padding: clamp(11px, 2.5vw, 16px) 0;
+  font-size: clamp(0.82rem, 2vw, 1.05rem);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.2s;
+  box-sizing: border-box;
+}
+
+.huViewAllBtn:hover {
+  background: #2d0d5e;
+}
+
+/* ─── Responsive Breakpoints ─────────────────────────────── */
+
+/* Small phones (< 360px) */
+@media (max-width: 359px) {
+  .bodyWrapper {
+    padding: 14px 10px 24px;
+    gap: 14px;
+  }
+
+  .hcViewport {
+    padding: 4px 24px;
+  }
+
+  .hcSlide {
+    flex: 0 0 calc(100% - 48px);
+    width: calc(100% - 48px);
+  }
+
+  .huViewAllBtn {
+    width: 90%;
+  }
+}
+
+/* Tablet portrait (≥ 600px) */
+@media (min-width: 600px) {
+  .bodyWrapper {
+    padding: 24px 32px 36px;
+    gap: 24px;
+  }
+
+  .hcViewport {
+    padding: 4px 48px;
+  }
+
+  .hcSlide {
+    flex: 0 0 calc(100% - 96px);
+    width: calc(100% - 96px);
+  }
+
+  .huViewAllBtn {
+    width: 55%;
+  }
+}
+
+/* Tablet landscape / small laptop (≥ 768px) */
+@media (min-width: 768px) {
+  .bodyWrapper {
+    padding: 28px 48px 44px;
+    gap: 28px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .huViewAllBtn {
+    width: 50%;
+  }
+}
+
+/* Laptop / Desktop (≥ 1024px) */
+@media (min-width: 1024px) {
+  .bodyWrapper {
+    padding: 36px 64px 56px;
+    max-width: 860px;
+    gap: 32px;
+  }
+
+  .huViewAllBtn {
+    width: 45%;
+  }
+}
+
+/* Wide desktop (≥ 1280px) */
+@media (min-width: 1280px) {
+  .bodyWrapper {
+    max-width: 960px;
+    padding: 40px 80px 60px;
+  }
+
+  .huViewAllBtn {
+    width: 40%;
+  }
+}

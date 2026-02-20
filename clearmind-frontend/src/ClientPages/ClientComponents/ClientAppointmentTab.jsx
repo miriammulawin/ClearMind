@@ -13,6 +13,7 @@ const ClientAppointmentTab = () => {
   // Determine active tab based on current route
   const getActiveTab = () => {
     if (location.pathname.includes('/services')) return 'services';
+    if (location.pathname.includes('/pending')) return 'pending';
     if (location.pathname.includes('/upcoming')) return 'upcoming';
     if (location.pathname.includes('/history')) return 'history';
     return 'services';
@@ -37,6 +38,16 @@ const ClientAppointmentTab = () => {
             Services
           </Nav.Link>
         </Nav.Item>
+
+        <Nav.Item className='nav-item'>
+          <Nav.Link 
+            eventKey="pending" 
+            active={activeTab === 'pending'}
+            onClick={() => handleTabChange('pending')}
+          >
+            Pending
+          </Nav.Link>
+        </Nav.Item>
         
         <Nav.Item className='nav-item'>
           <Nav.Link 
@@ -44,7 +55,7 @@ const ClientAppointmentTab = () => {
             active={activeTab === 'upcoming'}
             onClick={() => handleTabChange('upcoming')}
           >
-            Upcoming
+            Scheduled
           </Nav.Link>
         </Nav.Item>
         

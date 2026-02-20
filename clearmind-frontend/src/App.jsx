@@ -8,7 +8,8 @@ import AdminDashboard from "./AdminPages/AdminDashboard";
 import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
 import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
-import UpcomingTab from "./ClientPages/ClientComponents/UpcomingTab";
+import PendingTab from "./ClientPages/ClientComponents/PendingTab";
+import UpcomingTab from "./ClientPages/ClientComponents/ScheduleTab";
 import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
 import ClientMessages from "./ClientPages/ClientMessages";
 import ClientProfile from "./ClientPages/ClientProfile";
@@ -38,6 +39,7 @@ function App() {
           <Route path="services" element={<ServicesTab />} />
           <Route path="book-appointment" element={<BookAppointment />} />
           <Route path="book-form" element={<BookAppointmentForm />} />
+          <Route path="pending" element={<PendingTab />} />
           <Route path="upcoming" element={<UpcomingTab />} />
           <Route path="history" element={<HistoryTab />} />
           <Route path="upcoming/:id" element={<AppointmentDetails />} />
