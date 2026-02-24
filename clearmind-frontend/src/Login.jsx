@@ -9,12 +9,12 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email,        setEmail]        = useState("");
+  const [password,     setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [agreed,       setAgreed]       = useState(false);
+  const [error,        setError]        = useState("");
+  const [loading,      setLoading]      = useState(false);
   const navigate = useNavigate();
 
   const showError = (message) => {
@@ -26,18 +26,15 @@ function Login() {
     e.preventDefault();
     setError("");
 
-    // Frontend validation
     if (!email.trim() || !password.trim()) {
       showError("Please enter both email and password");
       return;
     }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       showError("Please enter a valid email address");
       return;
     }
-
     if (!agreed) {
       showError("You must agree to the Terms & Conditions");
       return;
@@ -47,67 +44,71 @@ function Login() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/login",  // ← Laravel API
+        "http://127.0.0.1:8000/api/login",
         { email, password },
         {
           headers: {
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            "Accept":       "application/json",
           },
         }
       );
 
-      const data = response.data;
+      // ── Your Laravel returns: ──────────────────────────────────────
+      // { success: true, data: { token, role, user } }
+      const { success, data } = response.data;
 
-      if (data.success) {
-        // Save token and user info to localStorage
-        localStorage.setItem("token", data.data.token);
-        localStorage.setItem("role", data.data.role);
-        localStorage.setItem("user", JSON.stringify(data.data.user));
+      if (success && data?.token) {
+        const { token, role, user } = data;
+
+        // Store auth keys
+        localStorage.setItem("token", token);
+        localStorage.setItem("role",  role);
+
+        // Store full user object so profile fields survive logout/login
+        localStorage.setItem("user", JSON.stringify(user));
+
+        // Store profile image URL from backend (real URL, not base64)
+        if (user?.profilePictureUrl) {
+          localStorage.setItem("profile_image", user.profilePictureUrl);
+        } else {
+          localStorage.removeItem("profile_image");
+        }
+
+        // Tell sidebar to refresh immediately
+        window.dispatchEvent(new Event("profileUpdated"));
 
         toast.success("Login Successful!", {
           duration: 1500,
           style: {
-            background: "#E2F7E3",
-            border: "1px solid #91C793",
-            color: "#2E7D32",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            textAlign: "center",
-            maxWidth: "320px",
+            background:   "#E2F7E3",
+            border:       "1px solid #91C793",
+            color:        "#2E7D32",
+            fontWeight:   600,
+            fontSize:     "0.95rem",
+            textAlign:    "center",
+            maxWidth:     "320px",
             borderRadius: "10px",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+            boxShadow:    "0 3px 10px rgba(0, 0, 0, 0.15)",
           },
-          iconTheme: {
-            primary: "#2E7D32",
-            secondary: "#E2F7E3",
-          },
+          iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
 
         setTimeout(() => {
-          switch (data.data.role) {
-            case "Admin":
-              navigate("/admin/dashboard");
-              break;
-            case "Doctor":
-              navigate("/doctor/dashboard");
-              break;
-            case "Client":
-              navigate("/client/home");
-              break;
-            default:
-              navigate("/");
+          switch (role) {
+            case "Admin":  navigate("/admin/dashboard");  break;
+            case "Doctor": navigate("/doctor/dashboard"); break;
+            case "Client": navigate("/client/home");      break;
+            default:       navigate("/");
           }
         }, 1500);
       }
     } catch (err) {
       if (err.response) {
-        // Laravel validation errors (422)
         if (err.response.status === 422) {
           const firstError = Object.values(err.response.data.errors)?.[0]?.[0];
           showError(firstError || "Validation failed.");
         } else {
-          // 401 Unauthorized or other errors
           showError(err.response.data?.message || "Login failed.");
         }
       } else {
@@ -126,11 +127,7 @@ function Login() {
             <Card.Body className="card-body-responsive">
               <Row className="g-0">
                 <Col xs={12} className="text-center logo-section">
-                  <Image
-                    src={logo_login}
-                    fluid
-                    className="logo-img d-block mx-auto"
-                  />
+                  <Image src={logo_login} fluid className="logo-img d-block mx-auto" />
                 </Col>
                 <Col xs={12} className="text-center">
                   <p className="tagline-text">
@@ -190,9 +187,7 @@ function Login() {
                     label={
                       <>
                         I agree to the{" "}
-                        <a className="terms-link" href="/terms">
-                          Terms & Conditions
-                        </a>{" "}
+                        <a className="terms-link" href="/terms">Terms & Conditions</a>{" "}
                         <span className="text-danger">*</span>
                       </>
                     }
@@ -205,9 +200,7 @@ function Login() {
                 {error && (
                   <Row className="mb-2">
                     <Col>
-                      <small className="text-danger d-block text-center">
-                        {error}
-                      </small>
+                      <small className="text-danger d-block text-center">{error}</small>
                     </Col>
                   </Row>
                 )}
@@ -223,9 +216,7 @@ function Login() {
 
                 <p className="register-text text-center mb-0">
                   Don't have an account?{" "}
-                  <a className="register-link" href="/register">
-                    Register.
-                  </a>
+                  <a className="register-link" href="/register">Register.</a>
                 </p>
               </Form>
             </Card.Body>

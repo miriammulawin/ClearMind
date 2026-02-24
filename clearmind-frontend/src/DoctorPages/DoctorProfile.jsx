@@ -2,11 +2,77 @@ import { useState, useEffect, useRef } from "react";
 import { FiPlus, FiX } from "react-icons/fi";
 import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
+import Swal from "sweetalert2";
+import axiosClient from "../axiosClient";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function DoctorProfile() {
-  const [activeMenu, setActiveMenu] = useState("My Profile");
-  const [isEditing, setIsEditing]   = useState(false);
-  const fileInputRef                = useRef(null);
+  const [activeMenu,    setActiveMenu]    = useState("My Profile");
+  const [isEditing,     setIsEditing]     = useState(false);
+  const [saveLoading,   setSaveLoading]   = useState(false);
+  const fileInputRef                      = useRef(null);
+  const navigate                          = useNavigate();
+  const [profileFile,   setProfileFile]   = useState(null); // actual File object for upload
+const fetchProfile = async () => {
+  try {
+    const res = await axiosClient.get("/profile");
+    const user = res.data.data; // FIX HERE
+
+    localStorage.setItem("user", JSON.stringify(user));
+
+    if (user.profilePictureUrl) {
+      localStorage.setItem("profile_image", user.profilePictureUrl);
+    }
+
+    setForm(initForm());
+    setPreviewImage(user.profilePictureUrl || null);
+
+  } catch (error) {
+    console.error("Failed to fetch profile:", error);
+  }
+};
+  // ── Logout ──────────────────────────────────────────────────────
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title:             "Are you sure?",
+      text:              "You will be logged out.",
+      icon:              "warning",
+      showCancelButton:  true,
+      confirmButtonText: "Yes, logout",
+      cancelButtonText:  "Cancel",
+      reverseButtons:    true,
+      confirmButtonColor:"#a276d0",
+      cancelButtonColor: "#6c757d",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axiosClient.post("/logout");
+    } catch (error) {
+      console.error("Logout API error:", error);
+    } finally {
+      //  Remove auth keys + profile_image cache
+      // Profile data stays safe in the DATABASE —
+      // it will be restored automatically on next login.
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      localStorage.removeItem("profile_image");
+
+      Swal.fire({
+        icon:              "success",
+        title:             "Logged out successfully!",
+        showConfirmButton: false,
+        timer:             1500,
+        toast:             true,
+        position:          "top-end",
+      });
+
+      setTimeout(() => navigate("/"), 1500);
+    }
+  };
 
   // ── Read user from localStorage ─────────────────────────────────
   const getUser = () => {
@@ -59,33 +125,32 @@ function DoctorProfile() {
       dateOfBirth:     formatDate(u?.dob) || "",
       age:             computeAge(u?.dob) || "",
       gender:          capitalize(u?.sex) || "",
-      prcNumber:       u?.prcNumber       || "Not set",
+      prcNumber:       u?.prcNumber       || u?.licenseNumber || "Not set",
       bio:             u?.description     || "",
-      specialty:       u?.specialty       || "",
+      specialty:       u?.specialty       || (safeParse(u?.specializations)[0] ?? ""),
       practicingSince: u?.practicingSince || "",
-      credentials:     u?.credentials     || "",
+      credentials:     u?.credentials     || u?.professionalTitle || "",
       // list fields
-      subspecialty:    safeParse(u?.subSpecializations),
+      subspecialty:   safeParse(u?.subSpecializations),
       services:        safeParse(u?.services),
       certifications:  safeParse(u?.boardCertificates),
-      // temp input fields for adding items
-      newSubspecialty:   "",
-      newService:        "",
-      newCertification:  "",
-      // password
+      // temp input fields
+      newSubspecialty:  "",
+      newService:       "",
+      newCertification: "",
+      // password fields
       currentPassword: "",
       newPassword:     "",
       confirmPassword: "",
     };
   };
 
-  const [form, setForm]           = useState(initForm);
+  const [form,         setForm]         = useState(initForm);
   const [previewImage, setPreviewImage] = useState(localStorage.getItem("profile_image") || null);
 
-  useEffect(() => {
-    setForm(initForm());
-    setPreviewImage(localStorage.getItem("profile_image") || null);
-  }, []);
+useEffect(() => {
+  fetchProfile();
+}, []);
 
   const user     = getUser();
   const fullName = user?.fullName || `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || "Doctor";
@@ -99,6 +164,7 @@ function DoctorProfile() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setProfileFile(file); // keep the File object for FormData upload
     const reader = new FileReader();
     reader.onload = (ev) => {
       setPreviewImage(ev.target.result);
@@ -112,7 +178,7 @@ function DoctorProfile() {
     if (!val) return;
     setForm(prev => ({
       ...prev,
-      [field]:     [...prev[field], val],
+      [field]:      [...prev[field], val],
       [inputField]: "",
     }));
   };
@@ -124,39 +190,121 @@ function DoctorProfile() {
     }));
   };
 
- const handleSave = () => {
-  const u = getUser();
-  const updated = {
-    ...u,
-    description:        form.bio,
-    specialty:          form.specialty,
-    practicingSince:    form.practicingSince,
-    credentials:        form.credentials,
-    subSpecializations: JSON.stringify(form.subspecialty),
-    services:           JSON.stringify(form.services),
-    boardCertificates:  JSON.stringify(form.certifications),
-    // also keep name fields in sync
-    firstName:          form.firstName,
-    lastName:           form.lastName,
-    middleInitial:      form.middleInitial,
-    contactNo:          form.contactNumber,
-    email:              form.email,
+  // ── Save — posts to backend then syncs localStorage ─────────────
+  const handleSave = async () => {
+    setSaveLoading(true);
+    try {
+      const payload = new FormData();
+
+      // File upload only if a new image was selected
+      if (profileFile) {
+        payload.append("profile_picture", profileFile);
+      }
+
+      payload.append("professional_title",  form.credentials || form.specialty);
+      payload.append("description",         form.bio);
+      payload.append("years_of_experience", "");
+      payload.append("license_number",      form.prcNumber === "Not set" ? "" : form.prcNumber);
+      payload.append("practicing_since",    form.practicingSince);
+      payload.append("specializations",     JSON.stringify(
+        form.specialty ? [form.specialty] : form.subspecialty
+      ));
+      payload.append("sub_specializations", JSON.stringify(form.subspecialty));
+      payload.append("board_certificates",  JSON.stringify(form.certifications));
+      payload.append("services",            JSON.stringify(form.services));
+
+      const res = await axiosClient.post("/doctor/setup", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // ── Sync the returned full user object back to localStorage ──
+      // The backend returns the updated user with all fields + image URL
+      const updatedUser = res.data.user;
+      if (updatedUser) {
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        // Update profile_image cache with the real server URL
+        if (updatedUser.profilePictureUrl) {
+          localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
+          setPreviewImage(updatedUser.profilePictureUrl);
+        }
+
+        // Refresh form from the server response so everything is in sync
+        setForm(prev => ({
+          ...prev,
+          profileImage: updatedUser.profilePictureUrl || prev.profileImage,
+          credentials:  updatedUser.credentials       || prev.credentials,
+          bio:          updatedUser.description        || prev.bio,
+          specialty:    updatedUser.specialty          || prev.specialty,
+          practicingSince: updatedUser.practicingSince || prev.practicingSince,
+          subspecialty:    safeParse(updatedUser.subSpecializations),
+          services:        safeParse(updatedUser.services),
+          certifications:  safeParse(updatedUser.boardCertificates),
+        }));
+      }
+
+      // Clear the file ref since it's been uploaded
+      setProfileFile(null);
+
+      // Notify sidebar to refresh
+      window.dispatchEvent(new Event("profileUpdated"));
+
+      toast.success("Profile saved!", {
+        duration: 2000,
+        style: {
+          background:   "#E2F7E3",
+          border:       "1px solid #91C793",
+          color:        "#2E7D32",
+          fontWeight:   600,
+          borderRadius: "10px",
+        },
+      });
+
+      setIsEditing(false);
+
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to save. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSaveLoading(false);
+    }
   };
-  localStorage.setItem("user", JSON.stringify(updated));
 
-  if (form.profileImage) {
-    localStorage.setItem("profile_image", form.profileImage);
-  }
-
-  // Tell the sidebar to re-read localStorage immediately
-  window.dispatchEvent(new Event("profileUpdated"));
-
-  setIsEditing(false);
-};
+  // ── Save password ────────────────────────────────────────────────
+  const handleSavePassword = async () => {
+    if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
+      toast.error("Please fill in all password fields.");
+      return;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+    setSaveLoading(true);
+    try {
+      await axiosClient.post("/change-password", {
+        current_password:      form.currentPassword,
+        new_password:          form.newPassword,
+        new_password_confirmation: form.confirmPassword,
+      });
+      toast.success("Password updated successfully!", {
+        duration: 2000,
+        style: { background: "#E2F7E3", border: "1px solid #91C793", color: "#2E7D32", fontWeight: 600, borderRadius: "10px" },
+      });
+      setForm(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+      setIsEditing(false);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to update password.";
+      toast.error(msg);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
 
   const handleCancel = () => {
     setForm(initForm());
     setPreviewImage(localStorage.getItem("profile_image") || null);
+    setProfileFile(null);
     setIsEditing(false);
   };
 
@@ -256,7 +404,6 @@ function DoctorProfile() {
                             {initials}
                           </span>
                         )}
-                        {/* Overlay when editing */}
                         {isEditing && (
                           <div
                             className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center"
@@ -268,7 +415,6 @@ function DoctorProfile() {
                         )}
                       </div>
 
-                      {/* Hidden file input */}
                       <input
                         type="file"
                         accept="image/*"
@@ -315,7 +461,7 @@ function DoctorProfile() {
                         <button
                           className="btn d-flex align-items-center py-3 px-3 border-0"
                           style={{ backgroundColor: "transparent", color: "#DC2626", borderRadius: "8px", textAlign: "left" }}
-                          onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+                          onClick={handleLogout}
                         >
                           <i className="bi bi-box-arrow-right me-3" style={{ color: "#DC2626" }} />
                           Logout
@@ -453,40 +599,29 @@ function DoctorProfile() {
                         {/* Subspecialty */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">SUBSPECIALTY</label>
-                          <TagList
-                            items={form.subspecialty}
-                            field="subspecialty"
-                            inputField="newSubspecialty"
-                            placeholder="Add subspecialty..."
-                          />
+                          <TagList items={form.subspecialty} field="subspecialty" inputField="newSubspecialty" placeholder="Add subspecialty..." />
                         </div>
 
                         {/* Services */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">MY SERVICES</label>
-                          <TagList
-                            items={form.services}
-                            field="services"
-                            inputField="newService"
-                            placeholder="Add service..."
-                          />
+                          <TagList items={form.services} field="services" inputField="newService" placeholder="Add service..." />
                         </div>
 
                         {/* Board Certifications */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">BOARD CERTIFICATIONS</label>
-                          <TagList
-                            items={form.certifications}
-                            field="certifications"
-                            inputField="newCertification"
-                            placeholder="Add certification..."
-                          />
+                          <TagList items={form.certifications} field="certifications" inputField="newCertification" placeholder="Add certification..." />
                         </div>
 
                         {isEditing && (
                           <div className="d-flex gap-2 justify-content-end">
-                            <button className="btn btn-outline-secondary" style={{ borderRadius: "8px" }} onClick={handleCancel}>Cancel</button>
-                            <button className="btn text-white" style={{ backgroundColor: "#4D227C", borderRadius: "8px" }} onClick={handleSave}>Save Changes</button>
+                            <button className="btn btn-outline-secondary" style={{ borderRadius: "8px" }} onClick={handleCancel} disabled={saveLoading}>
+                              Cancel
+                            </button>
+                            <button className="btn text-white" style={{ backgroundColor: "#4D227C", borderRadius: "8px", minWidth: "110px" }} onClick={handleSave} disabled={saveLoading}>
+                              {saveLoading ? "Saving..." : "Save Changes"}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -506,7 +641,7 @@ function DoctorProfile() {
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-1">Email</label>
                           <input type="email" className="form-control border-0 bg-light" style={{ borderRadius: "8px" }}
-                            value={form.email} onChange={(e) => handleChange("email", e.target.value)} disabled={!isEditing} />
+                            value={form.email} onChange={(e) => handleChange("email", e.target.value)} disabled />
                         </div>
 
                         {isEditing && (
@@ -542,8 +677,12 @@ function DoctorProfile() {
 
                         {isEditing && (
                           <div className="d-flex gap-2 justify-content-end">
-                            <button className="btn btn-outline-secondary" style={{ borderRadius: "8px" }} onClick={handleCancel}>Cancel</button>
-                            <button className="btn text-white" style={{ backgroundColor: "#4D227C", borderRadius: "8px" }} onClick={handleSave}>Save Changes</button>
+                            <button className="btn btn-outline-secondary" style={{ borderRadius: "8px" }} onClick={handleCancel} disabled={saveLoading}>
+                              Cancel
+                            </button>
+                            <button className="btn text-white" style={{ backgroundColor: "#4D227C", borderRadius: "8px", minWidth: "110px" }} onClick={handleSavePassword} disabled={saveLoading}>
+                              {saveLoading ? "Saving..." : "Save Changes"}
+                            </button>
                           </div>
                         )}
                       </div>

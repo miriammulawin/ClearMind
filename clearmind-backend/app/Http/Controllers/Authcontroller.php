@@ -5,28 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    // ─────────────────────────────────────────────────────────────────────────
-    // REGISTER
-    // POST /api/register
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── REGISTER ───────────────────────────────────────────────────────────
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'firstName'       => ['required', 'string', 'max:100'],
-            'lastName'        => ['required', 'string', 'max:100'],
-            'dob'             => ['required', 'date', 'before:today'],
-            'sex'             => ['required', 'in:male,female'],
-            'contactNo'       => ['required', 'string', 'max:20'],
-            'email'           => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password'        => ['required', 'confirmed', Password::min(6)],
-            // 'password_confirmation' is handled by the 'confirmed' rule
+            'firstName' => ['required', 'string', 'max:100'],
+            'lastName'  => ['required', 'string', 'max:100'],
+            'dob'       => ['required', 'date', 'before:today'],
+            'sex'       => ['required', 'in:male,female'],
+            'contactNo' => ['required', 'string', 'max:20'],
+            'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password'  => ['required', 'confirmed', Password::min(6)],
         ]);
 
         $user = User::create([
@@ -37,28 +31,24 @@ class AuthController extends Controller
             'contact_no' => $validated['contactNo'],
             'email'      => $validated['email'],
             'password'   => Hash::make($validated['password']),
-            
-            'role'       => 'Client', 
+            'role'       => 'Client',
         ]);
 
-        // Issue a Sanctum token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Registration successful.',
             'data'    => [
-                'user'  => $this->formatUser($user),
-                'token' => $token,
+                'user'       => $this->formatUser($user),
+                'token'      => $token,
                 'token_type' => 'Bearer',
+                'role'       => $user->role,
             ],
         ], 201);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // LOGIN
-    // POST /api/login
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── LOGIN ──────────────────────────────────────────────────────────────
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -66,19 +56,16 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Find user by email
         $user = User::where('email', $request->email)->first();
 
-        // Check credentials
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid email or password.',
             ], 401);
         }
 
-        // Check if account is active
-        if (! $user->is_active) {
+        if (!$user->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your account has been deactivated. Please contact support.',
@@ -87,29 +74,25 @@ class AuthController extends Controller
 
         // Revoke all previous tokens (single-session)
         $user->tokens()->delete();
-
-        // Issue a new Sanctum token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
             'message' => 'Login successful.',
             'data'    => [
-                'user'       => $this->formatUser($user),
                 'token'      => $token,
                 'token_type' => 'Bearer',
                 'role'       => $user->role,
+                // Full user with ALL profile fields — frontend stores this in
+                // localStorage so everything is restored on every login
+                'user'       => $this->formatUser($user),
             ],
         ], 200);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // LOGOUT
-    // POST /api/logout   (requires auth:sanctum)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── LOGOUT ────────────────────────────────────────────────────────────
     public function logout(Request $request): JsonResponse
     {
-        // Revoke the token that was used to authenticate this request
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -118,10 +101,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET AUTHENTICATED USER PROFILE
-    // GET /api/profile   (requires auth:sanctum)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── GET PROFILE ───────────────────────────────────────────────────────
     public function profile(Request $request): JsonResponse
     {
         return response()->json([
@@ -130,10 +110,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // UPDATE PROFILE
-    // PUT /api/profile   (requires auth:sanctum)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── UPDATE PROFILE ────────────────────────────────────────────────────
     public function updateProfile(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -154,7 +131,6 @@ class AuthController extends Controller
             'sex'        => $validated['sex']        ?? $user->sex,
             'contact_no' => $validated['contactNo']  ?? $user->contact_no,
             'email'      => $validated['email']      ?? $user->email,
-            
         ]);
 
         return response()->json([
@@ -164,10 +140,7 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // CHANGE PASSWORD
-    // POST /api/change-password   (requires auth:sanctum)
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── CHANGE PASSWORD ───────────────────────────────────────────────────
     public function changePassword(Request $request): JsonResponse
     {
         $request->validate([
@@ -177,16 +150,14 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        if (! Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Current password is incorrect.',
             ], 422);
         }
 
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        $user->update(['password' => Hash::make($request->password)]);
 
         return response()->json([
             'success' => true,
@@ -194,24 +165,46 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // HELPER: format user for JSON response
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── HELPER: format user for all JSON responses ─────────────────────────
+    // This now includes ALL doctor profile fields so the frontend can restore
+    // everything from localStorage after every login — no extra API calls needed.
     private function formatUser(User $user): array
     {
         return [
-            'id'         => $user->id,
-            'firstName'  => $user->first_name,
-            'lastName'   => $user->last_name,
-            'fullName'   => $user->full_name,
-            'dob'        => $user->dob?->format('Y-m-d'),
-            'sex'        => $user->sex,
-            'contactNo'  => $user->contact_no,
-            'email'      => $user->email,
-            'role'       => $user->role,
-            'isActive'   => $user->is_active,
-            'createdAt'  => $user->created_at?->toDateTimeString(),
-            'prcNumber' => $user->prc_number,
+            // ── Core fields ───────────────────────────────────────────
+            'id'          => $user->id,
+            'firstName'   => $user->first_name,
+            'lastName'    => $user->last_name,
+            'fullName'    => $user->full_name,
+            'dob'         => $user->dob?->format('Y-m-d'),
+            'sex'         => $user->sex,
+            'contactNo'   => $user->contact_no,
+            'email'       => $user->email,
+            'role'        => $user->role,
+            'isActive'    => $user->is_active,
+            'createdAt'   => $user->created_at?->toDateTimeString(),
+            'prcNumber'   => $user->prc_number ?? $user->license_number,
+
+            // ── Doctor profile fields ─────────────────────────────────
+            'professionalTitle'  => $user->professional_title,
+            'credentials'        => $user->professional_title, // alias used by frontend
+            'description'        => $user->description,
+            'yearsOfExperience'  => $user->years_of_experience,
+            'licenseNumber'      => $user->license_number,
+            'practicingSince'    => $user->practicing_since,
+
+            // ── JSON array fields (model casts these to arrays already) ─
+            'specializations'    => $user->specializations    ?? [],
+            'subSpecializations' => $user->sub_specializations ?? [],
+            'boardCertificates'  => $user->board_certificates  ?? [],
+            'services'           => $user->services            ?? [],
+
+            // Convenience: first specialization as "specialty" string
+            'specialty'          => ($user->specializations[0] ?? null),
+
+            // ── Image URLs (full public URLs, served by Laravel storage) ─
+            'profilePictureUrl'  => $user->profile_picture_url,
+            'certificateImageUrl'=> $user->certificate_image_url,
         ];
     }
 }

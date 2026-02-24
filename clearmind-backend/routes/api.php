@@ -30,9 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Doctor SIDE
     Route::get('/doctor/dashboard', [DoctorDashboardController::class, 'patients']);
-    Route::get('/doctor/patients', [DoctorDashboardController::class, 'patientList']);
+    Route::get('/doctor/patients', [DoctorDashboardController::class, 'patients']);
     Route::get('/doctor/status-counts',   [DoctorDashboardController::class, 'statusCounts']); 
     Route::get('/doctor/monthly-patients', [DoctorDashboardController::class, 'monthlyPatients']);
     Route::post('/doctor/setup', [DoctorDashboardController::class, 'setup']);
+    Route::put ('/doctor/profile', [DoctorDashboardController::class, 'updateProfile']);
 
 });

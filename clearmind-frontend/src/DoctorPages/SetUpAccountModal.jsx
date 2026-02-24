@@ -52,13 +52,44 @@ function SetUpAccountModal({ showModal, onClose }) {
   const [loading,  setLoading]  = useState(false);
 
   // Re-sync when modal opens
-  useEffect(() => {
-    if (showModal) {
-      setFormData(buildInitialForm());
-      setLists(buildInitialLists());
+useEffect(() => {
+  if (!showModal) return;
+
+  const fetchProfile = async () => {
+    try {
+      const res = await axiosClient.get("/profile");
+      const user = res.data.data; // FIX HERE
+
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setFormData({
+        profilePicture: null,
+        certificateImage: null,
+        description: user.description || "",
+        professionalTitle: user.professionalTitle || "",
+        yearsOfExperience: user.yearsOfExperience || "",
+        licenseNumber: user.licenseNumber || "",
+        specialization: "",
+        subSpecialization: "",
+        boardCertificate: "",
+        myServices: "",
+      });
+
+      setLists({
+        specializationList: user.specializations || [],
+        subSpecializationList: user.subSpecializations || [],
+        boardCertificateList: user.boardCertificates || [],
+        servicesList: user.services || [],
+      });
+
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModal]);
+  };
+
+  fetchProfile();
+
+}, [showModal]);
 
   const handleInputChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -91,91 +122,81 @@ function SetUpAccountModal({ showModal, onClose }) {
 
   // ── Submit ───────────────────────────────────────────────────────
   const handleUpload = async () => {
-    if (!formData.professionalTitle.trim()) {
-      toast.error("Professional Title is required.");
-      return;
+  console.log("UPLOAD CLICKED!");
+  if (!formData.professionalTitle.trim()) {
+    toast.error("Professional Title is required.");
+    return;
+  }
+
+  if (!formData.licenseNumber.trim()) {
+    toast.error("License Number is required.");
+    return;
+  }
+
+  if (lists.specializationList.length === 0) {
+    toast.error("Please add at least one Specialization.");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const payload = new FormData();
+
+    if (formData.profilePicture) {
+      payload.append("profile_picture", formData.profilePicture);
     }
-    if (!formData.licenseNumber.trim()) {
-      toast.error("License Number is required.");
-      return;
-    }
-    if (lists.specializationList.length === 0) {
-      toast.error("Please add at least one Specialization.");
-      return;
+
+    if (formData.certificateImage) {
+      payload.append("certificate_image", formData.certificateImage);
     }
 
-    setLoading(true);
+    payload.append("description", formData.description);
+    payload.append("professional_title", formData.professionalTitle);
+    payload.append("years_of_experience", formData.yearsOfExperience || "");
+    payload.append("license_number", formData.licenseNumber);
 
-    try {
-      const payload = new FormData();
+    // Always stringify arrays for FormData
+    payload.append("specializations", JSON.stringify(lists.specializationList));
+    payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
+    payload.append("board_certificates", JSON.stringify(lists.boardCertificateList));
+    payload.append("services", JSON.stringify(lists.servicesList));
 
-      if (formData.profilePicture)   payload.append("profile_picture",   formData.profilePicture);
-      if (formData.certificateImage) payload.append("certificate_image",  formData.certificateImage);
+    const res = await axiosClient.post("/doctor/setup", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-      payload.append("description",         formData.description);
-      payload.append("professional_title",  formData.professionalTitle);
-      payload.append("years_of_experience", formData.yearsOfExperience);
-      payload.append("license_number",      formData.licenseNumber);
-      payload.append("specializations",     JSON.stringify(lists.specializationList));
-      payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
-      payload.append("board_certificates",  JSON.stringify(lists.boardCertificateList));
-      payload.append("services",            JSON.stringify(lists.servicesList));
+    const updatedUser = res.data.user;
 
-      const res = await axiosClient.post("/doctor/setup", payload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+    if (updatedUser) {
+      // Save clean server response
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // ── Sync back to localStorage so sidebar + profile update instantly ──
-      const u       = getUser();
-      const updated = {
-        ...u,
-        description:        formData.description,
-        professionalTitle:  formData.professionalTitle,
-        credentials:        formData.professionalTitle,
-        yearsOfExperience:  formData.yearsOfExperience,
-        prcNumber:          formData.licenseNumber,
-        specialty:          lists.specializationList[0] || u?.specialty || "",
-        specializations:    JSON.stringify(lists.specializationList),
-        subSpecializations: JSON.stringify(lists.subSpecializationList),
-        boardCertificates:  JSON.stringify(lists.boardCertificateList),
-        services:           JSON.stringify(lists.servicesList),
-        // Merge any server response fields if available
-        ...(res?.data?.user || {}),
-      };
-      localStorage.setItem("user", JSON.stringify(updated));
-
-      // Save profile picture preview if a file was chosen
-      if (formData.profilePicture) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          localStorage.setItem("profile_image", ev.target.result);
-          window.dispatchEvent(new Event("profileUpdated"));
-        };
-        reader.readAsDataURL(formData.profilePicture);
-      } else {
-        // Dispatch even without image change so sidebar refreshes text
-        window.dispatchEvent(new Event("profileUpdated"));
+      if (updatedUser.profilePictureUrl) {
+        localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
       }
 
-      toast.success("Profile setup complete!", {
-        duration: 2000,
-        style: {
-          background:   "#E2F7E3",
-          border:       "1px solid #91C793",
-          color:        "#2E7D32",
-          fontWeight:   600,
-          borderRadius: "10px",
-        },
-      });
-
-      onClose();
-    } catch (err) {
-      const msg = err.response?.data?.message || "Upload failed. Please try again.";
-      toast.error(msg);
-    } finally {
-      setLoading(false);
+      // Notify other components (like sidebar)
+      window.dispatchEvent(new Event("profileUpdated"));
     }
-  };
+
+    toast.success("Profile setup complete!");
+    onClose();
+
+  } catch (err) {
+    console.log(err.response?.data);
+
+    const msg =
+      err.response?.data?.message ||
+      Object.values(err.response?.data?.errors || {})[0]?.[0] ||
+      "Upload failed. Please try again.";
+
+    toast.error(msg);
+  } finally {
+    setLoading(false);
+  }
+    };
+  
 
   if (!showModal) return null;
 
@@ -348,8 +369,8 @@ function SetUpAccountModal({ showModal, onClose }) {
       </div>
     </div>
   );
-}
 
+}
 export default SetUpAccountModal;
 
 // ── Helper Components ──────────────────────────────────────────────
@@ -402,7 +423,12 @@ const ListInput = ({ label, value, onChange, list, add, remove }) => (
         placeholder={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyPress={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            add();
+          }
+        }}
         className="form-control"
         style={{ borderRadius: "12px", height: "40px" }}
       />
@@ -448,3 +474,4 @@ const ListInput = ({ label, value, onChange, list, add, remove }) => (
     )}
   </div>
 );
+
