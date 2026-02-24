@@ -1,4 +1,4 @@
-/* ─── Page Layout ───────────────────────────────────────── */
+/* Page Layout  */
 .pageWrapper {
   display: flex;
   flex-direction: column;
@@ -54,7 +54,7 @@
   background: #4a2273;
 }
 
-/* ─── Carousel ──────────────────────────────────────────── */
+/*  Carousel*/
 .hcWrap {
   width: 100%;
 }
@@ -71,36 +71,98 @@
 
 .hcViewport {
   overflow: hidden;
-  padding: 4px 32px;
+  padding: 4px 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0px;
 }
 
+/* Arrow buttons */
+.hcArrow {
+  flex-shrink: 0;
+  width: clamp(28px, 6vw, 36px);
+  height: clamp(28px, 6vw, 36px);
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #be93ff;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+  z-index: 2;
+  padding: 0;
+}
+
+.hcArrow:hover {
+  background: #dabdff;
+  color: #2d0d5e;
+  border-radius: 50%;
+}
+
+/* Track clips inside the viewport area between arrows */
 .hcTrack {
+  flex: 1;
   display: flex;
   gap: 12px;
   transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  touch-action: pan-y;
+  cursor: grab;
 }
 
+.hcTrack:active {
+  cursor: grabbing;
+}
+
+/* Slide Card-*/
 .hcSlide {
-  flex: 0 0 calc(100% - 64px);
-  width: calc(100% - 64px);
-  height: clamp(110px, 18vw, 200px);
-  background: #ffffff;
+  flex: 0 0 auto; /* allow natural width */
+  min-width: 100%; /* full width of viewport */
+  width: 100%;
+  height: clamp(150px, 26vw, 230px);
   border-radius: 16px;
-  box-shadow: 0 3px 14px rgba(84, 41, 130, 0.12);
+  box-shadow: 0 4px 18px rgba(84, 41, 130, 0.18);
+  padding: clamp(12px, 3vw, 20px) clamp(14px, 3.5vw, 24px);
+  padding-bottom: clamp(36px, 8vw, 48px); /* room for overlay */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Slide bottom overlay: dots + progress */
+.hcSlideOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(to top, rgba(0,0,0,0.22), transparent);
+  border-radius: 0 0 16px 16px;
+}
+
+/* Dots row */
 .hcDots {
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
 }
 
 .hcDot {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: #cbb8e8;
+  background: rgba(255, 255, 255, 0.45);
   border: none;
   cursor: pointer;
   padding: 0;
@@ -108,11 +170,116 @@
 }
 
 .hcDotActive {
-  background: #542982;
-  transform: scale(1.35);
+  background: #ffffff;
+  transform: scale(1.4);
 }
 
-/* ─── Next Available Session ────────────────────────────── */
+/* Progress bar */
+.hcProgress {
+  height: 3px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.hcProgressBar {
+  height: 100%;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  animation: progressFill 3.5s linear forwards;
+}
+
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* Decorative background circle */
+.hcSlide::after {
+  content: "";
+  position: absolute;
+  width: clamp(80px, 20vw, 160px);
+  height: clamp(80px, 20vw, 160px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  right: -24px;
+  top: -24px;
+  pointer-events: none;
+}
+
+/* Label pill */
+.hcSlidePill {
+  align-self: flex-start;
+  font-size: clamp(0.58rem, 1.4vw, 0.7rem);
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 2px 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Icon */
+.hcSlideIcon {
+  position: absolute;
+  right: clamp(14px, 4vw, 26px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(2rem, 8vw, 4rem);
+  color: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+/* Text block */
+.hcSlideText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hcSlideHeading {
+  font-size: clamp(0.88rem, 2.4vw, 1.15rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hcSlideSubheading {
+  font-size: clamp(0.75rem, 1.9vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.hcSlideDesc {
+  font-size: clamp(0.62rem, 1.5vw, 0.76rem);
+  color: rgba(255, 255, 255, 0.72);
+  margin: 4px 0 0;
+  max-width: 65%;
+  line-height: 1.35;
+}
+
+/* CTA button inside slide */
+.hcSlideCta {
+  align-self: flex-start;
+  background: transparent;
+  border: 1.5px solid;
+  border-radius: 20px;
+  padding: clamp(4px, 1vw, 7px) clamp(12px, 3vw, 20px);
+  font-size: clamp(0.6rem, 1.5vw, 0.74rem);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, color 0.2s;
+}
+
+.hcSlideCta:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Next Available Session */
 .huWrap {
   width: 100%;
 }
@@ -173,7 +340,7 @@
   margin: 0;
 }
 
-/* ─── Appointment Card ───────────────────────────────────── */
+/* Appointment Card */
 .huCard {
   display: flex;
   align-items: center;
@@ -268,7 +435,7 @@
   color: #fff;
 }
 
-/* ─── View All Appointments Button ──────────────────────── */
+/* View All Appointments Button */
 .huViewAllRow {
   margin-top: 16px;
   display: flex;
@@ -294,7 +461,7 @@
   background: #2d0d5e;
 }
 
-/* ─── Responsive Breakpoints ─────────────────────────────── */
+/* Responsive Breakpoints  */
 
 /* Small phones (< 360px) */
 @media (max-width: 359px) {
@@ -303,13 +470,10 @@
     gap: 14px;
   }
 
-  .hcViewport {
-    padding: 4px 24px;
-  }
-
-  .hcSlide {
-    flex: 0 0 calc(100% - 48px);
-    width: calc(100% - 48px);
+  .hcArrow {
+    width: 26px;
+    height: 26px;
+    font-size: 1rem;
   }
 
   .huViewAllBtn {
@@ -322,15 +486,6 @@
   .bodyWrapper {
     padding: 24px 32px 36px;
     gap: 24px;
-  }
-
-  .hcViewport {
-    padding: 4px 48px;
-  }
-
-  .hcSlide {
-    flex: 0 0 calc(100% - 96px);
-    width: calc(100% - 96px);
   }
 
   .huViewAllBtn {

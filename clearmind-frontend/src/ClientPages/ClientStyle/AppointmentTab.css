@@ -4,6 +4,8 @@
   background: var(--bs-white);
   margin-bottom: 0;
   padding: 0;
+  display: flex;
+  justify-content: center;
 }
 
 /* Custom Tab Styling */
@@ -15,7 +17,6 @@
 .custom-tabs .nav-item {
   margin-bottom: 0;
   padding: 0px;
-  /* background-color: #5B2C91; */
 }
 
 .custom-tabs .nav-link {
@@ -86,8 +87,18 @@
     padding: 10px 12px;
     font-size: 15px ;
   }
- 
+  .custom-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .custom-tabs::-webkit-scrollbar {
+   display: none;
+  }
+
 }
+
 
 @media (min-width: 375px) {
   .custom-tabs {

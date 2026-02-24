@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Nav } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import "../ClientStyle/AppointmentTab.css";
@@ -7,10 +7,8 @@ const AppointmentTab = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const activeRef = useRef(null);
 
-   
-
-  // Determine active tab based on current route
   const getActiveTab = () => {
     if (location.pathname.includes('/services')) return 'services';
     if (location.pathname.includes('/pending')) return 'pending';
@@ -19,55 +17,37 @@ const AppointmentTab = () => {
     return 'services';
   };
 
-
   const activeTab = getActiveTab();
 
   const handleTabChange = (tab) => {
     navigate(`/client/appointment/${tab}`);
   };
 
-  return (
-    <div className="tab-navigation-wrapper d-flex justify-content-center align-items-center">
-      <Nav variant="tabs" className="custom-tabs">
-        <Nav.Item className='nav-item'>
-          <Nav.Link 
-            eventKey="services" 
-            active={activeTab === 'services'}
-            onClick={() => handleTabChange('services')}
-            >
-            Services
-          </Nav.Link>
-        </Nav.Item>
+  // 🔥 AUTO SCROLL ACTIVE TAB
+  useEffect(() => {
+    if (activeRef.current) {
+      activeRef.current.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
+      });
+    }
+  }, [activeTab]);
 
-        <Nav.Item className='nav-item'>
-          <Nav.Link 
-            eventKey="pending" 
-            active={activeTab === 'pending'}
-            onClick={() => handleTabChange('pending')}
-          >
-            Pending
-          </Nav.Link>
-        </Nav.Item>
-        
-        <Nav.Item className='nav-item'>
-          <Nav.Link 
-            eventKey="upcoming" 
-            active={activeTab === 'upcoming'}
-            onClick={() => handleTabChange('upcoming')}
-          >
-            Scheduled
-          </Nav.Link>
-        </Nav.Item>
-        
-        <Nav.Item className='nav-item'>
-          <Nav.Link 
-            eventKey="history" 
-            active={activeTab === 'history'}
-            onClick={() => handleTabChange('history')}
-          >
-            History
-          </Nav.Link>
-        </Nav.Item>
+  return (
+    <div className="tab-navigation-wrapper">
+      <Nav variant="tabs" className="custom-tabs">
+        {["services", "pending", "upcoming", "history"].map((tab) => (
+          <Nav.Item key={tab}>
+            <Nav.Link
+              ref={activeTab === tab ? activeRef : null}
+              active={activeTab === tab}
+              onClick={() => handleTabChange(tab)}
+            >
+              {tab === "upcoming" ? "Scheduled" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Nav.Link>
+          </Nav.Item>
+        ))}
       </Nav>
     </div>
   );

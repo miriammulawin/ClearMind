@@ -26,7 +26,7 @@ export const MOCK_APPOINTMENTS = [
   {
     id: 2,
     time: '10:00 A.M.',
-    date: 'January 27, 2026',
+    date: 'March 2, 2026',
     serviceType: 'Psychiatric Assessment',
     doctor: 'Maria Santos',
     type: 'Online Consultation',
