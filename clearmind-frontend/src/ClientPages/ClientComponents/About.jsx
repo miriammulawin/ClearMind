@@ -4,8 +4,8 @@ import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import logo_login from "../../assets/CMPS_Logo.png";
-import ClientHeader from "./ClientHeader";
-import ClientFooter from "./ClientFooter";
+import ClientHeader from "./Header";
+import ClientFooter from "./Footer";
 
 export default function About() {
   const navigate = useNavigate();

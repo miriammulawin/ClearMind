@@ -1,8 +1,8 @@
 // ClientAccount.jsx
 import { useState } from "react";
 import "./ClientStyle/ClientProfile.css";
-import ClientHeader from "./ClientComponents/ClientHeader";
-import ClientFooter from "./ClientComponents/ClientFooter";
+import ClientHeader from "./ClientComponents/Header";
+import ClientFooter from "./ClientComponents/Footer";
 import ProfilePage from "./ClientComponents/ProfileBody";
 import EditProfileModal from "./EditProfileModal"; 
 function ClientAccount() {

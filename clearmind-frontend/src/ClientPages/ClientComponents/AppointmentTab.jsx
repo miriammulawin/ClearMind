@@ -1,9 +1,9 @@
 import React from 'react';
 import { Nav } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import "../ClientStyle/ClientAppointmentTab.css";
+import "../ClientStyle/AppointmentTab.css";
 
-const ClientAppointmentTab = () => {
+const AppointmentTab = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,4 +73,4 @@ const ClientAppointmentTab = () => {
   );
 };
 
-export default ClientAppointmentTab;
+export default AppointmentTab;

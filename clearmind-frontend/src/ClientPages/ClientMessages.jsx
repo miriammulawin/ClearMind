@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Container, Card, Row, Col, Form, Button, Image } from "react-bootstrap";
-import ClientHeader from "./ClientComponents/ClientHeader";
-import ClientFooter from "./ClientComponents/ClientFooter";
+import ClientHeader from "./ClientComponents/Header";
+import ClientFooter from "./ClientComponents/Footer";
 import MessagingApp from "./ClientComponents/MessageBody";
 
 function ClientMessages() {

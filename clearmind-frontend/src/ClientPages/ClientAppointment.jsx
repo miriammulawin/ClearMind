@@ -1,7 +1,7 @@
 import "./ClientStyle/ClientAppointment.css"
-import ClientHeader from "./ClientComponents/ClientHeader";
-import ClientFooter from "./ClientComponents/ClientFooter";
-import ClientAppointmentTab from "./ClientComponents/ClientAppointmentTab";
+import ClientHeader from "./ClientComponents/Header";
+import ClientFooter from "./ClientComponents/Footer";
+import ClientAppointmentTab from "./ClientComponents/AppointmentTab";
 import { Outlet, useLocation } from 'react-router-dom';
 
 function ClientAppointment() {

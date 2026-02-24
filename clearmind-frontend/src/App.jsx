@@ -18,7 +18,7 @@ import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndCondition
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentDetails";
-import BookAppointment from "./ClientPages/ClientComponents/BookAppointment";
+import BookAppointment from "./ClientPages/ClientComponents/SetAppointment";
 import BookAppointmentForm from './ClientPages/ClientComponents/BookAppointmentForm';
 
 

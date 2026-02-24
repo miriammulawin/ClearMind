@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { FaClinicMedical, FaVideo, FaCalendarTimes } from "react-icons/fa";
 import MOCK_APPOINTMENTS from "../MockData/MockAppointment.js";
 import styles from "./ClientStyle/ClientHome.module.css";
-import ClientHeader from "./ClientComponents/ClientHeader";
-import ClientFooter from "./ClientComponents/ClientFooter";
+import ClientHeader from "./ClientComponents/Header.jsx";
+import ClientFooter from "./ClientComponents/Footer.jsx";
 
 const SLIDES = [1, 2, 3, 4];
 

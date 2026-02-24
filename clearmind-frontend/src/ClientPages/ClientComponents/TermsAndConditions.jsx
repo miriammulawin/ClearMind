@@ -3,8 +3,8 @@ import { Container } from "react-bootstrap";
 import { IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import ClientHeader from "./ClientHeader";
-import ClientFooter from "./ClientFooter";
+import ClientHeader from "./Header";
+import ClientFooter from "./Footer";
 
 export default function TermsAndConditions() {
   const navigate = useNavigate();
