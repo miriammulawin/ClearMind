@@ -37,7 +37,8 @@ class AuthController extends Controller
             'contact_no' => $validated['contactNo'],
             'email'      => $validated['email'],
             'password'   => Hash::make($validated['password']),
-            'role'       => 'Client', // default role for self-registration
+            
+            'role'       => 'Client', 
         ]);
 
         // Issue a Sanctum token
@@ -153,6 +154,7 @@ class AuthController extends Controller
             'sex'        => $validated['sex']        ?? $user->sex,
             'contact_no' => $validated['contactNo']  ?? $user->contact_no,
             'email'      => $validated['email']      ?? $user->email,
+            
         ]);
 
         return response()->json([
@@ -209,6 +211,7 @@ class AuthController extends Controller
             'role'       => $user->role,
             'isActive'   => $user->is_active,
             'createdAt'  => $user->created_at?->toDateTimeString(),
+            'prcNumber' => $user->prc_number,
         ];
     }
 }

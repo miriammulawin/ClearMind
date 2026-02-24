@@ -33,5 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctor/patients', [DoctorDashboardController::class, 'patientList']);
     Route::get('/doctor/status-counts',   [DoctorDashboardController::class, 'statusCounts']); 
     Route::get('/doctor/monthly-patients', [DoctorDashboardController::class, 'monthlyPatients']);
+    Route::post('/doctor/setup', [DoctorDashboardController::class, 'setup']);
 
 });

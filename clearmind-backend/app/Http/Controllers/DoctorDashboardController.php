@@ -58,4 +58,22 @@ public function monthlyPatients()
 
     return response()->json($data);
 }
+
+public function setup(Request $request)
+{
+    $user = auth()->user();
+
+    $user->update([
+        'professional_title'  => $request->professional_title,
+        'description'         => $request->description,
+        'years_of_experience' => $request->years_of_experience,
+        'license_number'      => $request->license_number,
+        'specializations'     => $request->specializations,
+        'sub_specializations' => $request->sub_specializations,
+        'board_certificates'  => $request->board_certificates,
+        'services'            => $request->services,
+    ]);
+
+    return response()->json(['message' => 'Setup complete.']);
+}
 }

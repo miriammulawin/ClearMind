@@ -366,7 +366,7 @@ function DoctorAppointment() {
             </div>
 
             <div className="modal-footer">
-              <button className="btn-add" onClick={handleAddEvent}>
+              <button className="btn-add " onClick={handleAddEvent}>
                 Add Appointment
               </button>
             </div>

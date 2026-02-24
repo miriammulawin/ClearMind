@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axiosClient from "../axiosClient";
 import DoctorSidebar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
+import AccountSetupModal from "./SetUpAccountModal";
 import "./DoctorStyle/DoctorDashboard.css";
 import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
@@ -29,12 +30,15 @@ function DoctorDashboard() {
   const [today, setToday]                       = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
 
+  // ── Always show modal on every login ───────────────────────────
+  const [showSetupModal, setShowSetupModal]     = useState(true);
+
   // ── Patients state ──────────────────────────────────────────────
-  const [patientsData, setPatientsData]   = useState([]);
-  const [totalPatients, setTotalPatients] = useState(0);
-  const [currentPage, setCurrentPage]     = useState(1);
-  const [lastPage, setLastPage]           = useState(1);
-  const [loading, setLoading]             = useState(false);
+  const [patientsData, setPatientsData]         = useState([]);
+  const [totalPatients, setTotalPatients]       = useState(0);
+  const [currentPage, setCurrentPage]           = useState(1);
+  const [lastPage, setLastPage]                 = useState(1);
+  const [loading, setLoading]                   = useState(false);
 
   // ── Status counts for pie chart ─────────────────────────────────
   const [statusCounts, setStatusCounts] = useState({
@@ -44,9 +48,19 @@ function DoctorDashboard() {
   });
 
   // ── Monthly patients for bar chart ──────────────────────────────
-  const [monthlyData, setMonthlyData] = useState(
-    Array(12).fill(0)
-  );
+  const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
+
+  // ── On mount ────────────────────────────────────────────────────
+  useEffect(() => {
+    fetchPatients(1);
+    fetchStatusCounts();
+    fetchMonthlyPatients();
+  }, []);
+
+  // ── Close modal ─────────────────────────────────────────────────
+  const handleCloseSetupModal = () => {
+    setShowSetupModal(false);
+  };
 
   // ── Fetch patients ──────────────────────────────────────────────
   const fetchPatients = async (page = 1) => {
@@ -84,13 +98,6 @@ function DoctorDashboard() {
       console.error("Failed to fetch monthly patients:", err);
     }
   };
-
-  // ── On mount ────────────────────────────────────────────────────
-  useEffect(() => {
-    fetchPatients(1);
-    fetchStatusCounts();
-    fetchMonthlyPatients();
-  }, []);
 
   // ── Timer ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -152,30 +159,23 @@ function DoctorDashboard() {
   const getPageNumbers = () => {
     const pages = [];
     const delta = 2;
-
     if (lastPage <= 7) {
       for (let i = 1; i <= lastPage; i++) pages.push(i);
       return pages;
     }
-
     pages.push(1);
     if (currentPage > delta + 2) pages.push("...");
-
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(lastPage - 1, currentPage + delta);
       i++
-    ) {
-      pages.push(i);
-    }
-
+    ) { pages.push(i); }
     if (currentPage < lastPage - delta - 1) pages.push("...");
     pages.push(lastPage);
-
     return pages;
   };
 
-  // ── Bar chart — REAL monthly data ───────────────────────────────
+  // ── Bar chart ───────────────────────────────────────────────────
   const barData = {
     labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
     datasets: [{
@@ -204,25 +204,17 @@ function DoctorDashboard() {
       x: { ticks: { color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
       y: {
         beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          color: "#574a65",
-          font: { family: "Poppins, sans-serif", size: 12 },
-        },
+        ticks: { stepSize: 1, color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } },
       },
     },
   };
 
-  // ── Pie chart — real data ───────────────────────────────────────
+  // ── Pie chart ───────────────────────────────────────────────────
   const pieData = {
     labels: ["Scheduled", "Cancelled", "Pending"],
     datasets: [{
       label: "Appointment Status",
-      data: [
-        statusCounts.Scheduled,
-        statusCounts.Cancelled,
-        statusCounts.Pending,
-      ],
+      data: [statusCounts.Scheduled, statusCounts.Cancelled, statusCounts.Pending],
       backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de"],
       borderColor: "rgb(255,255,255)",
       borderWidth: 1,
@@ -258,16 +250,20 @@ function DoctorDashboard() {
       },
     },
     layout: {
-      padding: {
-        top: 10, bottom: 10, left: 10,
-        right: window.innerWidth < 768 ? 10 : 60,
-      },
+      padding: { top: 10, bottom: 10, left: 10, right: window.innerWidth < 768 ? 10 : 60 },
     },
     cutout: "0%",
   };
 
   return (
     <div className="doctor-layout">
+
+      {/* ── Account Setup Modal — shows every login ── */}
+      <AccountSetupModal
+        showModal={showSetupModal}
+        onClose={handleCloseSetupModal}
+      />
+
       <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
       <div className="doctor-main">
@@ -333,47 +329,25 @@ function DoctorDashboard() {
                       <div className="calendar-dates">
                         {(() => {
                           const dates = [];
-                          const firstDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(), 1
-                          );
-                          const lastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth() + 1, 0
-                          );
+                          const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                          const lastDay  = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
                           const startDay         = firstDay.getDay();
                           const daysInMonth      = lastDay.getDate();
-                          const prevMonthLastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(), 0
-                          ).getDate();
+                          const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--)
-                            dates.push(
-                              <div key={`prev-${i}`} className="calendar-date other-month">
-                                {prevMonthLastDay - i}
-                              </div>
-                            );
+                            dates.push(<div key={`prev-${i}`} className="calendar-date other-month">{prevMonthLastDay - i}</div>);
 
                           for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(
-                              currentWeekStart.getFullYear(),
-                              currentWeekStart.getMonth(), day
-                            );
+                            const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
                             dates.push(
-                              <div key={day} className={`calendar-date ${isToday(date) ? "today" : ""}`}>
-                                {day}
-                              </div>
+                              <div key={day} className={`calendar-date ${isToday(date) ? "today" : ""}`}>{day}</div>
                             );
                           }
 
                           const remaining = 42 - dates.length;
                           for (let day = 1; day <= remaining; day++)
-                            dates.push(
-                              <div key={`next-${day}`} className="calendar-date other-month">
-                                {day}
-                              </div>
-                            );
+                            dates.push(<div key={`next-${day}`} className="calendar-date other-month">{day}</div>);
 
                           return dates;
                         })()}
@@ -390,9 +364,7 @@ function DoctorDashboard() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <h5>Total Patients</h5>
-                    <div className="card-date">
-                      <span>{totalPatients}</span>
-                    </div>
+                    <div className="card-date"><span>{totalPatients}</span></div>
                   </div>
                   <hr />
                   <div className="card-body table-responsive">
@@ -421,10 +393,7 @@ function DoctorDashboard() {
                               <td>{formatDate(patient.dob)}</td>
                               <td>{patient.contact_no}</td>
                               <td>{patient.email}</td>
-                              <td style={{
-                                color: getStatusColor(patient.appointment_status),
-                                fontWeight: "600",
-                              }}>
+                              <td style={{ color: getStatusColor(patient.appointment_status), fontWeight: "600" }}>
                                 {patient.appointment_status}
                               </td>
                               <td>{formatDate(patient.created_at)}</td>
@@ -435,25 +404,16 @@ function DoctorDashboard() {
                     )}
                   </div>
 
-                  {/* ── Smart Pagination ── */}
+                  {/* Pagination */}
                   <div className="table-pagination">
                     <span>Page {currentPage} of {lastPage}</span>
                     <div className="pagination-buttons">
-                      <button
-                        onClick={() => fetchPatients(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
+                      <button onClick={() => fetchPatients(currentPage - 1)} disabled={currentPage === 1}>
                         {"< Previous"}
                       </button>
-
                       {getPageNumbers().map((n, i) =>
                         n === "..." ? (
-                          <span
-                            key={`dots-${i}`}
-                            style={{ padding: "0 6px", color: "#574a65", alignSelf: "center" }}
-                          >
-                            ...
-                          </span>
+                          <span key={`dots-${i}`} style={{ padding: "0 6px", color: "#574a65", alignSelf: "center" }}>...</span>
                         ) : (
                           <button
                             key={n}
@@ -468,11 +428,7 @@ function DoctorDashboard() {
                           </button>
                         )
                       )}
-
-                      <button
-                        onClick={() => fetchPatients(currentPage + 1)}
-                        disabled={currentPage === lastPage}
-                      >
+                      <button onClick={() => fetchPatients(currentPage + 1)} disabled={currentPage === lastPage}>
                         {"Next >"}
                       </button>
                     </div>
@@ -485,7 +441,12 @@ function DoctorDashboard() {
             <div className="row mt-4">
               <div className="col-md-6">
                 <div className="dashboard-card">
-                  <h5>Monthly Patients <small style={{ fontSize: "12px", color: "#888", marginLeft: "8px" }}>{new Date().getFullYear()}</small></h5>
+                  <h5>
+                    Monthly Patients
+                    <small style={{ fontSize: "12px", color: "#888", marginLeft: "8px" }}>
+                      {new Date().getFullYear()}
+                    </small>
+                  </h5>
                   <div style={{ overflowX: "auto" }}>
                     <div style={{ minWidth: "500px", height: "300px" }}>
                       <Bar data={barData} options={barOptions} />
@@ -497,32 +458,17 @@ function DoctorDashboard() {
               <div className="col-md-6">
                 <div className="dashboard-card">
                   <h5>Appointment Status</h5>
-
-                  {/* Status count badges */}
                   <div style={{ display: "flex", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
-                    <span style={{
-                      background: "#e8f0fe", color: "#1E3A8A",
-                      padding: "4px 14px", borderRadius: "20px",
-                      fontSize: "13px", fontWeight: "600",
-                    }}>
+                    <span style={{ background: "#e8f0fe", color: "#1E3A8A", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
                       Scheduled: {statusCounts.Scheduled}
                     </span>
-                    <span style={{
-                      background: "#fde8e8", color: "#DC2626",
-                      padding: "4px 14px", borderRadius: "20px",
-                      fontSize: "13px", fontWeight: "600",
-                    }}>
+                    <span style={{ background: "#fde8e8", color: "#DC2626", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
                       Cancelled: {statusCounts.Cancelled}
                     </span>
-                    <span style={{
-                      background: "#fef3c7", color: "#B45309",
-                      padding: "4px 14px", borderRadius: "20px",
-                      fontSize: "13px", fontWeight: "600",
-                    }}>
+                    <span style={{ background: "#fef3c7", color: "#B45309", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
                       Pending: {statusCounts.Pending}
                     </span>
                   </div>
-
                   <div className="pie-chart-container">
                     <Pie data={pieData} options={pieOptions} />
                   </div>
