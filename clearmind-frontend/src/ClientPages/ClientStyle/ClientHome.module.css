@@ -340,6 +340,111 @@
   margin: 0;
 }
 
+/* Announcements */
+.anWrap {
+  width: 100%;
+}
+
+.anSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.anTitle {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 700;
+  color: #542982;
+}
+
+.anCount {
+  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-weight: 700;
+  color: #542982;
+}
+
+.anList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.anCard {
+  display: flex;
+  background: #fff;
+  border-radius: 14px;
+  border: 1.5px solid #e0d0f5;
+  box-shadow: 0 2px 8px rgba(84, 41, 130, 0.06);
+  overflow: hidden;
+}
+
+.anCardUrgent {
+  border-left: none;
+}
+
+.anCardNormal {
+  border-left: none;
+}
+
+.anCardAccent {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.anCardUrgent .anCardAccent {
+  background: #d32f2f;
+}
+
+.anCardNormal .anCardAccent {
+  background: #7c5aaa;
+}
+
+.anCardContent {
+  padding: clamp(10px, 2.5vw, 16px) clamp(12px, 3vw, 18px);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.anCardTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.anUrgentBadge {
+  background: #d32f2f;
+  color: #fff;
+  font-size: clamp(0.55rem, 1.3vw, 0.65rem);
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 2px 9px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.anCardTitle {
+  font-size: clamp(0.82rem, 2vw, 1rem);
+  font-weight: 700;
+  color: #2d1a47;
+}
+
+.anCardBody {
+  font-size: clamp(0.72rem, 1.8vw, 0.88rem);
+  color: #555;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.anCardDate {
+  font-size: clamp(0.63rem, 1.5vw, 0.76rem);
+  color: #aaa;
+  font-weight: 500;
+}
+
 /* Appointment Card */
 .huCard {
   display: flex;
