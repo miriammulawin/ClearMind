@@ -1,14 +1,66 @@
 import { useState, useEffect } from "react";
 import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
+import EditPersonalInfoModal from "./EditPersonalInfoModal";
+import EditAccountSecurityModal from "./EditAccountSecurityModal";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 function DoctorProfile() {
-  const [activeMenu, setActiveMenu] = useState("Account Security");
   const [isEditing, setIsEditing] = useState(false);
+  const [activeMenu, setActiveMenu] = useState("My Profile");
+  const [profileTab, setProfileTab] = useState("Personal Information");
+  const [certIndex, setCertIndex] = useState(0);
+  const [idIndex, setIdIndex] = useState(0);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [fullscreenType, setFullscreenType] = useState(null); // 'cert' or 'id'
+  const [showPersonalModal, setShowPersonalModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
 
   useEffect(() => {
     setActiveMenu("My Profile");
+    setProfileTab("Personal Information");
   }, []);
+
+  const openFullscreen = (type, index) => {
+    setFullscreenType(type);
+    if (type === 'cert') {
+      setFullscreenImage(doctorData.certificateImages[index]);
+    } else {
+      setFullscreenImage(doctorData.idImages[index]);
+    }
+  };
+
+  const nextFullscreenImage = () => {
+    if (fullscreenType === 'cert') {
+      const newIndex = certIndex === doctorData.certificateImages.length - 1 ? 0 : certIndex + 1;
+      setCertIndex(newIndex);
+      setFullscreenImage(doctorData.certificateImages[newIndex]);
+    } else {
+      const newIndex = idIndex === doctorData.idImages.length - 1 ? 0 : idIndex + 1;
+      setIdIndex(newIndex);
+      setFullscreenImage(doctorData.idImages[newIndex]);
+    }
+  };
+
+  const prevFullscreenImage = () => {
+    if (fullscreenType === 'cert') {
+      const newIndex = certIndex === 0 ? doctorData.certificateImages.length - 1 : certIndex - 1;
+      setCertIndex(newIndex);
+      setFullscreenImage(doctorData.certificateImages[newIndex]);
+    } else {
+      const newIndex = idIndex === 0 ? doctorData.idImages.length - 1 : idIndex - 1;
+      setIdIndex(newIndex);
+      setFullscreenImage(doctorData.idImages[newIndex]);
+    }
+  };
+
+  const getCurrentIndex = () => {
+    return fullscreenType === 'cert' ? certIndex : idIndex;
+  };
+
+  const getTotalImages = () => {
+    return fullscreenType === 'cert' ? doctorData.certificateImages.length : doctorData.idImages.length;
+  };
 
   const doctorData = {
     name: "Jinky C. Malabanan",
@@ -45,6 +97,39 @@ function DoctorProfile() {
       "Registered Psychometrician",
       "Registered Psychologist",
     ],
+    certificateImages: [
+      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+1",
+      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+2",
+      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+3",
+    ],
+    idImages: [
+      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=ID+Card+1",
+      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=ID+Card+2",
+    ],
+  };
+
+  const nextCert = () => {
+    setCertIndex((prev) => 
+      prev === doctorData.certificateImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevCert = () => {
+    setCertIndex((prev) => 
+      prev === 0 ? doctorData.certificateImages.length - 1 : prev - 1
+    );
+  };
+
+  const nextId = () => {
+    setIdIndex((prev) => 
+      prev === doctorData.idImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const prevId = () => {
+    setIdIndex((prev) => 
+      prev === 0 ? doctorData.idImages.length - 1 : prev - 1
+    );
   };
 
   return (
@@ -62,7 +147,7 @@ function DoctorProfile() {
                 <div className="col-lg-4 col-md-5">
                   <div
                     className="card shadow-sm border-0 mb-4"
-                    style={{ borderRadius: "12px" }}
+                    style={{ borderRadius: "12px", minHeight: "300px" }}
                   >
                     <div className="card-body text-center">
                       {/* Profile Picture Placeholder */}
@@ -112,23 +197,23 @@ function DoctorProfile() {
                           className="btn d-flex align-items-center py-3 px-3 border-0"
                           style={{
                             backgroundColor:
-                              activeMenu === "Personal Information"
+                              profileTab === "Personal Information"
                                 ? "#4D227C"
                                 : "transparent",
                             color:
-                              activeMenu === "Personal Information"
+                              profileTab === "Personal Information"
                                 ? "white"
                                 : "#2D3748",
                             borderRadius: "8px",
                             textAlign: "left",
                           }}
-                          onClick={() => setActiveMenu("Personal Information")}
+                          onClick={() => setProfileTab("Personal Information")}
                         >
                           <i
                             className="bi bi-person me-3"
                             style={{
                               color:
-                                activeMenu === "Personal Information"
+                                profileTab === "Personal Information"
                                   ? "white"
                                   : "#4D227C",
                             }}
@@ -139,23 +224,23 @@ function DoctorProfile() {
                           className="btn d-flex align-items-center py-3 px-3 border-0"
                           style={{
                             backgroundColor:
-                              activeMenu === "Account Security"
+                              profileTab === "Account Security"
                                 ? "#4D227C"
                                 : "transparent",
                             color:
-                              activeMenu === "Account Security"
+                              profileTab === "Account Security"
                                 ? "white"
                                 : "#2D3748",
                             borderRadius: "8px",
                             textAlign: "left",
                           }}
-                          onClick={() => setActiveMenu("Account Security")}
+                          onClick={() => setProfileTab("Account Security")}
                         >
                           <i
                             className="bi bi-shield-check me-3"
                             style={{
                               color:
-                                activeMenu === "Account Security"
+                                profileTab === "Account Security"
                                   ? "white"
                                   : "#4D227C",
                             }}
@@ -234,8 +319,8 @@ function DoctorProfile() {
                     </div>
                   </div>
 
-                  {/* Conditional Rendering based on Active Menu */}
-                  {activeMenu === "Personal Information" ? (
+                  {/* Conditional Rendering based on Active Tab */}
+                  {profileTab === "Personal Information" ? (
                     /* Personal Information Section */
                     <div
                       className="card shadow-sm border-0"
@@ -251,7 +336,7 @@ function DoctorProfile() {
                           </h5>
                           <button
                             className="btn btn-link text-decoration-none p-0"
-                            onClick={() => setIsEditing(!isEditing)}
+                            onClick={() => setShowPersonalModal(true)}
                           >
                             <i
                               className="bi bi-pencil-square"
@@ -412,6 +497,175 @@ function DoctorProfile() {
                           </div>
                         </div>
 
+                        {/* Certificate and ID Images Carousel */}
+                        <div className="row mb-4">
+                          {/* Board Certificate Images */}
+                          <div className="col-md-6 mb-3 mb-md-0">
+                            <label className="form-label text-muted small mb-2 fw-semibold">
+                              BOARD CERTIFICATE
+                            </label>
+                            <div
+                              className="position-relative bg-light d-flex align-items-center justify-content-center"
+                              style={{ borderRadius: "8px", height: "280px", overflow: "hidden" }}
+                            >
+                              <img
+                                src={doctorData.certificateImages[certIndex]}
+                                alt={`Certificate ${certIndex + 1}`}
+                                onClick={() => openFullscreen('cert', certIndex)}
+                                style={{ 
+                                  maxWidth: "100%", 
+                                  maxHeight: "100%", 
+                                  objectFit: "contain",
+                                  cursor: "pointer",
+                                  transition: "transform 0.2s",
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = "scale(1.02)"}
+                                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                              />
+                              <button
+                                onClick={prevCert}
+                                style={{
+                                  position: "absolute",
+                                  left: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(77, 34, 124, 0.8)",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "40px",
+                                  height: "40px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  color: "white",
+                                }}
+                              >
+                                <FaChevronLeft />
+                              </button>
+                              <button
+                                onClick={nextCert}
+                                style={{
+                                  position: "absolute",
+                                  right: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(77, 34, 124, 0.8)",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "40px",
+                                  height: "40px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  color: "white",
+                                }}
+                              >
+                                <FaChevronRight />
+                              </button>
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: "10px",
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  background: "rgba(0, 0, 0, 0.6)",
+                                  color: "white",
+                                  padding: "4px 12px",
+                                  borderRadius: "12px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                {certIndex + 1} / {doctorData.certificateImages.length}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ID Images */}
+                          <div className="col-md-6">
+                            <label className="form-label text-muted small mb-2 fw-semibold">
+                              ID CARDS
+                            </label>
+                            <div
+                              className="position-relative bg-light d-flex align-items-center justify-content-center"
+                              style={{ borderRadius: "8px", height: "280px", overflow: "hidden" }}
+                            >
+                              <img
+                                src={doctorData.idImages[idIndex]}
+                                alt={`ID ${idIndex + 1}`}
+                                onClick={() => openFullscreen('id', idIndex)}
+                                style={{ 
+                                  maxWidth: "100%", 
+                                  maxHeight: "100%", 
+                                  objectFit: "contain",
+                                  cursor: "pointer",
+                                  transition: "transform 0.2s",
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = "scale(1.02)"}
+                                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                              />
+                              <button
+                                onClick={prevId}
+                                style={{
+                                  position: "absolute",
+                                  left: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(77, 34, 124, 0.8)",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "40px",
+                                  height: "40px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  color: "white",
+                                }}
+                              >
+                                <FaChevronLeft />
+                              </button>
+                              <button
+                                onClick={nextId}
+                                style={{
+                                  position: "absolute",
+                                  right: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  background: "rgba(77, 34, 124, 0.8)",
+                                  border: "none",
+                                  borderRadius: "50%",
+                                  width: "40px",
+                                  height: "40px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  cursor: "pointer",
+                                  color: "white",
+                                }}
+                              >
+                                <FaChevronRight />
+                              </button>
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: "10px",
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  background: "rgba(0, 0, 0, 0.6)",
+                                  color: "white",
+                                  padding: "4px 12px",
+                                  borderRadius: "12px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                {idIndex + 1} / {doctorData.idImages.length}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Save Button */}
                         {isEditing && (
                           <div className="d-flex gap-2 justify-content-end">
@@ -440,7 +694,7 @@ function DoctorProfile() {
                     /* Account Security Section */
                     <div
                       className="card shadow-sm border-0"
-                      style={{ borderRadius: "12px" }}
+                      style={{ borderRadius: "12px", minHeight: "400px" }}
                     >
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -452,7 +706,7 @@ function DoctorProfile() {
                           </h5>
                           <button
                             className="btn btn-link text-decoration-none p-0"
-                            onClick={() => setIsEditing(!isEditing)}
+                            onClick={() => setShowSecurityModal(true)}
                           >
                             <i
                               className="bi bi-pencil-square"
@@ -520,6 +774,207 @@ function DoctorProfile() {
           </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      {fullscreenImage && (
+        <div
+          onClick={() => {
+            setFullscreenImage(null);
+            setFullscreenType(null);
+          }}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "16px",
+              padding: "20px",
+              maxWidth: "900px",
+              width: "100%",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setFullscreenImage(null);
+                setFullscreenType(null);
+              }}
+              style={{
+                position: "absolute",
+                top: "15px",
+                right: "15px",
+                background: "#f3f4f6",
+                border: "none",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: "24px",
+                color: "#374151",
+                transition: "background 0.2s",
+                zIndex: 10,
+              }}
+              onMouseEnter={(e) => e.target.style.background = "#e5e7eb"}
+              onMouseLeave={(e) => e.target.style.background = "#f3f4f6"}
+            >
+              ×
+            </button>
+
+            {/* Image Title */}
+            <div
+              style={{
+                marginBottom: "15px",
+                textAlign: "center",
+                color: "#4D227C",
+                fontWeight: "600",
+                fontSize: "18px",
+              }}
+            >
+              {fullscreenType === 'cert' ? 'Board Certificate' : 'ID Card'}
+            </div>
+
+            {/* Image Container */}
+            <div
+              style={{
+                position: "relative",
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                borderRadius: "12px",
+                backgroundColor: "#f9fafb",
+                minHeight: "500px",
+              }}
+            >
+              <img
+                src={fullscreenImage}
+                alt="View"
+                style={{
+                  maxWidth: "90%",
+                  maxHeight: "90%",
+                  objectFit: "contain",
+                  border: "4px solid #4D227C",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 12px rgba(77, 34, 124, 0.2)",
+                }}
+              />
+
+              {/* Left Arrow */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevFullscreenImage();
+                }}
+                style={{
+                  position: "absolute",
+                  left: "15px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(77, 34, 124, 0.9)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "50px",
+                  height: "50px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "white",
+                  fontSize: "24px",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => e.target.style.background = "rgba(77, 34, 124, 1)"}
+                onMouseLeave={(e) => e.target.style.background = "rgba(77, 34, 124, 0.9)"}
+              >
+                <FaChevronLeft />
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextFullscreenImage();
+                }}
+                style={{
+                  position: "absolute",
+                  right: "15px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "rgba(77, 34, 124, 0.9)",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: "50px",
+                  height: "50px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "white",
+                  fontSize: "24px",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => e.target.style.background = "rgba(77, 34, 124, 1)"}
+                onMouseLeave={(e) => e.target.style.background = "rgba(77, 34, 124, 0.9)"}
+              >
+                <FaChevronRight />
+              </button>
+
+              {/* Image Counter */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "15px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background: "rgba(0, 0, 0, 0.7)",
+                  color: "white",
+                  padding: "6px 16px",
+                  borderRadius: "20px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
+              >
+                {getCurrentIndex() + 1} / {getTotalImages()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modals */}
+      <EditPersonalInfoModal
+        show={showPersonalModal}
+        onClose={() => setShowPersonalModal(false)}
+        doctorData={doctorData}
+        onSave={(updated) => console.log("Saved:", updated)}
+      />
+      <EditAccountSecurityModal
+        show={showSecurityModal}
+        onClose={() => setShowSecurityModal(false)}
+        doctorData={doctorData}
+        onSave={(updated) => console.log("Saved:", updated)}
+      />
     </div>
   );
 }

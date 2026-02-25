@@ -3,7 +3,6 @@ import DoctorSideBar from "./DoctorSideBar";
 import DoctorTopNavbar from "./DoctorTopNavbar";
 import "./DoctorStyle/DoctorPatient.css";
 import { FiX } from "react-icons/fi";
-import samplePayment from "../assets/payment/images.png";
 
 function DoctorPatient() {
   const [activeMenu, setActiveMenu] = useState("");
@@ -12,6 +11,8 @@ function DoctorPatient() {
   const [showModal, setShowModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
+  const [initialImpression, setInitialImpression] = useState("");
+  const [complaints, setComplaints] = useState("");
 
   useEffect(() => {
     setActiveMenu("Patients");
@@ -23,6 +24,7 @@ function DoctorPatient() {
     {
       id: 1,
       name: "Liezel Paciente",
+      age: "28",
       date: "January 20, 2026",
       time: "2:00 pm",
       type: "Follow Up",
@@ -30,10 +32,14 @@ function DoctorPatient() {
       contact: "09171234567",
       email: "liezel@example.com",
       address: "123 Main St, Manila",
+      reason: "For Consultation",
+      initialImpression: "Good",
+      complaints: "None",
     },
     {
       id: 2,
       name: "Ara Christina Ceres",
+      age: "35",
       date: "January 15, 2026",
       time: "9:00 am",
       type: "New Concern",
@@ -41,17 +47,23 @@ function DoctorPatient() {
       contact: "09181234567",
       email: "ara@example.com",
       address: "456 Rizal Ave, Quezon City",
+      reason: "For Consultation",
+      initialImpression: "Good",
+      complaints: "None",
     },
     {
       id: 3,
       name: "John Doe",
+      age: "42",
       date: "January 22, 2026",
       time: "11:00 am",
       type: "Check Up",
       status: "Cancelled",
       contact: "09201234567",
       email: "john@example.com",
-      address: "789 Taft Ave, Manila",
+      reason: "For Consultation",
+      initialImpression: "Good",
+      complaints: "None",
     },
   ];
 
@@ -59,6 +71,7 @@ function DoctorPatient() {
     {
       id: 101,
       name: "Liezel Paciente",
+      age: "28",
       date: "January 20, 2026",
       time: "2:00 pm",
       type: "Follow Up",
@@ -66,10 +79,14 @@ function DoctorPatient() {
       contact: "09171234567",
       email: "liezel@example.com",
       address: "123 Main St, Manila",
+      initialImpression:
+        "Patient shows signs of improvement with current treatment plan.",
+      complaints: "Mild anxiety, difficulty sleeping",
     },
     {
       id: 102,
       name: "Ara Christina Ceres",
+      age: "35",
       date: "January 15, 2026",
       time: "9:00 am",
       type: "New Concern",
@@ -77,10 +94,14 @@ function DoctorPatient() {
       contact: "09181234567",
       email: "ara@example.com",
       address: "456 Rizal Ave, Quezon City",
+      initialImpression:
+        "First consultation. Patient appears cooperative and willing to engage in therapy.",
+      complaints: "Work-related stress, burnout symptoms",
     },
     {
       id: 103,
       name: "Maria Santos",
+      age: "31",
       date: "January 10, 2026",
       time: "1:30 pm",
       type: "Check Up",
@@ -88,10 +109,13 @@ function DoctorPatient() {
       contact: "09191234567",
       email: "maria@example.com",
       address: "101 Boni Ave, Mandaluyong",
+      initialImpression: "",
+      complaints: "",
     },
     {
       id: 104,
       name: "Kevin Ramos",
+      age: "45",
       date: "December 28, 2025",
       time: "10:00 am",
       type: "Follow Up",
@@ -99,6 +123,9 @@ function DoctorPatient() {
       contact: "09221234567",
       email: "kevin@example.com",
       address: "202 EDSA, Quezon City",
+      initialImpression:
+        "Patient demonstrates positive response to cognitive behavioral therapy.",
+      complaints: "Depression, low motivation",
     },
   ];
 
@@ -113,6 +140,8 @@ function DoctorPatient() {
 
   const handleView = (row) => {
     setSelectedPatient(row);
+    setInitialImpression(row.initialImpression || "");
+    setComplaints(row.complaints || "");
     setShowModal(true);
   };
 
@@ -134,7 +163,7 @@ function DoctorPatient() {
                   setCurrentPage(1);
                 }}
               >
-                Total’s Patients <span>{patients.length}</span>
+                Total's Patients <span>{patients.length}</span>
               </button>
 
               {/* <button
@@ -251,6 +280,9 @@ function DoctorPatient() {
                   <strong>Name:</strong> {selectedPatient.name}
                 </p>
                 <p>
+                  <strong>Age:</strong> {selectedPatient.age}
+                </p>
+                <p>
                   <strong>Contact:</strong> {selectedPatient.contact}
                 </p>
                 <p>
@@ -259,6 +291,70 @@ function DoctorPatient() {
                 <p>
                   <strong>Address:</strong> {selectedPatient.address}
                 </p>
+                <p>
+                  <strong>Reason for Consultation:</strong>{" "}
+                  {selectedPatient.reason}
+                </p>
+                <p>
+                  <strong>Initial Impression:</strong>{" "}
+                  {selectedPatient.initialImpression}
+                </p>
+                <p>
+                  <strong>Complains:</strong> {selectedPatient.complaints}
+                </p>
+              </div>
+
+              <hr
+                style={{
+                  margin: "20px 0",
+                  border: "none",
+                  borderTop: "1px solid #e0e0e0",
+                }}
+              />
+
+              <div className="modal-section">
+                <h4>Progress Note</h4>
+                <div style={{ marginBottom: "15px" }}>
+                  <p>
+                    <strong>Initial Impression:</strong>
+                  </p>
+                  <textarea
+                    value={initialImpression}
+                    onChange={(e) => setInitialImpression(e.target.value)}
+                    placeholder="Enter initial impression..."
+                    style={{
+                      width: "100%",
+                      minHeight: "100px",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <p>
+                    <strong>Complains:</strong>
+                  </p>
+                  <textarea
+                    value={complaints}
+                    onChange={(e) => setComplaints(e.target.value)}
+                    placeholder="Enter patient complaints..."
+                    style={{
+                      width: "100%",
+                      minHeight: "100px",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      fontSize: "14px",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
