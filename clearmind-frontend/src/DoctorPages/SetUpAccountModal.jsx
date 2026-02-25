@@ -16,6 +16,8 @@ function SetUpAccountModal({ showModal, onClose }) {
     description:       "",
     professionalTitle: "",
     yearsOfExperience: "",
+    practicingSince:   "",   
+    prcNumber:         "",
     licenseNumber:     "",
     specialization:    "",
     subSpecialization: "",
@@ -32,7 +34,6 @@ function SetUpAccountModal({ showModal, onClose }) {
 
   const [loading, setLoading] = useState(false);
 
-  // ── Fetch & pre-populate form when modal opens ──────────────────
   useEffect(() => {
     if (!showModal) return;
 
@@ -42,21 +43,21 @@ function SetUpAccountModal({ showModal, onClose }) {
         const user    = res.data.user    || {};
         const profile = res.data.profile || {};
 
-        // Pre-fill text inputs
         setFormData({
-          profilePicture:    null,   // can't pre-fill File input, but show current image separately
+          profilePicture:    null,
           certificateImage:  null,
-          description:       profile.description       || "",
+          description:       profile.description        || "",
           professionalTitle: profile.professional_title || "",
           yearsOfExperience: profile.years_of_experience != null ? String(profile.years_of_experience) : "",
-          licenseNumber:     profile.license_number    || profile.prc_number || "",
+          practicingSince:   profile.practicing_since   || "",   
+          prcNumber:         profile.prc_number         || "",
+          licenseNumber:     profile.license_number     || "",
           specialization:    "",
           subSpecialization: "",
           boardCertificate:  "",
           myServices:        "",
         });
 
-        // Pre-fill tag lists
         setLists({
           specializationList:    safeParse(profile.specializations),
           subSpecializationList: safeParse(profile.sub_specializations),
@@ -64,7 +65,6 @@ function SetUpAccountModal({ showModal, onClose }) {
           servicesList:          safeParse(profile.services),
         });
 
-        // Store merged data in localStorage
         const merged = { ...user, ...profile };
         localStorage.setItem("user", JSON.stringify(merged));
         if (profile.profile_picture) {
@@ -107,10 +107,9 @@ function SetUpAccountModal({ showModal, onClose }) {
     }));
   };
 
-  // ── Save ────────────────────────────────────────────────────────
   const handleUpload = async () => {
     if (!formData.professionalTitle.trim()) return toast.error("Professional Title is required.");
-    if (!formData.licenseNumber.trim())     return toast.error("License Number is required.");
+    if (!formData.prcNumber.trim())         return toast.error("PRC License Number is required.");
     if (lists.specializationList.length === 0) return toast.error("Please add at least one Specialization.");
 
     setLoading(true);
@@ -124,18 +123,19 @@ function SetUpAccountModal({ showModal, onClose }) {
       payload.append("description",         formData.description);
       payload.append("professional_title",  formData.professionalTitle);
       payload.append("years_of_experience", formData.yearsOfExperience || "");
+      payload.append("practicing_since",    formData.practicingSince   || ""); 
+      payload.append("prc_number",          formData.prcNumber);
       payload.append("license_number",      formData.licenseNumber);
 
-      payload.append("specializations",    JSON.stringify(lists.specializationList));
-      payload.append("sub_specializations",JSON.stringify(lists.subSpecializationList));
-      payload.append("board_certificates", JSON.stringify(lists.boardCertificateList));
-      payload.append("services",           JSON.stringify(lists.servicesList));
+      payload.append("specializations",     JSON.stringify(lists.specializationList));
+      payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
+      payload.append("board_certificates",  JSON.stringify(lists.boardCertificateList));
+      payload.append("services",            JSON.stringify(lists.servicesList));
 
       const res = await axiosClient.post("/doctor/setup", payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // The setup endpoint returns { user: {...} } — sync localStorage
       const updatedUser = res.data.user || {};
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
@@ -143,9 +143,7 @@ function SetUpAccountModal({ showModal, onClose }) {
         localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
       }
 
-      // Tell DoctorProfile (and DoctorSideBar) to re-fetch
       window.dispatchEvent(new Event("profileUpdated"));
-
       toast.success("Profile setup complete!");
       onClose();
     } catch (err) {
@@ -162,8 +160,6 @@ function SetUpAccountModal({ showModal, onClose }) {
   if (!showModal) return null;
 
   const { specializationList, subSpecializationList, boardCertificateList, servicesList } = lists;
-
-  // Show current saved profile picture as a preview (read-only hint)
   const savedImage = localStorage.getItem("profile_image");
 
   return (
@@ -180,9 +176,7 @@ function SetUpAccountModal({ showModal, onClose }) {
           className="position-relative px-4 py-3 border-bottom flex-shrink-0"
           style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px", backgroundColor: "#fff" }}
         >
-          <h3 className="m-0 fw-bold text-center" style={{ color: "#4D227C" }}>
-            Account Setup
-          </h3>
+          <h3 className="m-0 fw-bold text-center" style={{ color: "#4D227C" }}>Account Setup</h3>
           <button
             className="btn btn-link text-secondary p-1 position-absolute"
             style={{ top: "12px", right: "12px", fontSize: "24px" }}
@@ -196,7 +190,7 @@ function SetUpAccountModal({ showModal, onClose }) {
         <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           <div className="row g-3">
 
-            {/* Profile Picture — show current image as preview */}
+            {/* Profile Picture */}
             <div className="col-12">
               {savedImage && !formData.profilePicture && (
                 <div className="mb-2 d-flex align-items-center gap-3">
@@ -215,6 +209,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
+            {/* Description */}
             <div className="col-12">
               <textarea
                 placeholder="Description"
@@ -225,6 +220,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
+            {/* Professional Title */}
             <div className="col-12">
               <input
                 type="text"
@@ -236,6 +232,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
+            {/* Years of Experience + Practicing Since */}
             <div className="col-12 col-sm-6">
               <input
                 type="number"
@@ -251,7 +248,30 @@ function SetUpAccountModal({ showModal, onClose }) {
             <div className="col-12 col-sm-6">
               <input
                 type="text"
-                placeholder="License Number *"
+                placeholder="Practicing Since (e.g. 2011)"
+                value={formData.practicingSince}
+                onChange={(e) => handleInputChange("practicingSince", e.target.value)}
+                className="form-control"
+                style={{ borderRadius: "12px", height: "40px" }}
+              />
+            </div>
+
+            {/* PRC Number + License Number */}
+            <div className="col-12 col-sm-6">
+              <input
+                type="text"
+                placeholder="PRC License No. * (e.g. PSY-0123456)"
+                value={formData.prcNumber}
+                onChange={(e) => handleInputChange("prcNumber", e.target.value)}
+                className="form-control"
+                style={{ borderRadius: "12px", height: "40px" }}
+              />
+            </div>
+
+            <div className="col-12 col-sm-6">
+              <input
+                type="text"
+                placeholder="License Number"
                 value={formData.licenseNumber}
                 onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
                 className="form-control"
@@ -259,42 +279,13 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            <ListInput
-              label="Specialization *"
-              value={formData.specialization}
-              onChange={(val) => handleInputChange("specialization", val)}
-              list={specializationList}
-              add={() => addToList("specialization")}
-              remove={(i) => removeFromList("specializationList", i)}
-            />
+            {/* Tag Lists */}
+            <ListInput label="Specialization *"   value={formData.specialization}   onChange={(val) => handleInputChange("specialization", val)}   list={specializationList}    add={() => addToList("specialization")}    remove={(i) => removeFromList("specializationList", i)} />
+            <ListInput label="Sub-specialization"  value={formData.subSpecialization} onChange={(val) => handleInputChange("subSpecialization", val)} list={subSpecializationList}  add={() => addToList("subSpecialization")}  remove={(i) => removeFromList("subSpecializationList", i)} />
+            <ListInput label="Board Certificate"   value={formData.boardCertificate}  onChange={(val) => handleInputChange("boardCertificate", val)}  list={boardCertificateList}   add={() => addToList("boardCertificate")}   remove={(i) => removeFromList("boardCertificateList", i)} />
+            <ListInput label="My Services"         value={formData.myServices}        onChange={(val) => handleInputChange("myServices", val)}        list={servicesList}           add={() => addToList("myServices")}         remove={(i) => removeFromList("servicesList", i)} />
 
-            <ListInput
-              label="Sub-specialization"
-              value={formData.subSpecialization}
-              onChange={(val) => handleInputChange("subSpecialization", val)}
-              list={subSpecializationList}
-              add={() => addToList("subSpecialization")}
-              remove={(i) => removeFromList("subSpecializationList", i)}
-            />
-
-            <ListInput
-              label="Board Certificate"
-              value={formData.boardCertificate}
-              onChange={(val) => handleInputChange("boardCertificate", val)}
-              list={boardCertificateList}
-              add={() => addToList("boardCertificate")}
-              remove={(i) => removeFromList("boardCertificateList", i)}
-            />
-
-            <ListInput
-              label="My Services"
-              value={formData.myServices}
-              onChange={(val) => handleInputChange("myServices", val)}
-              list={servicesList}
-              add={() => addToList("myServices")}
-              remove={(i) => removeFromList("servicesList", i)}
-            />
-
+            {/* Certificate Image */}
             <FileInput
               label="Certificate Image"
               file={formData.certificateImage}
@@ -334,27 +325,9 @@ const FileInput = ({ label, file, onFileChange }) => {
   return (
     <div className="col-12">
       <div className="position-relative">
-        <input
-          type="text"
-          placeholder={`Upload ${label}`}
-          readOnly
-          value={file ? file.name : ""}
-          className="form-control"
-          style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
-        />
-        <input
-          type="file"
-          accept="image/*"
-          id={inputId}
-          className="d-none"
-          onChange={(e) => onFileChange(e.target.files[0])}
-        />
-        <button
-          type="button"
-          className="btn position-absolute"
-          style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
-          onClick={() => document.getElementById(inputId).click()}
-        >
+        <input type="text" placeholder={`Upload ${label}`} readOnly value={file ? file.name : ""} className="form-control" style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }} />
+        <input type="file" accept="image/*" id={inputId} className="d-none" onChange={(e) => onFileChange(e.target.files[0])} />
+        <button type="button" className="btn position-absolute" style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }} onClick={() => document.getElementById(inputId).click()}>
           Browse
         </button>
       </div>
@@ -365,39 +338,17 @@ const FileInput = ({ label, file, onFileChange }) => {
 const ListInput = ({ label, value, onChange, list, add, remove }) => (
   <div className="col-12">
     <div className="d-flex gap-2">
-      <input
-        type="text"
-        placeholder={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-        className="form-control"
-        style={{ borderRadius: "12px", height: "40px" }}
-      />
-      <button
-        type="button"
-        className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-        style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
-        onClick={add}
-      >
+      <input type="text" placeholder={label} value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} className="form-control" style={{ borderRadius: "12px", height: "40px" }} />
+      <button type="button" className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center" style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }} onClick={add}>
         <FiPlus size={18} />
       </button>
     </div>
     {list.length > 0 && (
       <div className="mt-2 d-flex flex-wrap gap-2">
         {list.map((item, i) => (
-          <span
-            key={i}
-            className="badge d-inline-flex align-items-center gap-2"
-            style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
-          >
+          <span key={i} className="badge d-inline-flex align-items-center gap-2" style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}>
             {item}
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", lineHeight: "1" }}
-              aria-label="Remove"
-            >
+            <button type="button" onClick={() => remove(i)} style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", padding: "0", lineHeight: "1" }} aria-label="Remove">
               <FiX size={16} strokeWidth={2} />
             </button>
           </span>

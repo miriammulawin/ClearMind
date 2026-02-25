@@ -102,6 +102,7 @@ class DoctorDashboardController extends Controller
         'professional_title'  => 'nullable|string',
         'description'         => 'nullable|string',
         'years_of_experience' => 'nullable|integer',
+        'prc_number'          => 'nullable|string',
         'license_number'      => 'nullable|string',
         'specializations'     => 'nullable|array',
         'sub_specializations' => 'nullable|array',
@@ -125,6 +126,7 @@ class DoctorDashboardController extends Controller
 
     // Save doctor-specific fields to doctors table
     $doctor->fill([
+        'prc_number'          => $request->prc_number,
         'professional_title'  => $request->professional_title,
         'description'         => $request->description,
         'years_of_experience' => $request->years_of_experience,
@@ -150,6 +152,7 @@ class DoctorDashboardController extends Controller
             'contactNo'         => $user->contact_no,
             'dob'               => $user->dob,
             'sex'               => $user->sex,
+            'prc_number'        => $doctor->prc_number,
             'description'       => $doctor->description,
             'professionalTitle' => $doctor->professional_title,
             'licenseNumber'     => $doctor->license_number,
