@@ -14,19 +14,53 @@ function DoctorProfile() {
   const fileInputRef                      = useRef(null);
   const navigate                          = useNavigate();
   const [profileFile,   setProfileFile]   = useState(null); // actual File object for upload
+
 const fetchProfile = async () => {
   try {
     const res = await axiosClient.get("/profile");
-    const user = res.data.data; // FIX HERE
+    const user    = res.data.user    || {};
+    const profile = res.data.profile || {};
 
-    localStorage.setItem("user", JSON.stringify(user));
+    // Merge and store in localStorage
+    const merged = { ...user, ...profile };
+    localStorage.setItem("user", JSON.stringify(merged));
 
-    if (user.profilePictureUrl) {
-      localStorage.setItem("profile_image", user.profilePictureUrl);
-    }
+    // Handle profile picture
+    const imageUrl = profile.profile_picture || null;
+    if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
-    setForm(initForm());
-    setPreviewImage(user.profilePictureUrl || null);
+    // Set preview image
+    setPreviewImage(imageUrl || localStorage.getItem("profile_image") || null);
+
+    // Directly set form with fresh API data
+    setForm({
+      profileImage:    imageUrl || null,
+      firstName:       user.firstName     || "",
+      lastName:        user.lastName      || "",
+      middleInitial:   user.middleInitial || "",
+      email:           user.email         || "",
+      contactNumber:   user.contactNo     || "",
+      dateOfBirth:     formatDate(user.dob) || "",
+      age:             computeAge(user.dob) || "",
+      gender:          capitalize(user.sex) || "",
+
+      prcNumber:       profile.license_number || profile.prc_number || "Not set",
+      bio:             profile.description    || "",
+      specialty:       safeParse(profile.specializations)[0] ?? "",
+      practicingSince: profile.practicing_since || "",
+      credentials:     profile.professional_title || "",
+
+      subspecialty:    safeParse(profile.sub_specializations),
+      services:        safeParse(profile.services),
+      certifications:  safeParse(profile.board_certificates),
+
+      newSubspecialty:  "",
+      newService:       "",
+      newCertification: "",
+      currentPassword:  "",
+      newPassword:      "",
+      confirmPassword:  "",
+    });
 
   } catch (error) {
     console.error("Failed to fetch profile:", error);
@@ -130,15 +164,15 @@ const fetchProfile = async () => {
       specialty:       u?.specialty       || (safeParse(u?.specializations)[0] ?? ""),
       practicingSince: u?.practicingSince || "",
       credentials:     u?.credentials     || u?.professionalTitle || "",
-      // list fields
+
       subspecialty:   safeParse(u?.subSpecializations),
       services:        safeParse(u?.services),
       certifications:  safeParse(u?.boardCertificates),
-      // temp input fields
+
       newSubspecialty:  "",
       newService:       "",
       newCertification: "",
-      // password fields
+
       currentPassword: "",
       newPassword:     "",
       confirmPassword: "",
@@ -150,6 +184,10 @@ const fetchProfile = async () => {
 
 useEffect(() => {
   fetchProfile();
+
+  const handleProfileUpdated = () => fetchProfile();
+  window.addEventListener("profileUpdated", handleProfileUpdated);
+  return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
 }, []);
 
   const user     = getUser();
@@ -191,84 +229,82 @@ useEffect(() => {
   };
 
   // ── Save — posts to backend then syncs localStorage ─────────────
-  const handleSave = async () => {
-    setSaveLoading(true);
-    try {
-      const payload = new FormData();
+const handleSave = async () => {
+  setSaveLoading(true);
 
-      // File upload only if a new image was selected
-      if (profileFile) {
-        payload.append("profile_picture", profileFile);
-      }
+  try {
+    const payload = new FormData();
 
-      payload.append("professional_title",  form.credentials || form.specialty);
-      payload.append("description",         form.bio);
-      payload.append("years_of_experience", "");
-      payload.append("license_number",      form.prcNumber === "Not set" ? "" : form.prcNumber);
-      payload.append("practicing_since",    form.practicingSince);
-      payload.append("specializations",     JSON.stringify(
-        form.specialty ? [form.specialty] : form.subspecialty
-      ));
-      payload.append("sub_specializations", JSON.stringify(form.subspecialty));
-      payload.append("board_certificates",  JSON.stringify(form.certifications));
-      payload.append("services",            JSON.stringify(form.services));
-
-      const res = await axiosClient.post("/doctor/setup", payload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      // ── Sync the returned full user object back to localStorage ──
-      // The backend returns the updated user with all fields + image URL
-      const updatedUser = res.data.user;
-      if (updatedUser) {
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        // Update profile_image cache with the real server URL
-        if (updatedUser.profilePictureUrl) {
-          localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
-          setPreviewImage(updatedUser.profilePictureUrl);
-        }
-
-        // Refresh form from the server response so everything is in sync
-        setForm(prev => ({
-          ...prev,
-          profileImage: updatedUser.profilePictureUrl || prev.profileImage,
-          credentials:  updatedUser.credentials       || prev.credentials,
-          bio:          updatedUser.description        || prev.bio,
-          specialty:    updatedUser.specialty          || prev.specialty,
-          practicingSince: updatedUser.practicingSince || prev.practicingSince,
-          subspecialty:    safeParse(updatedUser.subSpecializations),
-          services:        safeParse(updatedUser.services),
-          certifications:  safeParse(updatedUser.boardCertificates),
-        }));
-      }
-
-      // Clear the file ref since it's been uploaded
-      setProfileFile(null);
-
-      // Notify sidebar to refresh
-      window.dispatchEvent(new Event("profileUpdated"));
-
-      toast.success("Profile saved!", {
-        duration: 2000,
-        style: {
-          background:   "#E2F7E3",
-          border:       "1px solid #91C793",
-          color:        "#2E7D32",
-          fontWeight:   600,
-          borderRadius: "10px",
-        },
-      });
-
-      setIsEditing(false);
-
-    } catch (err) {
-      const msg = err.response?.data?.message || "Failed to save. Please try again.";
-      toast.error(msg);
-    } finally {
-      setSaveLoading(false);
+    if (profileFile) {
+      payload.append("profile_picture", profileFile);
     }
-  };
+
+    payload.append("professional_title", form.credentials || form.specialty || "");
+    payload.append("description", form.bio || "");
+    payload.append("years_of_experience", form.yearsOfExperience || "");
+    payload.append("license_number", form.prcNumber === "Not set" ? "" : form.prcNumber || "");
+    payload.append("practicing_since", form.practicingSince || "");
+
+    // Arrays — always stringify and ensure array
+    payload.append("specializations", JSON.stringify(Array.isArray(form.subspecialty) ? form.subspecialty : []));
+    payload.append("sub_specializations", JSON.stringify(Array.isArray(form.subspecialty) ? form.subspecialty : []));
+    payload.append("board_certificates", JSON.stringify(Array.isArray(form.certifications) ? form.certifications : []));
+    payload.append("services", JSON.stringify(Array.isArray(form.services) ? form.services : []));
+
+    console.log("Payload Debug:", {
+      specializations: form.subspecialty,
+      sub_specializations: form.subspecialty,
+      board_certificates: form.certifications,
+      services: form.services,
+    });
+
+    const res = await axiosClient.post("/doctor/setup", payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    const updatedUser = res.data.user;
+
+    if (updatedUser) {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      if (updatedUser.profilePictureUrl) {
+        localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
+        setPreviewImage(updatedUser.profilePictureUrl);
+      }
+
+      setForm(prev => ({
+        ...prev,
+        profileImage: updatedUser.profilePictureUrl || prev.profileImage,
+        credentials: updatedUser.professionalTitle || prev.credentials,
+        bio: updatedUser.description || prev.bio,
+        specialty: updatedUser.specializations?.[0] || prev.specialty,
+        practicingSince: updatedUser.practicingSince || prev.practicingSince,
+
+        subspecialty: updatedUser.subSpecializations || [],
+        services: updatedUser.services || [],
+        certifications: updatedUser.boardCertificates || [],
+      }));
+
+      window.dispatchEvent(new Event("profileUpdated"));
+    }
+
+    setProfileFile(null);
+    toast.success("Profile saved!");
+    setIsEditing(false);
+
+  } catch (err) {
+    console.error(err);
+
+    const msg =
+      err.response?.data?.message ||
+      Object.values(err.response?.data?.errors || {})[0]?.[0] ||
+      "Failed to save. Please try again.";
+
+    toast.error(msg);
+  } finally {
+    setSaveLoading(false);
+  }
+};
 
   // ── Save password ────────────────────────────────────────────────
   const handleSavePassword = async () => {

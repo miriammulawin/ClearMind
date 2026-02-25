@@ -3,16 +3,6 @@ import { FiX, FiPlus } from "react-icons/fi";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
 
-// ── Helper: read user safely ────────────────────────────────────────
-const getUser = () => {
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-};
-
 const safeParse = (val) => {
   if (!val) return [];
   if (Array.isArray(val)) return val;
@@ -20,76 +10,74 @@ const safeParse = (val) => {
 };
 
 function SetUpAccountModal({ showModal, onClose }) {
-  // ── Pre-fill from localStorage ───────────────────────────────────
-  const buildInitialForm = () => {
-    const u = getUser();
-    return {
-      profilePicture:    null,
-      description:       u?.description       || "",
-      professionalTitle: u?.professionalTitle  || u?.credentials || "",
-      yearsOfExperience: u?.yearsOfExperience  || "",
-      licenseNumber:     u?.prcNumber          || "",
-      specialization:    "",   // text input buffer
-      subSpecialization: "",
-      boardCertificate:  "",
-      myServices:        "",
-      certificateImage:  null,
+  const [formData, setFormData] = useState({
+    profilePicture:    null,
+    certificateImage:  null,
+    description:       "",
+    professionalTitle: "",
+    yearsOfExperience: "",
+    licenseNumber:     "",
+    specialization:    "",
+    subSpecialization: "",
+    boardCertificate:  "",
+    myServices:        "",
+  });
+
+  const [lists, setLists] = useState({
+    specializationList:    [],
+    subSpecializationList: [],
+    boardCertificateList:  [],
+    servicesList:          [],
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  // ── Fetch & pre-populate form when modal opens ──────────────────
+  useEffect(() => {
+    if (!showModal) return;
+
+    const fetchProfile = async () => {
+      try {
+        const res     = await axiosClient.get("/profile");
+        const user    = res.data.user    || {};
+        const profile = res.data.profile || {};
+
+        // Pre-fill text inputs
+        setFormData({
+          profilePicture:    null,   // can't pre-fill File input, but show current image separately
+          certificateImage:  null,
+          description:       profile.description       || "",
+          professionalTitle: profile.professional_title || "",
+          yearsOfExperience: profile.years_of_experience != null ? String(profile.years_of_experience) : "",
+          licenseNumber:     profile.license_number    || profile.prc_number || "",
+          specialization:    "",
+          subSpecialization: "",
+          boardCertificate:  "",
+          myServices:        "",
+        });
+
+        // Pre-fill tag lists
+        setLists({
+          specializationList:    safeParse(profile.specializations),
+          subSpecializationList: safeParse(profile.sub_specializations),
+          boardCertificateList:  safeParse(profile.board_certificates),
+          servicesList:          safeParse(profile.services),
+        });
+
+        // Store merged data in localStorage
+        const merged = { ...user, ...profile };
+        localStorage.setItem("user", JSON.stringify(merged));
+        if (profile.profile_picture) {
+          localStorage.setItem("profile_image", profile.profile_picture);
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
     };
-  };
 
-  const buildInitialLists = () => {
-    const u = getUser();
-    return {
-      specializationList:    safeParse(u?.specializations)    || (u?.specialty ? [u.specialty] : []),
-      subSpecializationList: safeParse(u?.subSpecializations) || [],
-      boardCertificateList:  safeParse(u?.boardCertificates)  || [],
-      servicesList:          safeParse(u?.services)           || [],
-    };
-  };
-
-  const [formData, setFormData] = useState(buildInitialForm);
-  const [lists,    setLists]    = useState(buildInitialLists);
-  const [loading,  setLoading]  = useState(false);
-
-  // Re-sync when modal opens
-useEffect(() => {
-  if (!showModal) return;
-
-  const fetchProfile = async () => {
-    try {
-      const res = await axiosClient.get("/profile");
-      const user = res.data.data; // FIX HERE
-
-      localStorage.setItem("user", JSON.stringify(user));
-
-      setFormData({
-        profilePicture: null,
-        certificateImage: null,
-        description: user.description || "",
-        professionalTitle: user.professionalTitle || "",
-        yearsOfExperience: user.yearsOfExperience || "",
-        licenseNumber: user.licenseNumber || "",
-        specialization: "",
-        subSpecialization: "",
-        boardCertificate: "",
-        myServices: "",
-      });
-
-      setLists({
-        specializationList: user.specializations || [],
-        subSpecializationList: user.subSpecializations || [],
-        boardCertificateList: user.boardCertificates || [],
-        servicesList: user.services || [],
-      });
-
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-    }
-  };
-
-  fetchProfile();
-
-}, [showModal]);
+    fetchProfile();
+  }, [showModal]);
 
   const handleInputChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -97,7 +85,6 @@ useEffect(() => {
   const handleFileChange = (field, file) =>
     setFormData((prev) => ({ ...prev, [field]: file }));
 
-  // Explicit map — avoids "myServices" → "myServicesList" (wrong key) crash
   const FIELD_TO_LIST_KEY = {
     specialization:    "specializationList",
     subSpecialization: "subSpecializationList",
@@ -106,11 +93,11 @@ useEffect(() => {
   };
 
   const addToList = (field) => {
-    const val    = formData[field]?.trim();
+    const val     = formData[field]?.trim();
     const listKey = FIELD_TO_LIST_KEY[field];
     if (!val || !listKey) return;
     setLists((prev) => ({ ...prev, [listKey]: [...prev[listKey], val] }));
-    setFormData((prev) => ({ ...prev, [field]: "" }));
+    handleInputChange(field, "");
   };
 
   const removeFromList = (listKey, index) => {
@@ -120,87 +107,64 @@ useEffect(() => {
     }));
   };
 
-  // ── Submit ───────────────────────────────────────────────────────
+  // ── Save ────────────────────────────────────────────────────────
   const handleUpload = async () => {
-  console.log("UPLOAD CLICKED!");
-  if (!formData.professionalTitle.trim()) {
-    toast.error("Professional Title is required.");
-    return;
-  }
+    if (!formData.professionalTitle.trim()) return toast.error("Professional Title is required.");
+    if (!formData.licenseNumber.trim())     return toast.error("License Number is required.");
+    if (lists.specializationList.length === 0) return toast.error("Please add at least one Specialization.");
 
-  if (!formData.licenseNumber.trim()) {
-    toast.error("License Number is required.");
-    return;
-  }
+    setLoading(true);
 
-  if (lists.specializationList.length === 0) {
-    toast.error("Please add at least one Specialization.");
-    return;
-  }
+    try {
+      const payload = new FormData();
 
-  setLoading(true);
+      if (formData.profilePicture)   payload.append("profile_picture",   formData.profilePicture);
+      if (formData.certificateImage) payload.append("certificate_image",  formData.certificateImage);
 
-  try {
-    const payload = new FormData();
+      payload.append("description",         formData.description);
+      payload.append("professional_title",  formData.professionalTitle);
+      payload.append("years_of_experience", formData.yearsOfExperience || "");
+      payload.append("license_number",      formData.licenseNumber);
 
-    if (formData.profilePicture) {
-      payload.append("profile_picture", formData.profilePicture);
-    }
+      payload.append("specializations",    JSON.stringify(lists.specializationList));
+      payload.append("sub_specializations",JSON.stringify(lists.subSpecializationList));
+      payload.append("board_certificates", JSON.stringify(lists.boardCertificateList));
+      payload.append("services",           JSON.stringify(lists.servicesList));
 
-    if (formData.certificateImage) {
-      payload.append("certificate_image", formData.certificateImage);
-    }
+      const res = await axiosClient.post("/doctor/setup", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-    payload.append("description", formData.description);
-    payload.append("professional_title", formData.professionalTitle);
-    payload.append("years_of_experience", formData.yearsOfExperience || "");
-    payload.append("license_number", formData.licenseNumber);
-
-    // Always stringify arrays for FormData
-    payload.append("specializations", JSON.stringify(lists.specializationList));
-    payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
-    payload.append("board_certificates", JSON.stringify(lists.boardCertificateList));
-    payload.append("services", JSON.stringify(lists.servicesList));
-
-    const res = await axiosClient.post("/doctor/setup", payload, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    const updatedUser = res.data.user;
-
-    if (updatedUser) {
-      // Save clean server response
+      // The setup endpoint returns { user: {...} } — sync localStorage
+      const updatedUser = res.data.user || {};
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       if (updatedUser.profilePictureUrl) {
         localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
       }
 
-      // Notify other components (like sidebar)
+      // Tell DoctorProfile (and DoctorSideBar) to re-fetch
       window.dispatchEvent(new Event("profileUpdated"));
+
+      toast.success("Profile setup complete!");
+      onClose();
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        Object.values(err.response?.data?.errors || {})[0]?.[0] ||
+        "Upload failed. Please try again.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Profile setup complete!");
-    onClose();
-
-  } catch (err) {
-    console.log(err.response?.data);
-
-    const msg =
-      err.response?.data?.message ||
-      Object.values(err.response?.data?.errors || {})[0]?.[0] ||
-      "Upload failed. Please try again.";
-
-    toast.error(msg);
-  } finally {
-    setLoading(false);
-  }
-    };
-  
+  };
 
   if (!showModal) return null;
 
   const { specializationList, subSpecializationList, boardCertificateList, servicesList } = lists;
+
+  // Show current saved profile picture as a preview (read-only hint)
+  const savedImage = localStorage.getItem("profile_image");
 
   return (
     <div
@@ -209,16 +173,9 @@ useEffect(() => {
     >
       <div
         className="bg-white d-flex flex-column"
-        style={{
-          width:       "95%",
-          maxWidth:    "800px",
-          height:      "90vh",
-          maxHeight:   "900px",
-          borderRadius:"24px",
-          boxShadow:   "0 8px 30px rgba(0,0,0,0.2)",
-        }}
+        style={{ width: "95%", maxWidth: "800px", height: "90vh", maxHeight: "900px", borderRadius: "24px", boxShadow: "0 8px 30px rgba(0,0,0,0.2)" }}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div
           className="position-relative px-4 py-3 border-bottom flex-shrink-0"
           style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px", backgroundColor: "#fff" }}
@@ -227,7 +184,6 @@ useEffect(() => {
             Account Setup
           </h3>
           <button
-            type="button"
             className="btn btn-link text-secondary p-1 position-absolute"
             style={{ top: "12px", right: "12px", fontSize: "24px" }}
             onClick={onClose}
@@ -236,18 +192,29 @@ useEffect(() => {
           </button>
         </div>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           <div className="row g-3">
 
-            {/* Profile Picture */}
-            <FileInput
-              label="Profile Picture"
-              file={formData.profilePicture}
-              onFileChange={(file) => handleFileChange("profilePicture", file)}
-            />
+            {/* Profile Picture — show current image as preview */}
+            <div className="col-12">
+              {savedImage && !formData.profilePicture && (
+                <div className="mb-2 d-flex align-items-center gap-3">
+                  <img
+                    src={savedImage}
+                    alt="Current profile"
+                    style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", border: "2px solid #4D227C" }}
+                  />
+                  <small className="text-muted">Current profile picture. Upload a new one to replace it.</small>
+                </div>
+              )}
+              <FileInput
+                label="Profile Picture"
+                file={formData.profilePicture}
+                onFileChange={(file) => handleFileChange("profilePicture", file)}
+              />
+            </div>
 
-            {/* Description */}
             <div className="col-12">
               <textarea
                 placeholder="Description"
@@ -258,7 +225,6 @@ useEffect(() => {
               />
             </div>
 
-            {/* Professional Title */}
             <div className="col-12">
               <input
                 type="text"
@@ -270,7 +236,6 @@ useEffect(() => {
               />
             </div>
 
-            {/* Years of Experience + License Number */}
             <div className="col-12 col-sm-6">
               <input
                 type="number"
@@ -279,10 +244,10 @@ useEffect(() => {
                 onChange={(e) => handleInputChange("yearsOfExperience", e.target.value)}
                 className="form-control"
                 style={{ borderRadius: "12px", height: "40px" }}
-                min="0"
-                max="70"
+                min="0" max="70"
               />
             </div>
+
             <div className="col-12 col-sm-6">
               <input
                 type="text"
@@ -294,7 +259,6 @@ useEffect(() => {
               />
             </div>
 
-            {/* Specialization */}
             <ListInput
               label="Specialization *"
               value={formData.specialization}
@@ -304,7 +268,6 @@ useEffect(() => {
               remove={(i) => removeFromList("specializationList", i)}
             />
 
-            {/* Sub-specialization */}
             <ListInput
               label="Sub-specialization"
               value={formData.subSpecialization}
@@ -314,7 +277,6 @@ useEffect(() => {
               remove={(i) => removeFromList("subSpecializationList", i)}
             />
 
-            {/* Board Certificate */}
             <ListInput
               label="Board Certificate"
               value={formData.boardCertificate}
@@ -324,7 +286,6 @@ useEffect(() => {
               remove={(i) => removeFromList("boardCertificateList", i)}
             />
 
-            {/* My Services */}
             <ListInput
               label="My Services"
               value={formData.myServices}
@@ -334,7 +295,6 @@ useEffect(() => {
               remove={(i) => removeFromList("servicesList", i)}
             />
 
-            {/* Certificate Image */}
             <FileInput
               label="Certificate Image"
               file={formData.certificateImage}
@@ -344,10 +304,9 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* ── Footer ── */}
+        {/* Footer */}
         <div className="d-flex align-items-center justify-content-center px-4 py-3 border-top flex-shrink-0 position-relative">
           <button
-            type="button"
             className="btn text-white fw-semibold px-4 py-2"
             style={{ backgroundColor: "#4D227C", borderRadius: "12px", minWidth: "120px" }}
             onClick={handleUpload}
@@ -356,7 +315,6 @@ useEffect(() => {
             {loading ? "Uploading..." : "Save Changes"}
           </button>
           <button
-            type="button"
             className="btn btn-link text-decoration-none position-absolute"
             style={{ right: "20px", color: "#4D227C" }}
             onClick={onClose}
@@ -365,16 +323,12 @@ useEffect(() => {
             Cancel
           </button>
         </div>
-
       </div>
     </div>
   );
-
 }
-export default SetUpAccountModal;
 
 // ── Helper Components ──────────────────────────────────────────────
-
 const FileInput = ({ label, file, onFileChange }) => {
   const inputId = label.replace(/\s+/g, "") + "Input";
   return (
@@ -398,14 +352,7 @@ const FileInput = ({ label, file, onFileChange }) => {
         <button
           type="button"
           className="btn position-absolute"
-          style={{
-            backgroundColor: "#C4B5D6",
-            top: "0", right: "0",
-            height:       "40px",
-            borderRadius: "0 12px 12px 0",
-            border:       "none",
-            padding:      "0 15px",
-          }}
+          style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
           onClick={() => document.getElementById(inputId).click()}
         >
           Browse
@@ -423,12 +370,7 @@ const ListInput = ({ label, value, onChange, list, add, remove }) => (
         placeholder={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            add();
-          }
-        }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
         className="form-control"
         style={{ borderRadius: "12px", height: "40px" }}
       />
@@ -453,17 +395,7 @@ const ListInput = ({ label, value, onChange, list, add, remove }) => (
             <button
               type="button"
               onClick={() => remove(i)}
-              style={{
-                background:  "none",
-                border:      "none",
-                color:       "white",
-                cursor:      "pointer",
-                display:     "flex",
-                alignItems:  "center",
-                justifyContent: "center",
-                padding:     "0",
-                lineHeight:  "1",
-              }}
+              style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", lineHeight: "1" }}
               aria-label="Remove"
             >
               <FiX size={16} strokeWidth={2} />
@@ -475,3 +407,4 @@ const ListInput = ({ label, value, onChange, list, add, remove }) => (
   </div>
 );
 
+export default SetUpAccountModal;

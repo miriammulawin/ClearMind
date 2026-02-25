@@ -17,18 +17,17 @@ class UserFactory extends Factory
         );
 
         return [
-            'first_name'         => $this->faker->firstName,
-            'last_name'          => $this->faker->lastName,
-            'dob'                => $this->faker->dateTimeBetween('1970-01-01', '2005-01-01')->format('Y-m-d'),
-            'sex'                => $this->faker->randomElement(['male', 'female']),
-            'contact_no'         => '09' . $this->faker->numerify('#########'),
-            'email'              => $this->faker->unique()->safeEmail,
-            'password'           => Hash::make('client123'),
-            'role'               => 'Client',
-            'appointment_status' => $this->faker->randomElement(['Scheduled', 'Cancelled', 'Pending']),
-            'prc_number'         => null, // Default to null for clients
-            'created_at'         => $createdAt,
-            'updated_at'         => $createdAt,
+            'first_name'   => $this->faker->firstName(),
+            'last_name'    => $this->faker->lastName(),
+            'dob'          => $this->faker->dateTimeBetween('1970-01-01', '2005-01-01')->format('Y-m-d'),
+            'sex'          => $this->faker->randomElement(['male', 'female']),
+            'contact_no'   => '09' . $this->faker->numerify('#########'),
+            'email'        => $this->faker->unique()->safeEmail(),
+            'password'     => static::$password ??= Hash::make('client123'),
+            'role'         => 'Client',           // default – override in seeder when needed
+            'is_active'    => true,
+            'created_at'   => $createdAt,
+            'updated_at'   => $createdAt,
         ];
     }
 
@@ -36,6 +35,29 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    // Optional states for different roles
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'Admin',
+            'email' => 'admin@clearmind.com',
+        ]);
+    }
+
+    public function doctor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'Doctor',
+        ]);
+    }
+
+    public function client(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'Client',
         ]);
     }
 }

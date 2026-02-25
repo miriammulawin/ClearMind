@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoctorDashboardController;
+use App\Http\Controllers\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | ClearMind API Routes
@@ -35,5 +36,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctor/monthly-patients', [DoctorDashboardController::class, 'monthlyPatients']);
     Route::post('/doctor/setup', [DoctorDashboardController::class, 'setup']);
     Route::put ('/doctor/profile', [DoctorDashboardController::class, 'updateProfile']);
+     Route::get('/profile', [ProfileController::class, 'show']);
 
 });

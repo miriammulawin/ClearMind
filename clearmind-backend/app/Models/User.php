@@ -2,17 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
-        // ── Core ──────────────────────────────────────────
         'first_name',
         'last_name',
         'dob',
@@ -22,65 +27,89 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
-        'prc_number',
-        'appointment_status',
-
-        // ── Doctor Profile ─────────────────────────────────
-        'professional_title',
-        'description',
-        'years_of_experience',
-        'license_number',
-        'specializations',
-        'sub_specializations',
-        'board_certificates',
-        'services',
-        'profile_picture',
-        'certificate_image',
-        'practicing_since',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    protected function casts(): array
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+        'is_active'         => 'boolean',
+        'dob'               => 'date',
+    ];
+
+    /**
+     * Relationship: Doctor profile (1:1)
+     */
+    public function doctor()
     {
-        return [
-            'email_verified_at'  => 'datetime',
-            'dob'                => 'date:Y-m-d',
-            'is_active'          => 'boolean',
-            'password'           => 'hashed',
-            // Auto encode/decode JSON columns
-            'specializations'    => 'array',
-            'sub_specializations'=> 'array',
-            'board_certificates' => 'array',
-            'services'           => 'array',
-        ];
+        return $this->hasOne(Doctor::class);
     }
 
-    // ── Accessors ──────────────────────────────────────────────────
+    /**
+     * Relationship: Client profile (1:1)
+     */
+    public function client()
+    {
+        return $this->hasOne(Client::class);
+    }
+
+    /**
+     * Accessor: Get the appropriate profile based on role
+     *
+     * Usage: $user->profile
+     */
+    public function getProfileAttribute()
+    {
+        return match ($this->role) {
+            'Doctor' => $this->doctor,
+            'Client' => $this->client,
+            default  => null,
+        };
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'Admin';
+    }
+
+    /**
+     * Check if user is doctor
+     */
+    public function isDoctor(): bool
+    {
+        return $this->role === 'Doctor';
+    }
+
+    /**
+     * Check if user is client
+     */
+    public function isClient(): bool
+    {
+        return $this->role === 'Client';
+    }
+
+    /**
+     * Get full name accessor
+     */
     public function getFullNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
-    }
-
-    /**
-     * Return the full public URL for the profile picture.
-     * Returns null if no picture is set.
-     */
-    public function getProfilePictureUrlAttribute(): ?string
-    {
-        if (!$this->profile_picture) return null;
-        return asset('storage/' . $this->profile_picture);
-    }
-
-    /**
-     * Return the full public URL for the certificate image.
-     */
-    public function getCertificateImageUrlAttribute(): ?string
-    {
-        if (!$this->certificate_image) return null;
-        return asset('storage/' . $this->certificate_image);
+        return trim("{$this->first_name} {$this->last_name}");
     }
 }
