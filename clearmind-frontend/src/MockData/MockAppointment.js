@@ -8,7 +8,7 @@ export const MOCK_APPOINTMENTS = [
   {
     id: 1,
     time: '9:00 A.M.',
-    date: 'February 19, 2026',
+    date: 'March 2, 2026',
     serviceType: 'Psychotherapy and Counseling',
     doctor: 'Juan Dela Cruz',
     type: 'Clinic - CMPS',
@@ -44,7 +44,7 @@ export const MOCK_APPOINTMENTS = [
   {
     id: 3,
     time: '11:00 A.M.',
-    date: 'January 28, 2026',
+    date: 'March 2, 2026',
     serviceType: 'Mental Health Certification',
     doctor: 'Pedro Reyes',
     type: 'Online Consultation',

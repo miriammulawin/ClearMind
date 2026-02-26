@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Container, Card, Button, Alert } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaVideo, FaClinicMedical, FaCalendarCheck, FaUserCircle, FaArrowLeft } from 'react-icons/fa';
-import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../MockData/MockDoctors.js';
+import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
 import DoctorProfile from './DoctorProfile.jsx';
-import '../ClientStyle/BookAppointment.css';
+import '../../ClientStyle/BookAppointment.css';
 
 const BookAppointment = () => {
   const location = useLocation();

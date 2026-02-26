@@ -3,12 +3,12 @@ import { Image } from "react-bootstrap";
 import { Container, Card, Button, Form } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaVideo, FaHome } from 'react-icons/fa';
-import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../../src/MockData/MockDoctors.js';
-import styles from '../ClientStyle/BookAppointmentForm.module.css';
-import logo_login_single from "../../../src/assets/CMPS_Img_logo_only.png";
+import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
+import styles from '../../ClientStyle/BookAppointmentForm.module.css';
+import logo_login_single from "../../../../src/assets/CMPS_Img_logo_only.png";
 
 
-const BookAppointmentForm = () => {
+const SetAppointmentForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const doctorData = location.state?.doctor;
@@ -212,4 +212,4 @@ const BookAppointmentForm = () => {
   );
 };
 
-export default BookAppointmentForm;
+export default SetAppointmentForm;

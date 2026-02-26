@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Card, Button, Dropdown, Row, Col, Form, Badge } from 'react-bootstrap';
 import { FaCalendarTimes, FaVideo, FaClinicMedical, FaFilter } from "react-icons/fa";
-import "../ClientStyle/HistoryTab.css";
+import "../../ClientStyle/HistoryTab.css";
 
 const HistoryTab = () => {
   const [selectedStatus, setSelectedStatus] = useState('All');

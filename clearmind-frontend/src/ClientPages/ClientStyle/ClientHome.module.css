@@ -32,7 +32,7 @@
   background-color: transparent;
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 35px !important;
+  margin-bottom: 70px !important;
 }
 
 /* Custom Scrollbar */
@@ -54,104 +54,143 @@
   background: #4a2273;
 }
 
-/*  Carousel*/
+/* Carousel */
+
 .hcWrap {
   width: 100%;
 }
 
-.hcHeading {
-  font-size: clamp(0.85rem, 2.5vw, 1.25rem);
-  font-weight: 700;
-  color: #542982;
-  text-align: center;
-  line-height: 1.45;
-  margin: 0 0 14px;
-  padding: 0 12px;
-}
-
+/* Clips everything outside the active slide */
 .hcViewport {
   overflow: hidden;
-  padding: 4px 0;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0px;
-}
-
-/* Arrow buttons */
-.hcArrow {
-  flex-shrink: 0;
-  width: clamp(28px, 6vw, 36px);
-  height: clamp(28px, 6vw, 36px);
-  border: none;
-  border-radius: 50%;
-  background: none;
-  color: #be93ff;
-  font-size: clamp(1rem, 3vw, 1.4rem);
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background 0.2s, transform 0.15s;
-  z-index: 2;
-  padding: 0;
-}
-
-.hcArrow:hover {
-  background: #dabdff;
-  color: #2d0d5e;
-  border-radius: 50%;
-}
-
-/* Track clips inside the viewport area between arrows */
-.hcTrack {
-  flex: 1;
-  display: flex;
-  gap: 12px;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  touch-action: pan-y;
-  cursor: grab;
-}
-
-.hcTrack:active {
-  cursor: grabbing;
-}
-
-/* Slide Card-*/
-.hcSlide {
-  flex: 0 0 auto; /* allow natural width */
-  min-width: 100%; /* full width of viewport */
   width: 100%;
-  height: clamp(150px, 26vw, 230px);
-  border-radius: 16px;
-  box-shadow: 0 4px 18px rgba(84, 41, 130, 0.18);
-  padding: clamp(12px, 3vw, 20px) clamp(14px, 3.5vw, 24px);
-  padding-bottom: clamp(36px, 8vw, 48px); /* room for overlay */
+  border-radius: 18px;
+}
+
+/* Flex row — each slide is exactly 100% of viewport width */
+.hcTrack {
+  display: flex;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+}
+
+/* Each slide fills the full viewport width */
+.hcSlide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: clamp(155px, 42vw, 215px);
+  border-radius: 18px;
+  padding: clamp(14px, 3.5vw, 22px) clamp(16px, 4vw, 26px);
+  padding-bottom: clamp(40px, 9vw, 54px);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
-/* Slide bottom overlay: dots + progress */
+/* Decorative circle */
+.hcSlideCircle {
+  position: absolute;
+  width: clamp(90px, 22vw, 170px);
+  height: clamp(90px, 22vw, 170px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  right: -28px;
+  top: -28px;
+  pointer-events: none;
+}
+
+/* Pill label */
+.hcSlidePill {
+  align-self: flex-start;
+  font-size: clamp(0.58rem, 1.4vw, 0.68rem);
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 3px 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Big icon watermark */
+.hcSlideIcon {
+  position: absolute;
+  right: clamp(14px, 4vw, 24px);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: clamp(2.2rem, 9vw, 4.5rem);
+  color: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+/* Text */
+.hcSlideText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hcSlideHeading {
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.hcSlideSubheading {
+  font-size: clamp(0.75rem, 2vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.hcSlideDesc {
+  font-size: clamp(0.62rem, 1.5vw, 0.75rem);
+  color: rgba(255, 255, 255, 0.7);
+  margin: 4px 0 0;
+  max-width: 68%;
+  line-height: 1.4;
+}
+
+/* CTA */
+.hcSlideCta {
+  align-self: flex-start;
+  background: transparent;
+  border: 1.5px solid;
+  border-radius: 20px;
+  padding: clamp(4px, 1vw, 7px) clamp(12px, 3vw, 20px);
+  font-size: clamp(0.6rem, 1.5vw, 0.73rem);
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.2s;
+}
+
+.hcSlideCta:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Bottom overlay: dots + progress */
 .hcSlideOverlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 6px 14px 8px;
+  padding: 6px 14px 9px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  background: linear-gradient(to top, rgba(0,0,0,0.22), transparent);
-  border-radius: 0 0 16px 16px;
+  gap: 5px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.25), transparent);
+  border-radius: 0 0 18px 18px;
 }
 
-/* Dots row */
 .hcDots {
   display: flex;
   justify-content: center;
@@ -162,7 +201,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.4);
   border: none;
   cursor: pointer;
   padding: 0;
@@ -170,15 +209,14 @@
 }
 
 .hcDotActive {
-  background: #ffffff;
-  transform: scale(1.4);
+  background: #fff;
+  transform: scale(1.45);
 }
 
-/* Progress bar */
 .hcProgress {
   height: 3px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
   overflow: hidden;
 }
 
@@ -194,90 +232,6 @@
   to   { width: 100%; }
 }
 
-/* Decorative background circle */
-.hcSlide::after {
-  content: "";
-  position: absolute;
-  width: clamp(80px, 20vw, 160px);
-  height: clamp(80px, 20vw, 160px);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  right: -24px;
-  top: -24px;
-  pointer-events: none;
-}
-
-/* Label pill */
-.hcSlidePill {
-  align-self: flex-start;
-  font-size: clamp(0.58rem, 1.4vw, 0.7rem);
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255,255,255,0.25);
-  border-radius: 20px;
-  padding: 2px 10px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-/* Icon */
-.hcSlideIcon {
-  position: absolute;
-  right: clamp(14px, 4vw, 26px);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: clamp(2rem, 8vw, 4rem);
-  color: rgba(255, 255, 255, 0.18);
-  pointer-events: none;
-}
-
-/* Text block */
-.hcSlideText {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.hcSlideHeading {
-  font-size: clamp(0.88rem, 2.4vw, 1.15rem);
-  font-weight: 800;
-  color: #fff;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.hcSlideSubheading {
-  font-size: clamp(0.75rem, 1.9vw, 0.95rem);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0;
-}
-
-.hcSlideDesc {
-  font-size: clamp(0.62rem, 1.5vw, 0.76rem);
-  color: rgba(255, 255, 255, 0.72);
-  margin: 4px 0 0;
-  max-width: 65%;
-  line-height: 1.35;
-}
-
-/* CTA button inside slide */
-.hcSlideCta {
-  align-self: flex-start;
-  background: transparent;
-  border: 1.5px solid;
-  border-radius: 20px;
-  padding: clamp(4px, 1vw, 7px) clamp(12px, 3vw, 20px);
-  font-size: clamp(0.6rem, 1.5vw, 0.74rem);
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  transition: background 0.2s, color 0.2s;
-}
-
-.hcSlideCta:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
 
 /* Next Available Session */
 .huWrap {
@@ -292,19 +246,19 @@
 }
 
 .huTitle {
-  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-size: clamp(1.5rem, 2.2vw,1.7rem);
   font-weight: 700;
   color: #542982;
 }
 
 .huCount {
-  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.15rem);
   font-weight: 700;
   color: #542982;
 }
 
 .huEarliestLabel {
-  font-size: clamp(0.75rem, 1.8vw, 0.9rem);
+  font-size: clamp(1rem, 1.8vw, 0.9rem);
   font-weight: 700;
   color: #2d1a47;
   margin: 0 0 10px;
@@ -353,13 +307,13 @@
 }
 
 .anTitle {
-  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-size: clamp(1.5rem, 2.2vw, 1.7rem);
   font-weight: 700;
   color: #542982;
 }
 
 .anCount {
-  font-size: clamp(0.9rem, 2.2vw, 1.15rem);
+  font-size: clamp(1.2rem, 2.2vw, 1.7rem);
   font-weight: 700;
   color: #542982;
 }
@@ -418,7 +372,7 @@
 .anUrgentBadge {
   background: #d32f2f;
   color: #fff;
-  font-size: clamp(0.55rem, 1.3vw, 0.65rem);
+  font-size: clamp(0.8rem, 1.3vw, 0.65rem);
   font-weight: 700;
   border-radius: 20px;
   padding: 2px 9px;
@@ -427,20 +381,20 @@
 }
 
 .anCardTitle {
-  font-size: clamp(0.82rem, 2vw, 1rem);
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
   font-weight: 700;
   color: #2d1a47;
 }
 
 .anCardBody {
-  font-size: clamp(0.72rem, 1.8vw, 0.88rem);
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
   color: #555;
   margin: 0;
   line-height: 1.45;
 }
 
 .anCardDate {
-  font-size: clamp(0.63rem, 1.5vw, 0.76rem);
+  font-size: clamp(0.63rem, 1.5vw,0.9rem);
   color: #aaa;
   font-weight: 500;
 }
@@ -453,38 +407,44 @@
   background: #fff;
   border: 1.5px solid #e0d0f5;
   border-radius: 14px;
-  padding: clamp(10px, 2.5vw, 16px) clamp(10px, 2.5vw, 18px);
   box-shadow: 0 2px 8px rgba(84, 41, 130, 0.06);
   box-sizing: border-box;
   width: 100%;
+  overflow: hidden; 
 }
 
 /* Left accent strip */
 .huCardAccent {
-  width: 4px;
-  min-width: 4px;
-  height: clamp(38px, 8vw, 54px);
-  border-radius: 4px;
+  width: 5px;
+  min-width: 5px;
+  align-self: stretch; /* fills full card height */
   flex-shrink: 0;
+  border-radius: 0;
 }
 
 /* Main info */
 .huCardInfo {
   flex: 1;
+  padding-right: 4px;
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
 }
+.huCardInfo,
+.huCardRight {
+  padding-top: clamp(10px, 2.5vw, 16px);
+  padding-bottom: clamp(10px, 2.5vw, 16px);
+}
 
 .huCardDate {
-  font-size: clamp(0.7rem, 1.8vw, 0.86rem);
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
   color: #888;
   font-weight: 500;
 }
 
 .huCardService {
-  font-size: clamp(0.78rem, 2vw, 1rem);
+  font-size: clamp(1rem, 2vw, 1.2rem);
   font-weight: 700;
   color: #2d1a47;
   white-space: nowrap;
@@ -493,7 +453,7 @@
 }
 
 .huCardDoctor {
-  font-size: clamp(0.68rem, 1.7vw, 0.84rem);
+  font-size: clamp(0.9rem, 1.7vw, 0.84rem);
   color: #7c5aaa;
   font-weight: 500;
 }
@@ -505,10 +465,11 @@
   align-items: flex-end;
   gap: 5px;
   flex-shrink: 0;
+  padding-right: clamp(10px, 2.5vw, 18px);
 }
 
 .huBadge {
-  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+  font-size: clamp(0.8rem, 1.5vw, 0.72rem);
   font-weight: 700;
   border-radius: 20px;
   padding: 3px clamp(7px, 1.8vw, 11px);
@@ -518,7 +479,7 @@
 
 .huIconType {
   color: #b89dda;
-  font-size: clamp(0.85rem, 2.2vw, 1.1rem);
+  font-size: clamp(1.5rem, 2.2vw, 1.1rem);
 }
 
 .huViewDetailsBtn {
@@ -527,7 +488,7 @@
   color: #542982;
   border-radius: 20px;
   padding: clamp(3px, 0.8vw, 6px) clamp(8px, 2vw, 14px);
-  font-size: clamp(0.58rem, 1.5vw, 0.72rem);
+  font-size: clamp(0.9rem, 1.5vw, 0.72rem);
   font-weight: 700;
   cursor: pointer;
   letter-spacing: 0.03em;
@@ -553,7 +514,7 @@
   color: #fff;
   border: none;
   border-radius: 28px;
-  padding: clamp(11px, 2.5vw, 16px) 0;
+  padding: clamp(10px, 2.5vw, 12px) 0;
   font-size: clamp(0.82rem, 2vw, 1.05rem);
   font-weight: 700;
   cursor: pointer;
@@ -575,10 +536,14 @@
     gap: 14px;
   }
 
+  .hcViewport {
+    height: clamp(140px, 48vw, 180px);
+  }
+
   .hcArrow {
     width: 26px;
     height: 26px;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .huViewAllBtn {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
 import { FaUserCircle, FaVideo, FaClinicMedical } from 'react-icons/fa';
-import { CONSULTATION_FEES } from '../../../src/MockData/MockDoctors.js';
+import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
 
 const DoctorProfile = ({ 
   doctorData, 

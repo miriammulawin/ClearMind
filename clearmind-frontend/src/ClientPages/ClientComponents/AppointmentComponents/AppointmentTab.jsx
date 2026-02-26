@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Nav } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import "../ClientStyle/AppointmentTab.css";
+import "../../ClientStyle/AppointmentTab.css";
 
 const AppointmentTab = () => {
 

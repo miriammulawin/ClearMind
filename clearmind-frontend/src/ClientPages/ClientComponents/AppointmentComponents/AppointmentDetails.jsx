@@ -2,8 +2,8 @@ import React from 'react';
 import { Container, Card, Button, Badge } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaFileAlt } from 'react-icons/fa';
-import { getAppointmentById } from '../../../src/MockData/MockAppointment.js';
-import '../ClientStyle/AppointmentDetails.css';
+import { getAppointmentById } from '../../../MockData/MockAppointment.js';
+import '../../ClientStyle/AppointmentDetails.css';
 
 const AppointmentDetails = () => {
   const { id } = useParams();

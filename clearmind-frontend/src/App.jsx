@@ -7,19 +7,19 @@ import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
 import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
-import ServicesTab from "./ClientPages/ClientComponents/ServicesTab";
-import PendingTab from "./ClientPages/ClientComponents/PendingTab";
-import UpcomingTab from "./ClientPages/ClientComponents/ScheduleTab";
-import HistoryTab from "./ClientPages/ClientComponents/HistoryTab";
+import ServicesTab from "./ClientPages/ClientComponents/AppointmentComponents/ServicesTab";
+import PendingTab from "./ClientPages/ClientComponents/AppointmentComponents/PendingTab";
+import UpcomingTab from "./ClientPages/ClientComponents/AppointmentComponents/ScheduleTab";
+import HistoryTab from "./ClientPages/ClientComponents/AppointmentComponents/HistoryTab";
 import ClientMessages from "./ClientPages/ClientMessages";
 import ClientProfile from "./ClientPages/ClientProfile";
 import Help from "./ClientPages/ClientComponents/Help";
 import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndConditions";
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
-import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentDetails";
-import BookAppointment from "./ClientPages/ClientComponents/SetAppointment";
-import BookAppointmentForm from './ClientPages/ClientComponents/BookAppointmentForm';
+import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentComponents/AppointmentDetails";
+import SetAppointment from "./ClientPages/ClientComponents/AppointmentComponents/SetAppointment";
+import SetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/SetAppointmentForm';
 
 
 function App() {
@@ -37,8 +37,8 @@ function App() {
         <Route path="/client/appointment" element={<ClientAppointment />}>
           <Route index element={<Navigate to="services" replace />} />
           <Route path="services" element={<ServicesTab />} />
-          <Route path="book-appointment" element={<BookAppointment />} />
-          <Route path="book-form" element={<BookAppointmentForm />} />
+          <Route path="set-appointment" element={<SetAppointment />} />
+          <Route path="set-appointment-form" element={<SetAppointmentForm />} />
           <Route path="pending" element={<PendingTab />} />
           <Route path="upcoming" element={<UpcomingTab />} />
           <Route path="history" element={<HistoryTab />} />

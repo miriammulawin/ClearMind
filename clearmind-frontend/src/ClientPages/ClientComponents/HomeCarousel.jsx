@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { FaUserMd, FaVideo, FaHeartbeat, FaClock } from "react-icons/fa";
-import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import styles from "../ClientStyle/ClientHome.module.css";
 
 const SLIDES = [
@@ -34,25 +33,19 @@ const SLIDES = [
     gradient: "linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%)",
     accentColor: "#a5d6a7",
   },
-  {
-    label: "Promo",
-    icon: <FaHeartbeat />,
-    heading: "Health Packages",
-    subheading: "Complete Check-up Bundles",
-    description: "Annual packages starting at ₱1,500. Limited slots available.",
-    cta: "See Packages",
-    gradient: "linear-gradient(135deg, #c62828 0%, #ef5350 100%)",
-    accentColor: "#ef9a9a",
-  },
 ];
 
-const AUTO_DELAY = 3500;
+const AUTO_DELAY = 4000;
 
 function HomeCarousel() {
   const [current, setCurrent] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
-  const isDragging = useRef(false);
+  const isHoriz = useRef(false);
+  const mouseStartX = useRef(null);
   const autoTimer = useRef(null);
 
   const stopAuto = useCallback(() => {
@@ -61,9 +54,10 @@ function HomeCarousel() {
 
   const startAuto = useCallback(() => {
     stopAuto();
-    autoTimer.current = setInterval(() => {
-      setCurrent((c) => (c + 1) % SLIDES.length);
-    }, AUTO_DELAY);
+    autoTimer.current = setInterval(
+      () => setCurrent((c) => (c + 1) % SLIDES.length),
+      AUTO_DELAY
+    );
   }, [stopAuto]);
 
   useEffect(() => {
@@ -71,15 +65,20 @@ function HomeCarousel() {
     return stopAuto;
   }, [startAuto, stopAuto]);
 
-  const goTo = useCallback((idx) => {
-    setCurrent((idx + SLIDES.length) % SLIDES.length);
-    startAuto();
-  }, [startAuto]);
+  const goTo = useCallback(
+    (idx) => {
+      setCurrent((idx + SLIDES.length) % SLIDES.length);
+      startAuto();
+    },
+    [startAuto]
+  );
 
+  /* ── Touch ── */
   const onTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
-    isDragging.current = false;
+    isHoriz.current = false;
+    setDragOffset(0);
     stopAuto();
   };
 
@@ -87,46 +86,82 @@ function HomeCarousel() {
     if (touchStartX.current === null) return;
     const dx = e.touches[0].clientX - touchStartX.current;
     const dy = e.touches[0].clientY - touchStartY.current;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      isDragging.current = true;
+    if (!isHoriz.current && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+      isHoriz.current = true;
+    }
+    if (isHoriz.current) {
       e.preventDefault();
+      setIsDragging(true);
+      setDragOffset(dx);
     }
   };
 
   const onTouchEnd = (e) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (isDragging.current) {
-      if (dx < -40) goTo(current + 1);
-      else if (dx > 40) goTo(current - 1);
+    if (isHoriz.current) {
+      if (dx < -50) goTo(current + 1);
+      else if (dx > 50) goTo(current - 1);
       else startAuto();
     } else {
       startAuto();
     }
+    setIsDragging(false);
+    setDragOffset(0);
     touchStartX.current = null;
-    touchStartY.current = null;
-    isDragging.current = false;
+    isHoriz.current = false;
+  };
+
+  /* ── Mouse drag ── */
+  const onMouseDown = (e) => {
+    mouseStartX.current = e.clientX;
+    setDragOffset(0);
+    stopAuto();
+  };
+
+  const onMouseMove = (e) => {
+    if (mouseStartX.current === null) return;
+    const dx = e.clientX - mouseStartX.current;
+    if (Math.abs(dx) > 6) {
+      setIsDragging(true);
+      setDragOffset(dx);
+    }
+  };
+
+  const endMouse = (clientX) => {
+    if (mouseStartX.current === null) return;
+    const dx = clientX - mouseStartX.current;
+    if (Math.abs(dx) > 50) {
+      dx < 0 ? goTo(current + 1) : goTo(current - 1);
+    } else {
+      startAuto();
+    }
+    setIsDragging(false);
+    setDragOffset(0);
+    mouseStartX.current = null;
   };
 
   return (
     <div className={styles.hcWrap}>
-      <p className={styles.hcHeading}>
-        Book an Appointment<br />with Our Specialists
-      </p>
-
+      {/* overflow:hidden clips the other slides */}
       <div className={styles.hcViewport}>
-        <button className={styles.hcArrow} onClick={() => goTo(current - 1)} aria-label="Previous slide">
-          <IoIosArrowBack />
-        </button>
-
         <div
           className={styles.hcTrack}
-          style={{ transform: `translateX(-${current * 100}%)` }}
+          style={{
+            /* each slide is 100% wide, so slide N starts at N*100% */
+            transform: `translateX(calc(-${current * 100}% + ${dragOffset}px))`,
+            transition: isDragging
+              ? "none"
+              : "transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1)",
+            cursor: isDragging ? "grabbing" : "grab",
+          }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          onMouseEnter={stopAuto}
-          onMouseLeave={startAuto}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={(e) => endMouse(e.clientX)}
+          onMouseLeave={(e) => endMouse(e.clientX)}
         >
           {SLIDES.map((slide, i) => (
             <div
@@ -134,12 +169,9 @@ function HomeCarousel() {
               className={styles.hcSlide}
               style={{ background: slide.gradient }}
             >
-              <span
-                className={styles.hcSlidePill}
-                style={{ background: slide.accentColor }}
-              >
-                {slide.label}
-              </span>
+              <div className={styles.hcSlideCircle} />
+
+              <span className={styles.hcSlidePill}>{slide.label}</span>
 
               <div className={styles.hcSlideIcon}>{slide.icon}</div>
 
@@ -162,7 +194,7 @@ function HomeCarousel() {
                     {SLIDES.map((_, d) => (
                       <button
                         key={d}
-                        className={`${styles.hcDot}${d === current ? ` ${styles.hcDotActive}` : ""}`}
+                        className={`${styles.hcDot} ${d === current ? styles.hcDotActive : ""}`}
                         onClick={(e) => { e.stopPropagation(); goTo(d); }}
                       />
                     ))}
@@ -175,10 +207,6 @@ function HomeCarousel() {
             </div>
           ))}
         </div>
-
-        <button className={styles.hcArrow} onClick={() => goTo(current + 1)} aria-label="Next slide">
-          <IoIosArrowForward />
-        </button>
       </div>
     </div>
   );
