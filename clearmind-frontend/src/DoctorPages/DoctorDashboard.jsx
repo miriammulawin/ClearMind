@@ -44,7 +44,7 @@ function DoctorDashboard() {
   const [statusCounts, setStatusCounts] = useState({
     Scheduled: 0,
     Cancelled: 0,
-    Pending:   0,
+    Completed: 0,
   });
 
   // ── Monthly patients for bar chart ──────────────────────────────
@@ -150,7 +150,7 @@ function DoctorDashboard() {
     switch (status) {
       case "Scheduled": return "#1E3A8A";
       case "Cancelled": return "#DC2626";
-      case "Pending":   return "#B45309";
+      case "Completed": return "#16A34A";
       default:          return "#000";
     }
   };
@@ -211,11 +211,11 @@ function DoctorDashboard() {
 
   // ── Pie chart ───────────────────────────────────────────────────
   const pieData = {
-    labels: ["Scheduled", "Cancelled", "Pending"],
+    labels: ["Scheduled", "Cancelled", "Completed"],
     datasets: [{
       label: "Appointment Status",
-      data: [statusCounts.Scheduled, statusCounts.Cancelled, statusCounts.Pending],
-      backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de"],
+      data: [statusCounts.Scheduled, statusCounts.Cancelled, statusCounts.Completed],
+      backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de", ],
       borderColor: "rgb(255,255,255)",
       borderWidth: 1,
     }],
@@ -465,9 +465,9 @@ function DoctorDashboard() {
                     <span style={{ background: "#fde8e8", color: "#DC2626", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
                       Cancelled: {statusCounts.Cancelled}
                     </span>
-                    <span style={{ background: "#fef3c7", color: "#B45309", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
-                      Pending: {statusCounts.Pending}
-                    </span>
+                    <span style={{ background: "#d1fae5", color: "#16A34A", padding: "4px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600" }}>
+                      Completed: {statusCounts.Completed}
+                      </span>
                   </div>
                   <div className="pie-chart-container">
                     <Pie data={pieData} options={pieOptions} />

@@ -15,7 +15,6 @@ class ClientFactory extends Factory
                 'Cancelled',
                 'Completed',
             ]),
-            // you can add more fields later
         ];
     }
 }

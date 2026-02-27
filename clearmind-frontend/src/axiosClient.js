@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const axiosClient = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
@@ -9,7 +10,6 @@ const axiosClient = axios.create({
 });
 
 // ── Request Interceptor ────────────────────────────────────────────────────
-// Automatically attach Bearer token from localStorage to every request
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -22,18 +22,26 @@ axiosClient.interceptors.request.use(
 );
 
 // ── Response Interceptor ───────────────────────────────────────────────────
-// If the server returns 401 (token expired/invalid), auto-logout the user
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear all auth data
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("user");
+      const isAlreadyOnLogin = window.location.pathname === "/";
 
-      // Redirect to login
-      window.location.href = "/";
+      // Only redirect if not already on login page
+      if (!isAlreadyOnLogin) {
+        toast.error("Session expired. Please log in again.", {
+          duration: 3000,
+        });
+
+        // Give the toast 2 seconds to show before redirecting
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("user");
+          window.location.href = "/";
+        }, 2000);
+      }
     }
     return Promise.reject(error);
   }

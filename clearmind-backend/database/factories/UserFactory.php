@@ -24,7 +24,7 @@ class UserFactory extends Factory
             'contact_no'   => '09' . $this->faker->numerify('#########'),
             'email'        => $this->faker->unique()->safeEmail(),
             'password'     => static::$password ??= Hash::make('client123'),
-            'role'         => 'Client',           // default – override in seeder when needed
+            'role'         => 'Client',           
             'is_active'    => true,
             'created_at'   => $createdAt,
             'updated_at'   => $createdAt,

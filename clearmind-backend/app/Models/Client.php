@@ -43,6 +43,16 @@ class Client extends Model
         return $this->belongsTo(User::class);
     }
 
+        public function appointments()
+    {
+        return $this->hasMany(Appointment::class);
+    }
+
+    public function latestAppointment()
+        {
+            return $this->hasOne(Appointment::class)->latestOfMany();
+        }
+
     // Optional: helpful scopes for cleaner queries
     public function scopePending($query)
     {

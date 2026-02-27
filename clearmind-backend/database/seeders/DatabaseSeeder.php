@@ -5,8 +5,10 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Client;
+use App\Models\Appointment; 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+
 
 class DatabaseSeeder extends Seeder
 {
@@ -132,13 +134,13 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('10 additional doctors + profiles created/updated.');
 
-        // ── 4. 1000 Clients ───────────────────────────────────────────────────────
+        // ──  500 Clients ───────────────────────────────────────────────────────
         User::factory()
-            ->count(1000)
-            ->client()                     // ← uses the client() state from UserFactory
+            ->count(500)
+            ->client()                    
             ->create()
             ->each(function ($user) {
-                Client::factory()->create([
+               $client =  Client::factory()->create([
                     'user_id'            => $user->id,
                     'appointment_status' => fake()->randomElement([
                         'Pending',
@@ -147,6 +149,15 @@ class DatabaseSeeder extends Seeder
                         'Completed'
                     ]),
                 ]);
+        
+
+         // ── Give each client 1–3 appointments ──────────────────
+        $count = fake()->numberBetween(1, 3);
+        for ($i = 0; $i < $count; $i++) {
+            Appointment::factory()->create([
+                'client_id' => $client->id,
+            ]);
+        }
             });
 
         $this->command->info('1000 clients + client profiles created.');
