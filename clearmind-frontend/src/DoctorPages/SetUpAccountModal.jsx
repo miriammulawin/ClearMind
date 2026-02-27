@@ -67,9 +67,12 @@ function SetUpAccountModal({ showModal, onClose }) {
 
         const merged = { ...user, ...profile };
         localStorage.setItem("user", JSON.stringify(merged));
-        if (profile.profile_picture) {
-          localStorage.setItem("profile_image", profile.profile_picture);
-        }
+       if (profile.profile_picture) {
+        const fullUrl = profile.profile_picture.startsWith("http")
+          ? profile.profile_picture
+          : `http://127.0.0.1:8000/storage/${profile.profile_picture}`;
+        localStorage.setItem("profile_image", fullUrl);
+      }
 
       } catch (error) {
         console.error("Failed to fetch profile:", error);

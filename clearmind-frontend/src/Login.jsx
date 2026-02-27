@@ -22,6 +22,40 @@ function Login() {
     setTimeout(() => setError(""), 3000);
   };
 
+  // ── Fetch full profile and store in localStorage ───────────────
+  const fetchAndStoreProfile = async (token, role) => {
+    // Only doctors have a profile to fetch
+    if (role !== "Doctor") return;
+
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const user    = res.data.user    || {};
+      const profile = res.data.profile || {};
+
+      // Merge user + profile so sidebar can read all fields
+      const merged = { ...user, ...profile };
+      localStorage.setItem("user", JSON.stringify(merged));
+
+      // Store full profile picture URL
+      if (profile.profile_picture) {
+        const fullUrl = profile.profile_picture.startsWith("http")
+          ? profile.profile_picture
+          : `http://127.0.0.1:8000/storage/${profile.profile_picture}`;
+        localStorage.setItem("profile_image", fullUrl);
+      } else {
+        localStorage.removeItem("profile_image");
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile after login:", err);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -54,28 +88,21 @@ function Login() {
         }
       );
 
-      // ── Your Laravel returns: ──────────────────────────────────────
-      // { success: true, data: { token, role, user } }
       const { success, data } = response.data;
 
       if (success && data?.token) {
         const { token, role, user } = data;
 
-        // Store auth keys
+        // Store auth keys first
         localStorage.setItem("token", token);
         localStorage.setItem("role",  role);
+        localStorage.setItem("user",  JSON.stringify(user));
 
-        // Store full user object so profile fields survive logout/login
-        localStorage.setItem("user", JSON.stringify(user));
+        // ── Fetch full profile BEFORE navigating ─────────────────
+        // This ensures sidebar has prc_number + profile_picture on first load
+        await fetchAndStoreProfile(token, role);
 
-        // Store profile image URL from backend (real URL, not base64)
-        if (user?.profilePictureUrl) {
-          localStorage.setItem("profile_image", user.profilePictureUrl);
-        } else {
-          localStorage.removeItem("profile_image");
-        }
-
-        // Tell sidebar to refresh immediately
+        // Dispatch so any mounted components update
         window.dispatchEvent(new Event("profileUpdated"));
 
         toast.success("Login Successful!", {

@@ -9,6 +9,16 @@ const axiosClient = axios.create({
   },
 });
 
+// ── Clear token when browser/tab is closed ─────────────────────────────────
+// sessionStorage is cleared automatically when the tab/browser closes
+// If no session flag exists, it means a fresh browser open — clear old token
+if (!sessionStorage.getItem("session_active")) {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  localStorage.removeItem("user");
+}
+sessionStorage.setItem("session_active", "true");
+
 // ── Request Interceptor ────────────────────────────────────────────────────
 axiosClient.interceptors.request.use(
   (config) => {
@@ -27,18 +37,15 @@ axiosClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const isAlreadyOnLogin = window.location.pathname === "/";
-
-      // Only redirect if not already on login page
       if (!isAlreadyOnLogin) {
         toast.error("Session expired. Please log in again.", {
           duration: 3000,
         });
-
-        // Give the toast 2 seconds to show before redirecting
         setTimeout(() => {
           localStorage.removeItem("token");
           localStorage.removeItem("role");
           localStorage.removeItem("user");
+          sessionStorage.removeItem("session_active");
           window.location.href = "/";
         }, 2000);
       }

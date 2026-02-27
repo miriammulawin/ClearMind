@@ -11,15 +11,13 @@ import logo from "../assets/CMPS_Logo.png";
 function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [tooltip, setTooltip] = useState({
-    text: "",
-    x: 0,
-    y: 0,
-    visible: false,
+    text: "", x: 0, y: 0, visible: false,
   });
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
+  // ── Helpers ─────────────────────────────────────────────────────
   const getUser = () => {
     try {
       const raw = localStorage.getItem("user");
@@ -29,56 +27,62 @@ function DoctorSideBar() {
     }
   };
 
-  const [userState, setUserState] = useState(getUser);
-  const [profileImage, setProfileImage] = useState(
-    localStorage.getItem("profile_image") || null,
-  );
+  const getProfileImageUrl = () => {
+    const img = localStorage.getItem("profile_image");
+    if (!img) return null;
+    if (img.startsWith("http")) return img;
+    return `http://127.0.0.1:8000/storage/${img}`;
+  };
 
+  // ── State ────────────────────────────────────────────────────────
+  const [userState, setUserState]   = useState(getUser);
+  const [profileImage, setProfileImage] = useState(getProfileImageUrl);
+
+  // ── Listen for profile updates (from modal save OR modal fetch) ──
   useEffect(() => {
     const handleProfileUpdated = () => {
       setUserState(getUser());
-      setProfileImage(localStorage.getItem("profile_image") || null);
+      setProfileImage(getProfileImageUrl());
     };
     window.addEventListener("profileUpdated", handleProfileUpdated);
-    return () =>
-      window.removeEventListener("profileUpdated", handleProfileUpdated);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
   }, []);
 
-  const fullName =
-    userState?.fullName ||
-    `${userState?.firstName ?? ""} ${userState?.lastName ?? ""}`.trim() ||
+  // ── Derived display values ───────────────────────────────────────
+  // Support both camelCase (from setup response) and snake_case (from profile fetch)
+  const firstName = userState?.firstName  || userState?.first_name  || "";
+  const lastName  = userState?.lastName   || userState?.last_name   || "";
+  const fullName  = userState?.fullName   ||
+    `${firstName} ${lastName}`.trim()     ||
     "Doctor";
-  const prcNumber = userState?.prc_number || userState?.prcNumber ||userState?.licenseNumber || userState?.license_number || "Not set";
+
+  const prcNumber =
+    userState?.prc_number       ||
+    userState?.prcNumber        ||
+    userState?.license_number   ||
+    userState?.licenseNumber    ||
+    "Not set";
+
   const initials = (
-      (userState?.firstName?.[0] ?? "") + (userState?.lastName?.[0] ?? "")
-    ).toUpperCase() || "DR";
+    (firstName?.[0] ?? "") + (lastName?.[0] ?? "")
+  ).toUpperCase() || "DR";
 
   const menus = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
-    {
-      name: "Appointment",
-      icon: <FaCalendarDays />,
-      path: "/doctor/appointment",
-    },
-    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
-    {
-      name: "My Profile",
-      icon: <BiSolidUserCircle />,
-      path: "/doctor/profile",
-    },
+    { name: "Dashboard",   icon: <RiDashboardFill />,    path: "/doctor/dashboard" },
+    { name: "Appointment", icon: <FaCalendarDays />,      path: "/doctor/appointment" },
+    { name: "Patients",    icon: <BsPersonLinesFill />,   path: "/doctor/patient" },
+    { name: "My Profile",  icon: <BiSolidUserCircle />,   path: "/doctor/profile" },
   ];
 
   return (
     <>
       <div className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
         <div className="sidebar">
+
           {/* Header */}
           <div className="sidebar-header">
             <img src={logo} alt="Logo" className="sidebar-logo" />
-            <FiMenu
-              className="menu-icon"
-              onClick={() => setCollapsed(!collapsed)}
-            />
+            <FiMenu className="menu-icon" onClick={() => setCollapsed(!collapsed)} />
           </div>
 
           {/* Profile Section */}
@@ -102,6 +106,7 @@ function DoctorSideBar() {
                 <img
                   src={profileImage}
                   alt="Profile"
+                  onError={() => setProfileImage(null)}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
               ) : (
@@ -111,32 +116,16 @@ function DoctorSideBar() {
 
             {!collapsed && (
               <div className="profile-info" style={{ flex: 1, minWidth: 0 }}>
-                {/* Name row with edit icon aligned to the right */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <h5
                     className="profile-name"
-                    style={{
-                      margin: 0,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
+                    style={{ margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                   >
                     {fullName}
                   </h5>
                   <FiEdit
                     className="edit-icon"
-                    style={{
-                      cursor: "pointer",
-                      flexShrink: 0,
-                      marginLeft: "6px",
-                    }}
+                    style={{ cursor: "pointer", flexShrink: 0, marginLeft: "6px" }}
                     onClick={() => navigate("/doctor/profile")}
                   />
                 </div>
@@ -157,22 +146,16 @@ function DoctorSideBar() {
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setTooltip({
-                    text: item.name,
-                    x: rect.right + 10,
-                    y: rect.top + rect.height / 2,
-                    visible: true,
-                  });
+                  setTooltip({ text: item.name, x: rect.right + 10, y: rect.top + rect.height / 2, visible: true });
                 }}
-                onMouseLeave={() =>
-                  setTooltip((t) => ({ ...t, visible: false }))
-                }
+                onMouseLeave={() => setTooltip((t) => ({ ...t, visible: false }))}
               >
                 <span className="menu-icon-left">{item.icon}</span>
                 <span className="menu-text">{item.name}</span>
               </div>
             ))}
           </div>
+
         </div>
       </div>
 
