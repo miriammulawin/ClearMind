@@ -112,7 +112,7 @@ function DoctorDashboard() {
     const diff = day === 0 ? -6 : 1 - day;
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     setCurrentWeekStart(startOfWeek);
-  }, []);
+  }, [today]);
 
   // ── Helpers ─────────────────────────────────────────────────────
   const formattedDate = today.toLocaleDateString("en-US", {

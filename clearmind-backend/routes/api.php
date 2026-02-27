@@ -3,7 +3,8 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoctorDashboardController;
-use App\Http\Controllers\AdminDashboardController;  // ← add this
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminPatientController;  // ← add this
 use App\Http\Controllers\ProfileController;
 
 // ── Public Routes ──────────────────────────────────────────────────────────
@@ -17,7 +18,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout',          [AuthController::class, 'logout']);
 
     // User profile
-    Route::get('/profile',          [AuthController::class, 'profile']);
+    Route::get('/profile',          [ProfileController::class, 'show']);  // ← moved up, no duplicate
     Route::put('/profile',          [AuthController::class, 'updateProfile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
@@ -28,12 +29,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctor/monthly-patients', [DoctorDashboardController::class, 'monthlyPatients']);
     Route::post('/doctor/setup',           [DoctorDashboardController::class, 'setup']);
     Route::put('/doctor/profile',          [DoctorDashboardController::class, 'updateProfile']);
-    Route::get('/profile',                 [ProfileController::class, 'show']);
 
-    // Admin SIDE  
-    Route::get('/admin/dashboard',         [AdminDashboardController::class, 'patients']);
-    Route::get('/admin/status-counts',     [AdminDashboardController::class, 'statusCounts']);
-    Route::get('/admin/monthly-patients',  [AdminDashboardController::class, 'monthlyPatients']);
-    Route::get('/admin/total-clients', [AdminDashboardController::class, 'totalClients']);
+    // Admin Dashboard
+    Route::get('/admin/dashboard',        [AdminDashboardController::class, 'patients']);
+    Route::get('/admin/status-counts',    [AdminDashboardController::class, 'statusCounts']);
+    Route::get('/admin/monthly-patients', [AdminDashboardController::class, 'monthlyPatients']);
+    Route::get('/admin/total-clients',    [AdminDashboardController::class, 'totalClients']);
+
+    // Admin Patients — specific routes BEFORE {id} ──────────────
+    Route::get('/admin/patients',                 [AdminPatientController::class, 'index']);
+    Route::get('/admin/patients/consultations',   [AdminPatientController::class, 'consultations']); // ← BEFORE {id}
+    Route::get('/admin/patients/{id}',            [AdminPatientController::class, 'show']);
+    Route::patch('/admin/patients/{id}/confirm',  [AdminPatientController::class, 'confirm']);
+    Route::patch('/admin/patients/{id}/complete', [AdminPatientController::class, 'complete']);
 
 });
