@@ -121,7 +121,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         <div className="modal-header">
           <h2>Account Security</h2>
           <button className="close-btn" onClick={onClose}>
-            <FiX style={{ color: "#555", fontSize: "20px" }} />
+            <FiX style={{ color: "#fff", fontSize: "20px" }} />
           </button>
         </div>
 
@@ -230,7 +230,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         {/* FOOTER */}
         <div className="modal-footer">
           <button className="btn-completed" onClick={handleSave}>
-            Save Changes
+            Save 
           </button>
         </div>
       </div>

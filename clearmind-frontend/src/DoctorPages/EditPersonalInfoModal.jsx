@@ -27,12 +27,10 @@ const addBtnStyle = {
 };
 
 /* Icon colours depending on context */
-const iconWhite = { color: "#fff", fontSize: "16px" };
-const iconDelete = { color: "#e05c5c", fontSize: "16px" }; // red for list delete
-const iconCarouselAction = { color: "#333", fontSize: "16px" }; // dark for carousel edit/delete
-const iconEdit = { color: "#333", fontSize: "16px" };
+const iconClose = { color: "#fff", fontSize: "18px", fontWeight: "bold" }; // red for list delete
+const iconCarouselAction = { color: "#fff", fontSize: "16px" }; // dark for carousel edit/delete
+const iconEdit = { color: "#fff", fontSize: "16px" };
 const iconNav = { color: "#fff", fontSize: "18px" };
-const iconClose = { color: "#555", fontSize: "20px" };
 
 function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
@@ -303,7 +301,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             setBoardIndex,
             "Board Certifications",
           )}
-          {renderCarousel("idPictures", idIndex, setIdIndex, "ID Pictures")}
+          {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
           {renderDynamicField("subspecialty", "Subspecialty")}
           {renderDynamicField("services", "Services")}
           {renderDynamicField("certifications", "Certifications")}
@@ -312,7 +310,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         {/* FOOTER */}
         <div className="modal-footer">
           <button className="btn-completed" onClick={handleSave}>
-            Save Changes
+            Save
           </button>
         </div>
       </div>
