@@ -1,11 +1,49 @@
-import React, { useState } from 'react';
-import { Image } from "react-bootstrap";
-import { Container, Card, Button, Form } from 'react-bootstrap';
+import React, { useState, useMemo } from 'react';
+import { Image } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaVideo, FaHome } from 'react-icons/fa';
+import { FaVideo, FaHome, FaArrowLeft } from 'react-icons/fa';
 import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
-import styles from '../../ClientStyle/BookAppointmentForm.module.css';
+import styles from '../../ClientStyle/SetAppointmentForm.module.css';
 import logo_login_single from "../../../../src/assets/CMPS_Img_logo_only.png";
+
+
+// ─── Convert "4:30 PM" → total minutes since midnight ─────────────────────────
+const timeToMinutes = (timeStr) => {
+  const [time, period] = timeStr.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
+
+// ─── Get end time string (start + 60 mins) ────────────────────────────────────
+const getEndTime = (startTime) => {
+  if (!startTime) return '';
+  const mins = timeToMinutes(startTime) + 60;
+  const hours = Math.floor(mins / 60);
+  const minutes = mins % 60;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+  const displayMins = minutes === 0 ? '00' : String(minutes).padStart(2, '0');
+  return `${displayHours}:${displayMins} ${period}`;
+};
+
+// ─── Mark each slot as bookable ───────────────────────────────────────────────
+// A slot is BOOKABLE (can be selected as a session start) only if:
+//   • this slot's 30-min block is free (available: true)
+//   • the NEXT slot's 30-min block is also free (available: true)
+//     → together they cover the full 1-hour session
+// Slots that are NOT bookable are shown grayed out (user sees all slots)
+const getBookableSlots = (slots) => {
+  return slots.map((slot, index) => {
+    const isLastSlot = index === slots.length - 1;
+    // Last slot can never start a 1hr session (no room left in schedule)
+    if (isLastSlot) return { ...slot, bookable: false };
+    const nextSlot = slots[index + 1];
+    const bookable = slot.available && !!nextSlot && nextSlot.available;
+    return { ...slot, bookable };
+  });
+};
 
 
 const SetAppointmentForm = () => {
@@ -17,198 +55,228 @@ const SetAppointmentForm = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
 
-  // Handler for selecting consultation mode
-  const handleModeSelect = (mode) => {
-    setConsultationMode(mode);
-  };
+  const handleModeSelect = (mode) => setConsultationMode(mode);
 
-  // Handler for selecting date
   const handleSelectDate = (dateSlot) => {
     setSelectedDate(dateSlot);
     setSelectedTime(null);
   };
 
-  // Handler for selecting time slot
-  const handleSelectTime = (time) => {
-    setSelectedTime(time);
-  };
+  const handleSelectTime = (time) => setSelectedTime(time);
 
-  // Handler for continue button
   const handleContinue = () => {
-    if (consultationMode && selectedDate && selectedTime) {
-      // Navigate to payment or next step
-      alert(`Proceeding to payment...\n\nMode: ${consultationMode}\nDate: ${selectedDate.date}\nTime: ${selectedTime}`);
-      // You can navigate to payment page here
+    if (isFormComplete) {
+      alert(`Proceeding to payment...\n\nMode: ${consultationMode}\nDate: ${selectedDate.date}\nTime: ${selectedTime} – ${getEndTime(selectedTime)}`);
       // navigate('/client/appointment/payment', { state: { doctor: doctorData, consultationMode, selectedDate, selectedTime } });
-    } else {
-      alert('Please complete all fields before continuing.');
     }
   };
 
-  // Check if form is complete
+  // ─── Bookable slots for the selected date ─────────────────────────────────
+  const bookableSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    return getBookableSlots(selectedDate.slots);
+  }, [selectedDate]);
+
   const isFormComplete = consultationMode && selectedDate && selectedTime;
+
+  // ─── Derive available consultation modes from doctor data ──────────────────
+  const availableModes = [];
+  if (doctorData) {
+    const mode = doctorData.consultationMode;
+    if (mode === 'Both' || mode === 'In-Person' || mode === 'Onsite') availableModes.push('IN-PERSON');
+    if (mode === 'Both' || mode === 'Online') availableModes.push('ONLINE');
+  }
+
+  // Auto-select if only one mode available
+  if (availableModes.length === 1 && consultationMode !== availableModes[0]) {
+    setConsultationMode(availableModes[0]);
+  }
 
   if (!doctorData) {
     return (
-      <Container className={styles.container}>
-        <p>No doctor selected. Please go back and select a doctor.</p>
-        <Button variant="outline-secondary" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
-      </Container>
+      <div className={styles.pageWrapper}>
+        <div className={styles.scrollContent}>
+          <p className={styles.noDataText}>No doctor selected. Please go back and select a doctor.</p>
+          <button className={styles.backButton} onClick={() => navigate(-1)}>Go Back</button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container className={styles.container}>
-      {/* Header with Doctor Info */}
-      <div className={styles.header}>
-        <div className={styles.doctorInfo}>
-          <div className={styles.doctorAvatar}>
+    <div className={styles.pageWrapper}>
+
+      {/* ── Sticky Header ── */}
+      <div className={styles.stickyHeader}>
+        <div className={styles.backRow}>
+          <button className={styles.backBtn} onClick={() => navigate(-1)}>
+            <FaArrowLeft /> Go Back
+          </button>
+        </div>
+        <div className={styles.doctorStrip}>
+          <div className={styles.doctorStripLeft}>
             <div className={styles.avatarCircle}>
               {doctorData.name.charAt(0)}
             </div>
-          </div>
-          <div className={styles.doctorDetails}>
-            <p className={styles.assignedLabel}>Assigned Doctor</p>
-            <h5 className={styles.doctorName}>{doctorData.name}</h5>
-            <p className={styles.doctorCredentials}>{doctorData.credentials}</p>
-          </div>
-        </div>
-        <div className={styles.logoIconProfile}>
-            <Image src={logo_login_single } fluid className=" d-block mx-auto" />
-        </div>
-      </div>
-
-      {/* Stepper */}
-      <div className={styles.stepper}>
-        <div className={styles.stepperItem}>
-          <div className={`${styles.stepCircle} ${styles.active}`}>1</div>
-          <p className={styles.stepLabel}>Schedule</p>
-        </div>
-        <div className={styles.stepperLine}></div>
-        <div className={styles.stepperItem}>
-          <div className={styles.stepCircle}>2</div>
-          <p className={styles.stepLabel}>Verify Profile</p>
-        </div>
-        <div className={styles.stepperLine}></div>
-        <div className={styles.stepperItem}>
-          <div className={styles.stepCircle}>3</div>
-          <p className={styles.stepLabel}>Payment</p>
-        </div>
-      </div>
-
-      {/* Consultation Mode Selection */}
-      <div className={styles.section}>
-        <p className={styles.sectionLabel}>
-          <span className={styles.required}>*</span> Select which mode of consultation do you prefer.
-        </p>
-        <div className={styles.modeButtons}>
-          <button
-            className={`${styles.modeButton} ${consultationMode === 'IN-PERSON' ? styles.selected : ''}`}
-            onClick={() => handleModeSelect('IN-PERSON')}
-          >
-            <FaHome className={styles.modeIcon} />
-            <span>IN-PERSON</span>
-          </button>
-          <button
-            className={`${styles.modeButton} ${consultationMode === 'ONLINE' ? styles.selected : ''}`}
-            onClick={() => handleModeSelect('ONLINE')}
-          >
-            <FaVideo className={styles.modeIcon} />
-            <span>ONLINE</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Date Selection */}
-      <div className={styles.section}>
-        <p className={styles.sectionLabel}>
-          <span className={styles.required}>*</span> Select Date
-        </p>
-        <div className={styles.datesGrid}>
-          {doctorData.availability.map((dateSlot, index) => (
-            <div
-              key={index}
-              className={`${styles.dateCard} ${selectedDate?.date === dateSlot.date ? styles.selectedDate : ''}`}
-              onClick={() => handleSelectDate(dateSlot)}
-            >
-              <div className={styles.dateDay}>{dateSlot.day}</div>
-              <div className={styles.dateText}>{dateSlot.date}</div>
+            <div className={styles.doctorDetails}>
+              <span className={styles.assignedLabel}>Assigned Doctor</span>
+              <span className={styles.doctorName}>{doctorData.name}</span>
+              <span className={styles.doctorCredentials}>{doctorData.credentials}</span>
             </div>
+          </div>
+          <div className={styles.logoIconProfile}>
+            <Image src={logo_login_single} fluid />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Scrollable Body ── */}
+      <div className={styles.scrollContent}>
+
+        {/* Stepper */}
+        <div className={styles.stepper}>
+          {[
+            { num: 1, label: 'Schedule' },
+            { num: 2, label: 'Verify Profile' },
+            { num: 3, label: 'Payment' },
+          ].map((step, i, arr) => (
+            <React.Fragment key={step.num}>
+              <div className={styles.stepperItem}>
+                <div className={`${styles.stepCircle} ${step.num === 1 ? styles.active : ''}`}>
+                  {step.num}
+                </div>
+                <span className={styles.stepLabel}>{step.label}</span>
+              </div>
+              {i < arr.length - 1 && <div className={styles.stepperLine} />}
+            </React.Fragment>
           ))}
         </div>
-      </div>
 
-      {/* Time Selection */}
-      {selectedDate && (
+        {/* ── Consultation Mode ── */}
         <div className={styles.section}>
-          <p className={styles.sectionLabel}>
-            <span className={styles.required}>*</span> Select Time
+          <p className={styles.sectionTitle}>
+            <span className={styles.required}>*</span> Consultation Mode
           </p>
-          <div className={styles.timeSlotsGrid}>
-            {selectedDate.slots.map((slot, index) => (
+          {availableModes.length === 1 ? (
+            <div className={styles.singleModeInfo}>
+              {availableModes[0] === 'ONLINE'
+                ? <><FaVideo className={styles.singleModeIcon} /> Online Consultation</>
+                : <><FaHome className={styles.singleModeIcon} /> In-Person Consultation</>
+              }
+            </div>
+          ) : (
+            <div className={styles.modeToggleRow}>
+              <button
+                className={`${styles.modeToggle} ${consultationMode === 'IN-PERSON' ? styles.modeToggleActive : ''}`}
+                onClick={() => handleModeSelect('IN-PERSON')}
+              >
+                <FaHome className={styles.modeToggleIcon} />
+                <span>In-Person</span>
+              </button>
+              <button
+                className={`${styles.modeToggle} ${consultationMode === 'ONLINE' ? styles.modeToggleActive : ''}`}
+                onClick={() => handleModeSelect('ONLINE')}
+              >
+                <FaVideo className={styles.modeToggleIcon} />
+                <span>Online</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Date Selection ── */}
+        <div className={styles.section}>
+          <p className={styles.sectionTitle}>
+            <span className={styles.required}>*</span> Select Date
+          </p>
+          <div className={styles.datesGrid}>
+            {doctorData.availability.map((dateSlot, index) => (
               <button
                 key={index}
-                className={`${styles.timeSlot} ${selectedTime === slot.time ? styles.selectedTime : ''} ${!slot.available ? styles.disabled : ''}`}
-                disabled={!slot.available}
-                onClick={() => slot.available && handleSelectTime(slot.time)}
+                className={`${styles.dateCard} ${selectedDate?.date === dateSlot.date ? styles.dateCardSelected : ''}`}
+                onClick={() => handleSelectDate(dateSlot)}
               >
-                {slot.time}
+                <span className={styles.dateDay}>{dateSlot.day}</span>
+                <span className={styles.dateNum}>{dateSlot.date}</span>
               </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Booking Summary (shown when all fields are selected) */}
-      {isFormComplete && (
-        <Card className={styles.summaryCard}>
-          <Card.Body>
-            <h6 className={styles.summaryTitle}>Booking Summary</h6>
-            <div className={styles.summaryRow}>
-              <span>Doctor:</span>
+        {/* ── Time Selection ── */}
+        {selectedDate && (
+          <div className={styles.section}>
+            <p className={styles.sectionTitle}>
+              <span className={styles.required}>*</span> Select Time
+              <span className={styles.sessionNote}> · 1 hour session</span>
+            </p>
+            <div className={styles.timeSlotsGrid}>
+              {bookableSlots
+                .filter(slot => slot.bookable)
+                .map((slot, index) => (
+                  <button
+                    key={index}
+                    className={`${styles.timeSlot} ${selectedTime === slot.time ? styles.timeSlotSelected : ''}`}
+                    onClick={() => handleSelectTime(slot.time)}
+                    title={`${slot.time} – ${getEndTime(slot.time)}`}
+                  >
+                    {slot.time}
+                  </button>
+                ))
+              }
+            </div>
+
+            {/* Show selected session range */}
+            {selectedTime && (
+              <p className={styles.selectedTimeRange}>
+                Session: <strong>{selectedTime} – {getEndTime(selectedTime)}</strong>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── Booking Summary ── */}
+        {isFormComplete && (
+          <div className={styles.summaryCard}>
+            <p className={styles.summaryTitle}>Booking Summary</p>
+            <div className={styles.summaryGrid}>
+              <span className={styles.summaryLabel}>Doctor</span>
               <span className={styles.summaryValue}>{doctorData.name}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Mode:</span>
-              <span className={styles.summaryValue}>{consultationMode}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Date:</span>
-              <span className={styles.summaryValue}>{selectedDate.date}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Time:</span>
-              <span className={styles.summaryValue}>{selectedTime}</span>
-            </div>
-            <div className={`${styles.summaryRow} ${styles.feeRow}`}>
-              <span>Fee:</span>
-              <span className={styles.summaryFee}>₱{CONSULTATION_FEES.initial.toLocaleString()}</span>
-            </div>
-          </Card.Body>
-        </Card>
-      )}
 
-      {/* Action Buttons */}
-      <div className={styles.actionButtons}>
-        <Button
-          variant="outline-secondary"
-          className={styles.backButton}
-          onClick={() => navigate(-1)}
-        >
-          GO BACK
-        </Button>
-        <Button
-          variant={isFormComplete ? 'primary' : 'secondary'}
-          className={styles.continueButton}
+              <span className={styles.summaryLabel}>Mode</span>
+              <span className={styles.summaryValue}>{consultationMode}</span>
+
+              <span className={styles.summaryLabel}>Date</span>
+              <span className={styles.summaryValue}>{selectedDate.date}</span>
+
+              <span className={styles.summaryLabel}>Time</span>
+              <span className={styles.summaryValue}>
+                {selectedTime} – {getEndTime(selectedTime)}
+              </span>
+
+              <span className={`${styles.summaryLabel} ${styles.summaryFeeLabel}`}>Consultation Fee</span>
+              <span className={`${styles.summaryValue} ${styles.summaryFee}`}>
+                ₱{CONSULTATION_FEES.initial.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className={styles.footerSpacer} />
+      </div>
+
+      {/* ── Sticky Footer ── */}
+      <div className={styles.stickyFooter}>
+        <button
+          className={`${styles.continueButton} ${!isFormComplete ? styles.continueDisabled : ''}`}
           disabled={!isFormComplete}
           onClick={handleContinue}
         >
-          CONTINUE
-        </Button>
+          Continue
+        </button>
       </div>
-    </Container>
+
+    </div>
   );
 };
 

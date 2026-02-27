@@ -11,7 +11,6 @@ function ClientAppointment() {
     const hideLayoutRoutes = [
         '/client/appointment/book-form',
         '/client/appointment/payment',
-        // Add more routes here
     ];    
         
     const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);

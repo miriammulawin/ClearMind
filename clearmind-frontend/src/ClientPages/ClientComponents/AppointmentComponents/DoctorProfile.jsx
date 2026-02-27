@@ -2,19 +2,19 @@ import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
 import { FaUserCircle, FaVideo, FaClinicMedical } from 'react-icons/fa';
 import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
+import styles from '../../ClientStyle/SetAppointment.module.css';
 
 const DoctorProfile = ({ 
   doctorData, 
   onBookAppointment,  
 }) => {
-  // Helper function to get consultation icon
+
   const getConsultationIcon = (mode) => {
     return mode === 'Online' ? 
-      <FaVideo className="consultation-icon" /> : 
-      <FaClinicMedical className="consultation-icon" />;
+      <FaVideo className={styles.consultationIcon} /> : 
+      <FaClinicMedical className={styles.consultationIcon} />;
   };
 
-  // Helper function to format schedule days
   const formatScheduleDays = (days) => {
     if (days.length === 1) return days[0];
     if (days.length === 2) return days.join(' & ');
@@ -27,65 +27,65 @@ const DoctorProfile = ({
   };
 
   return (
-    <div className="booking-view">
+    <div className={styles.bookingView}>
 
       {/* Doctor Profile Card */}
-      <Card className="profile-card mb-4">
-        <Card.Body>
-          <div className="doctor-header">
-            <div className="doctor-avatar-large">
-              <FaUserCircle className="avatar-icon-large" />
+      <Card className={`${styles.profileCard} mb-4`}>
+        <Card.Body className={styles.cardBody}>
+
+          <div className={styles.doctorHeaderCentered}>
+            <div className={styles.doctorAvatarLarge}>
+              <FaUserCircle className={styles.avatarIconLarge} />
             </div>
-            <div className="doctor-info-full">
-              <h5 className="doctor-name-large">{doctorData.name}</h5>
-              <p className="doctor-title">{doctorData.title}</p>
-              <p className="doctor-credentials-full">{doctorData.credentials}</p>
+            <div className={styles.doctorInfoFull}>
+              <h5 className={styles.doctorNameLarge}>{doctorData.name}</h5>
+              <p className={styles.doctorTitle}>{doctorData.title}</p>
+              <p className={styles.doctorCredentialsFull}>{doctorData.credentials}</p>
             </div>
           </div>
 
-          <hr className="divider" />
+          <hr className={styles.divider} />
 
-          <div className="schedule-details">
-            <h6 className="section-title">Schedule</h6>
-            <div className="schedule-row">
-              <span className="schedule-label-text">Days:</span>
-              <span className="schedule-value">{formatScheduleDays(doctorData.schedule.days)}</span>
+          <div className={styles.scheduleDetails}>
+            <h6 className={styles.sectionTitle}>Schedule</h6>
+            <div className={styles.scheduleRow}>
+              <span className={styles.scheduleLabelText}>Days:</span>
+              <span className={styles.scheduleValue}>{formatScheduleDays(doctorData.schedule.days)}</span>
             </div>
-            <div className="schedule-row">
-              <span className="schedule-label-text">Time:</span>
-              <span className="schedule-value">{doctorData.schedule.time}</span>
+            <div className={styles.scheduleRow}>
+              <span className={styles.scheduleLabelText}>Time:</span>
+              <span className={styles.scheduleValue}>{doctorData.schedule.time}</span>
             </div>
-            <div className="schedule-row">
-              <span className="schedule-label-text">Type:</span>
-              <Badge className="consultation-badge">
+            <div className={styles.scheduleRow}>
+              <span className={styles.scheduleLabelText}>Type:</span>
+              <Badge className={styles.consultationBadge}>
                 {getConsultationIcon(doctorData.consultationMode)}
                 {doctorData.consultationType}
               </Badge>
             </div>
           </div>
 
-          <hr className="divider" />
+          <hr className={styles.divider} />
 
-          <div className="fees-details">
-            <h6 className="section-title">Consultation Fees</h6>
-            <div className="fee-row">
+          <div className={styles.feesDetails}>
+            <h6 className={styles.sectionTitle}>Consultation Fees</h6>
+            <div className={styles.feeRow}>
               <span>Initial Consultation:</span>
-              <span className="fee-amount">₱{CONSULTATION_FEES.initial.toLocaleString()}</span>
+              <span className={styles.feeAmount}>₱{CONSULTATION_FEES.initial.toLocaleString()}</span>
             </div>
-            <div className="fee-row">
+            <div className={styles.feeRow}>
               <span>Follow-up Session:</span>
-              <span className="fee-amount">₱{CONSULTATION_FEES.followUp.toLocaleString()}</span>
+              <span className={styles.feeAmount}>₱{CONSULTATION_FEES.followUp.toLocaleString()}</span>
             </div>
           </div>
 
-          {/* Book Appointment Button */}
           <Button
-            variant="purple"
-            className="btn-book-appointment w-100 mt-4"
+            className={`${styles.btnBookAppointment} w-100 mt-4`}
             onClick={onBookAppointment}
           >
-            BOOK APPOINTMENT
+            SET APPOINTMENT
           </Button>
+
         </Card.Body>
       </Card>
     </div>

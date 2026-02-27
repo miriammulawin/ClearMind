@@ -13,7 +13,7 @@ const ClientAppointmentServices = () => {
     // Only allow booking for Psychotherapy and Counseling
     if (serviceTitle === 'Psychotherapy and Counseling') {
       // Navigate to book appointment page
-      navigate('/client/appointment/book-appointment', { 
+      navigate('/client/appointment/set-appointment', { 
         state: { selectedService: serviceTitle } 
       });
     } else {
