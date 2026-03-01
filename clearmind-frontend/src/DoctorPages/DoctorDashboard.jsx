@@ -6,6 +6,7 @@ import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
 import { FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 import { BsMegaphone } from "react-icons/bs";
+import AccountSetupModal from "./SetUpAccountModal";
 
 // Chart.js
 import {
@@ -38,7 +39,8 @@ function DoctorDashboard() {
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState(null);
-  const [announcementTab, setAnnouncementTab] = useState("received"); // "received" or "created"
+  const [announcementTab, setAnnouncementTab] = useState("received");
+  const [showSetupModal, setShowSetupModal] = useState(true);
   const [announcementForm, setAnnouncementForm] = useState({
     title: "",
     message: "",
@@ -99,6 +101,14 @@ function DoctorDashboard() {
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     setCurrentWeekStart(startOfWeek);
   }, []);
+
+  useEffect(() => {
+    setShowSetupModal(true);
+  }, []);
+
+  const closeModal = () => {
+    setShowSetupModal(false);
+  };
 
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "short",
@@ -729,7 +739,7 @@ function DoctorDashboard() {
               <div
                 style={{ display: "flex", alignItems: "center", gap: "12px" }}
               >
-                <h2>Post Announcement</h2>
+                <h2>Create Announcement</h2>
                 {editingAnnouncement &&
                   editingAnnouncement.priority === "urgent" && (
                     <span
@@ -818,12 +828,14 @@ function DoctorDashboard() {
                 className="btn-post-announcement"
                 onClick={handleSubmitAnnouncement}
               >
-                Post
+                Create
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <AccountSetupModal showModal={showSetupModal} onClose={closeModal} />
     </div>
   );
 }
