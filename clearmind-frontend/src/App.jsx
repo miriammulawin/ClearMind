@@ -19,7 +19,7 @@ import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentComponents/AppointmentDetails";
 import SetAppointment from "./ClientPages/ClientComponents/AppointmentComponents/SetAppointment";
-import SetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/SetAppointmentForm';
+import SetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/AppointmentForm/SetAppointmentForm';
 
 
 function App() {
