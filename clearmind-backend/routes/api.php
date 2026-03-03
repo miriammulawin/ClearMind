@@ -4,8 +4,9 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DoctorDashboardController;
 use App\Http\Controllers\AdminDashboardController;
-use App\Http\Controllers\AdminPatientController;  // ← add this
+use App\Http\Controllers\AdminPatientController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AdminCreateAccountController;
 
 // ── Public Routes ──────────────────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
@@ -18,7 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout',          [AuthController::class, 'logout']);
 
     // User profile
-    Route::get('/profile',          [ProfileController::class, 'show']);  // ← moved up, no duplicate
+    Route::get('/profile',          [ProfileController::class, 'show']);
     Route::put('/profile',          [AuthController::class, 'updateProfile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
@@ -37,10 +38,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/total-clients',    [AdminDashboardController::class, 'totalClients']);
 
     // Admin Patients — specific routes BEFORE {id} ──────────────
-    Route::get('/admin/patients',                 [AdminPatientController::class, 'index']);
-    Route::get('/admin/patients/consultations',   [AdminPatientController::class, 'consultations']); // ← BEFORE {id}
-    Route::get('/admin/patients/{id}',            [AdminPatientController::class, 'show']);
-    Route::patch('/admin/patients/{id}/confirm',  [AdminPatientController::class, 'confirm']);
-    Route::patch('/admin/patients/{id}/complete', [AdminPatientController::class, 'complete']);
+    Route::get('/admin/patients/search',              [AdminPatientController::class, 'search']);      
+    Route::get('/admin/patients/consultations',       [AdminPatientController::class, 'consultations']); 
+    Route::get('/admin/patients',                     [AdminPatientController::class, 'index']);       
+    Route::get('/admin/patients/{id}',                [AdminPatientController::class, 'show']);     
+    Route::get('/admin/doctors',              [AdminCreateAccountController::class, 'index']);
+    Route::get('/admin/doctors/{id}',         [AdminCreateAccountController::class, 'show']);
+    Route::post('/admin/doctors',             [AdminCreateAccountController::class, 'store']);  
+    Route::patch('/admin/doctors/{id}/toggle-status', [AdminCreateAccountController::class, 'toggleStatus']);
+    Route::patch('/admin/patients/{id}/confirm',      [AdminPatientController::class, 'confirm']);
+    Route::patch('/admin/patients/{id}/complete',     [AdminPatientController::class, 'complete']);
+
+    
 
 });

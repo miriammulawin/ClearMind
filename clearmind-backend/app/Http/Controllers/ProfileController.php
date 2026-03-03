@@ -18,6 +18,7 @@ public function show(Request $request)
             'lastName'      => $user->last_name,
             'middleInitial' => $user->middle_initial ?? '',
             'email'         => $user->email,
+            'address'       => $user->address ?? '',
             'contactNo'     => $user->contact_no,
             'dob'           => $user->dob,
             'sex'           => $user->sex,

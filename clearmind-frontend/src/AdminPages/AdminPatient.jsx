@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import "./AdminStyle/AdminPatient.css";
@@ -7,23 +8,49 @@ import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
 
 function AdminPatient() {
-  const [activeMenu, setActiveMenu]         = useState("Patients");
-  const [activeTab, setActiveTab]           = useState("consultation");
-  const [currentPage, setCurrentPage]       = useState(1);
-  const [lastPage, setLastPage]             = useState(1);
-  // const [totalRecords, setTotalRecords]     = useState(0);
-  const [loading, setLoading]               = useState(false);
-  const [showModal, setShowModal]           = useState(false);
+  const [activeMenu, setActiveMenu]           = useState("Patients");
+  const [activeTab, setActiveTab]             = useState("consultation");
+  const [currentPage, setCurrentPage]         = useState(1);
+  const [lastPage, setLastPage]               = useState(1);
+  const [loading, setLoading]                 = useState(false);
+  const [showModal, setShowModal]             = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [modalLoading, setModalLoading]     = useState(false);
-  const [zoomImage, setZoomImage]           = useState(null);
+  const [modalLoading, setModalLoading]       = useState(false);
+  const [zoomImage, setZoomImage]             = useState(null);
 
-  const [consultations, setConsultations]   = useState([]);
-  const [patients, setPatients]             = useState([]);
-  const [consultTotal, setConsultTotal]     = useState(0);
-  const [patientsTotal, setPatientsTotal]   = useState(0);
+  const [consultations, setConsultations]     = useState([]);
+  const [patients, setPatients]               = useState([]);
+  const [consultTotal, setConsultTotal]       = useState(0);
+  const [patientsTotal, setPatientsTotal]     = useState(0);
 
-  // ── Fetch data based on active tab ──────────────────────────────
+  // ── Search state ─────────────────────────────────────────────────
+  const [searchQuery, setSearchQuery]         = useState("");
+  const [isSearchMode, setIsSearchMode]       = useState(false);
+  const [searchResults, setSearchResults]     = useState([]);
+  const [searchTotal, setSearchTotal]         = useState(0);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // ── Read ?q= from URL on mount / URL change ──────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") || "";
+    if (q) {
+      setSearchQuery(q);
+      setIsSearchMode(true);
+      fetchSearch(q, 1);
+    } else {
+      setIsSearchMode(false);
+      setSearchQuery("");
+      fetchData(1, activeTab);
+      // Pre-fetch tab totals
+      axiosClient.get("/admin/patients?page=1").then((r) => setPatientsTotal(r.data.total));
+      axiosClient.get("/admin/patients/consultations?page=1").then((r) => setConsultTotal(r.data.total));
+    }
+  }, [location.search]);
+
+  // ── Fetch normal tab data ────────────────────────────────────────
   const fetchData = async (page = 1, tab = activeTab) => {
     setLoading(true);
     try {
@@ -52,19 +79,43 @@ function AdminPatient() {
     }
   };
 
-  useEffect(() => {
-    fetchData(1, "consultation");
-    // Pre-fetch patients total for tab badge
-    axiosClient.get("/admin/patients?page=1").then((res) => {
-      setPatientsTotal(res.data.total);
-    });
-  }, []);
+  // ── Fetch search results ─────────────────────────────────────────
+  const fetchSearch = async (q, page = 1) => {
+    setLoading(true);
+    try {
+      const res = await axiosClient.get(`/admin/patients/search?q=${encodeURIComponent(q)}&page=${page}`);
+      const { data, last_page, total } = res.data;
+      setSearchResults(data);
+      setSearchTotal(total);
+      setLastPage(last_page);
+      setCurrentPage(page);
+    } catch (err) {
+      console.error("Search failed:", err);
+      toast.error("Search failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Clear search → go back to normal view ───────────────────────
+  const clearSearch = () => {
+    navigate("/admin/patients");
+  };
 
   // ── Switch tab ───────────────────────────────────────────────────
   const handleTabSwitch = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
     fetchData(1, tab);
+  };
+
+  // ── Pagination handler ───────────────────────────────────────────
+  const handlePageChange = (page) => {
+    if (isSearchMode) {
+      fetchSearch(searchQuery, page);
+    } else {
+      fetchData(page, activeTab);
+    }
   };
 
   // ── View single appointment ──────────────────────────────────────
@@ -82,24 +133,23 @@ function AdminPatient() {
     }
   };
 
-  // ── Confirm appointment ──────────────────────────────────────────
+  // ── Confirm ──────────────────────────────────────────────────────
   const handleConfirm = async (id) => {
     try {
       await axiosClient.patch(`/admin/patients/${id}/confirm`);
       toast.success("Appointment confirmed!");
-      fetchData(currentPage, activeTab);
+      isSearchMode ? fetchSearch(searchQuery, currentPage) : fetchData(currentPage, activeTab);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to confirm.");
     }
   };
 
-  // ── Complete appointment ─────────────────────────────────────────
+  // ── Complete ─────────────────────────────────────────────────────
   const handleComplete = async (id) => {
     try {
       await axiosClient.patch(`/admin/patients/${id}/complete`);
       toast.success("Appointment marked as completed!");
-      fetchData(currentPage, activeTab);
-      // Update modal status if open
+      isSearchMode ? fetchSearch(searchQuery, currentPage) : fetchData(currentPage, activeTab);
       if (selectedPatient?.id === id) {
         setSelectedPatient((prev) => ({ ...prev, status: "Completed" }));
       }
@@ -128,7 +178,9 @@ function AdminPatient() {
     return pages;
   };
 
-  const displayedData = activeTab === "consultation" ? consultations : patients;
+  const displayedData = isSearchMode
+    ? searchResults
+    : activeTab === "consultation" ? consultations : patients;
 
   return (
     <div className="admin-layout">
@@ -138,23 +190,45 @@ function AdminPatient() {
         <div className="admin-content" style={{ padding: "20px" }}>
           <div className="patient-card">
 
-            {/* Tabs */}
-            <div className="patient-tabs">
-              <button
-                className={activeTab === "patients" ? "tab-active" : ""}
-                onClick={() => handleTabSwitch("patients")}
-              >
-                Total's Patients <span>{patientsTotal}</span>
-              </button>
-              <button
-                className={activeTab === "consultation" ? "tab-active" : ""}
-                onClick={() => handleTabSwitch("consultation")}
-              >
-                Consultation Request <span>{consultTotal}</span>
-              </button>
-            </div>
+            {/* ── Search Result Banner ───────────────────────────── */}
+            {isSearchMode && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: "#f3eafd", borderRadius: "10px", padding: "10px 16px",
+                marginBottom: "12px", fontSize: "14px", color: "#4D227C",
+              }}>
+                <span>
+                  Showing <strong>{searchTotal}</strong> result{searchTotal !== 1 ? "s" : ""} for&nbsp;
+                  <strong>"{searchQuery}"</strong>
+                </span>
+                <button
+                  onClick={clearSearch}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#4D227C", display: "flex", alignItems: "center", gap: "4px", fontWeight: "600" }}
+                >
+                  <FiX /> Clear search
+                </button>
+              </div>
+            )}
 
-            {/* Table */}
+            {/* ── Tabs (hidden in search mode) ───────────────────── */}
+            {!isSearchMode && (
+              <div className="patient-tabs">
+                <button
+                  className={activeTab === "patients" ? "tab-active" : ""}
+                  onClick={() => handleTabSwitch("patients")}
+                >
+                  Total's Patients <span>{patientsTotal}</span>
+                </button>
+                <button
+                  className={activeTab === "consultation" ? "tab-active" : ""}
+                  onClick={() => handleTabSwitch("consultation")}
+                >
+                  Consultation Request <span>{consultTotal}</span>
+                </button>
+              </div>
+            )}
+
+            {/* ── Table ──────────────────────────────────────────── */}
             <div className="patient-table-wrapper">
               {loading ? (
                 <p className="text-center py-4">Loading...</p>
@@ -174,7 +248,7 @@ function AdminPatient() {
                     {displayedData.length === 0 ? (
                       <tr>
                         <td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
-                          No records found.
+                          {isSearchMode ? `No results found for "${searchQuery}".` : "No records found."}
                         </td>
                       </tr>
                     ) : (
@@ -193,7 +267,22 @@ function AdminPatient() {
                             <button className="btn-view" onClick={() => handleView(row)}>
                               View
                             </button>
-                            {activeTab === "patients" ? (
+                            {/* In search mode show both buttons based on status */}
+                            {isSearchMode ? (
+                              row.status === "Pending" ? (
+                                <button className="btn-confirm" onClick={() => handleConfirm(row.id)}>
+                                  Confirm
+                                </button>
+                              ) : (
+                                <button
+                                  className="btn-completed"
+                                  disabled={row.status === "Completed"}
+                                  onClick={() => handleComplete(row.id)}
+                                >
+                                  Completed
+                                </button>
+                              )
+                            ) : activeTab === "patients" ? (
                               <button
                                 className="btn-completed"
                                 disabled={row.status === "Completed"}
@@ -202,10 +291,7 @@ function AdminPatient() {
                                 Completed
                               </button>
                             ) : (
-                              <button
-                                className="btn-confirm"
-                                onClick={() => handleConfirm(row.id)}
-                              >
+                              <button className="btn-confirm" onClick={() => handleConfirm(row.id)}>
                                 Confirm
                               </button>
                             )}
@@ -218,12 +304,9 @@ function AdminPatient() {
               )}
             </div>
 
-            {/* Pagination */}
+            {/* ── Pagination ─────────────────────────────────────── */}
             <div className="pagination">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => fetchData(currentPage - 1)}
-              >
+              <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)}>
                 ‹ Previous
               </button>
               {getPageNumbers().map((n, i) =>
@@ -233,42 +316,34 @@ function AdminPatient() {
                   <button
                     key={n}
                     className={currentPage === n ? "page-active" : ""}
-                    onClick={() => fetchData(n)}
+                    onClick={() => handlePageChange(n)}
                   >
                     {n}
                   </button>
                 )
               )}
-              <button
-                disabled={currentPage === lastPage}
-                onClick={() => fetchData(currentPage + 1)}
-              >
+              <button disabled={currentPage === lastPage} onClick={() => handlePageChange(currentPage + 1)}>
                 Next ›
               </button>
             </div>
-            <div className="page-info">
-              Page {currentPage} of {lastPage}
-            </div>
+            <div className="page-info">Page {currentPage} of {lastPage}</div>
 
           </div>
         </div>
       </div>
 
-      {/* Patient Details Modal */}
+      {/* ── Patient Details Modal ───────────────────────────────────── */}
       {showModal && (
         <div className="patient-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="patient-modal-lg" onClick={(e) => e.stopPropagation()}>
-
             <div className="modal-header">
               <h2>Patient Details</h2>
               <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                {selectedPatient && (
-                  <span className="modal-date">{selectedPatient.date}</span>
-                )}
+                {selectedPatient && <span className="modal-date">{selectedPatient.date}</span>}
                 <button
                   className="close-btn"
                   onClick={() => setShowModal(false)}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", display: "flex", alignItems: "center" }}
                 >
                   <FiX />
                 </button>
@@ -280,23 +355,18 @@ function AdminPatient() {
                 <p className="text-center py-4">Loading details...</p>
               ) : selectedPatient ? (
                 <div className="modal-section" style={{ display: "flex", gap: "40px", flexWrap: "wrap" }}>
-
-                  {/* Left — Patient + Appointment Info */}
                   <div style={{ flex: 1, minWidth: "300px" }}>
                     <h4>Patient Information</h4>
                     <p><strong>Name:</strong> {selectedPatient.name}</p>
                     <p><strong>Contact Number:</strong> {selectedPatient.contact}</p>
                     <p><strong>Email:</strong> {selectedPatient.email}</p>
                     <p><strong>Address:</strong> {selectedPatient.address ?? "—"}</p>
-
                     <h4 style={{ marginTop: "40px" }}>Appointment Details</h4>
                     <p><strong>Date:</strong> {selectedPatient.date}</p>
                     <p><strong>Time:</strong> {selectedPatient.time}</p>
                     <p><strong>Visit Type:</strong> {selectedPatient.type}</p>
                     <p><strong>Status:</strong> {selectedPatient.status}</p>
                   </div>
-
-                  {/* Right — Payment Info + Proof */}
                   <div style={{ display: "flex", gap: "40px", flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: "200px", borderRight: "1px solid #e5d6f5", paddingRight: "20px" }}>
                       <h4>Payment Details</h4>
@@ -313,13 +383,10 @@ function AdminPatient() {
                           onClick={() => setZoomImage(selectedPatient.payment.payment_proof)}
                         />
                       ) : (
-                        <div style={{ color: "#aaa", fontSize: "14px", textAlign: "center" }}>
-                          No payment proof uploaded.
-                        </div>
+                        <div style={{ color: "#aaa", fontSize: "14px", textAlign: "center" }}>No payment proof uploaded.</div>
                       )}
                     </div>
                   </div>
-
                 </div>
               ) : null}
             </div>
@@ -333,22 +400,14 @@ function AdminPatient() {
                 Completed
               </button>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* Zoom Image */}
+      {/* ── Zoom Image ─────────────────────────────────────────────── */}
       {zoomImage && (
-        <div
-          className="patient-modal-overlay"
-          onClick={() => setZoomImage(null)}
-          style={{ cursor: "zoom-out" }}
-        >
-          <div
-            style={{ maxWidth: "90%", maxHeight: "90%", display: "flex", justifyContent: "center", alignItems: "center" }}
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="patient-modal-overlay" onClick={() => setZoomImage(null)} style={{ cursor: "zoom-out" }}>
+          <div style={{ maxWidth: "90%", maxHeight: "90%", display: "flex", justifyContent: "center", alignItems: "center" }} onClick={(e) => e.stopPropagation()}>
             <img
               src={zoomImage}
               alt="Zoomed Payment Proof"

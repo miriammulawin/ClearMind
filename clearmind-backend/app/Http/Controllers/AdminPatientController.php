@@ -52,7 +52,28 @@ class AdminPatientController extends Controller
             ],
         ]);
     }
+// ── GET /admin/patients/search?q=keyword ────────────────────────
+public function search(Request $request)
+{
+    $q = $request->query('q', '');
 
+    $appointments = Appointment::with(['client.user'])
+        ->where(function ($query) use ($q) {
+            $query->where('visit_type', 'like', "%{$q}%")
+                  ->orWhere('status', 'like', "%{$q}%")
+                  ->orWhere('appointment_date', 'like', "%{$q}%")
+                  ->orWhereHas('client.user', function ($q2) use ($q) {
+                      $q2->where('first_name', 'like', "%{$q}%")
+                         ->orWhere('last_name',  'like', "%{$q}%");
+                  });
+        })
+        ->latest('created_at')
+        ->paginate(10);
+
+    $appointments->getCollection()->transform(fn($appt) => $this->format($appt));
+
+    return response()->json($appointments);
+}
     // ── PATCH /admin/patients/{id}/confirm ──────────────────────
     public function confirm($id)
     {

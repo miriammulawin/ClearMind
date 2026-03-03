@@ -5,60 +5,41 @@ import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-import axiosClient from "../axiosClient";  
+import axiosClient from "../axiosClient";
 import "../index.css";
 import "./AdminStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
 function AdminTopNavbar({ activeMenu }) {
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotifications, setShowNotifications]     = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [searchQuery, setSearchQuery]                 = useState("");
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "New Appointment Request",
-      message: "John Doe has requested an appointment for January 15, 2026",
-      time: "5 minutes ago",
-      isRead: false,
-      type: "appointment",
-    },
-    {
-      id: 2,
-      title: "Payment Received",
-      message: "Payment of ₱1,500 received from Maria Santos",
-      time: "1 hour ago",
-      isRead: false,
-      type: "payment",
-    },
-    {
-      id: 3,
-      title: "Appointment Reminder",
-      message: "Upcoming appointment with Pedro Cruz at 2:00 PM today",
-      time: "2 hours ago",
-      isRead: true,
-      type: "reminder",
-    },
-    {
-      id: 4,
-      title: "New Message",
-      message: "You have a new message from Anna Lopez",
-      time: "3 hours ago",
-      isRead: true,
-      type: "message",
-    },
-    {
-      id: 5,
-      title: "Appointment Cancelled",
-      message: "Carlos Reyes cancelled appointment scheduled for tomorrow",
-      time: "Yesterday",
-      isRead: true,
-      type: "cancelled",
-    },
+    { id: 1, title: "New Appointment Request", message: "John Doe has requested an appointment for January 15, 2026", time: "5 minutes ago", isRead: false, type: "appointment" },
+    { id: 2, title: "Payment Received",         message: "Payment of ₱1,500 received from Maria Santos",             time: "1 hour ago",    isRead: false, type: "payment" },
+    { id: 3, title: "Appointment Reminder",     message: "Upcoming appointment with Pedro Cruz at 2:00 PM today",    time: "2 hours ago",   isRead: true,  type: "reminder" },
+    { id: 4, title: "New Message",              message: "You have a new message from Anna Lopez",                   time: "3 hours ago",   isRead: true,  type: "message" },
+    { id: 5, title: "Appointment Cancelled",    message: "Carlos Reyes cancelled appointment scheduled for tomorrow", time: "Yesterday",     isRead: true,  type: "cancelled" },
   ]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  // ── Search ───────────────────────────────────────────────────────────────
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    // Navigate to patients page with search query
+    navigate(`/admin/patients?q=${encodeURIComponent(q)}`);
+    setSearchQuery("");
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === "Enter") handleSearch(e);
+    if (e.key === "Escape") setSearchQuery("");
+  };
 
   // ── Logout ───────────────────────────────────────────────────────────────
   const handleLogout = async () => {
@@ -77,16 +58,15 @@ function AdminTopNavbar({ activeMenu }) {
     if (!result.isConfirmed) return;
 
     try {
-      // Call Laravel logout → revokes the Bearer token on the server
       await axiosClient.post("/logout");
     } catch (error) {
-      // Even if the API call fails, we still clear local storage
       console.error("Logout API error:", error);
     } finally {
-      // Always clear localStorage regardless of API result
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("user");
+      localStorage.removeItem("profile_image");
+      sessionStorage.removeItem("session_active");
 
       Swal.fire({
         icon: "success",
@@ -102,19 +82,9 @@ function AdminTopNavbar({ activeMenu }) {
   };
 
   // ── Notification Helpers ─────────────────────────────────────────────────
-  const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
-  };
-
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter((n) => n.id !== id));
-  };
+  const markAsRead        = (id) => setNotifications(notifications.map((n) => n.id === id ? { ...n, isRead: true } : n));
+  const markAllAsRead     = ()   => setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+  const deleteNotification = (id) => setNotifications(notifications.filter((n) => n.id !== id));
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -153,10 +123,7 @@ function AdminTopNavbar({ activeMenu }) {
 
           {showNotifications && (
             <>
-              <div
-                className="notification-overlay"
-                onClick={() => setShowNotifications(false)}
-              />
+              <div className="notification-overlay" onClick={() => setShowNotifications(false)} />
               <div className="notification-modal">
                 <div className="notification-header">
                   <h3>Notifications</h3>
@@ -166,18 +133,13 @@ function AdminTopNavbar({ activeMenu }) {
                         Mark all as read
                       </button>
                     )}
-                    <FiX
-                      className="close-notification-btn"
-                      onClick={() => setShowNotifications(false)}
-                    />
+                    <FiX className="close-notification-btn" onClick={() => setShowNotifications(false)} />
                   </div>
                 </div>
 
                 <div className="notification-list">
                   {notifications.length === 0 ? (
-                    <div className="no-notifications">
-                      <p>No notifications yet</p>
-                    </div>
+                    <div className="no-notifications"><p>No notifications yet</p></div>
                   ) : (
                     notifications.map((notif) => (
                       <div
@@ -185,9 +147,7 @@ function AdminTopNavbar({ activeMenu }) {
                         className={`notification-item ${!notif.isRead ? "unread" : ""}`}
                         onClick={() => markAsRead(notif.id)}
                       >
-                        <div className="notification-icon">
-                          {getNotificationIcon(notif.type)}
-                        </div>
+                        <div className="notification-icon">{getNotificationIcon(notif.type)}</div>
                         <div className="notification-content">
                           <h4>{notif.title}</h4>
                           <p>{notif.message}</p>
@@ -195,10 +155,7 @@ function AdminTopNavbar({ activeMenu }) {
                         </div>
                         <button
                           className="delete-notification-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNotification(notif.id);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }}
                         >
                           <FiX />
                         </button>
@@ -211,10 +168,7 @@ function AdminTopNavbar({ activeMenu }) {
                   <div className="notification-footer">
                     <button
                       className="view-all-btn"
-                      onClick={() => {
-                        setShowNotifications(false);
-                        setShowAllNotifications(true);
-                      }}
+                      onClick={() => { setShowNotifications(false); setShowAllNotifications(true); }}
                     >
                       View All Notifications
                     </button>
@@ -227,19 +181,26 @@ function AdminTopNavbar({ activeMenu }) {
 
         {/* ── Search ────────────────────────────────────────────────── */}
         <div className="search-box">
-          <input type="text" placeholder="Search" />
-          <FiSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search patients..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+          />
+          {searchQuery && (
+            <FiX
+              style={{ position: "absolute", right: "36px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#888", fontSize: "14px" }}
+              onClick={() => setSearchQuery("")}
+            />
+          )}
+          <FiSearch className="search-icon" style={{ cursor: "pointer" }} onClick={handleSearch} />
         </div>
 
         {/* ── Logout ────────────────────────────────────────────────── */}
-        <FiLogOut
-          className="top-icon"
-          style={{ cursor: "pointer" }}
-          onClick={handleLogout}
-        />
+        <FiLogOut className="top-icon" style={{ cursor: "pointer" }} onClick={handleLogout} />
       </div>
 
-      {/* All Notifications Modal */}
       {showAllNotifications && (
         <AllNotifications
           onClose={() => setShowAllNotifications(false)}

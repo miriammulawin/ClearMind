@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             [
                 'first_name'   => 'Super',
                 'last_name'    => 'Admin',
+                'address'      => '123 Admin St, Control City',
                 'dob'          => '1990-01-01',
                 'sex'          => 'male',
                 'contact_no'   => '09000000000',
@@ -39,6 +40,7 @@ class DatabaseSeeder extends Seeder
                 'first_name'   => 'Jane',
                 'last_name'    => 'Smith',
                 'dob'          => '1985-05-15',
+                'address'      => '456 Wellness Ave, Healthtown',
                 'sex'          => 'female',
                 'contact_no'   => '09111111111',
                 'password'     => Hash::make('doctor123'),
@@ -103,6 +105,7 @@ class DatabaseSeeder extends Seeder
                     'first_name'   => $data['first_name'],
                     'last_name'    => $data['last_name'],
                     'dob'          => $data['dob'],
+                    'address'      => '123 Main St, Cityville', // Placeholder address for all doctors
                     'sex'          => $data['sex'],
                     'contact_no'   => $data['contact_no'],
                     'password'     => Hash::make('doctor123'),

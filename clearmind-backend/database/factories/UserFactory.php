@@ -21,6 +21,7 @@ class UserFactory extends Factory
             'last_name'    => $this->faker->lastName(),
             'dob'          => $this->faker->dateTimeBetween('1970-01-01', '2005-01-01')->format('Y-m-d'),
             'sex'          => $this->faker->randomElement(['male', 'female']),
+            'address'      => $this->faker->address(),
             'contact_no'   => '09' . $this->faker->numerify('#########'),
             'email'        => $this->faker->unique()->safeEmail(),
             'password'     => static::$password ??= Hash::make('client123'),

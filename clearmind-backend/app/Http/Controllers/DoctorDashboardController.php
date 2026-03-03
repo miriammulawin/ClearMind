@@ -29,6 +29,7 @@ class DoctorDashboardController extends Controller
                 'first_name'          => $user->first_name ?? '—',
                 'last_name'           => $user->last_name ?? '—',
                 'dob'                 => $user->dob ?? null,
+                'address'             => $user->address ?? '—',
                 'sex'                 => $user->sex ?? null,
                 'contact_no'          => $user->contact_no ?? '—',
                 'email'                => $user->email ?? '—',
