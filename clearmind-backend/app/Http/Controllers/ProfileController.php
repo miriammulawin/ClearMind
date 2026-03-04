@@ -9,7 +9,7 @@ class ProfileController extends Controller
 public function show(Request $request)
 {
     $user   = $request->user();
-    $doctor = $user->doctor; // pulls from doctors table
+    $doctor = $user->doctor;
 
     return response()->json([
         'user' => [
@@ -44,4 +44,5 @@ public function show(Request $request)
         ] : (object)[],
     ]);
 }
+
 }

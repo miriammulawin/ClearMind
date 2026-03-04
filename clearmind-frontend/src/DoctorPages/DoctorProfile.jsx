@@ -13,7 +13,7 @@ function DoctorProfile() {
   const [saveLoading,   setSaveLoading]   = useState(false);
   const fileInputRef                      = useRef(null);
   const navigate                          = useNavigate();
-  const [profileFile,   setProfileFile]   = useState(null); // actual File object for upload
+  const [profileFile,   setProfileFile]   = useState(null); 
 
 const fetchProfile = async () => {
   try {
@@ -191,7 +191,7 @@ useEffect(() => {
 }, []);
 
   const user     = getUser();
-  const fullName = user?.fullName || `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim() || "Doctor";
+  const fullName = user?.fullName || `${user?.firstName ?? ""}${user?.middleInitial ? " " + user.middleInitial + "." : ""} ${user?.lastName ?? ""}`.trim() || "Doctor";
   const initials = ((user?.firstName?.[0] ?? "") + (user?.lastName?.[0] ?? "")).toUpperCase() || "DR";
 
   // ── Handlers ────────────────────────────────────────────────────
@@ -244,6 +244,11 @@ const handleSave = async () => {
     payload.append("years_of_experience", form.yearsOfExperience || "");
     payload.append("license_number", form.prcNumber === "Not set" ? "" : form.prcNumber || "");
     payload.append("practicing_since", form.practicingSince || "");
+
+    payload.append("first_name", form.firstName);
+    payload.append("last_name", form.lastName);
+    payload.append("middle_initial", form.middleInitial);
+    payload.append('contact_no', form.contactNumber);
 
     // Arrays — always stringify and ensure array
     payload.append("specializations", JSON.stringify(Array.isArray(form.subspecialty) ? form.subspecialty : []));

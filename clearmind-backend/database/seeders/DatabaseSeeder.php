@@ -105,7 +105,8 @@ class DatabaseSeeder extends Seeder
                     'first_name'   => $data['first_name'],
                     'last_name'    => $data['last_name'],
                     'dob'          => $data['dob'],
-                    'address'      => '123 Main St, Cityville', // Placeholder address for all doctors
+                    'address'      => '123 Main St, Cityville', 
+                    'middle_initial' => strtoupper(substr($data['first_name'], 0, 1)),
                     'sex'          => $data['sex'],
                     'contact_no'   => $data['contact_no'],
                     'password'     => Hash::make('doctor123'),

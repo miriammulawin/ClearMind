@@ -17,7 +17,7 @@ class AuthController extends Controller
             'firstName' => ['required', 'string', 'max:100'],
             'lastName'  => ['required', 'string', 'max:100'],
             'dob'       => ['required', 'date', 'before:today'],
-            'address'   => ['required', 'string', 'max:255'],
+            'middleInitial' => ['sometimes', 'nullable', 'string', 'max:1'],
             'sex'       => ['required', 'in:male,female'],
             'contactNo' => ['required', 'string', 'max:20'],
             'email'     => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -115,12 +115,14 @@ class AuthController extends Controller
     // ── UPDATE PROFILE ────────────────────────────────────────────────────
     public function updateProfile(Request $request): JsonResponse
     {
+        
         $user = $request->user();
 
         $validated = $request->validate([
             'firstName' => ['sometimes', 'string', 'max:100'],
             'lastName'  => ['sometimes', 'string', 'max:100'],
             'dob'       => ['sometimes', 'date', 'before:today'],
+            'middleInitial' => ['sometimes', 'nullable', 'string', 'max:1'],
             'sex'       => ['sometimes', 'in:male,female'],
             'contactNo' => ['sometimes', 'string', 'max:20'],
             'email'     => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $user->id],
@@ -130,6 +132,7 @@ class AuthController extends Controller
             'first_name' => $validated['firstName'] ?? $user->first_name,
             'last_name'  => $validated['lastName']  ?? $user->last_name,
             'dob'        => $validated['dob']        ?? $user->dob,
+            'middle_initial' => $validated['middleInitial'] ?? $user->middle_initial,
             'sex'        => $validated['sex']        ?? $user->sex,
             'contact_no' => $validated['contactNo']  ?? $user->contact_no,
             'email'      => $validated['email']      ?? $user->email,
@@ -179,6 +182,8 @@ class AuthController extends Controller
             'lastName'    => $user->last_name,
             'fullName'    => $user->full_name,
             'dob'         => $user->dob?->format('Y-m-d'),
+            'address'     => $user->address,
+            'middleInitial' => $user->middle_initial ?? '',
             'sex'         => $user->sex,
             'contactNo'   => $user->contact_no,
             'email'       => $user->email,

@@ -26,6 +26,7 @@ function Registration() {
     lastName: "",
     dob: "",
     sex: "",
+    middleInitial: "",
     contactNo: "",
     email: "",
     password: "",
@@ -51,6 +52,7 @@ function Registration() {
     const newErrors = {};
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim())  newErrors.lastName  = "Last name is required";
+    if (!formData.middleInitial.trim()) newErrors.middleInitial = "Middle Initials is Required" 
     if (!formData.dob)              newErrors.dob        = "Date of birth is required";
     if (!formData.sex)              newErrors.sex        = "Sex is required";
     if (!formData.contactNo.trim()) newErrors.contactNo  = "Contact number is required";
@@ -73,16 +75,18 @@ function Registration() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/register",  // ← Laravel API
+        "http://127.0.0.1:8000/api/register",  
         {
           firstName:             formData.firstName,
           lastName:              formData.lastName,
+          middleInitial:         formData.middleInitial,
+          address:               formData.address,
           dob:                   formData.dob,
           sex:                   formData.sex,
           contactNo:             formData.contactNo,
           email:                 formData.email,
           password:              formData.password,
-          password_confirmation: formData.confirmPassword,  // Laravel needs this
+          password_confirmation: formData.confirmPassword, 
         },
         {
           headers: {
@@ -242,6 +246,25 @@ function Registration() {
                       size="sm"
                     />
                     <Form.Control.Feedback type="invalid">{errors.lastName}</Form.Control.Feedback>
+                  </div>
+                </Form.Group>
+
+                {/* Middle Initial */}
+                 <Form.Group className="mb-3">
+                  <div className="input-icon-wrapper">
+                    <FaUser className="input-icon-left" />
+                    <Form.Control
+                      type="text"
+                      name="middleInitial"
+                      placeholder="Middle Initial"
+                      value={formData.middleInitial}
+                      onChange={handleChange}
+                      isInvalid={!!errors.middleInitial}
+                      className="input-with-icon"
+                      size="sm"
+                      maxLength={1}
+                    />
+                    <Form.Control.Feedback type="invalid">{errors.middleInitial}</Form.Control.Feedback>
                   </div>
                 </Form.Group>
 
