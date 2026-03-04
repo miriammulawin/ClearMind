@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import DoctorSidebar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorDashboard.css";
 import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
 import { FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 import { BsMegaphone } from "react-icons/bs";
-import AccountSetupModal from "./SetUpAccountModal";
+import AccountSetupModal from "./components/SetUpAccountModal";
 
 // Chart.js
 import {
@@ -369,7 +369,7 @@ function DoctorDashboard() {
 
   return (
     <div className="doctor-layout">
-      <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+    <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />

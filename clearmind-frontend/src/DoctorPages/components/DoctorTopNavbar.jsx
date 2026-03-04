@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
 
-import "../index.css";
-import "./DoctorStyle/NotificationModal.css";
+import "../../index.css";
+import "../DoctorStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
 function DoctorTopNavbar({ activeMenu }) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import DoctorSideBar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorPatient.css";
 import { FiX } from "react-icons/fi";
 

@@ -7,7 +7,7 @@ import {
   FiChevronRight,
   FiEdit,
 } from "react-icons/fi";
-import "./DoctorStyle/Modal.css";
+import "../DoctorStyle/Modal.css";
 
 const iconClose = { color: "#fff", fontSize: "18px", fontWeight: "bold" };
 const iconCarouselAction = { color: "#fff", fontSize: "16px" };

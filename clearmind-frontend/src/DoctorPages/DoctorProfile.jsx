@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import DoctorSideBar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
-import EditPersonalInfoModal from "./EditPersonalInfoModal";
-import EditAccountSecurityModal from "./EditAccountSecurityModal";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
+import EditPersonalInfoModal from "./components/EditPersonalInfoModal";
+import EditAccountSecurityModal from "./components/EditAccountSecurityModal";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 function DoctorProfile() {

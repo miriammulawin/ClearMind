@@ -7,8 +7,9 @@ import { BsPersonLinesFill } from "react-icons/bs";
 import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
 
-import "../index.css";
-import logo from "../assets/CMPS_Logo.png";
+import "../../index.css";
+
+import logo from "../../assets/CMPS_Logo.png";
 
 function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(false);
