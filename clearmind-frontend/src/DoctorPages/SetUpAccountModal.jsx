@@ -9,6 +9,19 @@ const safeParse = (val) => {
   try { return JSON.parse(val); } catch { return []; }
 };
 
+// ── Resolves ANY image value the backend might return into a clean full URL ──
+const resolveImageUrl = (raw) => {
+  if (!raw) return null;
+  // Already a full URL — use as-is
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  // Strip any leading slashes
+  const clean = raw.replace(/^\/+/, "");
+  // Already contains "storage/" — don't double-prefix
+  if (clean.startsWith("storage/")) return `http://127.0.0.1:8000/${clean}`;
+  // Bare relative path like "profiles/abc.png"
+  return `http://127.0.0.1:8000/storage/${clean}`;
+};
+
 function SetUpAccountModal({ showModal, onClose }) {
   const [formData, setFormData] = useState({
     profilePicture:    null,
@@ -16,7 +29,7 @@ function SetUpAccountModal({ showModal, onClose }) {
     description:       "",
     professionalTitle: "",
     yearsOfExperience: "",
-    practicingSince:   "",   
+    practicingSince:   "",
     prcNumber:         "",
     licenseNumber:     "",
     specialization:    "",
@@ -34,6 +47,7 @@ function SetUpAccountModal({ showModal, onClose }) {
 
   const [loading, setLoading] = useState(false);
 
+  // ── Fetch existing profile when modal opens ──────────────────────
   useEffect(() => {
     if (!showModal) return;
 
@@ -43,15 +57,19 @@ function SetUpAccountModal({ showModal, onClose }) {
         const user    = res.data.user    || {};
         const profile = res.data.profile || {};
 
+        // ── DEBUG: remove these logs once image is working ──
+        console.log("[SetUpModal] /profile response:", JSON.stringify(res.data, null, 2));
+
         setFormData({
           profilePicture:    null,
           certificateImage:  null,
-          description:       profile.description        || "",
-          professionalTitle: profile.professional_title || "",
-          yearsOfExperience: profile.years_of_experience != null ? String(profile.years_of_experience) : "",
-          practicingSince:   profile.practicing_since   || "",   
-          prcNumber:         profile.prc_number         || "",
-          licenseNumber:     profile.license_number     || "",
+          description:       profile.description         || "",
+          professionalTitle: profile.professional_title  || "",
+          yearsOfExperience: profile.years_of_experience != null
+                               ? String(profile.years_of_experience) : "",
+          practicingSince:   profile.practicing_since    || "",
+          prcNumber:         profile.prc_number          || "",
+          licenseNumber:     profile.license_number      || "",
           specialization:    "",
           subSpecialization: "",
           boardCertificate:  "",
@@ -67,12 +85,17 @@ function SetUpAccountModal({ showModal, onClose }) {
 
         const merged = { ...user, ...profile };
         localStorage.setItem("user", JSON.stringify(merged));
-       if (profile.profile_picture) {
-        const fullUrl = profile.profile_picture.startsWith("http")
-          ? profile.profile_picture
-          : `http://127.0.0.1:8000/storage/${profile.profile_picture}`;
-        localStorage.setItem("profile_image", fullUrl);
-      }
+
+        const rawImage =
+          profile.profile_picture ||
+          user.profilePictureUrl  ||
+          null;
+
+        console.log("[SetUpModal] raw image from /profile:", rawImage);
+        const imageUrl = resolveImageUrl(rawImage);
+        console.log("[SetUpModal] resolved image URL:", imageUrl);
+
+        if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -110,23 +133,24 @@ function SetUpAccountModal({ showModal, onClose }) {
     }));
   };
 
+  // ── Save ─────────────────────────────────────────────────────────
   const handleUpload = async () => {
-    if (!formData.professionalTitle.trim()) return toast.error("Professional Title is required.");
-    if (!formData.prcNumber.trim())         return toast.error("PRC License Number is required.");
+    if (!formData.professionalTitle.trim())    return toast.error("Professional Title is required.");
+    if (!formData.prcNumber.trim())            return toast.error("PRC License Number is required.");
     if (lists.specializationList.length === 0) return toast.error("Please add at least one Specialization.");
 
     setLoading(true);
 
     try {
       const payload = new FormData();
-
-      if (formData.profilePicture)   payload.append("profile_picture",   formData.profilePicture);
-      if (formData.certificateImage) payload.append("certificate_image",  formData.certificateImage);
+      localStorage.getItem("profile_image")
+      if (formData.profilePicture)   payload.append("profile_picture",  formData.profilePicture);
+      if (formData.certificateImage) payload.append("certificate_image", formData.certificateImage);
 
       payload.append("description",         formData.description);
       payload.append("professional_title",  formData.professionalTitle);
       payload.append("years_of_experience", formData.yearsOfExperience || "");
-      payload.append("practicing_since",    formData.practicingSince   || ""); 
+      payload.append("practicing_since",    formData.practicingSince   || "");
       payload.append("prc_number",          formData.prcNumber);
       payload.append("license_number",      formData.licenseNumber);
 
@@ -139,17 +163,34 @@ function SetUpAccountModal({ showModal, onClose }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const updatedUser = res.data.user || {};
+      // ── DEBUG: log full response — tells us exactly where the image lives ──
+      console.log("[SetUpModal] /doctor/setup response:", JSON.stringify(res.data, null, 2));
+
+      const updatedUser    = res.data.user    || {};
+      const updatedProfile = res.data.profile || {};
+
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      if (updatedUser.profilePictureUrl) {
-        localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
-      }
+      // Check every possible key the backend might return the image under
+      const rawImage =
+        updatedProfile.profile_picture   ||   // res.data.profile.profile_picture
+        updatedUser.profilePictureUrl    ||   // res.data.user.profilePictureUrl
+        updatedUser.profile_picture_url  ||   // res.data.user.profile_picture_url
+        updatedUser.profile_picture      ||   // res.data.user.profile_picture
+        null;
+
+      console.log("[SetUpModal] raw image after save:", rawImage);
+      const imageUrl = resolveImageUrl(rawImage);
+      console.log("[SetUpModal] resolved image URL after save:", imageUrl);
+
+      if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       window.dispatchEvent(new Event("profileUpdated"));
       toast.success("Profile setup complete!");
       onClose();
+
     } catch (err) {
+      console.error("[SetUpModal] save error:", err.response?.data || err);
       const msg =
         err.response?.data?.message ||
         Object.values(err.response?.data?.errors || {})[0]?.[0] ||
@@ -172,7 +213,12 @@ function SetUpAccountModal({ showModal, onClose }) {
     >
       <div
         className="bg-white d-flex flex-column"
-        style={{ width: "95%", maxWidth: "800px", height: "90vh", maxHeight: "900px", borderRadius: "24px", boxShadow: "0 8px 30px rgba(0,0,0,0.2)" }}
+        style={{
+          width: "95%", maxWidth: "800px",
+          height: "90vh", maxHeight: "900px",
+          borderRadius: "24px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+        }}
       >
         {/* Header */}
         <div
@@ -193,16 +239,23 @@ function SetUpAccountModal({ showModal, onClose }) {
         <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           <div className="row g-3">
 
-            {/* Profile Picture */}
+            {/* Profile Picture Preview */}
             <div className="col-12">
               {savedImage && !formData.profilePicture && (
                 <div className="mb-2 d-flex align-items-center gap-3">
                   <img
                     src={savedImage}
                     alt="Current profile"
-                    style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", border: "2px solid #4D227C" }}
+                    onError={(e) => { e.target.style.display = "none"; }}
+                    style={{
+                      width: "56px", height: "56px",
+                      borderRadius: "10px", objectFit: "cover",
+                      border: "2px solid #4D227C",
+                    }}
                   />
-                  <small className="text-muted">Current profile picture. Upload a new one to replace it.</small>
+                  <small className="text-muted">
+                    Current profile picture. Upload a new one to replace it.
+                  </small>
                 </div>
               )}
               <FileInput
@@ -247,7 +300,6 @@ function SetUpAccountModal({ showModal, onClose }) {
                 min="0" max="70"
               />
             </div>
-
             <div className="col-12 col-sm-6">
               <input
                 type="text"
@@ -270,7 +322,6 @@ function SetUpAccountModal({ showModal, onClose }) {
                 style={{ borderRadius: "12px", height: "40px" }}
               />
             </div>
-
             <div className="col-12 col-sm-6">
               <input
                 type="text"
@@ -283,10 +334,38 @@ function SetUpAccountModal({ showModal, onClose }) {
             </div>
 
             {/* Tag Lists */}
-            <ListInput label="Specialization *"   value={formData.specialization}   onChange={(val) => handleInputChange("specialization", val)}   list={specializationList}    add={() => addToList("specialization")}    remove={(i) => removeFromList("specializationList", i)} />
-            <ListInput label="Sub-specialization"  value={formData.subSpecialization} onChange={(val) => handleInputChange("subSpecialization", val)} list={subSpecializationList}  add={() => addToList("subSpecialization")}  remove={(i) => removeFromList("subSpecializationList", i)} />
-            <ListInput label="Board Certificate"   value={formData.boardCertificate}  onChange={(val) => handleInputChange("boardCertificate", val)}  list={boardCertificateList}   add={() => addToList("boardCertificate")}   remove={(i) => removeFromList("boardCertificateList", i)} />
-            <ListInput label="My Services"         value={formData.myServices}        onChange={(val) => handleInputChange("myServices", val)}        list={servicesList}           add={() => addToList("myServices")}         remove={(i) => removeFromList("servicesList", i)} />
+            <ListInput
+              label="Specialization *"
+              value={formData.specialization}
+              onChange={(val) => handleInputChange("specialization", val)}
+              list={specializationList}
+              add={() => addToList("specialization")}
+              remove={(i) => removeFromList("specializationList", i)}
+            />
+            <ListInput
+              label="Sub-specialization"
+              value={formData.subSpecialization}
+              onChange={(val) => handleInputChange("subSpecialization", val)}
+              list={subSpecializationList}
+              add={() => addToList("subSpecialization")}
+              remove={(i) => removeFromList("subSpecializationList", i)}
+            />
+            <ListInput
+              label="Board Certificate"
+              value={formData.boardCertificate}
+              onChange={(val) => handleInputChange("boardCertificate", val)}
+              list={boardCertificateList}
+              add={() => addToList("boardCertificate")}
+              remove={(i) => removeFromList("boardCertificateList", i)}
+            />
+            <ListInput
+              label="My Services"
+              value={formData.myServices}
+              onChange={(val) => handleInputChange("myServices", val)}
+              list={servicesList}
+              add={() => addToList("myServices")}
+              remove={(i) => removeFromList("servicesList", i)}
+            />
 
             {/* Certificate Image */}
             <FileInput
@@ -322,15 +401,38 @@ function SetUpAccountModal({ showModal, onClose }) {
   );
 }
 
-// ── Helper Components ──────────────────────────────────────────────
+// ── Helper Components ────────────────────────────────────────────────────────
+
 const FileInput = ({ label, file, onFileChange }) => {
   const inputId = label.replace(/\s+/g, "") + "Input";
   return (
     <div className="col-12">
       <div className="position-relative">
-        <input type="text" placeholder={`Upload ${label}`} readOnly value={file ? file.name : ""} className="form-control" style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }} />
-        <input type="file" accept="image/*" id={inputId} className="d-none" onChange={(e) => onFileChange(e.target.files[0])} />
-        <button type="button" className="btn position-absolute" style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }} onClick={() => document.getElementById(inputId).click()}>
+        <input
+          type="text"
+          placeholder={`Upload ${label}`}
+          readOnly
+          value={file ? file.name : ""}
+          className="form-control"
+          style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
+        />
+        <input
+          type="file"
+          accept="image/*"
+          id={inputId}
+          className="d-none"
+          onChange={(e) => onFileChange(e.target.files[0])}
+        />
+        <button
+          type="button"
+          className="btn position-absolute"
+          style={{
+            backgroundColor: "#C4B5D6", top: "0", right: "0",
+            height: "40px", borderRadius: "0 12px 12px 0",
+            border: "none", padding: "0 15px",
+          }}
+          onClick={() => document.getElementById(inputId).click()}
+        >
           Browse
         </button>
       </div>
@@ -341,17 +443,43 @@ const FileInput = ({ label, file, onFileChange }) => {
 const ListInput = ({ label, value, onChange, list, add, remove }) => (
   <div className="col-12">
     <div className="d-flex gap-2">
-      <input type="text" placeholder={label} value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} className="form-control" style={{ borderRadius: "12px", height: "40px" }} />
-      <button type="button" className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center" style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }} onClick={add}>
+      <input
+        type="text"
+        placeholder={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+        className="form-control"
+        style={{ borderRadius: "12px", height: "40px" }}
+      />
+      <button
+        type="button"
+        className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
+        style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
+        onClick={add}
+      >
         <FiPlus size={18} />
       </button>
     </div>
     {list.length > 0 && (
       <div className="mt-2 d-flex flex-wrap gap-2">
         {list.map((item, i) => (
-          <span key={i} className="badge d-inline-flex align-items-center gap-2" style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}>
+          <span
+            key={i}
+            className="badge d-inline-flex align-items-center gap-2"
+            style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
+          >
             {item}
-            <button type="button" onClick={() => remove(i)} style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", padding: "0", lineHeight: "1" }} aria-label="Remove">
+            <button
+              type="button"
+              onClick={() => remove(i)}
+              style={{
+                background: "none", border: "none", color: "white",
+                cursor: "pointer", display: "flex", alignItems: "center",
+                padding: "0", lineHeight: "1",
+              }}
+              aria-label="Remove"
+            >
               <FiX size={16} strokeWidth={2} />
             </button>
           </span>

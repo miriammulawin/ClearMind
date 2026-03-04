@@ -8,59 +8,78 @@ import { RiDashboardFill } from "react-icons/ri";
 import "../index.css";
 import logo from "../assets/CMPS_Logo.png";
 
+// ── Same helper used in SetUpAccountModal ────────────────────────────────────
+const resolveImageUrl = (raw) => {
+  if (!raw) return null;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  const clean = raw.replace(/^\/+/, "");
+  if (clean.startsWith("storage/")) return `http://127.0.0.1:8000/${clean}`;
+  return `http://127.0.0.1:8000/storage/${clean}`;
+};
+
 function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(false);
   const [tooltip, setTooltip] = useState({
     text: "", x: 0, y: 0, visible: false,
   });
 
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // ── Helpers ─────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────
   const getUser = () => {
     try {
       const raw = localStorage.getItem("user");
       return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   };
 
-  const getProfileImageUrl = () => {
-    const img = localStorage.getItem("profile_image");
-    if (!img) return null;
-    if (img.startsWith("http")) return img;
-    return `http://127.0.0.1:8000/storage/${img}`;
+  const getProfileImageUrl = () =>
+    resolveImageUrl(localStorage.getItem("profile_image"));
+
+  // ── State ─────────────────────────────────────────────────────────
+  const [userState,    setUserState]    = useState(() => getUser());
+  const [profileImage, setProfileImage] = useState(() => getProfileImageUrl());
+
+  // ── Centralized refresh ───────────────────────────────────────────
+  const refreshFromStorage = () => {
+    setUserState(getUser());
+    setProfileImage(getProfileImageUrl());
   };
 
-  // ── State ────────────────────────────────────────────────────────
-  const [userState, setUserState]   = useState(getUser);
-  const [profileImage, setProfileImage] = useState(getProfileImageUrl);
-
-  // ── Listen for profile updates (from modal save OR modal fetch) ──
+  // Listen for explicit profileUpdated events (modal save, DoctorProfile save)
   useEffect(() => {
-    const handleProfileUpdated = () => {
-      setUserState(getUser());
-      setProfileImage(getProfileImageUrl());
-    };
-    window.addEventListener("profileUpdated", handleProfileUpdated);
-    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
+    window.addEventListener("profileUpdated", refreshFromStorage);
+    return () => window.removeEventListener("profileUpdated", refreshFromStorage);
   }, []);
 
-  // ── Derived display values ───────────────────────────────────────
-  // Support both camelCase (from setup response) and snake_case (from profile fetch)
-  const firstName = userState?.firstName  || userState?.first_name  || "";
-  const lastName  = userState?.lastName   || userState?.last_name   || "";
-  const fullName  = userState?.fullName   ||
-    `${firstName} ${lastName}`.trim()     ||
+  // Re-read on every route change (catches DoctorProfile fetchProfile
+  // which updates localStorage without dispatching the event)
+  useEffect(() => {
+    refreshFromStorage();
+  }, [location.pathname]);
+
+  // Safety-net poll — catches any missed updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const latest = getProfileImageUrl();
+      if (latest !== profileImage) setProfileImage(latest);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [profileImage]);
+
+  // ── Derived display values ────────────────────────────────────────
+  const firstName = userState?.firstName || userState?.first_name || "";
+  const lastName  = userState?.lastName  || userState?.last_name  || "";
+  const fullName  = userState?.fullName  ||
+    `${firstName} ${lastName}`.trim()    ||
     "Doctor";
 
   const prcNumber =
-    userState?.prc_number       ||
-    userState?.prcNumber        ||
-    userState?.license_number   ||
-    userState?.licenseNumber    ||
+    userState?.prc_number     ||
+    userState?.prcNumber      ||
+    userState?.license_number ||
+    userState?.licenseNumber  ||
     "Not set";
 
   const initials = (
@@ -68,10 +87,10 @@ function DoctorSideBar() {
   ).toUpperCase() || "DR";
 
   const menus = [
-    { name: "Dashboard",   icon: <RiDashboardFill />,    path: "/doctor/dashboard" },
-    { name: "Appointment", icon: <FaCalendarDays />,      path: "/doctor/appointment" },
-    { name: "Patients",    icon: <BsPersonLinesFill />,   path: "/doctor/patient" },
-    { name: "My Profile",  icon: <BiSolidUserCircle />,   path: "/doctor/profile" },
+    { name: "Dashboard",   icon: <RiDashboardFill />,  path: "/doctor/dashboard"   },
+    { name: "Appointment", icon: <FaCalendarDays />,    path: "/doctor/appointment" },
+    { name: "Patients",    icon: <BsPersonLinesFill />, path: "/doctor/patient"     },
+    { name: "My Profile",  icon: <BiSolidUserCircle />, path: "/doctor/profile"     },
   ];
 
   return (
@@ -90,16 +109,16 @@ function DoctorSideBar() {
             <div
               className="profile-pic"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                display:         "flex",
+                alignItems:      "center",
+                justifyContent:  "center",
                 backgroundColor: "#e9d8f5",
-                borderRadius: "50%",
-                fontWeight: "700",
-                fontSize: "1.1rem",
-                color: "#4D227C",
-                flexShrink: 0,
-                overflow: "hidden",
+                borderRadius:    "50%",
+                fontWeight:      "700",
+                fontSize:        "1.1rem",
+                color:           "#4D227C",
+                flexShrink:      0,
+                overflow:        "hidden",
               }}
             >
               {profileImage ? (
@@ -146,7 +165,12 @@ function DoctorSideBar() {
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setTooltip({ text: item.name, x: rect.right + 10, y: rect.top + rect.height / 2, visible: true });
+                  setTooltip({
+                    text:    item.name,
+                    x:       rect.right + 10,
+                    y:       rect.top + rect.height / 2,
+                    visible: true,
+                  });
                 }}
                 onMouseLeave={() => setTooltip((t) => ({ ...t, visible: false }))}
               >
@@ -162,18 +186,18 @@ function DoctorSideBar() {
       {tooltip.visible && (
         <div
           style={{
-            position: "fixed",
-            left: tooltip.x,
-            top: tooltip.y,
-            transform: "translateY(-50%)",
-            background: "#4e237c",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "6px",
-            fontSize: "0.85rem",
-            whiteSpace: "nowrap",
-            zIndex: 9999,
-            boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
+            position:      "fixed",
+            left:          tooltip.x,
+            top:           tooltip.y,
+            transform:     "translateY(-50%)",
+            background:    "#4e237c",
+            color:         "white",
+            padding:       "6px 12px",
+            borderRadius:  "6px",
+            fontSize:      "0.85rem",
+            whiteSpace:    "nowrap",
+            zIndex:        9999,
+            boxShadow:     "0 6px 15px rgba(0,0,0,0.15)",
             pointerEvents: "none",
           }}
         >

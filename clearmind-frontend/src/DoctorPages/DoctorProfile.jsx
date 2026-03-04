@@ -7,66 +7,79 @@ import axiosClient from "../axiosClient";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-function DoctorProfile() {
-  const [activeMenu,    setActiveMenu]    = useState("My Profile");
-  const [isEditing,     setIsEditing]     = useState(false);
-  const [saveLoading,   setSaveLoading]   = useState(false);
-  const fileInputRef                      = useRef(null);
-  const navigate                          = useNavigate();
-  const [profileFile,   setProfileFile]   = useState(null); 
-
-const fetchProfile = async () => {
-  try {
-    const res = await axiosClient.get("/profile");
-    const user    = res.data.user    || {};
-    const profile = res.data.profile || {};
-
-    // Merge and store in localStorage
-    const merged = { ...user, ...profile };
-    localStorage.setItem("user", JSON.stringify(merged));
-
-    // Handle profile picture
-    const imageUrl = profile.profile_picture || null;
-    if (imageUrl) localStorage.setItem("profile_image", imageUrl);
-
-    // Set preview image
-    setPreviewImage(imageUrl || localStorage.getItem("profile_image") || null);
-
-    // Directly set form with fresh API data
-    setForm({
-      profileImage:    imageUrl || null,
-      firstName:       user.firstName     || "",
-      lastName:        user.lastName      || "",
-      middleInitial:   user.middleInitial || "",
-      email:           user.email         || "",
-      contactNumber:   user.contactNo     || "",
-      dateOfBirth:     formatDate(user.dob) || "",
-      age:             computeAge(user.dob) || "",
-      gender:          capitalize(user.sex) || "",
-
-      prcNumber:       profile.license_number || profile.prc_number || "Not set",
-      bio:             profile.description    || "",
-      specialty:       safeParse(profile.specializations)[0] ?? "",
-      practicingSince: profile.practicing_since || "",
-      credentials:     profile.professional_title || "",
-
-      subspecialty:    safeParse(profile.sub_specializations),
-      services:        safeParse(profile.services),
-      certifications:  safeParse(profile.board_certificates),
-
-      newSubspecialty:  "",
-      newService:       "",
-      newCertification: "",
-      currentPassword:  "",
-      newPassword:      "",
-      confirmPassword:  "",
-    });
-
-  } catch (error) {
-    console.error("Failed to fetch profile:", error);
-  }
+// ── Resolves any image path/URL the backend returns into a full URL ──
+const resolveImageUrl = (raw) => {
+  if (!raw) return null;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  const clean = raw.replace(/^\/+/, "");
+  if (clean.startsWith("storage/")) return `http://127.0.0.1:8000/${clean}`;
+  return `http://127.0.0.1:8000/storage/${clean}`;
 };
-  // ── Logout ──────────────────────────────────────────────────────
+
+function DoctorProfile() {
+  const [activeMenu,  setActiveMenu]  = useState("My Profile");
+  const [isEditing,   setIsEditing]   = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const fileInputRef                  = useRef(null);
+  const navigate                      = useNavigate();
+  const [profileFile, setProfileFile] = useState(null);
+
+  // ── Fetch fresh profile from API ─────────────────────────────────
+  const fetchProfile = async () => {
+    try {
+      const res = await axiosClient.get("/profile");
+      const user    = res.data.user    || {};
+      const profile = res.data.profile || {};
+
+      // ── FIX: image lives in res.data.profile.profile_picture ──
+      const rawImage = profile.profile_picture || user.profilePictureUrl || null;
+      const imageUrl = resolveImageUrl(rawImage);
+
+      if (imageUrl) localStorage.setItem("profile_image", imageUrl);
+      setPreviewImage(imageUrl || localStorage.getItem("profile_image") || null);
+
+      // Sync full user to localStorage
+      localStorage.setItem("user", JSON.stringify({ ...user, ...profile }));
+
+      setForm({
+        profileImage:    imageUrl || null,
+        firstName:       user.firstName     || "",
+        lastName:        user.lastName      || "",
+        middleInitial:   user.middleInitial || "",
+        email:           user.email         || "",
+        contactNumber:   user.contactNo     || "",
+        dateOfBirth:     formatDate(user.dob) || "",
+        age:             computeAge(user.dob) || "",
+        gender:          capitalize(user.sex) || "",
+
+        // ── FIX: read from profile (snake_case) not user ──
+        prcNumber:       profile.prc_number        || profile.license_number || "Not set",
+        bio:             profile.description        || "",
+        specialty:       safeParse(profile.specializations)[0] || "",
+        practicingSince: profile.practicing_since   || "",
+        credentials:     profile.professional_title || "",
+
+        subspecialty:   safeParse(profile.sub_specializations),
+        services:        safeParse(profile.services),
+        certifications:  safeParse(profile.board_certificates),
+
+        newSubspecialty:  "",
+        newService:       "",
+        newCertification: "",
+        currentPassword:  "",
+        newPassword:      "",
+        confirmPassword:  "",
+      });
+
+      // Notify sidebar to refresh
+      window.dispatchEvent(new Event("profileUpdated"));
+
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  // ── Logout ───────────────────────────────────────────────────────
   const handleLogout = async () => {
     const result = await Swal.fire({
       title:             "Are you sure?",
@@ -87,9 +100,6 @@ const fetchProfile = async () => {
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      //  Remove auth keys + profile_image cache
-      // Profile data stays safe in the DATABASE —
-      // it will be restored automatically on next login.
       localStorage.removeItem("token");
       localStorage.removeItem("role");
       localStorage.removeItem("user");
@@ -108,7 +118,7 @@ const fetchProfile = async () => {
     }
   };
 
-  // ── Read user from localStorage ─────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────
   const getUser = () => {
     try {
       const raw = localStorage.getItem("user");
@@ -116,7 +126,6 @@ const fetchProfile = async () => {
     } catch { return null; }
   };
 
-  // ── Helpers ─────────────────────────────────────────────────────
   const computeAge = (dob) => {
     if (!dob) return "";
     const birth = new Date(dob);
@@ -146,55 +155,62 @@ const fetchProfile = async () => {
     try { return JSON.parse(val); } catch { return []; }
   };
 
-  // ── Initialize form state from localStorage ──────────────────────
+  // ── Initialize form from localStorage (before API responds) ──────
   const initForm = () => {
     const u = getUser();
     return {
-      profileImage:    localStorage.getItem("profile_image") || null,
-      firstName:       u?.firstName       || "",
-      lastName:        u?.lastName        || "",
+      profileImage:    resolveImageUrl(localStorage.getItem("profile_image")),
+      firstName:       u?.firstName       || u?.first_name        || "",
+      lastName:        u?.lastName        || u?.last_name         || "",
       middleInitial:   u?.middleInitial   || "",
       email:           u?.email           || "",
       contactNumber:   u?.contactNo       || "",
       dateOfBirth:     formatDate(u?.dob) || "",
       age:             computeAge(u?.dob) || "",
       gender:          capitalize(u?.sex) || "",
-      prcNumber:       u?.prcNumber       || u?.licenseNumber || "Not set",
-      bio:             u?.description     || "",
-      specialty:       u?.specialty       || (safeParse(u?.specializations)[0] ?? ""),
-      practicingSince: u?.practicingSince || "",
-      credentials:     u?.credentials     || u?.professionalTitle || "",
 
-      subspecialty:   safeParse(u?.subSpecializations),
+      // Support both camelCase and snake_case from merged localStorage
+      prcNumber:       u?.prc_number          || u?.prcNumber       || u?.license_number || u?.licenseNumber || "Not set",
+      bio:             u?.description         || "",
+      specialty:       u?.specialty           || safeParse(u?.specializations)[0] || "",
+      practicingSince: u?.practicing_since    || u?.practicingSince || "",
+      credentials:     u?.professional_title  || u?.professionalTitle || u?.credentials || "",
+
+      subspecialty:    safeParse(u?.sub_specializations || u?.subSpecializations),
       services:        safeParse(u?.services),
-      certifications:  safeParse(u?.boardCertificates),
+      certifications:  safeParse(u?.board_certificates  || u?.boardCertificates),
 
       newSubspecialty:  "",
       newService:       "",
       newCertification: "",
-
-      currentPassword: "",
-      newPassword:     "",
-      confirmPassword: "",
+      currentPassword:  "",
+      newPassword:      "",
+      confirmPassword:  "",
     };
   };
 
   const [form,         setForm]         = useState(initForm);
-  const [previewImage, setPreviewImage] = useState(localStorage.getItem("profile_image") || null);
+  const [previewImage, setPreviewImage] = useState(
+    () => resolveImageUrl(localStorage.getItem("profile_image"))
+  );
 
-useEffect(() => {
-  fetchProfile();
+  useEffect(() => {
+    fetchProfile();
 
-  const handleProfileUpdated = () => fetchProfile();
-  window.addEventListener("profileUpdated", handleProfileUpdated);
-  return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
-}, []);
+    const handleProfileUpdated = () => {
+      setPreviewImage(resolveImageUrl(localStorage.getItem("profile_image")));
+    };
+    window.addEventListener("profileUpdated", handleProfileUpdated);
+    return () => window.removeEventListener("profileUpdated", handleProfileUpdated);
+  }, []);
 
   const user     = getUser();
-  const fullName = user?.fullName || `${user?.firstName ?? ""}${user?.middleInitial ? " " + user.middleInitial + "." : ""} ${user?.lastName ?? ""}`.trim() || "Doctor";
-  const initials = ((user?.firstName?.[0] ?? "") + (user?.lastName?.[0] ?? "")).toUpperCase() || "DR";
+  const firstName = user?.firstName || user?.first_name || "";
+  const lastName  = user?.lastName  || user?.last_name  || "";
+  const fullName  = user?.fullName  || `${firstName}${user?.middleInitial ? " " + user.middleInitial + "." : ""} ${lastName}`.trim() || "Doctor";
+  const initials  = ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "DR";
 
-  // ── Handlers ────────────────────────────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
@@ -202,7 +218,7 @@ useEffect(() => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setProfileFile(file); // keep the File object for FormData upload
+    setProfileFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setPreviewImage(ev.target.result);
@@ -228,90 +244,73 @@ useEffect(() => {
     }));
   };
 
-  // ── Save — posts to backend then syncs localStorage ─────────────
-const handleSave = async () => {
-  setSaveLoading(true);
+  // ── Save profile ─────────────────────────────────────────────────
+  const handleSave = async () => {
+    setSaveLoading(true);
+    try {
+      const payload = new FormData();
 
-  try {
-    const payload = new FormData();
+      if (profileFile) payload.append("profile_picture", profileFile);
 
-    if (profileFile) {
-      payload.append("profile_picture", profileFile);
-    }
+      payload.append("professional_title",  form.credentials || form.specialty || "");
+      payload.append("description",         form.bio || "");
+      payload.append("years_of_experience", form.yearsOfExperience || "");
+      payload.append("license_number",      form.prcNumber === "Not set" ? "" : form.prcNumber || "");
+      payload.append("prc_number",          form.prcNumber === "Not set" ? "" : form.prcNumber || "");
+      payload.append("practicing_since",    form.practicingSince || "");
+      payload.append("first_name",          form.firstName);
+      payload.append("last_name",           form.lastName);
+      payload.append("middle_initial",      form.middleInitial);
+      payload.append("contact_no",          form.contactNumber);
 
-    payload.append("professional_title", form.credentials || form.specialty || "");
-    payload.append("description", form.bio || "");
-    payload.append("years_of_experience", form.yearsOfExperience || "");
-    payload.append("license_number", form.prcNumber === "Not set" ? "" : form.prcNumber || "");
-    payload.append("practicing_since", form.practicingSince || "");
+      payload.append("specializations",     JSON.stringify(Array.isArray(form.subspecialty)    ? form.subspecialty    : []));
+      payload.append("sub_specializations", JSON.stringify(Array.isArray(form.subspecialty)    ? form.subspecialty    : []));
+      payload.append("board_certificates",  JSON.stringify(Array.isArray(form.certifications)  ? form.certifications  : []));
+      payload.append("services",            JSON.stringify(Array.isArray(form.services)        ? form.services        : []));
 
-    payload.append("first_name", form.firstName);
-    payload.append("last_name", form.lastName);
-    payload.append("middle_initial", form.middleInitial);
-    payload.append('contact_no', form.contactNumber);
+      const res = await axiosClient.post("/doctor/setup", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-    // Arrays — always stringify and ensure array
-    payload.append("specializations", JSON.stringify(Array.isArray(form.subspecialty) ? form.subspecialty : []));
-    payload.append("sub_specializations", JSON.stringify(Array.isArray(form.subspecialty) ? form.subspecialty : []));
-    payload.append("board_certificates", JSON.stringify(Array.isArray(form.certifications) ? form.certifications : []));
-    payload.append("services", JSON.stringify(Array.isArray(form.services) ? form.services : []));
+      // ── FIX: read image from res.data.profile first, then fallback ──
+      const updatedProfile = res.data.profile || {};
+      const updatedUser    = res.data.user    || {};
 
-    console.log("Payload Debug:", {
-      specializations: form.subspecialty,
-      sub_specializations: form.subspecialty,
-      board_certificates: form.certifications,
-      services: form.services,
-    });
+      const rawImage =
+        updatedProfile.profile_picture  ||
+        updatedUser.profilePictureUrl   ||
+        updatedUser.profile_picture     ||
+        null;
 
-    const res = await axiosClient.post("/doctor/setup", payload, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    const updatedUser = res.data.user;
-
-    if (updatedUser) {
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      if (updatedUser.profilePictureUrl) {
-        localStorage.setItem("profile_image", updatedUser.profilePictureUrl);
-        setPreviewImage(updatedUser.profilePictureUrl);
+      const imageUrl = resolveImageUrl(rawImage);
+      if (imageUrl) {
+        localStorage.setItem("profile_image", imageUrl);
+        setPreviewImage(imageUrl);
       }
 
-      setForm(prev => ({
-        ...prev,
-        profileImage: updatedUser.profilePictureUrl || prev.profileImage,
-        credentials: updatedUser.professionalTitle || prev.credentials,
-        bio: updatedUser.description || prev.bio,
-        specialty: updatedUser.specializations?.[0] || prev.specialty,
-        practicingSince: updatedUser.practicingSince || prev.practicingSince,
-
-        subspecialty: updatedUser.subSpecializations || [],
-        services: updatedUser.services || [],
-        certifications: updatedUser.boardCertificates || [],
-      }));
+      localStorage.setItem("user", JSON.stringify({ ...updatedUser, ...updatedProfile }));
 
       window.dispatchEvent(new Event("profileUpdated"));
+      setProfileFile(null);
+      toast.success("Profile saved!");
+      setIsEditing(false);
+
+      // Re-fetch to sync all fields cleanly
+      await fetchProfile();
+
+    } catch (err) {
+      console.error(err);
+      const msg =
+        err.response?.data?.message ||
+        Object.values(err.response?.data?.errors || {})[0]?.[0] ||
+        "Failed to save. Please try again.";
+      toast.error(msg);
+    } finally {
+      setSaveLoading(false);
     }
+  };
 
-    setProfileFile(null);
-    toast.success("Profile saved!");
-    setIsEditing(false);
-
-  } catch (err) {
-    console.error(err);
-
-    const msg =
-      err.response?.data?.message ||
-      Object.values(err.response?.data?.errors || {})[0]?.[0] ||
-      "Failed to save. Please try again.";
-
-    toast.error(msg);
-  } finally {
-    setSaveLoading(false);
-  }
-};
-
-  // ── Save password ────────────────────────────────────────────────
+  // ── Save password ─────────────────────────────────────────────────
   const handleSavePassword = async () => {
     if (!form.currentPassword || !form.newPassword || !form.confirmPassword) {
       toast.error("Please fill in all password fields.");
@@ -324,8 +323,8 @@ const handleSave = async () => {
     setSaveLoading(true);
     try {
       await axiosClient.post("/change-password", {
-        current_password:      form.currentPassword,
-        new_password:          form.newPassword,
+        current_password:          form.currentPassword,
+        new_password:              form.newPassword,
         new_password_confirmation: form.confirmPassword,
       });
       toast.success("Password updated successfully!", {
@@ -344,12 +343,12 @@ const handleSave = async () => {
 
   const handleCancel = () => {
     setForm(initForm());
-    setPreviewImage(localStorage.getItem("profile_image") || null);
+    setPreviewImage(resolveImageUrl(localStorage.getItem("profile_image")));
     setProfileFile(null);
     setIsEditing(false);
   };
 
-  // ── Reusable tag list ────────────────────────────────────────────
+  // ── Reusable tag list ─────────────────────────────────────────────
   const TagList = ({ items, field, inputField, placeholder }) => (
     <div>
       {isEditing && (
@@ -421,7 +420,6 @@ const handleSave = async () => {
                   <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: "12px" }}>
                     <div className="card-body text-center p-4">
 
-                      {/* Profile Image / Avatar */}
                       <div
                         className="mx-auto mb-3 d-flex align-items-center justify-content-center position-relative"
                         style={{
@@ -438,6 +436,7 @@ const handleSave = async () => {
                           <img
                             src={previewImage}
                             alt="Profile"
+                            onError={() => setPreviewImage(null)}
                             style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           />
                         ) : (
@@ -586,7 +585,6 @@ const handleSave = async () => {
                           </button>
                         </div>
 
-                        {/* Name */}
                         <div className="row mb-3">
                           <div className="col-md-4 mb-3 mb-md-0">
                             <label className="form-label text-muted small mb-1">First Name</label>
@@ -605,7 +603,6 @@ const handleSave = async () => {
                           </div>
                         </div>
 
-                        {/* Contact, DOB, Age, Gender */}
                         <div className="row mb-4">
                           <div className="col-md-3 mb-3 mb-md-0">
                             <label className="form-label text-muted small mb-1">Contact Number</label>
@@ -629,7 +626,6 @@ const handleSave = async () => {
                           </div>
                         </div>
 
-                        {/* Credentials */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-1 fw-semibold">CREDENTIALS</label>
                           <input type="text" className="form-control border-0 bg-light" style={{ borderRadius: "8px" }}
@@ -637,19 +633,16 @@ const handleSave = async () => {
                             value={form.credentials} onChange={(e) => handleChange("credentials", e.target.value)} disabled={!isEditing} />
                         </div>
 
-                        {/* Subspecialty */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">SUBSPECIALTY</label>
                           <TagList items={form.subspecialty} field="subspecialty" inputField="newSubspecialty" placeholder="Add subspecialty..." />
                         </div>
 
-                        {/* Services */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">MY SERVICES</label>
                           <TagList items={form.services} field="services" inputField="newService" placeholder="Add service..." />
                         </div>
 
-                        {/* Board Certifications */}
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2 fw-semibold">BOARD CERTIFICATIONS</label>
                           <TagList items={form.certifications} field="certifications" inputField="newCertification" placeholder="Add certification..." />
@@ -669,7 +662,6 @@ const handleSave = async () => {
                     </div>
 
                   ) : (
-                    /* ── Account Security ── */
                     <div className="card shadow-sm border-0" style={{ borderRadius: "12px" }}>
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center mb-4">
@@ -682,7 +674,7 @@ const handleSave = async () => {
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-1">Email</label>
                           <input type="email" className="form-control border-0 bg-light" style={{ borderRadius: "8px" }}
-                            value={form.email} onChange={(e) => handleChange("email", e.target.value)} disabled />
+                            value={form.email} disabled />
                         </div>
 
                         {isEditing && (
@@ -729,7 +721,6 @@ const handleSave = async () => {
                       </div>
                     </div>
                   )}
-
                 </div>
               </div>
             </div>
