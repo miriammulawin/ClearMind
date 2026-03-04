@@ -7,12 +7,15 @@ function AccountSetupModal({ showModal, onClose }) {
     description: "",
     professionalTitle: "",
     yearsOfExperience: "",
+    practicingSince: "",
+    mainSpecialty: "",
     licenseNumber: "",
     specialization: "",
     subSpecialization: "",
     boardCertificate: "",
     myServices: "",
-    certificateImage: null,
+    certificateImages: [],
+    idPictures: [],
   });
 
   const [specializationList, setSpecializationList] = useState([]);
@@ -26,6 +29,17 @@ function AccountSetupModal({ showModal, onClose }) {
 
   const handleFileChange = (field, file) => {
     setFormData({ ...formData, [field]: file });
+  };
+
+  const handleMultiFileAdd = (field, file) => {
+    if (file) {
+      setFormData({ ...formData, [field]: [...formData[field], file] });
+    }
+  };
+
+  const handleMultiFileRemove = (field, index) => {
+    const updated = formData[field].filter((_, i) => i !== index);
+    setFormData({ ...formData, [field]: updated });
   };
 
   const addToList = (field, listSetter, currentList) => {
@@ -162,6 +176,34 @@ function AccountSetupModal({ showModal, onClose }) {
               />
             </div>
 
+            {/* Practicing Since and Main Specialty */}
+            <div className="col-12 col-sm-6">
+              <input
+                type="number"
+                placeholder="Practicing Since (Year)"
+                value={formData.practicingSince}
+                onChange={(e) =>
+                  handleInputChange("practicingSince", e.target.value)
+                }
+                className="form-control"
+                style={{ borderRadius: "12px", height: "40px" }}
+                min="1900"
+                max={new Date().getFullYear()}
+              />
+            </div>
+            <div className="col-12 col-sm-6">
+              <input
+                type="text"
+                placeholder="Main Specialty"
+                value={formData.mainSpecialty}
+                onChange={(e) =>
+                  handleInputChange("mainSpecialty", e.target.value)
+                }
+                className="form-control"
+                style={{ borderRadius: "12px", height: "40px" }}
+              />
+            </div>
+
             {/* Specialization Lists */}
             <ListInput
               label="Specialization *"
@@ -227,13 +269,22 @@ function AccountSetupModal({ showModal, onClose }) {
               remove={(i) => removeFromList(setServicesList, servicesList, i)}
             />
 
-            {/* Certificate */}
-            <FileInput
+            {/* Certificate Images — multi-upload */}
+            <MultiFileInput
               label="Certificate Image"
-              file={formData.certificateImage}
-              onFileChange={(file) =>
-                handleFileChange("certificateImage", file)
-              }
+              files={formData.certificateImages}
+              fieldKey="certImg"
+              onFileAdd={(file) => handleMultiFileAdd("certificateImages", file)}
+              onFileRemove={(i) => handleMultiFileRemove("certificateImages", i)}
+            />
+
+            {/* ID Picture — multi-upload */}
+            <MultiFileInput
+              label="Upload ID Card Picture"
+              files={formData.idPictures}
+              fieldKey="idPic"
+              onFileAdd={(file) => handleMultiFileAdd("idPictures", file)}
+              onFileRemove={(i) => handleMultiFileRemove("idPictures", i)}
             />
           </div>
         </div>
@@ -303,6 +354,125 @@ const FileInput = ({ label, file, onFileChange }) => {
           Browse
         </button>
       </div>
+    </div>
+  );
+};
+
+const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => {
+  const inputId = fieldKey + "MultiInput";
+
+  const handleChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      onFileAdd(file);
+      // Reset so same file can be re-selected if removed
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="col-12">
+      <div className="d-flex gap-2 align-items-center">
+        {/* Browse input */}
+        <div className="position-relative flex-grow-1">
+          <input
+            type="text"
+            placeholder={`Upload ${label}`}
+            readOnly
+            value={files.length > 0 ? `${files.length} file(s) selected` : ""}
+            className="form-control"
+            style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            id={inputId}
+            className="d-none"
+            onChange={handleChange}
+          />
+          <button
+            type="button"
+            className="btn position-absolute"
+            style={{
+              backgroundColor: "#C4B5D6",
+              top: "0",
+              right: "0",
+              height: "40px",
+              borderRadius: "0 12px 12px 0",
+              border: "none",
+              padding: "0 15px",
+            }}
+            onClick={() => document.getElementById(inputId).click()}
+          >
+            Browse
+          </button>
+        </div>
+
+        {/* Plus button */}
+        <button
+          type="button"
+          className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
+          style={{
+            backgroundColor: "#4D227C",
+            width: "40px",
+            height: "40px",
+            borderRadius: "12px",
+          }}
+          onClick={() => document.getElementById(inputId).click()}
+        >
+          <FiPlus size={18} />
+        </button>
+      </div>
+
+      {/* File list pills */}
+      {files.length > 0 && (
+        <div className="mt-2 d-flex flex-wrap gap-2">
+          {files.map((file, i) => (
+            <span
+              key={i}
+              className="badge d-inline-flex align-items-center gap-2"
+              style={{
+                backgroundColor: "#4D227C",
+                padding: "6px 12px",
+                fontSize: "0.85rem",
+                fontWeight: "400",
+                maxWidth: "220px",
+              }}
+            >
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "160px",
+                }}
+                title={file.name}
+              >
+                {file.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => onFileRemove(i)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0",
+                  lineHeight: "1",
+                  flexShrink: 0,
+                }}
+                aria-label="Remove"
+              >
+                <FiX size={14} strokeWidth={2} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
