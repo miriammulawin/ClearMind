@@ -35,8 +35,6 @@ class AdminDashboardController extends Controller
     return response()->json($appointments);
 }
 
-public 
-
 public function statusCounts()
 {
     $counts = Appointment::selectRaw("
