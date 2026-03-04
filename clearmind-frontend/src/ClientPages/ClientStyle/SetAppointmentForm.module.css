@@ -1,6 +1,8 @@
 /* SetAppointmentForm.module.css
    Layout: fixed full-viewport wrapper → sticky header → scroll body → sticky footer
    Responsive: desktop / tablet comfortable view, mobile-first clamp scaling
+
+   NOTE: ScheduleForm-specific styles have been moved to ScheduleForm.module.css
 */
 
 /* ─────────────────────────────────────────
@@ -15,7 +17,6 @@
   background-color: #f4f0fa;
   z-index: 1000;
   overflow: hidden;
-  /* Block touches/clicks from passing through to elements underneath */
   touch-action: none;
   pointer-events: all;
 }
@@ -26,12 +27,7 @@
 .stickyHeader {
   flex-shrink: 0;
   z-index: 20;
-
 }
-
-/* ─────────────────────────────────────────────
-   ADD THESE TO SetAppointmentForm.module.css
-   ───────────────────────────────────────────── */
 
 /* ── Header shell ── */
 .header {
@@ -68,7 +64,7 @@
 }
 
 .headerBackBtnSpacer {
-  width: 32px; /* mirrors back button width to center the title */
+  width: 32px;
 }
 
 .headerTitle {
@@ -148,7 +144,6 @@
   transition: color 0.2s ease;
 }
 
-/* Active step */
 .headerStepActive .headerStepCircle {
   border-color: #0077cc;
   background: #0077cc;
@@ -159,7 +154,6 @@
   font-weight: 600;
 }
 
-/* Completed step */
 .headerStepDone .headerStepCircle {
   border-color: #22c55e;
   background: #22c55e;
@@ -169,7 +163,6 @@
   color: #22c55e;
 }
 
-/* Pending step */
 .headerStepPending .headerStepCircle {
   border-color: #ddd;
   background: #fff;
@@ -185,9 +178,9 @@
   background: #f0f0f0;
   border-radius: 2px;
   overflow: hidden;
-  max-width: 500px;     
-  width: 100%;          
-  margin: 0 auto; 
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .progressBarFill {
@@ -249,7 +242,7 @@
   display: flex;
   align-items: center;
   gap: clamp(0.5rem, 2vw, 0.85rem);
-  min-width: 0; /* allow text truncation */
+  min-width: 0;
 }
 
 .avatarCircle {
@@ -309,8 +302,6 @@
   flex: 1;
   overflow-y: auto;
   padding: clamp(0.85rem, 3vw, 1.5rem) clamp(1rem, 4vw, 2rem);
-
-  /* Center on wide screens like a form card */
   max-width: 720px;
   width: 100%;
   margin: 0 auto;
@@ -335,9 +326,8 @@
 ───────────────────────────────────────── */
 .stepper {
   display: flex;
-  /* max-width: 720px; */
-  width: 100%;          
-  margin: 0 auto; 
+  width: 100%;
+  margin: 0 auto;
   align-items: center;
   justify-content: center;
   gap: 0;
@@ -387,268 +377,7 @@
   height: 2px;
   background: #ddd6f0;
   margin: 0 clamp(0.2rem, 1vw, 0.5rem);
-  margin-bottom: clamp(18px, 4vw, 26px); /* push line up to circle center */
-}
-
-/* ─────────────────────────────────────────
-   SECTION WRAPPER
-───────────────────────────────────────── */
-.section {
-  margin-bottom: clamp(0.85rem, 3vw, 1.25rem);
-}
-
-.sectionTitle {
-  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
-  font-weight: 600;
-  color: #4b5563;
-  margin-bottom: clamp(0.4rem, 1.5vw, 0.65rem);
-}
-
-.required {
-  color: #ef4444;
-  margin-right: 0.2rem;
-}
-
-/* ─────────────────────────────────────────
-   CONSULTATION MODE
-───────────────────────────────────────── */
-
-/* Single mode — just a small info pill */
-.singleModeInfo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #ede8f7;
-  color: #5B2C91;
-  border: 1.5px solid #c4aee8;
-  border-radius: 20px;
-  padding: clamp(0.35rem, 1.2vw, 0.5rem) clamp(0.75rem, 2.5vw, 1.1rem);
-  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
-  font-weight: 600;
-}
-
-.singleModeIcon {
-  font-size: clamp(0.85rem, 2.2vw, 1rem);
-}
-
-/* Both modes — compact horizontal toggle */
-.modeToggleRow {
-  display: inline-flex;
-  border: 1.5px solid #c4aee8;
-  border-radius: 20px;
-  overflow: hidden;
-  background: white;
-}
-
-.modeToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: clamp(0.3rem, 1vw, 0.45rem);
-  padding: clamp(0.35rem, 1.2vw, 0.5rem) clamp(0.75rem, 2.5vw, 1.2rem);
-  background: white;
-  border: none;
-  color: #718096;
-  font-size: clamp(0.75rem, 2.2vw, 0.85rem);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.modeToggle:first-child {
-  border-right: 1.5px solid #c4aee8;
-}
-
-.modeToggle:hover {
-  background: #f3eeff;
-  color: #5B2C91;
-}
-
-.modeToggleActive {
-  background: #5B2C91 !important;
-  color: white !important;
-}
-
-.modeToggleIcon {
-  font-size: clamp(0.8rem, 2vw, 0.95rem);
-}
-
-/* ─────────────────────────────────────────
-   DATE GRID
-───────────────────────────────────────── */
-.datesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.4rem, 1.5vw, 0.65rem);
-}
-
-.dateCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  background: white;
-  border: 1.5px solid #e2d9f3;
-  border-radius: clamp(8px, 2vw, 12px);
-  padding: clamp(0.5rem, 1.8vw, 0.8rem) clamp(0.3rem, 1.5vw, 0.5rem);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.dateCard:hover {
-  border-color: #5B2C91;
-  background: #f3eeff;
-}
-
-.dateCardSelected {
-  background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
-  color: white;
-  box-shadow: 0 2px 10px rgba(91, 44, 145, 0.25);
-}
-
-.dateDay {
-  font-size: clamp(0.62rem, 1.8vw, 0.72rem);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: #9b8ab0;
-}
-
-.dateCardSelected .dateDay { color: rgba(255,255,255,0.8); }
-
-.dateNum {
-  font-size: clamp(0.75rem, 2.2vw, 0.88rem);
-  font-weight: 600;
-  color: #3d2b5e;
-}
-
-.dateCardSelected .dateNum { color: white; }
-
-/* ─────────────────────────────────────────
-   TIME SLOTS GRID — compact 3-col pills
-───────────────────────────────────────── */
-.timeSlotsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(0.35rem, 1.2vw, 0.55rem);
-}
-
-.timeSlot {
-  background: white;
-  border: 1.5px solid #e2d9f3;
-  border-radius: clamp(6px, 1.5vw, 8px);
-  padding: clamp(0.4rem, 1.2vw, 0.6rem) clamp(0.25rem, 1vw, 0.4rem);
-  text-align: center;
-  cursor: pointer;
-  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
-  font-weight: 600;
-  color: #4b5563;
-  font-family: inherit;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.timeSlot:hover:not(.timeSlotDisabled) {
-  border-color: #5B2C91;
-  background: #f3eeff;
-  color: #5B2C91;
-}
-
-.timeSlotSelected {
-  background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
-  color: white !important;
-  box-shadow: 0 2px 8px rgba(91, 44, 145, 0.25);
-}
-
-.timeSlotDisabled {
-  background: #f9f7fe;
-  border-color: #ede8f7;
-  color: #c4b8d9;
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* "· 1 hour session" note beside section title */
-.sessionNote {
-  font-size: clamp(0.65rem, 1.6vw, 0.72rem);
-  color: #9b8ab0;
-  font-weight: 400;
-  font-style: italic;
-}
-
-/* Selected time range display e.g. "Session: 4:30 PM – 5:30 PM" */
-.selectedTimeRange {
-  margin-top: clamp(0.4rem, 1.5vw, 0.6rem);
-  font-size: clamp(0.72rem, 2vw, 0.82rem);
-  color: #5B2C91;
-  background: #ede8f7;
-  border-radius: 8px;
-  padding: clamp(0.3rem, 1vw, 0.45rem) clamp(0.6rem, 2vw, 0.85rem);
-  display: inline-block;
-  font-weight: 500;
-}
-
-/* ─────────────────────────────────────────
-   BOOKING SUMMARY CARD
-───────────────────────────────────────── */
-.summaryCard {
-  background: white;
-  border: 1.5px solid #c4aee8;
-  border-radius: clamp(10px, 2.5vw, 14px);
-  padding: clamp(0.85rem, 2.5vw, 1.25rem);
-  margin-top: clamp(0.5rem, 2vw, 0.85rem);
-}
-
-.summaryTitle {
-  font-size: clamp(0.8rem, 2.2vw, 0.9rem);
-  font-weight: 700;
-  color: #5B2C91;
-  margin: 0 0 clamp(0.5rem, 1.5vw, 0.75rem) 0;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-/* 2-column label / value grid */
-.summaryGrid {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  row-gap: clamp(0.3rem, 1.2vw, 0.5rem);
-  column-gap: clamp(0.75rem, 2.5vw, 1.25rem);
-  align-items: baseline;
-}
-
-.summaryLabel {
-  font-size: clamp(0.72rem, 2vw, 0.82rem);
-  color: #9b8ab0;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.summaryValue {
-  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
-  font-weight: 600;
-  color: #3d2b5e;
-  text-align: right;
-}
-
-.summaryFeeLabel {
-  color: #5B2C91;
-  font-weight: 700;
-  padding-top: clamp(0.3rem, 1vw, 0.5rem);
-  border-top: 1px solid #e9e0f8;
-}
-
-.summaryFee {
-  color: #5B2C91;
-  font-size: clamp(0.9rem, 2.5vw, 1.05rem) !important;
-  font-weight: 700;
-  padding-top: clamp(0.3rem, 1vw, 0.5rem);
-  border-top: 1px solid #e9e0f8;
-  text-align: right;
+  margin-bottom: clamp(18px, 4vw, 26px);
 }
 
 /* ─────────────────────────────────────────
@@ -669,7 +398,6 @@
   gap: clamp(0.5rem, 2vw, 0.75rem);
 }
 
-/* Full-bleed background trick for wide screens */
 .stickyFooter::before {
   content: '';
   position: fixed;
@@ -731,19 +459,10 @@
 
 /* ─────────────────────────────────────────
    DESKTOP / TABLET OVERRIDES
-   (tighten up on larger screens)
 ───────────────────────────────────────── */
 @media (min-width: 768px) {
   .scrollContent {
     padding: 1.5rem 2rem;
-  }
-
-  .datesGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .timeSlotsGrid {
-    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -751,4 +470,176 @@
   .scrollContent {
     padding: 1.75rem 2.5rem;
   }
+}
+
+
+/* ─────────────────────────────────────────
+   VALIDATION ERROR MODAL
+───────────────────────────────────────── */
+.errorModalContent {
+  border: none !important;
+  border-radius: clamp(12px, 3vw, 18px) !important;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(91, 44, 145, 0.18) !important;
+}
+
+.errorModalBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(1.5rem, 5vw, 2.25rem) clamp(1.25rem, 4vw, 2rem) !important;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+}
+
+/* Warning icon circle */
+.errorModalIconWrapper {
+  width: clamp(52px, 14vw, 68px);
+  height: clamp(52px, 14vw, 68px);
+  border-radius: 50%;
+  background: #fff0f0;
+  border: 2px solid #f5c2c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: clamp(0.25rem, 1vw, 0.5rem);
+}
+
+.errorModalIcon {
+  width: clamp(24px, 6vw, 30px);
+  height: clamp(24px, 6vw, 30px);
+  fill: #dc3545;
+}
+
+.errorModalTitle {
+  font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+  font-weight: 700;
+  color: #3d2b5e;
+  margin: 0;
+}
+
+.errorModalMessage {
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.55;
+}
+
+.errorModalBtn {
+  margin-top: clamp(0.25rem, 1vw, 0.5rem);
+  width: 100%;
+  padding: clamp(0.55rem, 1.8vw, 0.72rem);
+  border-radius: clamp(6px, 1.5vw, 9px);
+  border: none;
+  background: #5B2C91;
+  color: white;
+  font-weight: 700;
+  font-size: clamp(0.82rem, 2.2vw, 0.92rem);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+  letter-spacing: 0.2px;
+}
+
+.errorModalBtn:hover {
+  background: #4a2273;
+}
+
+/* ─────────────────────────────────────────
+   CONFIRM & BOOK MODAL
+───────────────────────────────────────── */
+.confirmModalContent {
+  border: none !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(91, 44, 145, 0.2) !important;
+}
+
+.confirmModalBody {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.75rem 1.75rem !important;
+  gap: 0.65rem;
+}
+
+/* Checkmark circle */
+.confirmModalIconWrapper {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #ede8f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 0.25rem;
+}
+
+.confirmModalIcon {
+  width: 36px;
+  height: 36px;
+  color: #5B2C91;
+}
+
+.confirmModalTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #3d2b5e;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.confirmModalMessage {
+  font-size: clamp(0.82rem, 2.2vw, 0.92rem);
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.confirmModalActions {
+  display: flex;
+  gap: 0.65rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.confirmModalBtnBack {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  border-radius: 10px;
+  border: 2px solid #5B2C91;
+  background: white;
+  color: #5B2C91;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 2vw, 0.88rem);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.confirmModalBtnBack:hover {
+  background: #f3eeff;
+}
+
+.confirmModalBtnConfirm {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  border-radius: 10px;
+  border: none;
+  background: #5B2C91;
+  color: white;
+  font-weight: 800;
+  font-size: clamp(0.78rem, 2vw, 0.88rem);
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  transition: background 0.2s ease;
+}
+
+.confirmModalBtnConfirm:hover {
+  background: #4a2273;
 }

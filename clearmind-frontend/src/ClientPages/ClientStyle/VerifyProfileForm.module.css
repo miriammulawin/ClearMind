@@ -1,0 +1,307 @@
+/* VerifyProfileForm.module.css
+   Mobile-first, clamp-scaled, consistent with SetAppointmentForm purple theme
+*/
+
+/* ── Wrapper ─────────────────────────────────────────── */
+.formWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2.5vw, 1.1rem);
+}
+
+/* ── Required notice ─────────────────────────────────── */
+.requiredNotice {
+  text-align: center;
+  font-size: clamp(0.7rem, 2vw, 0.8rem);
+  color: #718096;
+  background: #f3eeff;
+  border: 1px solid #e2d9f3;
+  border-radius: clamp(6px, 1.5vw, 8px);
+  padding: clamp(0.4rem, 1.5vw, 0.55rem) clamp(0.75rem, 2.5vw, 1rem);
+  font-style: italic;
+}
+
+.requiredStar {
+  color: #ef4444;
+  font-style: normal;
+  font-weight: 700;
+  margin: 0 0.1rem;
+}
+
+/* ── Section heading (Patient's Profile) ─────────────── */
+.sectionHeading {
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 700;
+  color: #3d2b5e;
+  font-style: italic;
+  padding-bottom: clamp(0.25rem, 1vw, 0.4rem);
+  border-bottom: 1.5px solid #e2d9f3;
+}
+
+/* ── Field group ─────────────────────────────────────── */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 1vw, 0.4rem);
+}
+
+.fieldLabel {
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0;
+}
+
+/* ── Input / Textarea ────────────────────────────────── */
+.input,
+.textarea {
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem) !important;
+  font-family: inherit !important;
+  color: #3d2b5e !important;
+  border: 1.5px solid #e2d9f3 !important;
+  border-radius: clamp(6px, 1.5vw, 9px) !important;
+  padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.85rem) !important;
+  background: white !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  width: 100%;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #5B2C91 !important;
+  box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.1) !important;
+  outline: none !important;
+}
+
+.inputReadOnly {
+  background: #f3eeff !important;
+  color: #5B2C91 !important;
+  font-weight: 700 !important;
+  cursor: default !important;
+  text-align: center !important;
+  border-color: #e2d9f3 !important;
+  pointer-events: none;
+}
+
+/* valdiation of email address */
+.inputError {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+}
+
+.fieldErrorMsg {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff5f5;
+  border: 1.5px solid #f5c2c7;
+  border-radius: clamp(6px, 1.5vw, 9px);
+  padding: clamp(0.4rem, 1.2vw, 0.55rem) clamp(0.65rem, 2vw, 0.85rem);
+  color: #842029;
+  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.fieldErrorIcon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  fill: #842029;
+}
+
+/* ── Custom select dropdown ──────────────────────────── */
+.selectWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.selectWrapper .input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding-right: 2rem !important; /* room for arrow */
+  cursor: pointer;
+}
+
+.selectArrow {
+  position: absolute;
+  right: 0.6rem;
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  color: #5B2C91;
+  pointer-events: none;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #b0a3c7 !important;
+  font-style: italic;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: clamp(72px, 15vw, 90px) !important;
+}
+
+/* ── Name row (2 col) ────────────────────────────────── */
+.nameRow {
+  margin: 0 !important;
+  gap: 0;
+}
+
+.nameCol {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.nameCol:first-child {
+  padding-right: clamp(0.25rem, 1vw, 0.4rem) !important;
+}
+
+.nameCol:last-child {
+  padding-left: clamp(0.25rem, 1vw, 0.4rem) !important;
+}
+
+/* ── Radio buttons ───────────────────────────────────── */
+.radioRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(0.6rem, 2vw, 1.1rem);
+}
+
+.radioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.3rem, 1vw, 0.45rem);
+  font-size: clamp(0.75rem, 2.2vw, 0.85rem);
+  color: #4b5563;
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+}
+
+.radioInput {
+  display: none; /* hidden — use custom circle */
+}
+
+/* Custom radio circle */
+.radioCustom {
+  width: clamp(16px, 4vw, 20px);
+  height: clamp(16px, 4vw, 20px);
+  border-radius: 50%;
+  border: 2px solid #c4aee8;
+  background: white;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.radioInput:checked + .radioCustom {
+  border-color: #5B2C91;
+  background: white;
+}
+
+.radioInput:checked + .radioCustom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(7px, 2vw, 9px);
+  height: clamp(7px, 2vw, 9px);
+  border-radius: 50%;
+  background: #5B2C91;
+}
+
+/* ── Sex toggle buttons ──────────────────────────────── */
+.sexRow {
+  display: flex;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+}
+
+.sexBtn {
+  padding: clamp(0.35rem, 1.2vw, 0.5rem) clamp(1rem, 3vw, 1.5rem);
+  border-radius: 20px;
+  border: 1.5px solid #c4aee8;
+  background: white;
+  color: #5B2C91;
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.sexBtn:hover {
+  background: #f3eeff;
+  border-color: #5B2C91;
+}
+
+.sexBtnActive {
+  background: #5B2C91 !important;
+  border-color: #5B2C91 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(91, 44, 145, 0.25);
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (min-width: 480px) {
+  .radioRow {
+    gap: clamp(0.85rem, 2.5vw, 1.5rem);
+  }
+}
+
+/* ── Informant toggle buttons ────────────────────────── */
+.informantToggleRow {
+  display: flex;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  flex-wrap: wrap;
+}
+
+.informantToggleBtn {
+  flex: 1;
+  padding: clamp(0.4rem, 1.5vw, 0.55rem) clamp(0.75rem, 2.5vw, 1rem);
+  border-radius: clamp(6px, 1.5vw, 9px);
+  border: 1.5px solid #c4aee8;
+  background: white;
+  color: #5B2C91;
+  font-size: clamp(0.75rem, 2.2vw, 0.85rem);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.informantToggleBtn:hover {
+  background: #f3eeff;
+  border-color: #5B2C91;
+}
+
+.informantToggleBtnActive {
+  background: #5B2C91 !important;
+  border-color: #5B2C91 !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(91, 44, 145, 0.2);
+}
+
+/* ── Informant card ──────────────────────────────────── */
+.informantCard {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 1.5vw, 0.75rem);
+  background: #f9f7fe;
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.65rem, 2vw, 0.9rem) clamp(0.75rem, 2.5vw, 1rem);
+}
+
+.informantCardTitle {
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 700;
+  color: #5B2C91;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}

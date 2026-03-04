@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Modal } from 'react-bootstrap';
+import { FiCheckCircle } from 'react-icons/fi';
 import { CONSULTATION_FEES } from '../../../../MockData/MockDoctors.js';
 import styles from '../../../ClientStyle/SetAppointmentForm.module.css';
 import SetAppointmentFormHeader from './SetAppointmentFormHeader.jsx';
 import ScheduleForm from './ScheduleForm.jsx';
+import VerifyProfileForm from './VerifyProfileForm.jsx';
+import PaymentForm from './PaymentForm.jsx';
 
 // ─── Total steps (must match STEPS array in SetAppointmentFormHeader) ─────────
 const TOTAL_STEPS = 3;
@@ -14,11 +18,21 @@ const SetAppointmentForm = () => {
   const doctorData = location.state?.doctor;
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [errorModal,   setErrorModal]   = useState({ show: false, message: '' });
+  const [confirmModal, setConfirmModal] = useState(false);
 
   // ── Shared form state (lifted so all steps can read/write) ────────────────
   const [consultationMode, setConsultationMode] = useState('');
   const [selectedDate,     setSelectedDate]     = useState(null);
   const [selectedTime,     setSelectedTime]     = useState(null);
+  const [profileData,      setProfileData]      = useState({
+    isInformant:    false,
+    patientType:    'New Patient',
+    classification: 'Regular',
+  });
+  const [paymentData, setPaymentData] = useState({
+    paymentMode: 'G-Cash',
+  });
 
   // ─── Navigation ──────────────────────────────────────────────────────────
   const handleBack = () => {
@@ -27,18 +41,60 @@ const SetAppointmentForm = () => {
   };
 
   const handleContinue = () => {
+    const error = getStepError();
+    if (error) {
+      setErrorModal({ show: true, message: error });
+      return;
+    }
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(prev => prev + 1);
     } else {
-      alert('Submitting appointment...');
-      // navigate('/client/appointment/confirmation', { state: { ... } });
+      setConfirmModal(true);
     }
   };
 
-  // ─── Step validation ─────────────────────────────────────────────────────
-  const isCurrentStepComplete = () => {
-    if (currentStep === 1) return !!(consultationMode && selectedDate && selectedTime);
-    return true; // update per step as you build them
+  const handleConfirmBook = () => {
+    setConfirmModal(false);
+    // navigate('/client/appointment/confirmation', { state: { ... } });
+    alert('Appointment booked!');
+  };
+
+  const closeErrorModal = () => setErrorModal({ show: false, message: '' });
+
+  // ─── Per-step error message ───────────────────────────────────────────────
+  const getStepError = () => {
+    if (currentStep === 1) {
+      if (!consultationMode) return 'Please select a consultation mode before continuing.';
+      if (!selectedDate)     return 'Please select a date before continuing.';
+      if (!selectedTime)     return 'Please select a time slot before continuing.';
+    }
+
+    if (currentStep === 2) {
+      if (profileData.isInformant && !profileData.informantName)
+                                      return 'Please enter the full name of the informant.';
+      if (profileData.isInformant && !profileData.informantRelation)
+                                      return "Please enter the informant's relation to the patient.";
+      if (!profileData.reason)        return 'Please enter a reason for consultation.';
+      if (!profileData.firstName)     return "Please enter the patient's first name.";
+      if (!profileData.lastName)      return "Please enter the patient's last name.";
+      if (!profileData.sex)           return "Please select the patient's sex.";
+      if (!profileData.dateOfBirth)   return "Please enter the patient's date of birth.";
+      if (profileData.age === '0' || profileData.age === '' && profileData.dateOfBirth)
+                                      return 'Patient must be at least 1 year old.';
+      if (!profileData.contactNo)     return 'Please enter a contact number.';
+      if (!profileData.email)         return 'Please enter an email address.';
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(profileData.email)) return 'Please enter a valid email address (e.g. juan@email.com).';
+      if (!profileData.address)       return 'Please enter a home address.';
+    }
+
+    if (currentStep === 3) {
+      if (!paymentData.paymentMode)  return 'Please select a payment mode.';
+      if (!paymentData.referenceNo)  return 'Please enter the reference number.';
+      if (!paymentData.receiptFile)  return 'Please upload your payment receipt.';
+    }
+
+    return '';
   };
 
   // ─── Step body ───────────────────────────────────────────────────────────
@@ -58,18 +114,24 @@ const SetAppointmentForm = () => {
           />
         );
       case 2:
-        // TODO: swap with <DetailsForm /> when ready
         return (
-          <div className={styles.placeholderStep}>
-            <p>Step 2 – Patient Details (coming soon)</p>
-          </div>
+          <VerifyProfileForm
+            formData={profileData}
+            setFormData={setProfileData}
+          />
         );
       case 3:
-        // TODO: swap with <PaymentForm /> when ready
         return (
-          <div className={styles.placeholderStep}>
-            <p>Step 3 – Payment (coming soon)</p>
-          </div>
+          <PaymentForm
+            doctorData={doctorData}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+            consultationMode={consultationMode}
+            consultationFee={CONSULTATION_FEES.initial}
+            profileData={profileData}
+            paymentData={paymentData}
+            setPaymentData={setPaymentData}
+          />
         );
       default:
         return null;
@@ -114,13 +176,93 @@ const SetAppointmentForm = () => {
           </button>
         )}
         <button
-          className={`${styles.continueButton} ${!isCurrentStepComplete() ? styles.continueDisabled : ''}`}
-          disabled={!isCurrentStepComplete()}
+          className={`${styles.continueButton} ${getStepError() ? styles.continueDisabled : ""}`}
+          disabled={!!getStepError()}
           onClick={handleContinue}
         >
           {currentStep === TOTAL_STEPS ? 'Confirm & Book' : 'Continue'}
         </button>
       </div>
+
+      {/* ── Confirm & Book Modal ── */}
+      <Modal
+        show={confirmModal}
+        onHide={() => setConfirmModal(false)}
+        centered
+        size="sm"
+        contentClassName={styles.confirmModalContent}
+      >
+        <Modal.Body className={styles.confirmModalBody}>
+
+          {/* Checkmark Icon */}
+          <div className={styles.confirmModalIconWrapper}>
+            <FiCheckCircle className={styles.confirmModalIcon} />
+          </div>
+
+          {/* Title */}
+          <p className={styles.confirmModalTitle}>Almost Done!</p>
+
+          {/* Message */}
+          <p className={styles.confirmModalMessage}>
+            You're about to book your appointment. Would you like to continue?
+          </p>
+
+          {/* Actions */}
+          <div className={styles.confirmModalActions}>
+            <button
+              className={styles.confirmModalBtnBack}
+              onClick={() => setConfirmModal(false)}
+            >
+              CANCEL
+            </button>
+            <button
+              className={styles.confirmModalBtnConfirm}
+              onClick={handleConfirmBook}
+            >
+              YES, CONFIRM
+            </button>
+          </div>
+
+        </Modal.Body>
+      </Modal>
+
+      {/* ── Validation Error Modal ── */}
+      <Modal
+        show={errorModal.show}
+        onHide={closeErrorModal}
+        centered
+        size="sm"
+        contentClassName={styles.errorModalContent}
+      >
+        <Modal.Body className={styles.errorModalBody}>
+
+          {/* Icon */}
+          <div className={styles.errorModalIconWrapper}>
+            <svg
+              className={styles.errorModalIcon}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+            >
+              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+            </svg>
+          </div>
+
+          {/* Title */}
+          <p className={styles.errorModalTitle}>Incomplete Form</p>
+
+          {/* Message */}
+          <p className={styles.errorModalMessage}>{errorModal.message}</p>
+
+          {/* Dismiss */}
+          <button
+            className={styles.errorModalBtn}
+            onClick={closeErrorModal}
+          >
+            Got it
+          </button>
+
+        </Modal.Body>
+      </Modal>
 
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Button, Badge } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Card, Badge } from 'react-bootstrap';
 import { FaUserCircle, FaVideo, FaClinicMedical } from 'react-icons/fa';
 import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
 import styles from '../../ClientStyle/SetAppointment.module.css';
@@ -8,6 +9,17 @@ const DoctorProfile = ({
   doctorData, 
   onBookAppointment,  
 }) => {
+
+  const navigate = useNavigate();
+
+  const handleBookAppointment = () => {
+    // Call parent callback if provided (e.g. for any pre-navigation side effects)
+    if (onBookAppointment) onBookAppointment();
+
+    navigate('/client/appointment/set-appointment-form', {
+      state: { doctor: doctorData },
+    });
+  };
 
   const getConsultationIcon = (mode) => {
     return mode === 'Online' ? 
@@ -79,12 +91,13 @@ const DoctorProfile = ({
             </div>
           </div>
 
-          <Button
+          <button
+            type="button"
             className={`${styles.btnBookAppointment} w-100 mt-4`}
-            onClick={onBookAppointment}
+            onClick={handleBookAppointment}
           >
             SET APPOINTMENT
-          </Button>
+          </button>
 
         </Card.Body>
       </Card>

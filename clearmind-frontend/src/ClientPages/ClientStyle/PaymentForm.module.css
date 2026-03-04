@@ -1,0 +1,344 @@
+/* PaymentForm.module.css
+   Mobile-first, clamp-scaled, consistent with SetAppointmentForm purple theme
+*/
+
+/* ── Wrapper ─────────────────────────────────────────── */
+.formWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.65rem, 2vw, 1rem);
+}
+
+/* ── Section label (bold left-aligned heading) ───────── */
+.sectionLabel {
+  font-size: clamp(0.8rem, 2.2vw, 0.92rem);
+  font-weight: 700;
+  color: #3d2b5e;
+}
+
+/* ── Appointment Summary Card ────────────────────────── */
+.summaryCard {
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.65rem, 2vw, 0.9rem) clamp(0.75rem, 2.5vw, 1.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 1vw, 0.4rem);
+  background: white;
+}
+
+.summaryRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  line-height: 1.5;
+}
+
+.summaryKey {
+  color: #4b5563;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.summaryVal {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+/* ── Consultation Fee ────────────────────────────────── */
+.feeRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.35rem, 1.2vw, 0.55rem);
+  flex-wrap: wrap;
+}
+
+.feeLabel {
+  font-size: clamp(0.8rem, 2.2vw, 0.92rem);
+  font-weight: 700;
+  color: #3d2b5e;
+}
+
+.feeAmount {
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 800;
+  color: #5B2C91;
+}
+
+/* ── Payment Mode Card ───────────────────────────────── */
+.paymentModeCard {
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.55rem, 1.8vw, 0.8rem) clamp(0.75rem, 2.5vw, 1.1rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.4rem, 1.5vw, 0.6rem);
+  background: white;
+}
+
+/* ── Radio buttons ───────────────────────────────────── */
+.paymentRadioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.4rem, 1.2vw, 0.6rem);
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+  font-weight: 500;
+  color: #3d2b5e;
+  cursor: pointer;
+  user-select: none;
+}
+
+.radioInput {
+  display: none;
+}
+
+.radioCustom {
+  width: clamp(17px, 4vw, 21px);
+  height: clamp(17px, 4vw, 21px);
+  border-radius: 50%;
+  border: 2px solid #c4aee8;
+  background: white;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.radioInput:checked + .radioCustom {
+  border-color: #5B2C91;
+}
+
+.radioInput:checked + .radioCustom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(8px, 2vw, 10px);
+  height: clamp(8px, 2vw, 10px);
+  border-radius: 50%;
+  background: #5B2C91;
+}
+
+/* ── QR Card ─────────────────────────────────────────── */
+.qrCard {
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.85rem, 2.5vw, 1.2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.4rem, 1.5vw, 0.65rem);
+  background: white;
+}
+
+.qrImageWrapper {
+  width: clamp(140px, 45vw, 200px);
+  height: clamp(140px, 45vw, 200px);
+}
+
+.qrImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Placeholder when no QR asset yet */
+.qrPlaceholder {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed #c4aee8;
+  border-radius: clamp(6px, 1.5vw, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9f7fe;
+}
+
+.qrPlaceholderInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.qrPlaceholderLabel {
+  font-size: clamp(0.8rem, 2.2vw, 0.95rem);
+  font-weight: 700;
+  color: #5B2C91;
+  letter-spacing: 0.3px;
+}
+
+.qrNote {
+  font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+  color: #9b8ab0;
+  margin: 0;
+  text-align: center;
+}
+
+.accountName {
+  font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+  font-weight: 800;
+  color: #5B2C91;
+  margin: 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* ── Field group ─────────────────────────────────────── */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 1vw, 0.4rem);
+}
+
+.fieldLabel {
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 600;
+  color: #4b5563;
+  margin: 0;
+}
+
+.requiredStar {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* ── Text input ──────────────────────────────────────── */
+.input {
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem) !important;
+  font-family: inherit !important;
+  color: #3d2b5e !important;
+  border: 1.5px solid #e2d9f3 !important;
+  border-radius: clamp(6px, 1.5vw, 9px) !important;
+  padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.85rem) !important;
+  background: white !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  width: 100%;
+}
+
+.input:focus {
+  border-color: #5B2C91 !important;
+  box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.1) !important;
+  outline: none !important;
+}
+
+.input::placeholder {
+  color: #b0a3c7 !important;
+  font-style: italic;
+}
+
+/* ── File upload ─────────────────────────────────────── */
+.fileInputWrapper {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid #e2d9f3;
+  border-radius: clamp(6px, 1.5vw, 9px);
+  overflow: hidden;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.fileInputWrapperError {
+  border-color: #dc3545 !important;
+}
+
+.fileBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.75rem, 2.5vw, 1rem);
+  background: #5B2C91;
+  color: white;
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0;
+  transition: background 0.2s ease;
+}
+
+.fileBtn:hover {
+  background: #4a2273;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.fileName {
+  padding: 0 clamp(0.5rem, 1.5vw, 0.75rem);
+  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  color: #9b8ab0;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.fileNameError {
+  color: #dc3545;
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* ── File hint & error ───────────────────────────────── */
+.fileHint {
+  font-size: clamp(0.65rem, 1.6vw, 0.74rem);
+  color: #9b8ab0;
+  margin: 0;
+  font-style: italic;
+}
+
+.fileErrorMsg {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff5f5;
+  border: 1.5px solid #f5c2c7;
+  border-radius: clamp(6px, 1.5vw, 9px);
+  padding: clamp(0.4rem, 1.2vw, 0.55rem) clamp(0.65rem, 2vw, 0.85rem);
+  color: #842029;
+  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  font-weight: 500;
+}
+
+.fileErrorIcon {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  fill: #842029;
+}
+
+/* ── Summary groups ──────────────────────────────────── */
+.summaryGroup {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.2rem, 0.8vw, 0.35rem);
+}
+
+.summaryGroupTitle {
+  font-size: clamp(0.68rem, 1.8vw, 0.76rem);
+  font-weight: 700;
+  color: #9b8ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: clamp(0.1rem, 0.5vw, 0.2rem);
+}
+
+.summaryDivider {
+  height: 1px;
+  background: #e9e0f8;
+  margin: clamp(0.4rem, 1.5vw, 0.6rem) 0;
+}
+
+.summaryReason {
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
+  color: #3d2b5e;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
+  font-style: italic;
+}

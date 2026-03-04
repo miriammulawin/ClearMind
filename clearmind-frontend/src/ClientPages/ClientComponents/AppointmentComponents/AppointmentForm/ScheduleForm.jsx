@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { FaVideo, FaHome } from 'react-icons/fa';
-import styles from '../../../ClientStyle/SetAppointmentForm.module.css';
+import styles from '../../../ClientStyle/ScheduleForm.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeToMinutes = (timeStr) => {
