@@ -8,6 +8,33 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [rescheduleReason, setRescheduleReason] = useState("");
   const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleSummary, setRescheduleSummary] = useState(null);
+
+  const computeEndTime = (timeStr) => {
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":").map(Number);
+    const endHour = (h + 1) % 24;
+    return `${String(endHour).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+
+  const fmt12 = (timeStr) => {
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(":");
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const handleConfirmReschedule = () => {
+    if (!rescheduleDate || !rescheduleTime) return;
+    setRescheduleSummary({
+      date: rescheduleDate,
+      startTime: rescheduleTime,
+      endTime: computeEndTime(rescheduleTime),
+      reason: rescheduleReason || "Not specified",
+    });
+  };
 
   if (!isOpen || !selectedDate) return null;
 
@@ -256,6 +283,8 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
                     Reschedule Appointment
                   </span>
                 </div>
+
+                {/* ── Form (always visible) ── */}
                 <div
                   style={{
                     padding: "16px 20px",
@@ -263,38 +292,21 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
                     flexWrap: "wrap",
                     gap: "12px",
                     alignItems: "flex-end",
+                    borderBottom: rescheduleSummary ? "1px solid #e0e0e0" : "none",
                   }}
                 >
                   {[
-                    {
-                      label: "Reschedule Date:",
-                      type: "date",
-                      value: rescheduleDate,
-                      onChange: setRescheduleDate,
-                      placeholder: "mm/dd/yyyy",
-                    },
-                    {
-                      label: "Reschedule Time:",
-                      type: "time",
-                      value: rescheduleTime,
-                      onChange: setRescheduleTime,
-                      placeholder: "Choose new time",
-                    },
-                    {
-                      label: "Reason for Reschedule:",
-                      type: "text",
-                      value: rescheduleReason,
-                      onChange: setRescheduleReason,
-                      placeholder: "",
-                    },
+                    { label: "Reschedule Date:", type: "date", value: rescheduleDate, onChange: setRescheduleDate },
+                    { label: "Reschedule Time:", type: "time", value: rescheduleTime, onChange: setRescheduleTime },
+                    { label: "Reason for Reschedule:", type: "text", value: rescheduleReason, onChange: setRescheduleReason, placeholder: "" },
                   ].map(({ label, type, value, onChange, placeholder }) => (
                     <div key={label} style={{ display: "flex", flexDirection: "column", gap: "4px", flex: "1 1 140px" }}>
                       <label style={{ fontSize: "12px", fontWeight: "600", color: "#4D227C" }}>{label}</label>
                       <input
                         type={type}
                         value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        placeholder={placeholder}
+                        onChange={(e) => { onChange(e.target.value); setRescheduleSummary(null); }}
+                        placeholder={placeholder || ""}
                         style={{
                           padding: "8px 12px",
                           borderRadius: "8px",
@@ -306,6 +318,7 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
                     </div>
                   ))}
                   <button
+                    onClick={handleConfirmReschedule}
                     style={{
                       padding: "8px 20px",
                       backgroundColor: "#4D227C",
@@ -323,6 +336,56 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
                     Confirm
                   </button>
                 </div>
+
+                {/* ── Summary (shown below form after confirm) ── */}
+                {rescheduleSummary && (
+                  <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <p style={{ margin: 0, fontSize: "13px", fontWeight: "700", color: "#4D227C" }}>
+                      ✓ Reschedule Summary
+                    </p>
+                    <div
+                      style={{
+                        backgroundColor: "#f7f2ff",
+                        border: "1px solid #d9c8f0",
+                        borderRadius: "10px",
+                        padding: "14px 18px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      {[
+                        { label: "New Date", value: format(new Date(rescheduleSummary.date), "MMMM dd, yyyy") },
+                        { label: "New Time", value: `${fmt12(rescheduleSummary.startTime)} – ${fmt12(rescheduleSummary.endTime)}` },
+                        { label: "Duration", value: "1 hour" },
+                        { label: "Reason", value: rescheduleSummary.reason },
+                      ].map(({ label, value }) => (
+                        <div key={label} style={{ display: "flex", gap: "8px", fontSize: "13px" }}>
+                          <span style={{ fontWeight: "700", color: "#4D227C", minWidth: "100px" }}>{label}:</span>
+                          <span style={{ color: "#333" }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button
+                        style={{
+                          padding: "8px 20px",
+                          backgroundColor: "#4D227C",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => (e.target.style.backgroundColor = "#3a1a5c")}
+                        onMouseLeave={(e) => (e.target.style.backgroundColor = "#4D227C")}
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
