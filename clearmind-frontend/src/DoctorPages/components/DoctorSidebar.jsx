@@ -5,8 +5,8 @@ import { FaCalendarDays } from "react-icons/fa6";
 import { BsPersonLinesFill } from "react-icons/bs";
 import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
-import "../index.css";
-import logo from "../assets/CMPS_Logo.png";
+import "../../index.css"; 
+import logo from "../../assets/CMPS_Logo.png";
 
 // ── Same helper used in SetUpAccountModal ────────────────────────────────────
 const resolveImageUrl = (raw) => {

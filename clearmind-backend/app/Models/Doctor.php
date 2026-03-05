@@ -20,6 +20,7 @@ class Doctor extends Model
         'practicing_since',
         'profile_picture',
         'certificate_image',
+        'main_specialization',
         'specializations',
         'sub_specializations',
         'board_certificates',
@@ -27,6 +28,7 @@ class Doctor extends Model
     ];
      protected $casts = [
         'specializations'    => 'array',
+        'main_specialization' => 'array',
         'sub_specializations'=> 'array',
         'board_certificates' => 'array',
         'services'           => 'array',

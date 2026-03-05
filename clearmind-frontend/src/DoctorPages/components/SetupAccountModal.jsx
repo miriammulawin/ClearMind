@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { FiX, FiPlus } from "react-icons/fi";
-import axiosClient from "../axiosClient";
+import axiosClient from "../../axiosClient";
 import toast from "react-hot-toast";
 
 const safeParse = (val) => {
@@ -9,36 +9,34 @@ const safeParse = (val) => {
   try { return JSON.parse(val); } catch { return []; }
 };
 
-// ── Resolves ANY image value the backend might return into a clean full URL ──
 const resolveImageUrl = (raw) => {
   if (!raw) return null;
-  // Already a full URL — use as-is
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  // Strip any leading slashes
   const clean = raw.replace(/^\/+/, "");
-  // Already contains "storage/" — don't double-prefix
   if (clean.startsWith("storage/")) return `http://127.0.0.1:8000/${clean}`;
-  // Bare relative path like "profiles/abc.png"
   return `http://127.0.0.1:8000/storage/${clean}`;
 };
 
 function SetUpAccountModal({ showModal, onClose }) {
   const [formData, setFormData] = useState({
     profilePicture:    null,
-    certificateImage:  null,
     description:       "",
     professionalTitle: "",
     yearsOfExperience: "",
     practicingSince:   "",
+    mainSpecialty:     "",
     prcNumber:         "",
     licenseNumber:     "",
     specialization:    "",
     subSpecialization: "",
     boardCertificate:  "",
     myServices:        "",
+    certificateImages: [],
+    idPictures:        [],
   });
 
   const [lists, setLists] = useState({
+    mainSpecialtyList:     [],
     specializationList:    [],
     subSpecializationList: [],
     boardCertificateList:  [],
@@ -57,12 +55,13 @@ function SetUpAccountModal({ showModal, onClose }) {
         const user    = res.data.user    || {};
         const profile = res.data.profile || {};
 
-        // ── DEBUG: remove these logs once image is working ──
         console.log("[SetUpModal] /profile response:", JSON.stringify(res.data, null, 2));
 
-        setFormData({
+        setFormData((prev) => ({
+          ...prev,
           profilePicture:    null,
-          certificateImage:  null,
+          certificateImages: [],
+          idPictures:        [],
           description:       profile.description         || "",
           professionalTitle: profile.professional_title  || "",
           yearsOfExperience: profile.years_of_experience != null
@@ -70,13 +69,10 @@ function SetUpAccountModal({ showModal, onClose }) {
           practicingSince:   profile.practicing_since    || "",
           prcNumber:         profile.prc_number          || "",
           licenseNumber:     profile.license_number      || "",
-          specialization:    "",
-          subSpecialization: "",
-          boardCertificate:  "",
-          myServices:        "",
-        });
+        }));
 
         setLists({
+          mainSpecialtyList:     safeParse(profile.main_specialties),
           specializationList:    safeParse(profile.specializations),
           subSpecializationList: safeParse(profile.sub_specializations),
           boardCertificateList:  safeParse(profile.board_certificates),
@@ -86,15 +82,10 @@ function SetUpAccountModal({ showModal, onClose }) {
         const merged = { ...user, ...profile };
         localStorage.setItem("user", JSON.stringify(merged));
 
-        const rawImage =
-          profile.profile_picture ||
-          user.profilePictureUrl  ||
-          null;
-
+        const rawImage = profile.profile_picture || user.profilePictureUrl || null;
         console.log("[SetUpModal] raw image from /profile:", rawImage);
         const imageUrl = resolveImageUrl(rawImage);
         console.log("[SetUpModal] resolved image URL:", imageUrl);
-
         if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       } catch (error) {
@@ -111,7 +102,21 @@ function SetUpAccountModal({ showModal, onClose }) {
   const handleFileChange = (field, file) =>
     setFormData((prev) => ({ ...prev, [field]: file }));
 
+  const handleMultiFileAdd = (field, file) => {
+    if (file) {
+      setFormData((prev) => ({ ...prev, [field]: [...prev[field], file] }));
+    }
+  };
+
+  const handleMultiFileRemove = (field, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
+  };
+
   const FIELD_TO_LIST_KEY = {
+    mainSpecialty:     "mainSpecialtyList",
     specialization:    "specializationList",
     subSpecialization: "subSpecializationList",
     boardCertificate:  "boardCertificateList",
@@ -143,9 +148,18 @@ function SetUpAccountModal({ showModal, onClose }) {
 
     try {
       const payload = new FormData();
-      localStorage.getItem("profile_image")
-      if (formData.profilePicture)   payload.append("profile_picture",  formData.profilePicture);
-      if (formData.certificateImage) payload.append("certificate_image", formData.certificateImage);
+
+      if (formData.profilePicture) payload.append("profile_picture", formData.profilePicture);
+
+      // Append multiple certificate images
+      formData.certificateImages.forEach((file) => {
+        payload.append("certificate_images[]", file);
+      });
+
+      // Append multiple ID pictures
+      formData.idPictures.forEach((file) => {
+        payload.append("id_pictures[]", file);
+      });
 
       payload.append("description",         formData.description);
       payload.append("professional_title",  formData.professionalTitle);
@@ -154,6 +168,7 @@ function SetUpAccountModal({ showModal, onClose }) {
       payload.append("prc_number",          formData.prcNumber);
       payload.append("license_number",      formData.licenseNumber);
 
+      payload.append("main_specialties",    JSON.stringify(lists.mainSpecialtyList));
       payload.append("specializations",     JSON.stringify(lists.specializationList));
       payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
       payload.append("board_certificates",  JSON.stringify(lists.boardCertificateList));
@@ -163,7 +178,6 @@ function SetUpAccountModal({ showModal, onClose }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // ── DEBUG: log full response — tells us exactly where the image lives ──
       console.log("[SetUpModal] /doctor/setup response:", JSON.stringify(res.data, null, 2));
 
       const updatedUser    = res.data.user    || {};
@@ -171,18 +185,16 @@ function SetUpAccountModal({ showModal, onClose }) {
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // Check every possible key the backend might return the image under
       const rawImage =
-        updatedProfile.profile_picture   ||   // res.data.profile.profile_picture
-        updatedUser.profilePictureUrl    ||   // res.data.user.profilePictureUrl
-        updatedUser.profile_picture_url  ||   // res.data.user.profile_picture_url
-        updatedUser.profile_picture      ||   // res.data.user.profile_picture
+        updatedProfile.profile_picture   ||
+        updatedUser.profilePictureUrl    ||
+        updatedUser.profile_picture_url  ||
+        updatedUser.profile_picture      ||
         null;
 
       console.log("[SetUpModal] raw image after save:", rawImage);
       const imageUrl = resolveImageUrl(rawImage);
       console.log("[SetUpModal] resolved image URL after save:", imageUrl);
-
       if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       window.dispatchEvent(new Event("profileUpdated"));
@@ -203,7 +215,7 @@ function SetUpAccountModal({ showModal, onClose }) {
 
   if (!showModal) return null;
 
-  const { specializationList, subSpecializationList, boardCertificateList, servicesList } = lists;
+  const { mainSpecialtyList, specializationList, subSpecializationList, boardCertificateList, servicesList } = lists;
   const savedImage = localStorage.getItem("profile_image");
 
   return (
@@ -239,7 +251,7 @@ function SetUpAccountModal({ showModal, onClose }) {
         <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           <div className="row g-3">
 
-            {/* Profile Picture Preview */}
+            {/* Profile Picture Preview + Upload */}
             <div className="col-12">
               {savedImage && !formData.profilePicture && (
                 <div className="mb-2 d-flex align-items-center gap-3">
@@ -288,7 +300,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            {/* Years of Experience + Practicing Since */}
+            {/* Years of Experience + License Number */}
             <div className="col-12 col-sm-6">
               <input
                 type="number"
@@ -303,21 +315,21 @@ function SetUpAccountModal({ showModal, onClose }) {
             <div className="col-12 col-sm-6">
               <input
                 type="text"
-                placeholder="Practicing Since (e.g. 2011)"
-                value={formData.practicingSince}
-                onChange={(e) => handleInputChange("practicingSince", e.target.value)}
+                placeholder="License Number"
+                value={formData.licenseNumber}
+                onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
                 className="form-control"
                 style={{ borderRadius: "12px", height: "40px" }}
               />
             </div>
 
-            {/* PRC Number + License Number */}
+            {/* Practicing Since */}
             <div className="col-12 col-sm-6">
               <input
                 type="text"
-                placeholder="PRC License No. * (e.g. PSY-0123456)"
-                value={formData.prcNumber}
-                onChange={(e) => handleInputChange("prcNumber", e.target.value)}
+                placeholder="Practicing Since (e.g. 2011)"
+                value={formData.practicingSince}
+                onChange={(e) => handleInputChange("practicingSince", e.target.value)}
                 className="form-control"
                 style={{ borderRadius: "12px", height: "40px" }}
               />
@@ -332,6 +344,28 @@ function SetUpAccountModal({ showModal, onClose }) {
                 style={{ borderRadius: "12px", height: "40px" }}
               />
             </div>
+
+            {/* PRC Number */}
+            <div className="col-12">
+              <input
+                type="text"
+                placeholder="PRC License No. * (e.g. PSY-0123456)"
+                value={formData.prcNumber}
+                onChange={(e) => handleInputChange("prcNumber", e.target.value)}
+                className="form-control"
+                style={{ borderRadius: "12px", height: "40px" }}
+              />
+            </div>
+
+            {/* Main Specialty — tag list */}
+            <ListInput
+              label="Main Specialty"
+              value={formData.mainSpecialty}
+              onChange={(val) => handleInputChange("mainSpecialty", val)}
+              list={mainSpecialtyList}
+              add={() => addToList("mainSpecialty")}
+              remove={(i) => removeFromList("mainSpecialtyList", i)}
+            />
 
             {/* Tag Lists */}
             <ListInput
@@ -367,11 +401,22 @@ function SetUpAccountModal({ showModal, onClose }) {
               remove={(i) => removeFromList("servicesList", i)}
             />
 
-            {/* Certificate Image */}
-            <FileInput
+            {/* Certificate Images — multi-upload */}
+            <MultiFileInput
               label="Certificate Image"
-              file={formData.certificateImage}
-              onFileChange={(file) => handleFileChange("certificateImage", file)}
+              files={formData.certificateImages}
+              fieldKey="certImg"
+              onFileAdd={(file) => handleMultiFileAdd("certificateImages", file)}
+              onFileRemove={(i) => handleMultiFileRemove("certificateImages", i)}
+            />
+
+            {/* ID Pictures — multi-upload */}
+            <MultiFileInput
+              label="Upload ID Card Picture"
+              files={formData.idPictures}
+              fieldKey="idPic"
+              onFileAdd={(file) => handleMultiFileAdd("idPictures", file)}
+              onFileRemove={(i) => handleMultiFileRemove("idPictures", i)}
             />
 
           </div>
@@ -436,6 +481,109 @@ const FileInput = ({ label, file, onFileChange }) => {
           Browse
         </button>
       </div>
+    </div>
+  );
+};
+
+const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => {
+  const inputId = fieldKey + "MultiInput";
+
+  const handleChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      onFileAdd(file);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="col-12">
+      <div className="d-flex gap-2 align-items-center">
+        <div className="position-relative flex-grow-1">
+          <input
+            type="text"
+            placeholder={`Upload ${label}`}
+            readOnly
+            value={files.length > 0 ? `${files.length} file(s) selected` : ""}
+            className="form-control"
+            style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            id={inputId}
+            className="d-none"
+            onChange={handleChange}
+          />
+          <button
+            type="button"
+            className="btn position-absolute"
+            style={{
+              backgroundColor: "#C4B5D6", top: "0", right: "0",
+              height: "40px", borderRadius: "0 12px 12px 0",
+              border: "none", padding: "0 15px",
+            }}
+            onClick={() => document.getElementById(inputId).click()}
+          >
+            Browse
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
+          style={{
+            backgroundColor: "#4D227C",
+            width: "40px", height: "40px",
+            borderRadius: "12px",
+          }}
+          onClick={() => document.getElementById(inputId).click()}
+        >
+          <FiPlus size={18} />
+        </button>
+      </div>
+
+      {files.length > 0 && (
+        <div className="mt-2 d-flex flex-wrap gap-2">
+          {files.map((file, i) => (
+            <span
+              key={i}
+              className="badge d-inline-flex align-items-center gap-2"
+              style={{
+                backgroundColor: "#4D227C",
+                padding: "6px 12px",
+                fontSize: "0.85rem",
+                fontWeight: "400",
+                maxWidth: "220px",
+              }}
+            >
+              <span
+                style={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "160px",
+                }}
+                title={file.name}
+              >
+                {file.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => onFileRemove(i)}
+                style={{
+                  background: "none", border: "none", color: "white",
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  justifyContent: "center", padding: "0", lineHeight: "1", flexShrink: 0,
+                }}
+                aria-label="Remove"
+              >
+                <FiX size={14} strokeWidth={2} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

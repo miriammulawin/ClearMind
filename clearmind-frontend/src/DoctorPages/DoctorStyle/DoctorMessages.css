@@ -1,0 +1,227 @@
+.msg-wrapper {
+  display: flex;
+
+  background: #fff;
+  border-radius: 14px;
+  padding-bottom: 50px!important;
+  overflow: hidden;
+
+}
+
+
+.msg-left {
+  width: 30%;
+  border-right: 1px solid #eee;
+  padding: 0 30px 50px 0px;
+
+}
+
+.msg-filter {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.msg-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.msg-search input {
+  border: none;
+  outline: none;
+  flex: 1;
+}
+
+.msg-list {
+  overflow-y: auto;
+  
+}
+
+.msg-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.msg-item:hover {
+  background: #f4f1fb;
+}
+
+.msg-item.active {
+  background: #ede7f6;
+}
+
+.avatar {
+  background: #4e237c;
+  color: #fff;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.avatar.large {
+  width: 55px;
+  height: 55px;
+  font-size: 18px;
+}
+
+.msg-info h6 {
+  margin: 0;
+  font-size: 14px;
+  color: #4e237c;
+}
+
+.msg-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #777;
+}
+
+.msg-date {
+  margin-left: auto;
+  font-size: 11px;
+  color: #999;
+}
+
+
+.msg-right {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  height: 90vh;
+}
+
+.msg-header {
+  display: flex;
+  gap: 12px;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  align-items: center;
+}
+
+.msg-header h5{
+color:#4e237c;
+margin-top: 9px;;
+}
+
+.msg-header p {
+
+  font-size: 12px;
+  color: #777;
+}
+
+.msg-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.msg-day,
+.msg-time {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  margin: 10px 0;
+}
+
+.bubble {
+  max-width: 60%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.bubble.patient {
+  background: #d9d9d9c9;
+  color: rgba(0, 0, 0, 0.786);
+}
+
+.bubble.admin {
+  background: #4e237c;
+  color: #fff;
+  margin-left: auto;
+}
+
+.seen {
+  font-size: 10px;
+  text-align: right;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.msg-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #eee;
+}
+
+.msg-input input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.attach,
+.send {
+  font-size: 20px;
+  color: #4e237c;
+  cursor: pointer;
+}
+
+
+@media (max-width: 768px) {
+  .msg-left {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    z-index: 10;
+    transition: transform 0.3s ease;
+  }
+
+  .msg-wrapper:not(.show-list) .msg-left {
+    transform: translateX(-100%);
+  }
+
+  .msg-right {
+    width: 100%;
+  }
+
+  .bubble {
+    max-width: 80%;
+  }
+
+  .back-btn {
+    display: block;
+    margin-right: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #4e237c;
+  }
+}
+
+.back-btn {
+  display: none;
+}

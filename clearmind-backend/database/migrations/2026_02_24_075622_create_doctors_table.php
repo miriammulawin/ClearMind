@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('practicing_since')->nullable(); 
             $table->string('profile_picture')->nullable();
             $table->string('certificate_image')->nullable();
-
+            $table->json('main_specializations')->nullable();
             $table->json('specializations')->nullable();
             $table->json('sub_specializations')->nullable();
             $table->json('board_certificates')->nullable();

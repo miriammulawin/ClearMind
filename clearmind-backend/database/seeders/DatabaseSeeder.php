@@ -5,10 +5,9 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Client;
-use App\Models\Appointment; 
+use App\Models\Appointment;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,162 +15,199 @@ class DatabaseSeeder extends Seeder
     {
         $this->command->info('Starting database seeding...');
 
-        // ── 1. Admin ───────────────────────────────────────────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | SHARED DOCTOR DATA (Same For All Doctors)
+        |--------------------------------------------------------------------------
+        */
+
+        $sharedDoctorData = [
+            'main_specializations' => json_encode([
+                'Psychological First Aid',
+                'Psycho Education',
+                'Wellness & Stress Management',
+                'Workplace Mental Health',
+            ]),
+
+            'specializations' => json_encode([
+                'Anxiety Disorders',
+                'Depression',
+                'Trauma & PTSD',
+                'Cognitive Behavioral Therapy',
+            ]),
+
+            'sub_specializations' => json_encode([
+                'Panic Disorder',
+                'OCD',
+                'Grief Counseling',
+                'Stress Management',
+            ]),
+
+            'board_certificates' => json_encode([
+                'Diplomate in Clinical Psychology',
+                'Certified CBT Therapist',
+                'Registered Psychologist (RPsy)',
+            ]),
+
+            'services' => json_encode([
+                'Individual Therapy',
+                'Couples Therapy',
+                'Online/Video Counseling',
+                'Psychological Assessment',
+            ]),
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1. ADMIN
+        |--------------------------------------------------------------------------
+        */
+
         User::firstOrCreate(
             ['email' => 'admin@clearmind.com'],
             [
-                'first_name'   => 'Super',
-                'last_name'    => 'Admin',
-                'address'      => '123 Admin St, Control City',
-                'dob'          => '1990-01-01',
-                'sex'          => 'male',
-                'contact_no'   => '09000000000',
-                'password'     => Hash::make('admin123'),
-                'role'         => 'Admin',
+                'first_name' => 'Super',
+                'last_name'  => 'Admin',
+                'address'    => '123 Admin St, Control City',
+                'dob'        => '1990-01-01',
+                'sex'        => 'male',
+                'contact_no' => '09000000000',
+                'password'   => Hash::make('admin123'),
+                'role'       => 'Admin',
             ]
         );
 
         $this->command->info('Admin created/updated.');
 
-        // ── 2. Main Doctor (your primary test/login account) ──────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | 2. MAIN DOCTOR
+        |--------------------------------------------------------------------------
+        */
+
         $mainDoctorUser = User::firstOrCreate(
             ['email' => 'doctor@clearmind.com'],
             [
-                'first_name'   => 'Jane',
-                'last_name'    => 'Smith',
-                'dob'          => '1985-05-15',
-                'address'      => '456 Wellness Ave, Healthtown',
-                'sex'          => 'female',
-                'contact_no'   => '09111111111',
-                'password'     => Hash::make('doctor123'),
-                'role'         => 'Doctor',
+                'first_name' => 'Jane',
+                'last_name'  => 'Smith',
+                'dob'        => '1985-05-15',
+                'address'    => '456 Wellness Ave, Healthtown',
+                'sex'        => 'female',
+                'contact_no' => '09111111111',
+                'password'   => Hash::make('doctor123'),
+                'role'       => 'Doctor',
             ]
         );
 
         Doctor::updateOrCreate(
             ['user_id' => $mainDoctorUser->id],
-            [
-                'prc_number'           => 'PSY-0123456',
-                'professional_title'   => 'Clinical Psychologist',
-                'description'          => 'Experienced therapist specializing in anxiety, depression, and trauma.',
-                'years_of_experience'  => 12,
-                'license_number'       => 'PRC-1234567',
-                'practicing_since'     => '2013',
-                'specializations'      => json_encode([
-                    'Cognitive Behavioral Therapy',
-                    'Trauma-Focused Therapy',
-                    'Mindfulness-Based Therapy'
-                ]),
-                'sub_specializations'  => json_encode([
-                    'PTSD',
-                    'Panic Disorders',
-                    'Grief Counseling'
-                ]),
-                'board_certificates'   => json_encode([
-                    'Diplomate in Clinical Psychology (Philippine Board)',
-                    'Certified CBT Therapist'
-                ]),
-                'services'             => json_encode([
-                    'Individual Therapy',
-                    'Couples Counseling',
-                    'Online/Video Sessions',
-                    'Psychological Assessment'
-                ]),
-                'profile_picture'      => null,
-                'certificate_image'    => null,
-            ]
+            array_merge([
+                'prc_number'          => 'PSY-0123456',
+                'professional_title'  => 'Clinical Psychologist',
+                'description'         => 'Experienced therapist specializing in anxiety, depression, and trauma.',
+                'years_of_experience' => 12,
+                'license_number'      => 'PRC-1234567',
+                'practicing_since'    => '2013',
+                'profile_picture'     => null,
+                'certificate_image'   => null,
+            ], $sharedDoctorData)
         );
 
-        $this->command->info('Main doctor + profile created/updated.');
+        $this->command->info('Main doctor created/updated.');
 
-        // ── 3. 10 Additional Doctors ──────────────────────────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | 3. ADDITIONAL 10 DOCTORS (Same Specializations)
+        |--------------------------------------------------------------------------
+        */
+
         $additionalDoctors = [
-            ['first_name' => 'Maria',    'last_name' => 'Santos',     'sex' => 'female', 'dob' => '1980-03-12', 'contact_no' => '09171000001', 'email' => 'maria.santos@clearmind.com'],
-            ['first_name' => 'Juan',     'last_name' => 'dela Cruz',  'sex' => 'male',   'dob' => '1975-07-22', 'contact_no' => '09171000002', 'email' => 'juan.delacruz@clearmind.com'],
-            ['first_name' => 'Ana',      'last_name' => 'Reyes',      'sex' => 'female', 'dob' => '1988-11-05', 'contact_no' => '09171000003', 'email' => 'ana.reyes@clearmind.com'],
-            ['first_name' => 'Carlos',   'last_name' => 'Garcia',     'sex' => 'male',   'dob' => '1982-01-30', 'contact_no' => '09171000004', 'email' => 'carlos.garcia@clearmind.com'],
-            ['first_name' => 'Rosa',     'last_name' => 'Mendoza',    'sex' => 'female', 'dob' => '1990-06-18', 'contact_no' => '09171000005', 'email' => 'rosa.mendoza@clearmind.com'],
-            ['first_name' => 'Miguel',   'last_name' => 'Torres',     'sex' => 'male',   'dob' => '1978-09-25', 'contact_no' => '09171000006', 'email' => 'miguel.torres@clearmind.com'],
-            ['first_name' => 'Luz',      'last_name' => 'Bautista',   'sex' => 'female', 'dob' => '1983-04-14', 'contact_no' => '09171000007', 'email' => 'luz.bautista@clearmind.com'],
-            ['first_name' => 'Ramon',    'last_name' => 'Villanueva', 'sex' => 'male',   'dob' => '1986-12-02', 'contact_no' => '09171000008', 'email' => 'ramon.villanueva@clearmind.com'],
-            ['first_name' => 'Patricia', 'last_name' => 'Aquino',     'sex' => 'female', 'dob' => '1979-08-09', 'contact_no' => '09171000009', 'email' => 'patricia.aquino@clearmind.com'],
-            ['first_name' => 'Eduardo',  'last_name' => 'Castillo',   'sex' => 'male',   'dob' => '1991-02-27', 'contact_no' => '09171000010', 'email' => 'eduardo.castillo@clearmind.com'],
+            ['Maria','Santos','female','1980-03-12','09171000001','maria.santos@clearmind.com'],
+            ['Juan','Dela Cruz','male','1975-07-22','09171000002','juan.delacruz@clearmind.com'],
+            ['Ana','Reyes','female','1988-11-05','09171000003','ana.reyes@clearmind.com'],
+            ['Carlos','Garcia','male','1982-01-30','09171000004','carlos.garcia@clearmind.com'],
+            ['Rosa','Mendoza','female','1990-06-18','09171000005','rosa.mendoza@clearmind.com'],
+            ['Miguel','Torres','male','1978-09-25','09171000006','miguel.torres@clearmind.com'],
+            ['Luz','Bautista','female','1983-04-14','09171000007','luz.bautista@clearmind.com'],
+            ['Ramon','Villanueva','male','1986-12-02','09171000008','ramon.villanueva@clearmind.com'],
+            ['Patricia','Aquino','female','1979-08-09','09171000009','patricia.aquino@clearmind.com'],
+            ['Eduardo','Castillo','male','1991-02-27','09171000010','eduardo.castillo@clearmind.com'],
         ];
 
-        foreach ($additionalDoctors as $data) {
+        foreach ($additionalDoctors as $doc) {
+
             $user = User::firstOrCreate(
-                ['email' => $data['email']],
+                ['email' => $doc[5]],
                 [
-                    'first_name'   => $data['first_name'],
-                    'last_name'    => $data['last_name'],
-                    'dob'          => $data['dob'],
-                    'address'      => '123 Main St, Cityville', 
-                    'middle_initial' => strtoupper(substr($data['first_name'], 0, 1)),
-                    'sex'          => $data['sex'],
-                    'contact_no'   => $data['contact_no'],
-                    'password'     => Hash::make('doctor123'),
-                    'role'         => 'Doctor',
+                    'first_name' => $doc[0],
+                    'last_name'  => $doc[1],
+                    'dob'        => $doc[3],
+                    'address'    => '123 Main St, Cityville',
+                    'sex'        => $doc[2],
+                    'contact_no' => $doc[4],
+                    'password'   => Hash::make('doctor123'),
+                    'role'       => 'Doctor',
                 ]
             );
 
             Doctor::updateOrCreate(
                 ['user_id' => $user->id],
-                [
-                    'prc_number'           => 'PSY-' . fake()->unique()->numerify('#######'),
-                    'professional_title'   => fake()->randomElement([
-                        'Clinical Psychologist',
-                        'Psychiatrist',
-                        'Counseling Psychologist',
-                        'Behavioral Therapist',
-                        'Neuropsychologist',
-                    ]),
-                    'description'          => fake()->paragraphs(2, true),
-                    'years_of_experience'  => fake()->numberBetween(4, 28),
-                    'practicing_since'     => (date('Y') - fake()->numberBetween(4, 28)) . '',
-                    'specializations'      => json_encode(fake()->randomElements([
-                        'Anxiety Disorders', 'Depression', 'Trauma & PTSD',
-                        'Couples Therapy', 'Child Psychology', 'Addiction Counseling'
-                    ], fake()->numberBetween(2, 5))),
-                ]
+                array_merge([
+                    'prc_number'          => 'PSY-' . fake()->unique()->numerify('#######'),
+                    'professional_title'  => 'Clinical Psychologist',
+                    'description'         => fake()->paragraph(),
+                    'years_of_experience' => fake()->numberBetween(5, 20),
+                    'license_number'      => 'PRC-' . fake()->unique()->numerify('#########'),
+                    'practicing_since'    => (date('Y') - fake()->numberBetween(5, 20)),
+                    'profile_picture'     => null,
+                    'certificate_image'   => null,
+                ], $sharedDoctorData)
             );
         }
 
-        $this->command->info('10 additional doctors + profiles created/updated.');
+        $this->command->info('10 additional doctors created.');
 
-        // ──  500 Clients ───────────────────────────────────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | 4. 500 CLIENTS + APPOINTMENTS
+        |--------------------------------------------------------------------------
+        */
+
         User::factory()
             ->count(500)
-            ->client()                    
+            ->client()
             ->create()
             ->each(function ($user) {
-               $client =  Client::factory()->create([
-                    'user_id'            => $user->id,
+
+                $client = Client::factory()->create([
+                    'user_id' => $user->id,
                     'appointment_status' => fake()->randomElement([
-                        'Pending',
-                        'Scheduled',
-                        'Cancelled',
-                        'Completed'
+                        'Pending','Scheduled','Cancelled','Completed'
                     ]),
                 ]);
-        
 
-         // ── Give each client 1–3 appointments ──────────────────
-        $count = fake()->numberBetween(1, 3);
-        for ($i = 0; $i < $count; $i++) {
-            Appointment::factory()->create([
-                'client_id' => $client->id,
-            ]);
-        }
+                $appointmentsCount = fake()->numberBetween(1, 3);
+
+                for ($i = 0; $i < $appointmentsCount; $i++) {
+                    Appointment::factory()->create([
+                        'client_id' => $client->id,
+                    ]);
+                }
             });
 
-        $this->command->info('1000 clients + client profiles created.');
+        $this->command->info('500 clients + appointments created.');
 
-        // ── Final summary ─────────────────────────────────────────────────────────
+        /*
+        |--------------------------------------------------------------------------
+        | FINAL SUMMARY
+        |--------------------------------------------------------------------------
+        */
+
         $this->command->newLine();
         $this->command->info('Seeding completed successfully:');
-        $this->command->info('  → Admin:          1');
-        $this->command->info('  → Doctors:        11 (with profiles in doctors table)');
-        $this->command->info('  → Clients:      1000 (with profiles in clients table)');
+        $this->command->info('  → Admin:   1');
+        $this->command->info('  → Doctors: 11');
+        $this->command->info('  → Clients: 500');
         $this->command->newLine();
     }
 }

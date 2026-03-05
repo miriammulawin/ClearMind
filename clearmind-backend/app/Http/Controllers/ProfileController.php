@@ -32,6 +32,7 @@ public function show(Request $request)
             'prc_number'          => $doctor->prc_number,
             'practicing_since'    => $doctor->practicing_since,
             'specializations'     => $doctor->specializations     ?? [],
+            'main_specializations' => $doctor->main_specialization ?? [],
             'sub_specializations' => $doctor->sub_specializations ?? [],
             'board_certificates'  => $doctor->board_certificates  ?? [],
             'services'            => $doctor->services            ?? [],

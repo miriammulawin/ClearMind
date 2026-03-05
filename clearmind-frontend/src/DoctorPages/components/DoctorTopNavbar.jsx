@@ -4,12 +4,11 @@ import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "../axiosClient";
+import axios from "axios";
 
-import "../index.css";
-import "./DoctorStyle/NotificationModal.css";
+import "../../index.css";
+import "../DoctorStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
-import axiosClient from "../axiosClient";
 
 function DoctorTopNavbar({ activeMenu }) {
   const [showNotifications, setShowNotifications] = useState(false);
@@ -61,46 +60,47 @@ function DoctorTopNavbar({ activeMenu }) {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-const handleLogout = async () => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "You will be logged out.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, logout",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-      confirmButtonColor: "#a276d0",
-      cancelButtonColor: "#6c757d",
-    });
-
-    if (!result.isConfirmed) return;
-
+  const handleLogout = async () => {
     try {
-      // Call Laravel logout → revokes the Bearer token on the server
-      await axiosClient.post("/logout");
-    } catch (error) {
-      // Even if the API call fails, we still clear local storage
-      console.error("Logout API error:", error);
-    } finally {
-      // Always clear localStorage regardless of API result
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("user");
-
-      Swal.fire({
-        icon: "success",
-        title: "Logged out successfully!",
-        showConfirmButton: false,
-        timer: 1500,
-        toast: true,
-        position: "top-end",
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You will be logged out.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, logout",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
       });
 
-      setTimeout(() => navigate("/"), 1500);
+      if (result.isConfirmed) {
+        await axios.post(
+          "http://localhost/ClearMind/clearmind-backend/logout.php",
+          {},
+          { withCredentials: true },
+        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Logged out successfully!",
+          showConfirmButton: false,
+          timer: 1500,
+          toast: true,
+          position: "top-end",
+        });
+
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Logout failed",
+        text: "Please try again later.",
+      });
     }
   };
-
 
   const markAsRead = (id) => {
     setNotifications(
@@ -146,7 +146,7 @@ const handleLogout = async () => {
       <div className="top-navbar-right">
         <AiFillMessage
           className="top-icon"
-          onClick={() => navigate("/admin/messages")}
+          onClick={() => navigate("/doctor/messages")}
           style={{ cursor: "pointer" }}
         />
 

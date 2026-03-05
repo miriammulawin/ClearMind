@@ -4,65 +4,61 @@ namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Doctor>
- */
 class DoctorFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'prc_number'           => 'PSY-' . $this->faker->unique()->numerify('#######'),
-            'professional_title'   => $this->faker->randomElement([
-                'Clinical Psychologist',
-                'Psychiatrist',
-                'Counseling Psychologist',
-                'Therapist',
-                'Behavioral Therapist',
-                'Neuropsychologist',
+
+            'prc_number'          => 'PSY-' . $this->faker->unique()->numerify('#######'),
+
+            'professional_title'  => 'Clinical Psychologist',
+
+            'description'         => 'Experienced mental health professional specializing in therapy and psychological assessment.',
+
+            'years_of_experience' => 10,
+
+            'license_number'      => 'PRC-' . $this->faker->unique()->numerify('#########'),
+
+            'practicing_since'    => '2014',
+
+            //  SAME FOR ALL DOCTORS
+            'main_specializations' => json_encode([
+                'Psychological First Aid',
+                'Psycho Education',
+                'Wellness & Stress Management',
+                'Workplace Mental Health'
             ]),
-            'description'          => $this->faker->paragraphs(2, true),
-            'years_of_experience'  => $this->faker->numberBetween(3, 28),
-            'license_number'       => 'PRC-' . $this->faker->numerify('#########'),
-            'practicing_since'     => $this->faker->numberBetween(1995, date('Y') - 2),
-            'specializations'      => json_encode($this->faker->randomElements([
+
+            'specializations' => json_encode([
                 'Anxiety Disorders',
                 'Depression',
                 'Trauma & PTSD',
-                'Couples Therapy',
-                'Child & Adolescent',
-                'Cognitive Behavioral Therapy',
-                'Mindfulness-Based Therapy',
-                'Addiction Counseling',
-            ], $this->faker->numberBetween(2, 6))),
-            'sub_specializations'  => json_encode($this->faker->randomElements([
+                'Cognitive Behavioral Therapy'
+            ]),
+
+            'sub_specializations' => json_encode([
                 'Panic Disorder',
                 'OCD',
                 'Grief Counseling',
-                'Stress Management',
-                'Anger Management',
-            ], $this->faker->numberBetween(0, 4))),
-            'board_certificates'   => json_encode($this->faker->randomElements([
+                'Stress Management'
+            ]),
+
+            'board_certificates' => json_encode([
                 'Diplomate in Clinical Psychology',
                 'Certified CBT Therapist',
-                'Registered Psychologist (RPsy)',
-                'Certified Trauma Specialist',
-            ], $this->faker->numberBetween(1, 3))),
-            'services'             => json_encode($this->faker->randomElements([
+                'Registered Psychologist (RPsy)'
+            ]),
+
+            'services' => json_encode([
                 'Individual Therapy',
+                'Couples Therapy',
                 'Online/Video Counseling',
-                'Couples Session',
-                'Group Therapy',
-                'Psychological Assessment',
-                'Family Therapy',
-            ], $this->faker->numberBetween(2, 6))),
-            'profile_picture'      => null,
-            'certificate_image'    => null,
+                'Psychological Assessment'
+            ]),
+
+            'profile_picture'   => null,
+            'certificate_image' => null,
         ];
     }
 }

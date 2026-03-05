@@ -1,31 +1,26 @@
 import { useState, useEffect } from "react";
-import DoctorSideBar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorPatient.css";
-import { FiX } from "react-icons/fi";
+import PatientDetailsModal from "./components/PatientsDetailsModal";
 import axiosClient from "../axiosClient";
 
 function DoctorPatient() {
-  const [activeMenu, setActiveMenu]           = useState("");
+  const [activeMenu, setActiveMenu]           = useState("Patients");
   const [activeTab, setActiveTab]             = useState("patients");
   const [currentPage, setCurrentPage]         = useState(1);
   const [lastPage, setLastPage]               = useState(1);
   const [totalPatients, setTotalPatients]     = useState(0);
-  const [patientsData, setPatientsData]       = useState([]);
   const [loading, setLoading]                 = useState(false);
+  const [patientsData, setPatientsData]       = useState([]);
   const [showModal, setShowModal]             = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
 
-  useEffect(() => {
-    setActiveMenu("Patients");
-    fetchPatients(1);
-  }, []);
-
-  // ── Fetch from API ───────────────────────────────────────────────
+  // ── Fetch patients ───────────────────────────────────────────────
   const fetchPatients = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await axiosClient.get(`/doctor/dashboard?page=${page}`);
+      const res = await axiosClient.get(`/doctor/patients?page=${page}`);
       const { data, total, last_page, current_page } = res.data;
       setPatientsData(data);
       setTotalPatients(total);
@@ -38,65 +33,43 @@ function DoctorPatient() {
     }
   };
 
-  // ── Helpers ──────────────────────────────────────────────────────
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
-    try {
-      const parts = String(dateStr).split("T")[0].split("-");
-      if (parts.length !== 3) return "N/A";
-      const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      if (isNaN(date.getTime())) return "N/A";
-      return date.toLocaleDateString("en-US", {
-        month: "long", day: "numeric", year: "numeric",
-      });
-    } catch { return "N/A"; }
-  };
-
-  const capitalize = (str) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-
-  const getStatusClass = (status) => {
-    if (!status) return "";
-    switch (status.toLowerCase()) {
-      case "scheduled": return "scheduled";
-      case "cancelled": return "cancelled";
-      case "pending":   return "pending";
-      default:          return "";
-    }
-  };
-
-  const handleView = (patient) => {
-    setSelectedPatient(patient);
-    setShowModal(true);
-  };
+  useEffect(() => {
+    fetchPatients(1);
+  }, []);
 
   // ── Smart pagination ─────────────────────────────────────────────
   const getPageNumbers = () => {
     const pages = [];
     const delta = 2;
-
     if (lastPage <= 7) {
       for (let i = 1; i <= lastPage; i++) pages.push(i);
       return pages;
     }
-
     pages.push(1);
-
     if (currentPage > delta + 2) pages.push("...");
-
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(lastPage - 1, currentPage + delta);
       i++
-    ) {
-      pages.push(i);
-    }
-
+    ) { pages.push(i); }
     if (currentPage < lastPage - delta - 1) pages.push("...");
-
     pages.push(lastPage);
-
     return pages;
+  };
+
+  const handleView = (row) => {
+    setSelectedPatient(row);
+    setShowModal(true);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Scheduled": return "#1E3A8A";
+      case "Completed": return "#16A34A";
+      case "Cancelled": return "#DC2626";
+      case "Pending":   return "#B45309";
+      default:          return "#000";
+    }
   };
 
   return (
@@ -113,10 +86,7 @@ function DoctorPatient() {
             <div className="patient-tabs">
               <button
                 className={activeTab === "patients" ? "tab-active" : ""}
-                onClick={() => {
-                  setActiveTab("patients");
-                  fetchPatients(1);
-                }}
+                onClick={() => { setActiveTab("patients"); setCurrentPage(1); fetchPatients(1); }}
               >
                 Total's Patients <span>{totalPatients}</span>
               </button>
@@ -125,7 +95,7 @@ function DoctorPatient() {
             {/* TABLE */}
             <div className="patient-table-wrapper">
               {loading ? (
-                <p className="text-center py-3">Loading...</p>
+                <p className="text-center py-4">Loading...</p>
               ) : (
                 <table className="patient-table">
                   <thead>
@@ -141,35 +111,45 @@ function DoctorPatient() {
                     </tr>
                   </thead>
                   <tbody>
-                    {patientsData.map((row, index) => (
-                      <tr key={row.id}>
-                        <td>{(currentPage - 1) * 10 + index + 1}</td>
-                        <td>{row.first_name} {row.last_name}</td>
-                        <td>{capitalize(row.sex)}</td>
-                        <td>{formatDate(row.dob)}</td>
-                        <td>{row.contact_no}</td>
-                        <td>{row.email}</td>
-                        <td>
-                          <span className={`status ${getStatusClass(row.appointment_status)}`}>
-                            {row.appointment_status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className="btn-view"
-                            onClick={() => handleView(row)}
-                          >
-                            View
-                          </button>
+                    {patientsData.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "#888" }}>
+                          No patients found.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      patientsData.map((row, index) => (
+                        <tr key={row.id}>
+                          <td>{(currentPage - 1) * 10 + index + 1}</td>
+                          <td>{row.first_name} {row.last_name}</td>
+                          <td style={{ textTransform: "capitalize" }}>{row.sex ?? "—"}</td>
+                          <td>{row.dob ?? "—"}</td>
+                          <td>{row.contact_no}</td>
+                          <td>{row.email}</td>
+                          <td>
+                            <span
+                              style={{
+                                color: getStatusColor(row.appointment_status),
+                                fontWeight: "600",
+                              }}
+                            >
+                              {row.appointment_status}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn-view" onClick={() => handleView(row)}>
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               )}
             </div>
 
-            {/* ── Smart Pagination ── */}
+            {/* PAGINATION */}
             <div className="pagination">
               <button
                 disabled={currentPage === 1}
@@ -177,13 +157,9 @@ function DoctorPatient() {
               >
                 ‹ Previous
               </button>
-
               {getPageNumbers().map((n, i) =>
                 n === "..." ? (
-                  <span
-                    key={`dots-${i}`}
-                    style={{ padding: "0 6px", color: "#574a65", alignSelf: "center" }}
-                  >
+                  <span key={`dots-${i}`} style={{ padding: "0 6px", alignSelf: "center", color: "#574a65" }}>
                     ...
                   </span>
                 ) : (
@@ -196,7 +172,6 @@ function DoctorPatient() {
                   </button>
                 )
               )}
-
               <button
                 disabled={currentPage === lastPage}
                 onClick={() => fetchPatients(currentPage + 1)}
@@ -205,71 +180,17 @@ function DoctorPatient() {
               </button>
             </div>
 
-            <div className="page-info">
-              Page {currentPage} of {lastPage}
-            </div>
+            <div className="page-info">Page {currentPage} of {lastPage}</div>
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
-      {showModal && selectedPatient && (
-        <div
-          className="patient-modal-overlay"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="patient-modal-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h2>Patient Details</h2>
-              <div style={{ display: "flex", gap: "15px" }}>
-                <span className="modal-date">
-                  Joined {formatDate(selectedPatient.created_at)}
-                </span>
-                <button
-                  className="close-btn"
-                  onClick={() => setShowModal(false)}
-                >
-                  <FiX />
-                </button>
-              </div>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h4>Patient Information</h4>
-                <p>
-                  <strong>Name:</strong>{" "}
-                  {selectedPatient.first_name} {selectedPatient.last_name}
-                </p>
-                <p>
-                  <strong>Gender:</strong> {capitalize(selectedPatient.sex)}
-                </p>
-                <p>
-                  <strong>Date of Birth:</strong> {formatDate(selectedPatient.dob)}
-                </p>
-                <p>
-                  <strong>Contact:</strong> {selectedPatient.contact_no}
-                </p>
-                <p>
-                  <strong>Email:</strong> {selectedPatient.email}
-                </p>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className={`btn-completed ${getStatusClass(selectedPatient.appointment_status)}`}
-                disabled
-              >
-                {selectedPatient.appointment_status}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Patient Details Modal */}
+      <PatientDetailsModal
+        show={showModal}
+        onClose={() => { setShowModal(false); setSelectedPatient(null); }}
+        patient={selectedPatient}
+      />
     </div>
   );
 }

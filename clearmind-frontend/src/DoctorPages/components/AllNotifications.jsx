@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FiX, FiCheck, FiTrash2, FiFilter } from "react-icons/fi";
-import "./DoctorStyle/AllNotifications.css";
+import "../DoctorStyle/AllNotifications.css";
 
 function AllNotifications({ onClose, notifications, setNotifications }) {
   const [filter, setFilter] = useState("all"); 
