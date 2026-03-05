@@ -45,19 +45,6 @@ function PatientDropdown({ onSelect }) {
     ? `${selected.firstName} ${selected.mi}. ${selected.lastName}`
     : "";
 
-  const inputStyle = {
-    width: "100%",
-    padding: "9px 12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "13px",
-    outline: "none",
-    boxSizing: "border-box",
-    fontFamily: "inherit",
-    color: "#333",
-    backgroundColor: "#fff",
-  };
-
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
       <div
@@ -196,7 +183,11 @@ function PatientDropdown({ onSelect }) {
   );
 }
 
-/* ── Receipt Full-View Modal ── */
+/* ══════════════════════════════════════
+   Receipt Full-View Modal
+   — uses same className pattern as
+     Add Schedule modal for consistency
+══════════════════════════════════════ */
 function ReceiptModal({ src, onClose }) {
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -210,86 +201,54 @@ function ReceiptModal({ src, onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        backgroundColor: "rgba(10,5,20,0.88)",
+        backgroundColor: "rgba(0,0,0,0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: 999999,
-        padding: "24px",
-        backdropFilter: "blur(6px)",
-        animation: "fadeIn 0.2s ease",
+        padding: "20px",
+        overflowY: "auto",
       }}
     >
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes slideUp { from { transform: translateY(30px) scale(0.96); opacity: 0 } to { transform: translateY(0) scale(1); opacity: 1 } }
-      `}</style>
-
       <div
+        className="appointment-modal-lg"
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: "20px",
-          overflow: "hidden",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
-          maxWidth: "420px",
-          width: "100%",
-          animation: "slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          display: "flex",
-          flexDirection: "column",
-        }}
+        style={{ maxWidth: "480px", width: "100%" }}
       >
-        {/* Header */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #4D227C, #7B3FA8)",
-            padding: "16px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div>
-              <div style={{ color: "#fff", fontWeight: "700", fontSize: "15px" }}>Payment Receipt</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: "11px" }}>Tap outside or press ESC to close</div>
-            </div>
-          </div>
+        {/* Header — identical to Add Schedule modal */}
+        <div className="modal-header">
           <button
+            className="close-btn"
             onClick={onClose}
             style={{
-              background: "rgba(255,255,255,0.15)",
+              background: "transparent",
               border: "none",
-              borderRadius: "50%",
-              width: "34px",
-              height: "34px",
-              color: "#fff",
-              fontSize: "18px",
               cursor: "pointer",
+              fontSize: "20px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              backdropFilter: "blur(4px)",
-              transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.28)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
           >
             <FiX />
           </button>
         </div>
 
-        {/* Image */}
-        <div style={{ overflowY: "auto", maxHeight: "70vh" }}>
+        {/* Scrollable receipt image body */}
+        <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
           <img
             src={src}
             alt="Payment Receipt"
-            style={{ width: "100%", display: "block", objectFit: "contain" }}
+            style={{
+              width: "100%",
+              display: "block",
+              objectFit: "contain",
+            }}
             onError={(e) => {
               e.currentTarget.style.display = "none";
               e.currentTarget.nextSibling.style.display = "flex";
             }}
           />
+          {/* Fallback */}
           <div
             style={{
               display: "none",
@@ -302,36 +261,17 @@ function ReceiptModal({ src, onClose }) {
               color: "#4D227C",
             }}
           >
+            <span style={{ fontSize: "40px" }}>🧾</span>
             <span style={{ fontWeight: "600" }}>Receipt image not found</span>
-            <span style={{ fontSize: "12px", color: "#aaa" }}>Check assets/payment/images.png</span>
+            <span style={{ fontSize: "12px", color: "#aaa" }}>
+              Check assets/payment/images.png
+            </span>
           </div>
         </div>
 
-        {/* Footer */}
-        <div
-          style={{
-            padding: "14px 20px",
-            borderTop: "1px solid #f0eaf8",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            onClick={onClose}
-            style={{
-              padding: "8px 24px",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: "#4D227C",
-              color: "#fff",
-              fontWeight: "600",
-              fontSize: "13px",
-              cursor: "pointer",
-              transition: "background 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#3a1860")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4D227C")}
-          >
+        {/* Footer — identical to Add Schedule modal */}
+        <div className="modal-footer">
+          <button className="btn-add" onClick={onClose}>
             Close
           </button>
         </div>
@@ -340,7 +280,9 @@ function ReceiptModal({ src, onClose }) {
   );
 }
 
-/* ── Main Component ── */
+/* ══════════════════════════════════════
+   Main CreateAppointmentModal Component
+══════════════════════════════════════ */
 function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
   const [newEvent, setNewEvent] = useState({ title: "", date: "", startTime: "", endTime: "" });
   const [dob, setDob] = useState("");
@@ -441,6 +383,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
 
   return (
     <>
+      {/* ── Appointment Modal Backdrop ── */}
       <div
         style={{
           position: "fixed",
@@ -455,7 +398,8 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
         }}
       >
         <div className="appointment-modal-lg">
-          {/* Header */}
+
+          {/* ── Header ── */}
           <div className="modal-header">
             <h2>New Appointment</h2>
             <span className="modal-date">
@@ -466,7 +410,14 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             <button
               className="close-btn"
               onClick={onClose}
-              style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "20px", display: "flex", alignItems: "center" }}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "20px",
+                display: "flex",
+                alignItems: "center",
+              }}
             >
               <FiX />
             </button>
@@ -631,7 +582,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             <div className="modal-section">
               <h4>Payment Status</h4>
 
-              {/* Receipt Dropdown */}
+              {/* Receipt Dropdown Toggle */}
               <div style={{ marginBottom: "12px" }}>
                 <div
                   onClick={() => setShowReceiptDropdown((prev) => !prev)}
@@ -664,6 +615,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                   />
                 </div>
 
+                {/* Blurred Preview with View Full Button */}
                 {showReceiptDropdown && (
                   <div
                     style={{
@@ -726,7 +678,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                             e.currentTarget.style.transform = "scale(1)";
                           }}
                         >
-                           View Full Receipt
+                          View Full Receipt
                         </button>
                         <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "11px" }}>
                           Click to view in full size
@@ -749,6 +701,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             </div>
           </div>
 
+          {/* ── Footer ── */}
           <div className="modal-footer">
             <button className="btn-add" onClick={handleAdd}>
               Add Appointment
@@ -757,7 +710,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
         </div>
       </div>
 
-      {/* Receipt Full-View Modal */}
+      {/* ── Receipt Full-View Modal ── */}
       {showReceiptModal && (
         <ReceiptModal
           src={receiptImageSrc}
