@@ -4,7 +4,7 @@ import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorDashboard.css";
 import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
-import { FiEdit2, FiTrash2, FiX } from "react-icons/fi";
+import { FiX } from "react-icons/fi";
 import { BsMegaphone } from "react-icons/bs";
 import AccountSetupModal from "./components/SetUpAccountModal";
 
@@ -37,18 +37,10 @@ function DoctorDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
-  const [announcementTab, setAnnouncementTab] = useState("received");
   const [showSetupModal, setShowSetupModal] = useState(true);
-  const [announcementForm, setAnnouncementForm] = useState({
-    title: "",
-    message: "",
-    priority: "normal",
-  });
 
   // Announcements from Admin (read-only)
-  const [adminAnnouncements, setAdminAnnouncements] = useState([
+  const [adminAnnouncements] = useState([
     {
       id: 1,
       title: "TIME OUT",
@@ -74,18 +66,6 @@ function DoctorDashboard() {
     },
   ]);
 
-  // Announcements created by Doctor (editable)
-  const [doctorAnnouncements, setDoctorAnnouncements] = useState([
-    {
-      id: 1,
-      title: "Office Hours Update",
-      message:
-        "Please note that consultation hours for this week have been adjusted. Morning slots start at 9:00 AM.",
-      priority: "normal",
-      postedDate: "Feb 25, 2026",
-    },
-  ]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setToday(new Date());
@@ -94,10 +74,9 @@ function DoctorDashboard() {
   }, []);
 
   useEffect(() => {
-    // Set to start of current week (Monday)
     const startOfWeek = new Date(today);
     const day = startOfWeek.getDay();
-    const diff = day === 0 ? -6 : 1 - day; // Adjust to Monday
+    const diff = day === 0 ? -6 : 1 - day;
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     setCurrentWeekStart(startOfWeek);
   }, []);
@@ -106,9 +85,7 @@ function DoctorDashboard() {
     setShowSetupModal(true);
   }, []);
 
-  const closeModal = () => {
-    setShowSetupModal(false);
-  };
+  const closeModal = () => setShowSetupModal(false);
 
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "short",
@@ -167,95 +144,15 @@ function DoctorDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Scheduled":
-        return "#1E3A8A";
-      case "Completed":
-        return "#16A34A";
-      case "Cancelled":
-        return "#DC2626";
-      default:
-        return "#000";
+      case "Scheduled": return "#1E3A8A";
+      case "Completed": return "#16A34A";
+      case "Cancelled": return "#DC2626";
+      default: return "#000";
     }
-  };
-
-  const handleOpenAnnouncementModal = (announcement = null) => {
-    if (announcement) {
-      setEditingAnnouncement(announcement);
-      setAnnouncementForm({
-        title: announcement.title,
-        message: announcement.message,
-        priority: announcement.priority,
-      });
-    } else {
-      setEditingAnnouncement(null);
-      setAnnouncementForm({
-        title: "",
-        message: "",
-        priority: "normal",
-      });
-    }
-    setShowAnnouncementModal(true);
-  };
-
-  const handleCloseAnnouncementModal = () => {
-    setShowAnnouncementModal(false);
-    setEditingAnnouncement(null);
-    setAnnouncementForm({
-      title: "",
-      message: "",
-      priority: "normal",
-    });
-  };
-
-  const handleSubmitAnnouncement = () => {
-    if (editingAnnouncement) {
-      setDoctorAnnouncements(
-        doctorAnnouncements.map((a) =>
-          a.id === editingAnnouncement.id ? { ...a, ...announcementForm } : a,
-        ),
-      );
-    } else {
-      const newAnnouncement = {
-        id: doctorAnnouncements.length + 1,
-        ...announcementForm,
-        postedDate: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }),
-      };
-      setDoctorAnnouncements([newAnnouncement, ...doctorAnnouncements]);
-    }
-    handleCloseAnnouncementModal();
-  };
-
-  const handleDeleteAnnouncement = (id) => {
-    if (window.confirm("Are you sure you want to delete this announcement?")) {
-      setDoctorAnnouncements(doctorAnnouncements.filter((a) => a.id !== id));
-    }
-  };
-
-  const getCurrentAnnouncements = () => {
-    return announcementTab === "received"
-      ? adminAnnouncements
-      : doctorAnnouncements;
   };
 
   const barData = {
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ],
+    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
     datasets: [
       {
         label: "Monthly Patients",
@@ -276,28 +173,15 @@ function DoctorDashboard() {
         color: "#ffffff9c",
         anchor: "center",
         align: "center",
-        font: {
-          family: "Poppins, sans-serif",
-          size: 10,
-          weight: "100",
-        },
+        font: { family: "Poppins, sans-serif", size: 10, weight: "100" },
         formatter: (value) => value,
       },
     },
     scales: {
-      x: {
-        ticks: {
-          color: "#574a65",
-          font: { family: "Poppins, sans-serif", size: 12 },
-        },
-      },
+      x: { ticks: { color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
       y: {
         beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          color: "#574a65",
-          font: { family: "Poppins, sans-serif", size: 12 },
-        },
+        ticks: { stepSize: 1, color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } },
       },
     },
   };
@@ -342,34 +226,23 @@ function DoctorDashboard() {
       },
       datalabels: {
         color: "#ffffff",
-        font: {
-          family: "Poppins, sans-serif",
-          size: 14,
-          weight: "100",
-        },
+        font: { family: "Poppins, sans-serif", size: 14, weight: "100" },
       },
       tooltip: {
         bodyFont: { family: "Poppins, sans-serif" },
         titleFont: { family: "Poppins, sans-serif", weight: "900" },
-        callbacks: {
-          label: (context) => `${context.label}: ${context.raw}`,
-        },
+        callbacks: { label: (context) => `${context.label}: ${context.raw}` },
       },
     },
     layout: {
-      padding: {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: window.innerWidth < 768 ? 10 : 60,
-      },
+      padding: { top: 10, bottom: 10, left: 10, right: window.innerWidth < 768 ? 10 : 60 },
     },
     cutout: "0%",
   };
 
   return (
     <div className="doctor-layout">
-    <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
@@ -385,47 +258,15 @@ function DoctorDashboard() {
                       <BsMegaphone className="me-2" />
                       <h5>Announcements</h5>
                     </div>
-                    <button
-                      className="btn-create-announcement"
-                      onClick={() => handleOpenAnnouncementModal()}
-                    >
-                      Create Announcement
-                    </button>
-                  </div>
-
-                  {/* Announcement Tabs */}
-                  <div className="announcement-tabs">
-                    <button
-                      className={`announcement-tab ${announcementTab === "received" ? "active" : ""}`}
-                      onClick={() => setAnnouncementTab("received")}
-                    >
-                      Clinic Announcements
-                      {adminAnnouncements.length > 0 && (
-                        <span className="tab-badge">
-                          {adminAnnouncements.length}
-                        </span>
-                      )}
-                    </button>
-                    <button
-                      className={`announcement-tab ${announcementTab === "created" ? "active" : ""}`}
-                      onClick={() => setAnnouncementTab("created")}
-                    >
-                      My Announcements
-                      {doctorAnnouncements.length > 0 && (
-                        <span className="tab-badge">
-                          {doctorAnnouncements.length}
-                        </span>
-                      )}
-                    </button>
                   </div>
 
                   <div className="announcements-list">
-                    {getCurrentAnnouncements().length === 0 ? (
+                    {adminAnnouncements.length === 0 ? (
                       <div className="no-announcements">
                         <p>No announcements yet.</p>
                       </div>
                     ) : (
-                      getCurrentAnnouncements().map((announcement) => (
+                      adminAnnouncements.map((announcement) => (
                         <div
                           key={announcement.id}
                           className={`announcement-item ${announcement.priority === "urgent" ? "urgent" : ""}`}
@@ -446,60 +287,6 @@ function DoctorDashboard() {
                               Posted: {announcement.postedDate}
                             </small>
                           </div>
-                          {/* Show edit/delete only for doctor's own announcements */}
-                          {announcementTab === "created" && (
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "8px",
-                                marginLeft: "16px",
-                              }}
-                            >
-                              <button
-                                onClick={() =>
-                                  handleOpenAnnouncementModal(announcement)
-                                }
-                                title="Edit"
-                                style={{
-                                  border: "none",
-                                  width: "40px",
-                                  height: "40px",
-                                  borderRadius: "8px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  cursor: "pointer",
-                                  fontSize: "18px",
-                                  background: "#4d227c",
-                                  color: "#fff",
-                                }}
-                              >
-                                <FiEdit2 />
-                              </button>
-
-                              <button
-                                onClick={() =>
-                                  handleDeleteAnnouncement(announcement.id)
-                                }
-                                title="Delete"
-                                style={{
-                                  border: "none",
-                                  width: "40px",
-                                  height: "40px",
-                                  borderRadius: "8px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  cursor: "pointer",
-                                  fontSize: "18px",
-                                  background: "#dc2626",
-                                  color: "#fff",
-                                }}
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          )}
                         </div>
                       ))
                     )}
@@ -542,10 +329,7 @@ function DoctorDashboard() {
                   <div className="card-header">
                     <h5>Calendar</h5>
                     <div className="week-navigation">
-                      <button
-                        className="week-nav-btn"
-                        onClick={() => navigateWeek(-1)}
-                      >
+                      <button className="week-nav-btn" onClick={() => navigateWeek(-1)}>
                         <FaChevronLeft />
                       </button>
                       <span className="week-range">
@@ -554,10 +338,7 @@ function DoctorDashboard() {
                           year: "numeric",
                         })}
                       </span>
-                      <button
-                        className="week-nav-btn"
-                        onClick={() => navigateWeek(1)}
-                      >
+                      <button className="week-nav-btn" onClick={() => navigateWeek(1)}>
                         <FaChevronRight />
                       </button>
                     </div>
@@ -565,84 +346,31 @@ function DoctorDashboard() {
                   <hr />
                   <div className="card-body">
                     <div className="calendar-grid">
-                      {/* Day headers */}
                       <div className="calendar-header">
-                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(
-                          (day) => (
-                            <div key={day} className="calendar-day-label">
-                              {day}
-                            </div>
-                          ),
-                        )}
+                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                          <div key={day} className="calendar-day-label">{day}</div>
+                        ))}
                       </div>
-
-                      {/* Calendar dates */}
                       <div className="calendar-dates">
                         {(() => {
                           const dates = [];
-                          const firstDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(),
-                            1,
-                          );
-                          const lastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth() + 1,
-                            0,
-                          );
+                          const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                          const lastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
                           const startDay = firstDay.getDay();
                           const daysInMonth = lastDay.getDate();
-
-                          // Previous month's trailing days
-                          const prevMonthLastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(),
-                            0,
-                          ).getDate();
+                          const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--) {
-                            dates.push(
-                              <div
-                                key={`prev-${i}`}
-                                className="calendar-date other-month"
-                              >
-                                {prevMonthLastDay - i}
-                              </div>,
-                            );
+                            dates.push(<div key={`prev-${i}`} className="calendar-date other-month">{prevMonthLastDay - i}</div>);
                           }
-
-                          // Current month's days
                           for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(
-                              currentWeekStart.getFullYear(),
-                              currentWeekStart.getMonth(),
-                              day,
-                            );
-                            const todayCheck = isToday(date);
-
-                            dates.push(
-                              <div
-                                key={day}
-                                className={`calendar-date ${todayCheck ? "today" : ""}`}
-                              >
-                                {day}
-                              </div>,
-                            );
+                            const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
+                            dates.push(<div key={day} className={`calendar-date ${isToday(date) ? "today" : ""}`}>{day}</div>);
                           }
-
-                          // Next month's leading days
-                          const remainingCells = 42 - dates.length; // 6 rows × 7 days
+                          const remainingCells = 42 - dates.length;
                           for (let day = 1; day <= remainingCells; day++) {
-                            dates.push(
-                              <div
-                                key={`next-${day}`}
-                                className="calendar-date other-month"
-                              >
-                                {day}
-                              </div>,
-                            );
+                            dates.push(<div key={`next-${day}`} className="calendar-date other-month">{day}</div>);
                           }
-
                           return dates;
                         })()}
                       </div>
@@ -682,11 +410,7 @@ function DoctorDashboard() {
                             <td>{patient.date}</td>
                             <td>{patient.time}</td>
                             <td>{patient.type}</td>
-                            <td
-                              style={{ color: getStatusColor(patient.status) }}
-                            >
-                              {patient.status}
-                            </td>
+                            <td style={{ color: getStatusColor(patient.status) }}>{patient.status}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -696,9 +420,7 @@ function DoctorDashboard() {
                     <span>Page 1 of 5</span>
                     <div className="pagination-buttons">
                       <button>{"< Previous"}</button>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button key={n}>{n}</button>
-                      ))}
+                      {[1, 2, 3, 4, 5].map((n) => (<button key={n}>{n}</button>))}
                       <button>{"Next >"}</button>
                     </div>
                   </div>
@@ -717,7 +439,6 @@ function DoctorDashboard() {
                   </div>
                 </div>
               </div>
-
               <div className="col-md-6">
                 <div className="dashboard-card">
                   <h5>Appointment Status</h5>
@@ -730,110 +451,6 @@ function DoctorDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Announcement Modal */}
-      {showAnnouncementModal && (
-        <div className="announcement-modal-overlay">
-          <div className="announcement-modal">
-            <div className="modal-header-announcement">
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              >
-                <h2>Create Announcement</h2>
-                {editingAnnouncement &&
-                  editingAnnouncement.priority === "urgent" && (
-                    <span
-                      style={{
-                        background: "#DC2626",
-                        color: "#fff",
-                        fontSize: "11px",
-                        fontWeight: "700",
-                        padding: "4px 10px",
-                        borderRadius: "4px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      URGENT
-                    </span>
-                  )}
-              </div>
-              <button
-                className="close-btn-announcement"
-                onClick={handleCloseAnnouncementModal}
-              >
-                <FiX />
-              </button>
-            </div>
-
-            <div className="modal-body-announcement">
-              <div className="form-group-announcement">
-                <p>Title:</p>
-                <input
-                  type="text"
-                  className="form-input-announcement"
-                  placeholder="Enter announcement title"
-                  value={announcementForm.title}
-                  onChange={(e) =>
-                    setAnnouncementForm({
-                      ...announcementForm,
-                      title: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group-announcement">
-                <p>Message:</p>
-                <textarea
-                  className="form-textarea-announcement"
-                  placeholder="Enter announcement message"
-                  rows="4"
-                  value={announcementForm.message}
-                  onChange={(e) =>
-                    setAnnouncementForm({
-                      ...announcementForm,
-                      message: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="form-group-announcement">
-                <p>Priority:</p>
-                <select
-                  className="form-select-announcement"
-                  value={announcementForm.priority}
-                  onChange={(e) =>
-                    setAnnouncementForm({
-                      ...announcementForm,
-                      priority: e.target.value,
-                    })
-                  }
-                >
-                  <option value="normal">Normal</option>
-                  <option value="urgent">Urgent / High Priority</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="modal-footer-announcement">
-              <button
-                className="btn-cancel-announcement"
-                onClick={handleCloseAnnouncementModal}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-post-announcement"
-                onClick={handleSubmitAnnouncement}
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <AccountSetupModal showModal={showSetupModal} onClose={closeModal} />
     </div>

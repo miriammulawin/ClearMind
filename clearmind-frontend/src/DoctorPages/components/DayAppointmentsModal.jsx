@@ -3,9 +3,14 @@ import { format } from "date-fns";
 import { FiX } from "react-icons/fi";
 
 function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
+  const [viewMoreAppointment, setViewMoreAppointment] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleTime, setRescheduleTime] = useState("");
+  const [rescheduleReason, setRescheduleReason] = useState("");
+  const [showReschedule, setShowReschedule] = useState(false);
+
   if (!isOpen || !selectedDate) return null;
 
-  // Filter events for the selected date
   const dayAppointments = events.filter((event) => {
     const eventDate = new Date(event.start);
     const selectedDateObj = new Date(selectedDate);
@@ -16,14 +21,12 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
     );
   });
 
-  // Format time helper
   const formatTime = (date) => {
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
     return `${hours}:${minutes}`;
   };
 
-  // Convert 24hr to 12hr format
   const format12Hour = (timeStr) => {
     if (!timeStr) return "";
     const [hours, minutes] = timeStr.split(":");
@@ -33,15 +36,308 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
+  const handleViewMore = (appointment) => {
+    setViewMoreAppointment(appointment);
+    setShowReschedule(false);
+    setRescheduleDate("");
+    setRescheduleTime("");
+    setRescheduleReason("");
+  };
+
+  const handleCloseViewMore = () => {
+    setViewMoreAppointment(null);
+    setShowReschedule(false);
+  };
+
+  const modalHeader = (title, dateLabel, onCloseHandler) => (
+    <div
+      style={{
+        backgroundColor: "#4D227C",
+        padding: "20px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderRadius: "16px 16px 0 0",
+        flexShrink: 0,
+      }}
+    >
+      <h3 style={{ margin: 0, fontSize: "20px", fontWeight: "700", color: "#fff" }}>
+        {title}
+      </h3>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div
+          style={{
+            backgroundColor: "#fff",
+            color: "#4D227C",
+            padding: "6px 16px",
+            borderRadius: "20px",
+            fontSize: "13px",
+            fontWeight: "600",
+          }}
+        >
+          {dateLabel}
+        </div>
+        <button
+          onClick={onCloseHandler}
+          style={{
+            backgroundColor: "#fff",
+            border: "none",
+            borderRadius: "50%",
+            width: "32px",
+            height: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "#4D227C",
+            fontSize: "18px",
+            padding: 0,
+          }}
+        >
+          <FiX />
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── View More Detail Modal ──────────────────────────────────────────────
+  if (viewMoreAppointment) {
+    const appt = viewMoreAppointment;
+    const startTime = format12Hour(formatTime(appt.start));
+    const endTime = format12Hour(formatTime(appt.end));
+    const isOnline = appt.title?.toLowerCase().includes("online");
+    const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
+    const patientName = appt.patientName || "Liezel Paciente";
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10001,
+          padding: "20px",
+        }}
+        onClick={handleCloseViewMore}
+      >
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
+            maxWidth: "620px",
+            width: "100%",
+            maxHeight: "90vh",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {modalHeader(
+            `${startTime} ${clinicType}`,
+            format(new Date(selectedDate), "MM/dd/yyyy"),
+            handleCloseViewMore
+          )}
+
+          <div style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
+            {/* Appointment info card */}
+            <div
+              style={{
+                border: "1px solid #e0e0e0",
+                borderRadius: "12px",
+                overflow: "hidden",
+                marginBottom: "20px",
+              }}
+            >
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #e0e0e0" }}>
+                <span style={{ fontSize: "15px", fontWeight: "700", color: "#4D227C" }}>
+                  Appointment Information
+                </span>
+              </div>
+
+              <div style={{ padding: "16px 20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                  {/* Left: details */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1 }}>
+                    {[
+                      { label: "Name", value: patientName },
+                      { label: "Visit Type", value: appt.visitType || "New Concern" },
+                      { label: "Status", value: appt.status || "Scheduled" },
+                      { label: "Reason for Consultation", value: appt.reason || "Not specified" },
+                      { label: "Appointment Date & Time", value: `${format(new Date(selectedDate), "MMMM dd, yyyy")} | ${startTime} – ${endTime}` },
+                    ].map(({ label, value }) => (
+                      <div key={label} style={{ display: "flex", gap: "8px", fontSize: "14px" }}>
+                        <span style={{ fontWeight: "700", color: "#4D227C", minWidth: "190px" }}>
+                          {label}:
+                        </span>
+                        <span style={{ color: "#333" }}>{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Right: payment */}
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "14px" }}>
+                    <span style={{ fontWeight: "700", color: "#4D227C" }}>Payment:</span>
+                    <span
+                      style={{
+                        backgroundColor: "#e8f5e9",
+                        color: "#2e7d32",
+                        padding: "2px 12px",
+                        borderRadius: "12px",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                      }}
+                    >
+                      {appt.payment || "Paid"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div
+                style={{
+                  padding: "12px 20px",
+                  display: "flex",
+                  gap: "10px",
+                  borderTop: "1px solid #f0f0f0",
+                }}
+              >
+                <button
+                  onClick={() => setShowReschedule((v) => !v)}
+                  style={{
+                    padding: "8px 20px",
+                    backgroundColor: "#4D227C",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = "#3a1a5c")}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = "#4D227C")}
+                >
+                  Reschedule
+                </button>
+                <button
+                  style={{
+                    padding: "8px 20px",
+                    backgroundColor: "#16a34a",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.target.style.backgroundColor = "#15803d")}
+                  onMouseLeave={(e) => (e.target.style.backgroundColor = "#16a34a")}
+                >
+                  Completed
+                </button>
+              </div>
+            </div>
+
+            {/* Reschedule section */}
+            {showReschedule && (
+              <div
+                style={{
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ padding: "14px 20px", borderBottom: "1px solid #e0e0e0" }}>
+                  <span style={{ fontSize: "15px", fontWeight: "700", color: "#4D227C" }}>
+                    Reschedule Appointment
+                  </span>
+                </div>
+                <div
+                  style={{
+                    padding: "16px 20px",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    alignItems: "flex-end",
+                  }}
+                >
+                  {[
+                    {
+                      label: "Reschedule Date:",
+                      type: "date",
+                      value: rescheduleDate,
+                      onChange: setRescheduleDate,
+                      placeholder: "mm/dd/yyyy",
+                    },
+                    {
+                      label: "Reschedule Time:",
+                      type: "time",
+                      value: rescheduleTime,
+                      onChange: setRescheduleTime,
+                      placeholder: "Choose new time",
+                    },
+                    {
+                      label: "Reason for Reschedule:",
+                      type: "text",
+                      value: rescheduleReason,
+                      onChange: setRescheduleReason,
+                      placeholder: "",
+                    },
+                  ].map(({ label, type, value, onChange, placeholder }) => (
+                    <div key={label} style={{ display: "flex", flexDirection: "column", gap: "4px", flex: "1 1 140px" }}>
+                      <label style={{ fontSize: "12px", fontWeight: "600", color: "#4D227C" }}>{label}</label>
+                      <input
+                        type={type}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={placeholder}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          border: "1px solid #d0d0d0",
+                          fontSize: "13px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  ))}
+                  <button
+                    style={{
+                      padding: "8px 20px",
+                      backgroundColor: "#4D227C",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      alignSelf: "flex-end",
+                    }}
+                    onMouseEnter={(e) => (e.target.style.backgroundColor = "#3a1a5c")}
+                    onMouseLeave={(e) => (e.target.style.backgroundColor = "#4D227C")}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main List Modal ─────────────────────────────────────────────────────
   return (
     <div
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -50,245 +346,94 @@ function DayAppointmentsModal({ isOpen, onClose, selectedDate, events }) {
       }}
       onClick={onClose}
     >
-      {/* Modal Container */}
       <div
         style={{
           backgroundColor: "#fff",
-          borderRadius: "12px",
-          boxShadow: "0 12px 48px rgba(77, 34, 124, 0.2)",
+          borderRadius: "16px",
+          boxShadow: "0 12px 48px rgba(0,0,0,0.2)",
           maxWidth: "600px",
           width: "100%",
           maxHeight: "85vh",
-          overflow: "auto",
-          animation: "slideUp 0.3s ease",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <style>{`
-          @keyframes slideUp {
-            from {
-              transform: translateY(20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
-        `}</style>
+        {modalHeader(
+          "Appointments",
+          format(new Date(selectedDate), "MMMM dd, yyyy"),
+          onClose
+        )}
 
-        {/* Header */}
-        <div
-          style={{
-            padding: "24px 24px 20px 24px",
-            borderBottom: "1px solid #e0d4f5",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <div>
-            <h3
-              style={{
-                margin: "0 0 8px 0",
-                fontSize: "18px",
-                fontWeight: "700",
-                color: "#333",
-              }}
-            >
-              {format(new Date(selectedDate), "EEEE")} Appointments
-            </h3>
-            <div
-              style={{
-                display: "inline-block",
-                backgroundColor: "#e8e0f5",
-                color: "#4D227C",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "12px",
-                fontWeight: "600",
-              }}
-            >
-              {format(new Date(selectedDate), "MM/dd/yyyy")}
-            </div>
-          </div>
-
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "24px",
-              cursor: "pointer",
-              color: "#aaa",
-              padding: "0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.target.style.color = "#333")}
-            onMouseLeave={(e) => (e.target.style.color = "#aaa")}
-          >
-            <FiX />
-          </button>
-        </div>
-
-        {/* Content */}
-        <div style={{ padding: "20px 24px" }}>
+        <div style={{ padding: "24px", overflowY: "auto", flex: 1 }}>
           {dayAppointments.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 20px",
-                color: "#aaa",
-              }}
-            >
-              <p style={{ fontSize: "14px", margin: "0 0 8px 0" }}>
-                No appointments scheduled for this day
-              </p>
-              <p
-                style={{
-                  fontSize: "12px",
-                  margin: 0,
-                  color: "#ccc",
-                }}
-              >
-                Click "Create Appointment" to add one
-              </p>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#aaa" }}>
+              <p style={{ fontSize: "14px", margin: 0 }}>No appointments scheduled for this day</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {dayAppointments.map((appointment, index) => {
-                const startTime = format12Hour(
-                  formatTime(appointment.start)
-                );
+                const startTime = format12Hour(formatTime(appointment.start));
                 const endTime = format12Hour(formatTime(appointment.end));
-
-                // Determine clinic type from title
-                const isOnline = appointment.title
-                  .toLowerCase()
-                  .includes("online");
+                const isOnline = appointment.title?.toLowerCase().includes("online");
                 const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
-                const clinicColor = isOnline ? "#7A92D1" : "#8B4545";
+                const patientName = appointment.patientName || "Liezel Paciente";
 
                 return (
                   <div
                     key={index}
-                    style={{
-                      padding: "16px",
-                      borderRadius: "10px",
-                      border: "1px solid #e0d4f5",
-                      backgroundColor: "#f9f7ff",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f3ecfc";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 16px rgba(77, 34, 124, 0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f9f7ff";
-                      e.currentTarget.style.boxShadow = "none";
-                    }}
+                    style={{ border: "1px solid #e0e0e0", borderRadius: "12px", overflow: "hidden" }}
                   >
-                    {/* Time */}
+                    <div style={{ padding: "14px 20px", borderBottom: "1px solid #e0e0e0" }}>
+                      <span style={{ fontSize: "15px", fontWeight: "700", color: "#4D227C" }}>
+                        Appointment Information
+                      </span>
+                    </div>
+
+                    <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {[
+                        { label: "Name", value: patientName },
+                        { label: "Date of Appointment", value: format(new Date(selectedDate), "MMMM dd, yyyy") },
+                        { label: "Time", value: `${startTime} - ${endTime}` },
+                        { label: "Clinic Type", value: clinicType },
+                        { label: "Reason of Consultation", value: appointment.reason || "Not specified" },
+                      ].map(({ label, value }) => (
+                        <div key={label} style={{ display: "flex", gap: "8px", fontSize: "14px" }}>
+                          <span style={{ fontWeight: "700", color: "#4D227C", minWidth: "180px" }}>
+                            {label}:
+                          </span>
+                          <span style={{ color: "#333" }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+
                     <div
                       style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#333",
-                        marginBottom: "8px",
+                        padding: "12px 20px",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        borderTop: "1px solid #f0f0f0",
                       }}
                     >
-                      {startTime} {clinicType}
+                      <button
+                        onClick={() => handleViewMore(appointment)}
+                        style={{
+                          padding: "10px 28px",
+                          backgroundColor: "#4D227C",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                        }}
+                        onMouseEnter={(e) => (e.target.style.backgroundColor = "#3a1a5c")}
+                        onMouseLeave={(e) => (e.target.style.backgroundColor = "#4D227C")}
+                      >
+                        View More
+                      </button>
                     </div>
-
-                    {/* Appointment Details */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {/* Name */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "13px",
-                          color: "#666",
-                        }}
-                      >
-                        <span style={{ fontWeight: "600", minWidth: "80px" }}>
-                          Name:
-                        </span>
-                        <span>Unset Patient</span>
-                      </div>
-
-                      {/* Date of Appointment */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "13px",
-                          color: "#666",
-                        }}
-                      >
-                        <span style={{ fontWeight: "600", minWidth: "80px" }}>
-                          Date of Appointment:
-                        </span>
-                        <span>{format(new Date(selectedDate), "MMMM dd, yyyy")}</span>
-                      </div>
-
-                      {/* Time Duration */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "13px",
-                          color: "#666",
-                        }}
-                      >
-                        <span style={{ fontWeight: "600", minWidth: "80px" }}>
-                          Time:
-                        </span>
-                        <span>
-                          {startTime} - {endTime}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* View More Button */}
-                    <button
-                      style={{
-                        marginTop: "12px",
-                        padding: "8px 16px",
-                        backgroundColor: "#4D227C",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = "#3a1a5c";
-                        e.target.style.transform = "scale(1.02)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = "#4D227C";
-                        e.target.style.transform = "scale(1)";
-                      }}
-                    >
-                      VIEW MORE
-                    </button>
                   </div>
                 );
               })}
