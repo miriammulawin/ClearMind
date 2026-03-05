@@ -1,7 +1,4 @@
-/* ScheduleForm.module.css
-   Styles scoped to ScheduleForm (Step 1) only.
-   Shares the same purple theme as SetAppointmentForm.
-*/
+/* ScheduleForm.module.css */
 
 /* ─────────────────────────────────────────
    SECTION WRAPPER
@@ -25,8 +22,6 @@
 /* ─────────────────────────────────────────
    CONSULTATION MODE
 ───────────────────────────────────────── */
-
-/* Single mode — just a small info pill */
 .singleModeInfo {
   display: inline-flex;
   align-items: center;
@@ -44,7 +39,6 @@
   font-size: clamp(0.85rem, 2.2vw, 1rem);
 }
 
-/* Both modes — compact horizontal toggle */
 .modeToggleRow {
   display: inline-flex;
   border: 1.5px solid #c4aee8;
@@ -87,105 +81,237 @@
 }
 
 /* ─────────────────────────────────────────
-   DATE GRID
+   CALENDAR
 ───────────────────────────────────────── */
-.datesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.4rem, 1.5vw, 0.65rem);
+.calendar {
+  background: white;
+  border: 1.5px solid #e2d9f3;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(91, 44, 145, 0.07);
 }
 
-.dateCard {
+/* Purple header */
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(0.6rem, 2.5vw, 0.85rem) clamp(0.75rem, 3vw, 1.1rem);
+  background: #5B2C91;
+}
+
+.calMonthLabel {
+  font-size: clamp(0.85rem, 2.5vw, 0.98rem);
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+.calNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(28px, 7vw, 34px);
+  height: clamp(28px, 7vw, 34px);
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  cursor: pointer;
+  transition: background 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.calNavBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.calNavBtn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+/* Day-of-week row */
+.calDayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f5f0fc;
+  padding: clamp(0.28rem, 1.2vw, 0.42rem) clamp(0.4rem, 1.5vw, 0.6rem);
+}
+
+.calDayLabel {
+  text-align: center;
+  font-size: clamp(0.6rem, 1.8vw, 0.7rem);
+  font-weight: 700;
+  color: #9b8ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Day grid */
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: clamp(2px, 0.6vw, 4px);
+  padding: clamp(0.4rem, 1.8vw, 0.65rem) clamp(0.4rem, 1.5vw, 0.6rem);
+}
+
+.calDay {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
-  background: white;
-  border: 1.5px solid #e2d9f3;
-  border-radius: clamp(8px, 2vw, 12px);
-  padding: clamp(0.5rem, 1.8vw, 0.8rem) clamp(0.3rem, 1.5vw, 0.5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: clamp(0.7rem, 2.2vw, 0.84rem);
+  font-weight: 500;
+  color: #3d2b5e;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+  line-height: 1;
+  gap: 2px;
 }
 
-.dateCard:hover {
-  border-color: #5B2C91;
-  background: #f3eeff;
+/* Past / disabled */
+.calDayPast {
+  color: #d1c4e9;
+  cursor: not-allowed;
 }
 
-.dateCardSelected {
-  background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
-  color: white;
-  box-shadow: 0 2px 10px rgba(91, 44, 145, 0.25);
-}
-
-.dateDay {
-  font-size: clamp(0.62rem, 1.8vw, 0.72rem);
+/* Today ring */
+.calDayToday {
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: #9b8ab0;
 }
 
-.dateCardSelected .dateDay { color: rgba(255,255,255,0.8); }
-
-.dateNum {
-  font-size: clamp(0.75rem, 2.2vw, 0.88rem);
+/* Has slots */
+.calDayAvailable {
   font-weight: 600;
   color: #3d2b5e;
 }
 
-.dateCardSelected .dateNum { color: white; }
+.calDayAvailable:hover {
+  background: #ede8f7;
+  transform: scale(1.1);
+}
+
+/* Selected */
+.calDaySelected {
+  background: #5B2C91 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 3px 10px rgba(91, 44, 145, 0.35);
+  transform: scale(1.1);
+}
+
+
 
 /* ─────────────────────────────────────────
-   TIME SLOTS GRID — compact 3-col pills
+   TIME DROPDOWN
 ───────────────────────────────────────── */
-.timeSlotsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(0.35rem, 1.2vw, 0.55rem);
+.timeDropdownWrapper {
+  position: relative;
+  width: 100%;
 }
 
-.timeSlot {
+.timeDropdownTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   background: white;
   border: 1.5px solid #e2d9f3;
-  border-radius: clamp(6px, 1.5vw, 8px);
-  padding: clamp(0.4rem, 1.2vw, 0.6rem) clamp(0.25rem, 1vw, 0.4rem);
-  text-align: center;
+  border-radius: clamp(8px, 2vw, 10px);
+  padding: clamp(0.55rem, 1.8vw, 0.75rem) clamp(0.75rem, 2.5vw, 1rem);
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+  font-weight: 500;
+  color: #9b8ab0;
   cursor: pointer;
-  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
-  font-weight: 600;
-  color: #4b5563;
   font-family: inherit;
   transition: all 0.2s ease;
-  white-space: nowrap;
 }
 
-.timeSlot:hover:not(.timeSlotDisabled) {
+.timeDropdownTrigger:hover {
   border-color: #5B2C91;
+  background: #faf8ff;
+}
+
+.timeDropdownTriggerSelected {
+  color: #3d2b5e;
+  border-color: #c4aee8;
+  font-weight: 600;
+}
+
+.timeDropdownIcon {
+  font-size: 1.25rem;
+  color: #9b8ab0;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.timeDropdownIconOpen {
+  transform: rotate(180deg);
+}
+
+.timeDropdownList {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(8px, 2vw, 10px);
+  box-shadow: 0 6px 20px rgba(91, 44, 145, 0.12);
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.timeDropdownList::-webkit-scrollbar { width: 4px; }
+.timeDropdownList::-webkit-scrollbar-track { background: #f3eeff; border-radius: 4px; }
+.timeDropdownList::-webkit-scrollbar-thumb { background: #c4aee8; border-radius: 4px; }
+
+.timeDropdownItem {
+  padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.9rem);
+  font-size: clamp(0.75rem, 2.2vw, 0.85rem);
+  font-weight: 500;
+  color: #4b5563;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.timeDropdownItem:hover {
   background: #f3eeff;
   color: #5B2C91;
 }
 
-.timeSlotSelected {
+.timeDropdownItemSelected {
   background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
   color: white !important;
-  box-shadow: 0 2px 8px rgba(91, 44, 145, 0.25);
+  font-weight: 600;
 }
 
-.timeSlotDisabled {
-  background: #f9f7fe;
-  border-color: #ede8f7;
-  color: #c4b8d9;
-  cursor: not-allowed;
-  opacity: 0.5;
+.timeDropdownEmpty {
+  padding: clamp(0.5rem, 1.5vw, 0.7rem) clamp(0.65rem, 2vw, 0.9rem);
+  font-size: clamp(0.72rem, 2vw, 0.82rem);
+  color: #9b8ab0;
+  font-style: italic;
+  text-align: center;
 }
 
-/* "· 1 hour session" note beside section title */
 .sessionNote {
   font-size: clamp(0.65rem, 1.6vw, 0.72rem);
   color: #9b8ab0;
@@ -193,7 +319,6 @@
   font-style: italic;
 }
 
-/* Selected time range display e.g. "Session: 4:30 PM – 5:30 PM" */
 .selectedTimeRange {
   margin-top: clamp(0.4rem, 1.5vw, 0.6rem);
   font-size: clamp(0.72rem, 2vw, 0.82rem);
@@ -206,7 +331,7 @@
 }
 
 /* ─────────────────────────────────────────
-   BOOKING SUMMARY CARD
+   BOOKING SUMMARY
 ───────────────────────────────────────── */
 .summaryCard {
   background: white;
@@ -225,7 +350,6 @@
   letter-spacing: 0.4px;
 }
 
-/* 2-column label / value grid */
 .summaryGrid {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -265,14 +389,36 @@
 }
 
 /* ─────────────────────────────────────────
-   RESPONSIVE OVERRIDES
+   RESPONSIVE
 ───────────────────────────────────────── */
-@media (min-width: 768px) {
-  .datesGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+@media (max-width: 360px) {
+  .calDayLabel { font-size: 0.56rem; }
+  .calDay      { font-size: 0.66rem; }
+}
 
-  .timeSlotsGrid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+/* ─────────────────────────────────────────
+   CALENDAR — unavailable future dates
+───────────────────────────────────────── */
+
+/* Future dates that exist in the month but have no slots */
+.calDayUnavailable {
+  color: #d1c4e9;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ─────────────────────────────────────────
+   SAME-DAY ALERT
+───────────────────────────────────────── */
+.sameDayAlert {
+  margin-top: 0.65rem !important;
+  font-size: clamp(0.75rem, 2vw, 0.84rem) !important;
+  border-radius: 10px !important;
+  padding: 0.65rem 0.9rem !important;
+}
+
+.sameDayAlert h6 {
+  font-size: clamp(0.78rem, 2.2vw, 0.88rem) !important;
+  font-weight: 700 !important;
+  margin-bottom: 0.2rem !important;
 }

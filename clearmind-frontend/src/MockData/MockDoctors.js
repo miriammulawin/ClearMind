@@ -3,12 +3,125 @@
 // HOW SLOTS WORK:
 // - Each slot = one 30-minute block
 // - available: true  → this 30-min block is FREE (unoccupied)
-// - available: true → this 30-min block is TAKEN/BLOCKED
+// - available: false → this 30-min block is TAKEN/BLOCKED
 //
 // A user can BOOK a 1-hour session starting at slot X only if:
 //   slot[X].available === true  AND  slot[X+1].available === true
-// (both consecutive 30-min blocks must be free)
+//
+// Availability is generated dynamically based on the current date.
+// Each doctor shows their next 4 upcoming days that match their schedule.
 
+// ─── Helper: get next N dates matching given day names ────────────────────────
+const getUpcomingDates = (dayNames, count = 4) => {
+  const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const results = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let cursor = new Date(today);
+  cursor.setDate(cursor.getDate() + 1); // start from tomorrow
+
+  while (results.length < count) {
+    const dayName = DAY_NAMES[cursor.getDay()];
+    if (dayNames.includes(dayName)) {
+      results.push({
+        date: cursor.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        day: dayName,
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return results;
+};
+
+// ─── Helper: build availability array from day configs ────────────────────────
+// dayConfigs: [{ days: [...], slots: [...] }, ...]
+const buildAvailability = (dayConfigs, count = 12) => {
+  const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const allDays = dayConfigs.flatMap(c => c.days);
+  const results = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let cursor = new Date(today);
+  cursor.setDate(cursor.getDate() + 1);
+
+  while (results.length < count) {
+    const dayName = DAY_NAMES[cursor.getDay()];
+    if (allDays.includes(dayName)) {
+      const config = dayConfigs.find(c => c.days.includes(dayName));
+      results.push({
+        date: cursor.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        day: dayName,
+        slots: config.slots.map(s => ({ ...s })),
+      });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return results;
+};
+
+// ─── Slot templates ───────────────────────────────────────────────────────────
+const SLOTS_4PM_7PM = [
+  { time: "4:00 PM", available: true },
+  { time: "4:30 PM", available: true },
+  { time: "5:00 PM", available: true },
+  { time: "5:30 PM", available: true },
+  { time: "6:00 PM", available: true },
+  { time: "6:30 PM", available: true },
+];
+
+const SLOTS_10AM_4PM = [
+  { time: "10:00 AM", available: true },
+  { time: "10:30 AM", available: true },
+  { time: "11:00 AM", available: true },
+  { time: "11:30 AM", available: true },
+  { time: "12:00 PM", available: true },
+  { time: "12:30 PM", available: true },
+  { time: "1:00 PM",  available: true },
+  { time: "1:30 PM",  available: true },
+  { time: "2:00 PM",  available: true },
+  { time: "2:30 PM",  available: true },
+  { time: "3:00 PM",  available: true },
+  { time: "3:30 PM",  available: true },
+];
+
+const SLOTS_1PM_7PM = [
+  { time: "1:00 PM", available: true },
+  { time: "1:30 PM", available: true },
+  { time: "2:00 PM", available: true },
+  { time: "2:30 PM", available: true },
+  { time: "3:00 PM", available: true },
+  { time: "3:30 PM", available: true },
+  { time: "4:00 PM", available: true },
+  { time: "4:30 PM", available: true },
+  { time: "5:00 PM", available: true },
+  { time: "5:30 PM", available: true },
+  { time: "6:00 PM", available: true },
+  { time: "6:30 PM", available: true },
+];
+
+const SLOTS_6PM_9PM = [
+  { time: "6:00 PM", available: true },
+  { time: "6:30 PM", available: true },
+  { time: "7:00 PM", available: true },
+  { time: "7:30 PM", available: true },
+  { time: "8:00 PM", available: true },
+  { time: "8:30 PM", available: true },
+];
+
+const SLOTS_3_30PM_7_30PM = [
+  { time: "3:30 PM", available: true },
+  { time: "4:00 PM", available: true },
+  { time: "4:30 PM", available: true },
+  { time: "5:00 PM", available: true },
+  { time: "5:30 PM", available: true },
+  { time: "6:00 PM", available: true },
+  { time: "6:30 PM", available: true },
+  { time: "7:00 PM", available: true },
+];
+
+// ─── Doctor definitions ───────────────────────────────────────────────────────
 export const MOCK_DOCTORS = [
   {
     id: 1,
@@ -16,64 +129,19 @@ export const MOCK_DOCTORS = [
     title: "Psychologist",
     credentials: "RPsy, RPm, CHRA, CSPE",
     avatar: null,
-    consultationType: "Online Clinic",
-    consultationMode: "Online",
+    consultationType: "Virtual Clinic",
+    consultationMode: "Virtual",
+    virtualDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    onSiteDays: [],
     schedule: {
       days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      time: "4:00 PM - 7:00 PM"
+      time: "4:00 PM - 7:00 PM",
     },
-    // 4:00 PM - 7:00 PM → slots: 4:00, 4:30, 5:00, 5:30, 6:00, 6:30
-    // Bookable starts: any slot where this AND next are both free
-    availability: [
-      {
-        date: "February 13, 2026",
-        day: "Thursday",
-        slots: [
-          { time: "4:00 PM", available: true  }, // 4:00-4:30 free
-          { time: "4:30 PM", available: true  }, 
-          { time: "5:00 PM", available: true }, // 5:00-5:30 taken
-          { time: "5:30 PM", available: true  }, // 5:30-6:00 free
-          { time: "6:00 PM", available: true  }, 
-          { time: "6:30 PM", available: true  },
-        ]
-      },
-      {
-        date: "February 14, 2026",
-        day: "Friday",
-        slots: [
-          { time: "4:00 PM", available: true  },
-          { time: "4:30 PM", available: true  },
-          { time: "5:00 PM", available: true  },
-          { time: "5:30 PM", available: true  },
-          { time: "6:00 PM", available: true  },
-          { time: "6:30 PM", available: true  },
-        ]
-      },
-      {
-        date: "February 17, 2026",
-        day: "Monday",
-        slots: [
-          { time: "4:00 PM", available: true },
-          { time: "4:30 PM", available: true  },
-          { time: "5:00 PM", available: true  },
-          { time: "5:30 PM", available: true  },
-          { time: "6:00 PM", available: true  },
-          { time: "6:30 PM", available: true  },
-        ]
-      },
-      {
-        date: "February 18, 2026",
-        day: "Tuesday",
-        slots: [
-          { time: "4:00 PM", available: true  },
-          { time: "4:30 PM", available: true  },
-          { time: "5:00 PM", available: true },
-          { time: "5:30 PM", available: true  },
-          { time: "6:00 PM", available: true  },
-          { time: "6:30 PM", available: true  },
-        ]
-      }
-    ]
+    get availability() {
+      return buildAvailability([
+        { days: ["Monday","Tuesday","Wednesday","Thursday","Friday"], slots: SLOTS_4PM_7PM },
+      ], 12);
+    },
   },
   {
     id: 2,
@@ -81,69 +149,19 @@ export const MOCK_DOCTORS = [
     title: "Psychologist",
     credentials: "PhD, RPsy, RPm, CHRA, CSPE",
     avatar: null,
-    consultationType: "Clinic - CMPS",
+    consultationType: "On-Site Clinic (CMPS)",
     consultationMode: "Onsite",
+    onSiteDays: ["Monday", "Tuesday", "Friday"],
+    virtualDays: [],
     schedule: {
       days: ["Monday", "Tuesday", "Friday"],
-      time: "10:00 AM - 4:00 PM"
+      time: "10:00 AM - 4:00 PM",
     },
-    // slots: 10:00, 10:30, 11:00, 11:30, 12:00, 12:30, 1:00, 1:30, 2:00, 2:30, 3:00, 3:30
-    availability: [
-      {
-        date: "February 14, 2026",
-        day: "Friday",
-        slots: [
-          { time: "10:00 AM", available: true  },
-          { time: "10:30 AM", available: true  },
-          { time: "11:00 AM", available: true  },
-          { time: "11:30 AM", available: true },
-          { time: "12:00 PM", available: true  },
-          { time: "12:30 PM", available: true  },
-          { time: "1:00 PM",  available: true  },
-          { time: "1:30 PM",  available: true },
-          { time: "2:00 PM",  available: true  },
-          { time: "2:30 PM",  available: true  },
-          { time: "3:00 PM",  available: true  },
-          { time: "3:30 PM",  available: true  },
-        ]
-      },
-      {
-        date: "February 17, 2026",
-        day: "Monday",
-        slots: [
-          { time: "10:00 AM", available: true },
-          { time: "10:30 AM", available: true  },
-          { time: "11:00 AM", available: true  },
-          { time: "11:30 AM", available: true  },
-          { time: "12:00 PM", available: true  },
-          { time: "12:30 PM", available: true  },
-          { time: "1:00 PM",  available: true },
-          { time: "1:30 PM",  available: true  },
-          { time: "2:00 PM",  available: true  },
-          { time: "2:30 PM",  available: true  },
-          { time: "3:00 PM",  available: true },
-          { time: "3:30 PM",  available: true  },
-        ]
-      },
-      {
-        date: "February 18, 2026",
-        day: "Tuesday",
-        slots: [
-          { time: "10:00 AM", available: true  },
-          { time: "10:30 AM", available: true  },
-          { time: "11:00 AM", available: true  },
-          { time: "11:30 AM", available: true  },
-          { time: "12:00 PM", available: true },
-          { time: "12:30 PM", available: true  },
-          { time: "1:00 PM",  available: true  },
-          { time: "1:30 PM",  available: true  },
-          { time: "2:00 PM",  available: true  },
-          { time: "2:30 PM",  available: true  },
-          { time: "3:00 PM",  available: true  },
-          { time: "3:30 PM",  available: true  },
-        ]
-      }
-    ]
+    get availability() {
+      return buildAvailability([
+        { days: ["Monday","Tuesday","Friday"], slots: SLOTS_10AM_4PM },
+      ], 12);
+    },
   },
   {
     id: 3,
@@ -151,51 +169,20 @@ export const MOCK_DOCTORS = [
     title: "Psychologist",
     credentials: "PhD, RPsy, RPm, CHRA, CSPE",
     avatar: null,
-    consultationType: "Clinic - CMPS",
-    consultationMode: "Onsite",
+    consultationType: "On-Site Clinic (CMPS) & Virtual",
+    consultationMode: "Both",
+    onSiteDays: ["Thursday"],
+    virtualDays: ["Tuesday"],
     schedule: {
-      days: ["Thursday"],
-      time: "1:00 PM - 7:00 PM"
+      days: ["Thursday", "Tuesday"],
+      time: "1:00 PM - 7:00 PM (On-Site Thu) · 6:00 PM - 9:00 PM (Virtual Tue)",
     },
-    // slots: 1:00, 1:30, 2:00, 2:30, 3:00, 3:30, 4:00, 4:30, 5:00, 5:30, 6:00, 6:30
-    availability: [
-      {
-        date: "February 13, 2026",
-        day: "Thursday",
-        slots: [
-          { time: "1:00 PM",  available: true  },
-          { time: "1:30 PM",  available: true  },
-          { time: "2:00 PM",  available: true  },
-          { time: "2:30 PM",  available: true },
-          { time: "3:00 PM",  available: true  },
-          { time: "3:30 PM",  available: true  },
-          { time: "4:00 PM",  available: true  },
-          { time: "4:30 PM",  available: true  },
-          { time: "5:00 PM",  available: true },
-          { time: "5:30 PM",  available: true  },
-          { time: "6:00 PM",  available: true  },
-          { time: "6:30 PM",  available: true  },
-        ]
-      },
-      {
-        date: "February 20, 2026",
-        day: "Thursday",
-        slots: [
-          { time: "1:00 PM",  available: true },
-          { time: "1:30 PM",  available: true  },
-          { time: "2:00 PM",  available: true  },
-          { time: "2:30 PM",  available: true  },
-          { time: "3:00 PM",  available: true  },
-          { time: "3:30 PM",  available: true },
-          { time: "4:00 PM",  available: true  },
-          { time: "4:30 PM",  available: true  },
-          { time: "5:00 PM",  available: true  },
-          { time: "5:30 PM",  available: true  },
-          { time: "6:00 PM",  available: true },
-          { time: "6:30 PM",  available: true  },
-        ]
-      }
-    ]
+    get availability() {
+      return buildAvailability([
+        { days: ["Thursday"], slots: SLOTS_1PM_7PM },
+        { days: ["Tuesday"],  slots: SLOTS_6PM_9PM },
+      ], 12);
+    },
   },
   {
     id: 4,
@@ -203,49 +190,25 @@ export const MOCK_DOCTORS = [
     title: "Psychologist",
     credentials: "PhD, RPsy, RPm, CHRA, CSPE",
     avatar: null,
-    consultationType: "Clinic - CMPS",
+    consultationType: "On-Site Clinic (CMPS)",
     consultationMode: "Onsite",
+    onSiteDays: ["Saturday"],
+    virtualDays: [],
     schedule: {
       days: ["Saturday"],
-      time: "3:30 PM - 7:30 PM"
+      time: "3:30 PM - 7:30 PM",
     },
-    // slots: 3:30, 4:00, 4:30, 5:00, 5:30, 6:00, 6:30, 7:00
-    availability: [
-      {
-        date: "February 15, 2026",
-        day: "Saturday",
-        slots: [
-          { time: "3:30 PM", available: true  },
-          { time: "4:00 PM", available: true  },
-          { time: "4:30 PM", available: true },
-          { time: "5:00 PM", available: true  },
-          { time: "5:30 PM", available: true  },
-          { time: "6:00 PM", available: true  },
-          { time: "6:30 PM", available: true  },
-          { time: "7:00 PM", available: true  },
-        ]
-      },
-      {
-        date: "February 22, 2026",
-        day: "Saturday",
-        slots: [
-          { time: "3:30 PM", available: true },
-          { time: "4:00 PM", available: true  },
-          { time: "4:30 PM", available: true  },
-          { time: "5:00 PM", available: true  },
-          { time: "5:30 PM", available: true },
-          { time: "6:00 PM", available: true  },
-          { time: "6:30 PM", available: true  },
-          { time: "7:00 PM", available: true  },
-        ]
-      }
-    ]
-  }
+    get availability() {
+      return buildAvailability([
+        { days: ["Saturday"], slots: SLOTS_3_30PM_7_30PM },
+      ], 12);
+    },
+  },
 ];
 
 export const CONSULTATION_FEES = {
   initial: 2500,
-  followUp: 2500
+  followUp: 2500,
 };
 
 export const getDoctorById = (id) => {
