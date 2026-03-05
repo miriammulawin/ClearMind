@@ -65,7 +65,13 @@ function PatientDropdown({ onSelect }) {
           transition: "border 0.2s",
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           {displayName || "Select Patient Name"}
         </span>
         <FiChevronDown
@@ -122,7 +128,14 @@ function PatientDropdown({ onSelect }) {
 
           <div style={{ maxHeight: "200px", overflowY: "auto" }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: "14px 16px", color: "#aaa", fontSize: "13px", textAlign: "center" }}>
+              <div
+                style={{
+                  padding: "14px 16px",
+                  color: "#aaa",
+                  fontSize: "13px",
+                  textAlign: "center",
+                }}
+              >
                 No patients found
               </div>
             ) : (
@@ -144,8 +157,14 @@ function PatientDropdown({ onSelect }) {
                       alignItems: "center",
                       gap: "10px",
                     }}
-                    onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "#faf7ff"; }}
-                    onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = "transparent"; }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "#faf7ff";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     <div
                       style={{
@@ -162,7 +181,8 @@ function PatientDropdown({ onSelect }) {
                         flexShrink: 0,
                       }}
                     >
-                      {p.firstName[0]}{p.lastName[0]}
+                      {p.firstName[0]}
+                      {p.lastName[0]}
                     </div>
                     <div>
                       <div style={{ lineHeight: 1.3 }}>
@@ -170,7 +190,15 @@ function PatientDropdown({ onSelect }) {
                       </div>
                     </div>
                     {isActive && (
-                      <span style={{ marginLeft: "auto", color: "#4D227C", fontSize: "16px" }}>✓</span>
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          color: "#4D227C",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ✓
+                      </span>
                     )}
                   </div>
                 );
@@ -190,7 +218,9 @@ function PatientDropdown({ onSelect }) {
 ══════════════════════════════════════ */
 function ReceiptModal({ src, onClose }) {
   useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -284,7 +314,12 @@ function ReceiptModal({ src, onClose }) {
    Main CreateAppointmentModal Component
 ══════════════════════════════════════ */
 function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
-  const [newEvent, setNewEvent] = useState({ title: "", date: "", startTime: "", endTime: "" });
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+  });
   const [dob, setDob] = useState("");
   const [showReceiptDropdown, setShowReceiptDropdown] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -302,7 +337,12 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
   })();
 
   const handleAdd = () => {
-    if (!newEvent.title || !newEvent.date || !newEvent.startTime || !newEvent.endTime) {
+    if (
+      !newEvent.title ||
+      !newEvent.date ||
+      !newEvent.startTime ||
+      !newEvent.endTime
+    ) {
       alert("Please complete all fields");
       return;
     }
@@ -340,7 +380,11 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
     margin: "0 0 8px 0",
   };
 
-  const radioGroupStyle = { display: "flex", flexDirection: "column", gap: "6px" };
+  const radioGroupStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  };
 
   const radioLabelStyle = {
     display: "flex",
@@ -387,7 +431,10 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
       <div
         style={{
           position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           backgroundColor: "rgba(0,0,0,0.5)",
           display: "flex",
           alignItems: "center",
@@ -398,7 +445,6 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
         }}
       >
         <div className="appointment-modal-lg">
-
           {/* ── Header ── */}
           <div className="modal-header">
             <h2>New Appointment</h2>
@@ -424,21 +470,32 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
           </div>
 
           <div className="modal-body">
-
             {/* ── PATIENT INFORMATION ── */}
             <div className="modal-section">
               <h4>Patient Information</h4>
 
               <div style={{ marginBottom: "8px" }}>
-                <input style={inputStyle} placeholder="Reason for Consultation" />
+                <input
+                  style={inputStyle}
+                  placeholder="Reason for Consultation"
+                />
               </div>
 
               <div style={{ marginBottom: "8px" }}>
-                <PatientDropdown onSelect={(patient) => console.log("Selected:", patient)} />
+                <PatientDropdown
+                  onSelect={(patient) => console.log("Selected:", patient)}
+                />
               </div>
 
               {/* DOB | Age */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "8px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
                 <input
                   style={inputStyle}
                   type="date"
@@ -460,7 +517,14 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
               </div>
 
               {/* Sex | Contact | Civil Status */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "8px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
                 <select style={selectStyle}>
                   <option value="">Select Sex</option>
                   <option value="male">Male</option>
@@ -480,9 +544,22 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
               </div>
 
               {/* Informant | Relation */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "8px", marginBottom: "8px" }}>
-                <input style={inputStyle} placeholder="Full Name of Informant (if not the client)" />
-                <input style={inputStyle} placeholder="Relation to the Patient" />
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
+                <input
+                  style={inputStyle}
+                  placeholder="Full Name of Informant (if not the client)"
+                />
+                <input
+                  style={inputStyle}
+                  placeholder="Relation to the Patient"
+                />
               </div>
 
               {/* Address */}
@@ -491,29 +568,72 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
               </div>
 
               {/* Radio groups */}
+              {/* Radio groups */}
               <div style={{ display: "flex", gap: "48px" }}>
-                <div>
+                <div class="mt-2">
                   <p style={sectionLabelStyle}>Patient Type</p>
-                  <div style={radioGroupStyle}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: "20px",
+                    }}
+                  >
                     <label style={radioLabelStyle}>
-                      <input type="radio" name="ptype" value="existing" style={radioInputStyle} /> Existing Patient
+                      <input
+                        type="radio"
+                        name="ptype"
+                        value="existing"
+                        style={radioInputStyle}
+                      />{" "}
+                      Existing Patient
                     </label>
                     <label style={radioLabelStyle}>
-                      <input type="radio" name="ptype" value="new" style={radioInputStyle} /> New Patient
+                      <input
+                        type="radio"
+                        name="ptype"
+                        value="new"
+                        style={radioInputStyle}
+                      />{" "}
+                      New Patient
                     </label>
                   </div>
                 </div>
-                <div>
+                <div class="mt-2">
                   <p style={sectionLabelStyle}>Patient Classification</p>
-                  <div style={radioGroupStyle}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: "20px",
+                    }}
+                  >
                     <label style={radioLabelStyle}>
-                      <input type="radio" name="class" value="pwd" style={radioInputStyle} /> PWD
+                      <input
+                        type="radio"
+                        name="class"
+                        value="pwd"
+                        style={radioInputStyle}
+                      />{" "}
+                      PWD
                     </label>
                     <label style={radioLabelStyle}>
-                      <input type="radio" name="class" value="senior" style={radioInputStyle} /> Senior Citizen
+                      <input
+                        type="radio"
+                        name="class"
+                        value="senior"
+                        style={radioInputStyle}
+                      />{" "}
+                      Senior Citizen
                     </label>
                     <label style={radioLabelStyle}>
-                      <input type="radio" name="class" value="regular" style={radioInputStyle} /> Regular
+                      <input
+                        type="radio"
+                        name="class"
+                        value="regular"
+                        style={radioInputStyle}
+                      />{" "}
+                      Regular
                     </label>
                   </div>
                 </div>
@@ -523,14 +643,23 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             {/* ── CONSULTATION SCHEDULE ── */}
             <div className="modal-section">
               <h4>Consultation Schedule</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "12px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "8px",
+                  marginBottom: "12px",
+                }}
+              >
                 <LabeledInput label="Date">
                   <input
                     style={inputStyle}
                     type="date"
                     value={newEvent.date}
                     min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, date: e.target.value })
+                    }
                   />
                 </LabeledInput>
                 <LabeledInput label="Start Time">
@@ -542,7 +671,9 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                       const startTime = e.target.value;
                       let endTime = "";
                       if (startTime) {
-                        const [hours, minutes] = startTime.split(":").map(Number);
+                        const [hours, minutes] = startTime
+                          .split(":")
+                          .map(Number);
                         const endHour = (hours + 1) % 24;
                         endTime = `${String(endHour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
                       }
@@ -569,10 +700,22 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                 <p style={sectionLabelStyle}>Consultation Mode</p>
                 <div style={{ display: "flex", gap: "24px" }}>
                   <label style={radioLabelStyle}>
-                    <input type="radio" name="visit" value="schedule" style={radioInputStyle} /> Onsite Consultation
+                    <input
+                      type="radio"
+                      name="visit"
+                      value="schedule"
+                      style={radioInputStyle}
+                    />{" "}
+                    Onsite Consultation
                   </label>
                   <label style={radioLabelStyle}>
-                    <input type="radio" name="visit" value="virtual" style={radioInputStyle} /> Virtual Consultation
+                    <input
+                      type="radio"
+                      name="visit"
+                      value="virtual"
+                      style={radioInputStyle}
+                    />{" "}
+                    Virtual Consultation
                   </label>
                 </div>
               </div>
@@ -592,7 +735,9 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                     justifyContent: "space-between",
                     padding: "9px 12px",
                     borderRadius: "8px",
-                    border: showReceiptDropdown ? "1.5px solid #4D227C" : "1px solid #ddd",
+                    border: showReceiptDropdown
+                      ? "1.5px solid #4D227C"
+                      : "1px solid #ddd",
                     fontSize: "13px",
                     backgroundColor: "#fff",
                     cursor: "pointer",
@@ -603,13 +748,21 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                     transition: "border 0.2s, color 0.2s",
                   }}
                 >
-                  <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
                     View Payment Receipt
                   </span>
                   <FiChevronDown
                     style={{
                       color: "#4D227C",
-                      transform: showReceiptDropdown ? "rotate(180deg)" : "rotate(0deg)",
+                      transform: showReceiptDropdown
+                        ? "rotate(180deg)"
+                        : "rotate(0deg)",
                       transition: "transform 0.2s",
                     }}
                   />
@@ -627,7 +780,13 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                       backgroundColor: "#faf7ff",
                     }}
                   >
-                    <div style={{ position: "relative", maxHeight: "160px", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        position: "relative",
+                        maxHeight: "160px",
+                        overflow: "hidden",
+                      }}
+                    >
                       <img
                         src={receiptImageSrc}
                         alt="Receipt Preview"
@@ -639,7 +798,9 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                           filter: "blur(1.5px) brightness(0.7)",
                           transform: "scale(1.03)",
                         }}
-                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                       <div
                         style={{
@@ -674,13 +835,19 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                             e.currentTarget.style.transform = "scale(1.05)";
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "rgba(77,34,124,0.85)";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(77,34,124,0.85)";
                             e.currentTarget.style.transform = "scale(1)";
                           }}
                         >
                           View Full Receipt
                         </button>
-                        <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "11px" }}>
+                        <span
+                          style={{
+                            color: "rgba(255,255,255,0.75)",
+                            fontSize: "11px",
+                          }}
+                        >
                           Click to view in full size
                         </span>
                       </div>
