@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-import DoctorSideBar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
+import DayAppointmentsModal from "./components/DayAppointmentsModal";
+import CreateAppointmentModal from "./components/CreateAppointmentModal";
+import AddScheduleModal from "./components/AddScheduleModal";
 import "./DoctorStyle/DoctorAppointment.css";
-import { FiX, FiPlus, FiTrash2 } from "react-icons/fi";
 
 const locales = { "en-US": enUS };
 
@@ -19,22 +21,14 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
-
 function DoctorAppointment() {
   const [activeMenu, setActiveMenu] = useState("Appointment");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState("month");
   const [showModal, setShowModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showDayModal, setShowDayModal] = useState(false);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
 
   const [events, setEvents] = useState([
     {
@@ -57,106 +51,26 @@ function DoctorAppointment() {
     },
   ]);
 
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-  });
-
-  const [weeklySchedule, setWeeklySchedule] = useState({
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: [],
-  });
-
-  const [selectedDay, setSelectedDay] = useState("Monday");
-
-  const handleAddEvent = () => {
-    if (
-      !newEvent.title ||
-      !newEvent.date ||
-      !newEvent.startTime ||
-      !newEvent.endTime
-    ) {
-      alert("Please complete all fields");
-      return;
-    }
-
-    const start = new Date(`${newEvent.date}T${newEvent.startTime}`);
-    const end = new Date(`${newEvent.date}T${newEvent.endTime}`);
-
-    setEvents([
-      ...events,
-      { title: newEvent.title, start, end, allDay: false },
-    ]);
-    setShowModal(false);
-    setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
+  const handleAddEvent = (newEvent) => {
+    setEvents([...events, newEvent]);
   };
 
-  const handleAddTimeSlot = () => {
-    setWeeklySchedule({
-      ...weeklySchedule,
-      [selectedDay]: [
-        ...weeklySchedule[selectedDay],
-        { startTime: "", endTime: "", clinicType: "" },
-      ],
-    });
-  };
-
-  const handleRemoveTimeSlot = (dayName, index) => {
-    setWeeklySchedule({
-      ...weeklySchedule,
-      [dayName]: weeklySchedule[dayName].filter((_, i) => i !== index),
-    });
-  };
-
-  const handleTimeSlotChange = (dayName, index, field, value) => {
-    const updatedSlots = [...weeklySchedule[dayName]];
-    updatedSlots[index][field] = value;
-    setWeeklySchedule({
-      ...weeklySchedule,
-      [dayName]: updatedSlots,
-    });
-  };
-
-  const handleSaveSchedule = () => {
-    for (const day of DAYS_OF_WEEK) {
-      for (const slot of weeklySchedule[day]) {
-        if (!slot.startTime || !slot.endTime) {
-          alert("Please fill in all time slots or remove empty ones");
-          return;
-        }
-        if (!slot.clinicType) {
-          alert("Please select a clinic type for all time slots");
-          return;
-        }
-      }
-    }
-
-    alert("Schedule saved successfully!");
-    setShowScheduleModal(false);
+  const handleSelectSlot = (slotInfo) => {
+    setSelectedDayDate(slotInfo.start);
+    setShowDayModal(true);
   };
 
   return (
-    <div className="admin-layout">
+    <div className="doctor-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-      <div className="admin-main">
+      <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
-        <div className="admin-content" style={{ padding: "20px" }}>
+        <div className="doctor-content" style={{ padding: "20px" }}>
           <br />
           <div className="appointment-card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+
+            {/* ── Toolbar ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3>Appointments Calendar</h3>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
@@ -188,6 +102,7 @@ function DoctorAppointment() {
               </div>
             </div>
 
+            {/* ── Calendar ── */}
             <Calendar
               localizer={localizer}
               events={events}
@@ -198,15 +113,12 @@ function DoctorAppointment() {
               views={["month", "week", "day", "agenda"]}
               startAccessor="start"
               endAccessor="end"
+              selectable
+              onSelectSlot={handleSelectSlot}
               style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
               eventPropGetter={(event) => {
-                let backgroundColor;
-                if (event.title.includes("Online Clinic"))
-                  backgroundColor = "#4D227C";
-                else if (event.title.includes("New Year's Day"))
-                  backgroundColor = "#7A92D1";
-                else backgroundColor = "#4D227C";
-
+                let backgroundColor = "#4D227C";
+                if (event.title.includes("New Year's Day")) backgroundColor = "#7A92D1";
                 return {
                   style: {
                     backgroundColor,
@@ -224,516 +136,24 @@ function DoctorAppointment() {
         </div>
       </div>
 
-      {/* Create Appointment Modal */}
-      {showModal && (
-        <div
-          className="appointment-modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "20px",
-            overflowY: "auto",
-          }}
-        >
-          <div className="appointment-modal-lg">
-            <div className="modal-header">
-              <h2>New Appointment</h2>
+      {/* ── Modals ── */}
+      <DayAppointmentsModal
+        isOpen={showDayModal}
+        onClose={() => setShowDayModal(false)}
+        selectedDate={selectedDayDate}
+        events={events}
+      />
 
-              <span className="modal-date">
-                {newEvent.date
-                  ? format(new Date(newEvent.date), "MMMM d, yyyy")
-                  : format(new Date(), "MMMM d, yyyy")}
-              </span>
+      <CreateAppointmentModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onAdd={handleAddEvent}
+      />
 
-              <button
-                className="close-btn"
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <FiX />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h4>Patient Information</h4>
-                <div className="form-grid">
-                  <input placeholder="Patient First Name" />
-                  <input placeholder="Patient Last Name" />
-                  <input placeholder="Patient Middle Initial" />
-                  <input placeholder="Patient Age" />
-                  <input placeholder="Patient Sex" />
-                  <input placeholder="Patient Contact No." />
-                </div>
-
-                <div className="radio-group">
-                  <div>
-                    <strong>Patient Type</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="ptype" /> Existing Patient
-                    </label>
-                    <label>
-                      <input type="radio" name="ptype" /> New Patient
-                    </label>
-                  </div>
-                  <div>
-                    <strong>Patient Classification</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="class" /> PWD
-                    </label>
-                    <label>
-                      <input type="radio" name="class" /> Senior Citizen
-                    </label>
-                    <label>
-                      <input type="radio" name="class" /> Regular
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h4>Consultation Schedule</h4>
-                <div className="schedule-row">
-                  <input
-                    type="date"
-                    value={newEvent.date}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, date: e.target.value })
-                    }
-                  />
-                  <div className="time-input-wrapper">
-                    <input
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startTime: e.target.value })
-                      }
-                    />
-                    <label>Start Time</label>
-                  </div>
-                  <div className="time-input-wrapper">
-                    <input
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endTime: e.target.value })
-                      }
-                    />
-                    <label>End Time</label>
-                  </div>
-                </div>
-                <div className="radio-group" style={{ marginTop: "15px" }}>
-                  <div>
-                    <strong>Schedule Visit</strong>
-                    <br />
-                    <label>
-                      <input type="radio" name="visit" /> Schedule Visit
-                    </label>
-                    <label>
-                      <input type="radio" name="visit" /> Virtual Consult
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h4>Payment Details</h4>
-                <div className="payment-form-grid">
-                  <input placeholder="Paid Amount" />
-                  <input placeholder="Reference Number" />
-                  <input placeholder="Payment Option" />
-                  <input type="file" />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn-add" onClick={handleAddEvent}>
-                Add Appointment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Schedule Modal */}
-      {showScheduleModal && (
-        <div
-          className="appointment-modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "20px",
-            overflowY: "auto",
-          }}
-        >
-          <div className="appointment-modal-lg">
-            <div className="modal-header">
-              <h2>Add Weekly Schedule</h2>
-              <button
-                className="close-btn"
-                onClick={() => setShowScheduleModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <FiX />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h4>Select Day of the Week</h4>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    marginBottom: "20px",
-                  }}
-                >
-                  {DAYS_OF_WEEK.map((day) => (
-                    <button
-                      key={day}
-                      onClick={() => setSelectedDay(day)}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "8px",
-                        border:
-                          selectedDay === day
-                            ? "2px solid #4D227C"
-                            : "1px solid #ddd",
-                        backgroundColor:
-                          selectedDay === day ? "#4D227C" : "#fff",
-                        color: selectedDay === day ? "#fff" : "#333",
-                        cursor: "pointer",
-                        fontWeight: selectedDay === day ? "600" : "400",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-
-                <div style={{ marginTop: "20px" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <h4>Time Slots for {selectedDay}</h4>
-                    <button
-                      onClick={handleAddTimeSlot}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "8px",
-                        border: "none",
-                        backgroundColor: "#4D227C",
-                        color: "#fff",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      <FiPlus /> Add Time Slot
-                    </button>
-                  </div>
-
-                  {weeklySchedule[selectedDay].length === 0 ? (
-                    <div
-                      style={{
-                        padding: "20px",
-                        textAlign: "center",
-                        color: "#666",
-                        backgroundColor: "#f5f5f5",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      No time slots added for {selectedDay}. Click "Add Time
-                      Slot" to get started.
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                      }}
-                    >
-                      {weeklySchedule[selectedDay].map((slot, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "16px",
-                            padding: "16px",
-                            backgroundColor: "#f9f9f9",
-                            borderRadius: "8px",
-                            border: "1px solid #e0e0e0",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "10px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <span
-                              style={{ fontWeight: "500", minWidth: "80px" }}
-                            >
-                              Slot {index + 1}:
-                            </span>
-                            <input
-                              type="time"
-                              value={slot.startTime}
-                              placeholder="- Start Time"
-                              onChange={(e) =>
-                                handleTimeSlotChange(
-                                  selectedDay,
-                                  index,
-                                  "startTime",
-                                  e.target.value,
-                                )
-                              }
-                              style={{
-                                padding: "10px 12px",
-                                borderRadius: "6px",
-                                border: "1px solid #ddd",
-                                fontSize: "14px",
-                                minWidth: "150px",
-                              }}
-                            />
-                            <span style={{ fontWeight: "500" }}>to</span>
-                            <input
-                              type="time"
-                              value={slot.endTime}
-                              placeholder="- End Time"
-                              onChange={(e) =>
-                                handleTimeSlotChange(
-                                  selectedDay,
-                                  index,
-                                  "endTime",
-                                  e.target.value,
-                                )
-                              }
-                              style={{
-                                padding: "10px 12px",
-                                borderRadius: "6px",
-                                border: "1px solid #ddd",
-                                fontSize: "14px",
-                                minWidth: "150px",
-                              }}
-                            />
-                            <button
-                              onClick={() =>
-                                handleRemoveTimeSlot(selectedDay, index)
-                              }
-                              style={{
-                                padding: "8px",
-                                borderRadius: "6px",
-                                border: "none",
-                                backgroundColor: "#ff4444",
-                                color: "#fff",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <FiTrash2 />
-                            </button>
-                          </div>
-
-                          {/* Clinic Type Radio Buttons */}
-                          <div style={{ paddingLeft: "90px" }}>
-                            <h5
-                              style={{
-                                marginBottom: "10px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                color: "#333",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.5px",
-                              }}
-                            >
-                              Clinic Type
-                            </h5>
-                            <div style={{ display: "flex", gap: "20px" }}>
-                              <label
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                  cursor: "pointer",
-                                  fontSize: "13px",
-                                  color: "#555",
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`clinicType-${selectedDay}-${index}`}
-                                  value="online"
-                                  checked={slot.clinicType === "online"}
-                                  onChange={(e) =>
-                                    handleTimeSlotChange(
-                                      selectedDay,
-                                      index,
-                                      "clinicType",
-                                      e.target.value,
-                                    )
-                                  }
-                                  style={{
-                                    width: "16px",
-                                    height: "16px",
-                                    accentColor: "#4D227C",
-                                    cursor: "pointer",
-                                  }}
-                                />
-                                <span>Online Clinic</span>
-                              </label>
-                              <label
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "8px",
-                                  cursor: "pointer",
-                                  fontSize: "13px",
-                                  color: "#555",
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  name={`clinicType-${selectedDay}-${index}`}
-                                  value="physical"
-                                  checked={slot.clinicType === "physical"}
-                                  onChange={(e) =>
-                                    handleTimeSlotChange(
-                                      selectedDay,
-                                      index,
-                                      "clinicType",
-                                      e.target.value,
-                                    )
-                                  }
-                                  style={{
-                                    width: "16px",
-                                    height: "16px",
-                                    accentColor: "#4D227C",
-                                    cursor: "pointer",
-                                  }}
-                                />
-                                <span>Physical Clinic</span>
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Summary of all days with schedules */}
-                <div
-                  style={{
-                    marginTop: "30px",
-                    padding: "15px",
-                    backgroundColor: "#f0f0f0",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <h4 style={{ marginBottom: "10px" }}>Schedule Summary</h4>
-                  {DAYS_OF_WEEK.map(
-                    (day) =>
-                      weeklySchedule[day].length > 0 && (
-                        <div key={day} style={{ marginBottom: "8px" }}>
-                          <strong>{day}:</strong>{" "}
-                          {weeklySchedule[day].map((slot, idx) => {
-                            const formatTime = (time) => {
-                              if (!time) return "";
-                              const [hours, minutes] = time.split(":");
-                              const hour = parseInt(hours);
-                              const ampm = hour >= 12 ? "PM" : "AM";
-                              const displayHour = hour % 12 || 12;
-                              return `${displayHour}:${minutes} ${ampm}`;
-                            };
-
-                            const clinicTypeLabel =
-                              slot.clinicType === "online"
-                                ? " (Online Clinic)"
-                                : slot.clinicType === "physical"
-                                  ? " (Physical Clinic)"
-                                  : "";
-
-                            return (
-                              <span key={idx}>
-                                {formatTime(slot.startTime)} -{" "}
-                                {formatTime(slot.endTime)}
-                                {clinicTypeLabel}
-                                {idx < weeklySchedule[day].length - 1
-                                  ? ", "
-                                  : ""}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      ),
-                  )}
-                  {DAYS_OF_WEEK.every(
-                    (day) => weeklySchedule[day].length === 0,
-                  ) && (
-                    <div style={{ color: "#666" }}>No schedules added yet.</div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn-add" onClick={handleSaveSchedule}>
-                Save Schedule
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AddScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+      />
     </div>
   );
 }

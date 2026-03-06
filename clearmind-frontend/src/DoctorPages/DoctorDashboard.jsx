@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import DoctorSidebar from "./DoctorSideBar";
-import DoctorTopNavbar from "./DoctorTopNavbar";
+import DoctorSideBar from "./components/DoctorSideBar";
+import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorDashboard.css";
 import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
+import { FiX } from "react-icons/fi";
+import { BsMegaphone } from "react-icons/bs";
+import AccountSetupModal from "./components/SetUpAccountModal";
 
 // Chart.js
 import {
@@ -34,6 +37,34 @@ function DoctorDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
+  const [showSetupModal, setShowSetupModal] = useState(true);
+
+  // Announcements from Admin (read-only)
+  const [adminAnnouncements] = useState([
+    {
+      id: 1,
+      title: "TIME OUT",
+      message: "MAG TIME OUT NA TAYO",
+      priority: "urgent",
+      postedDate: "Feb 24, 2026",
+    },
+    {
+      id: 2,
+      title: "Clinic Holiday Schedule",
+      message:
+        "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule your appointments accordingly.",
+      priority: "urgent",
+      postedDate: "Feb 20, 2026",
+    },
+    {
+      id: 3,
+      title: "New Online Consultation Hours",
+      message:
+        "Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday.",
+      priority: "normal",
+      postedDate: "Feb 18, 2026",
+    },
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -43,13 +74,18 @@ function DoctorDashboard() {
   }, []);
 
   useEffect(() => {
-    // Set to start of current week (Monday)
     const startOfWeek = new Date(today);
     const day = startOfWeek.getDay();
-    const diff = day === 0 ? -6 : 1 - day; // Adjust to Monday
+    const diff = day === 0 ? -6 : 1 - day;
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     setCurrentWeekStart(startOfWeek);
   }, []);
+
+  useEffect(() => {
+    setShowSetupModal(true);
+  }, []);
+
+  const closeModal = () => setShowSetupModal(false);
 
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "short",
@@ -108,32 +144,15 @@ function DoctorDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Scheduled":
-        return "#1E3A8A";
-      case "Completed":
-        return "#16A34A";
-      case "Cancelled":
-        return "#DC2626";
-      default:
-        return "#000";
+      case "Scheduled": return "#1E3A8A";
+      case "Completed": return "#16A34A";
+      case "Cancelled": return "#DC2626";
+      default: return "#000";
     }
   };
 
   const barData = {
-    labels: [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ],
+    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
     datasets: [
       {
         label: "Monthly Patients",
@@ -154,34 +173,21 @@ function DoctorDashboard() {
         color: "#ffffff9c",
         anchor: "center",
         align: "center",
-        font: {
-          family: "Poppins, sans-serif",
-          size: 10,
-          weight: "100",
-        },
+        font: { family: "Poppins, sans-serif", size: 10, weight: "100" },
         formatter: (value) => value,
       },
     },
     scales: {
-      x: {
-        ticks: {
-          color: "#574a65",
-          font: { family: "Poppins, sans-serif", size: 12 },
-        },
-      },
+      x: { ticks: { color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
       y: {
         beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-          color: "#574a65",
-          font: { family: "Poppins, sans-serif", size: 12 },
-        },
+        ticks: { stepSize: 1, color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } },
       },
     },
   };
 
   const pieData = {
-    labels: ["Completed", "Cancelled", "Pending"],
+    labels: ["Completed", "Cancelled", "Scheduled"],
     datasets: [
       {
         label: "Appointment Status",
@@ -220,40 +226,75 @@ function DoctorDashboard() {
       },
       datalabels: {
         color: "#ffffff",
-        font: {
-          family: "Poppins, sans-serif",
-          size: 14,
-          weight: "100",
-        },
+        font: { family: "Poppins, sans-serif", size: 14, weight: "100" },
       },
       tooltip: {
         bodyFont: { family: "Poppins, sans-serif" },
         titleFont: { family: "Poppins, sans-serif", weight: "900" },
-        callbacks: {
-          label: (context) => `${context.label}: ${context.raw}`,
-        },
+        callbacks: { label: (context) => `${context.label}: ${context.raw}` },
       },
     },
     layout: {
-      padding: {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: window.innerWidth < 768 ? 10 : 60,
-      },
+      padding: { top: 10, bottom: 10, left: 10, right: window.innerWidth < 768 ? 10 : 60 },
     },
     cutout: "0%",
   };
 
   return (
     <div className="doctor-layout">
-      <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+      <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
         <div className="doctor-content">
           <div className="container-fluid">
+            {/* Announcements Section */}
+            <div className="row mb-4">
+              <div className="col-12">
+                <div className="announcements-card">
+                  <div className="announcements-header">
+                    <div className="announcements-title">
+                      <BsMegaphone className="me-2" />
+                      <h5>Announcements</h5>
+                    </div>
+                  </div>
+
+                  <div className="announcements-list">
+                    {adminAnnouncements.length === 0 ? (
+                      <div className="no-announcements">
+                        <p>No announcements yet.</p>
+                      </div>
+                    ) : (
+                      adminAnnouncements.map((announcement) => (
+                        <div
+                          key={announcement.id}
+                          className={`announcement-item ${announcement.priority === "urgent" ? "urgent" : ""}`}
+                        >
+                          <div className="announcement-content">
+                            <div className="announcement-header-line">
+                              {announcement.priority === "urgent" && (
+                                <span className="priority-badge">URGENT</span>
+                              )}
+                              <h6 className="announcement-title">
+                                {announcement.title}
+                              </h6>
+                            </div>
+                            <p className="announcement-message">
+                              {announcement.message}
+                            </p>
+                            <small className="announcement-date">
+                              Posted: {announcement.postedDate}
+                            </small>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="row g-4">
               <div className="col-md-6">
                 <div className="dashboard-card">
@@ -288,10 +329,7 @@ function DoctorDashboard() {
                   <div className="card-header">
                     <h5>Calendar</h5>
                     <div className="week-navigation">
-                      <button
-                        className="week-nav-btn"
-                        onClick={() => navigateWeek(-1)}
-                      >
+                      <button className="week-nav-btn" onClick={() => navigateWeek(-1)}>
                         <FaChevronLeft />
                       </button>
                       <span className="week-range">
@@ -300,10 +338,7 @@ function DoctorDashboard() {
                           year: "numeric",
                         })}
                       </span>
-                      <button
-                        className="week-nav-btn"
-                        onClick={() => navigateWeek(1)}
-                      >
+                      <button className="week-nav-btn" onClick={() => navigateWeek(1)}>
                         <FaChevronRight />
                       </button>
                     </div>
@@ -311,76 +346,31 @@ function DoctorDashboard() {
                   <hr />
                   <div className="card-body">
                     <div className="calendar-grid">
-                      {/* Day headers */}
                       <div className="calendar-header">
                         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                          <div key={day} className="calendar-day-label">
-                            {day}
-                          </div>
+                          <div key={day} className="calendar-day-label">{day}</div>
                         ))}
                       </div>
-
-                      {/* Calendar dates */}
                       <div className="calendar-dates">
                         {(() => {
                           const dates = [];
-                          const firstDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(),
-                            1
-                          );
-                          const lastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth() + 1,
-                            0
-                          );
+                          const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                          const lastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
                           const startDay = firstDay.getDay();
                           const daysInMonth = lastDay.getDate();
-
-                          // Previous month's trailing days
-                          const prevMonthLastDay = new Date(
-                            currentWeekStart.getFullYear(),
-                            currentWeekStart.getMonth(),
-                            0
-                          ).getDate();
+                          const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--) {
-                            dates.push(
-                              <div key={`prev-${i}`} className="calendar-date other-month">
-                                {prevMonthLastDay - i}
-                              </div>
-                            );
+                            dates.push(<div key={`prev-${i}`} className="calendar-date other-month">{prevMonthLastDay - i}</div>);
                           }
-
-                          // Current month's days
                           for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(
-                              currentWeekStart.getFullYear(),
-                              currentWeekStart.getMonth(),
-                              day
-                            );
-                            const todayCheck = isToday(date);
-
-                            dates.push(
-                              <div
-                                key={day}
-                                className={`calendar-date ${todayCheck ? "today" : ""}`}
-                              >
-                                {day}
-                              </div>
-                            );
+                            const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
+                            dates.push(<div key={day} className={`calendar-date ${isToday(date) ? "today" : ""}`}>{day}</div>);
                           }
-
-                          // Next month's leading days
-                          const remainingCells = 42 - dates.length; // 6 rows × 7 days
+                          const remainingCells = 42 - dates.length;
                           for (let day = 1; day <= remainingCells; day++) {
-                            dates.push(
-                              <div key={`next-${day}`} className="calendar-date other-month">
-                                {day}
-                              </div>
-                            );
+                            dates.push(<div key={`next-${day}`} className="calendar-date other-month">{day}</div>);
                           }
-
                           return dates;
                         })()}
                       </div>
@@ -420,11 +410,7 @@ function DoctorDashboard() {
                             <td>{patient.date}</td>
                             <td>{patient.time}</td>
                             <td>{patient.type}</td>
-                            <td
-                              style={{ color: getStatusColor(patient.status) }}
-                            >
-                              {patient.status}
-                            </td>
+                            <td style={{ color: getStatusColor(patient.status) }}>{patient.status}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -434,9 +420,7 @@ function DoctorDashboard() {
                     <span>Page 1 of 5</span>
                     <div className="pagination-buttons">
                       <button>{"< Previous"}</button>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button key={n}>{n}</button>
-                      ))}
+                      {[1, 2, 3, 4, 5].map((n) => (<button key={n}>{n}</button>))}
                       <button>{"Next >"}</button>
                     </div>
                   </div>
@@ -455,7 +439,6 @@ function DoctorDashboard() {
                   </div>
                 </div>
               </div>
-
               <div className="col-md-6">
                 <div className="dashboard-card">
                   <h5>Appointment Status</h5>
@@ -468,6 +451,8 @@ function DoctorDashboard() {
           </div>
         </div>
       </div>
+
+      <AccountSetupModal showModal={showSetupModal} onClose={closeModal} />
     </div>
   );
 }
