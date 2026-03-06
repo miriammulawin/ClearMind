@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { FiX, FiPlus } from "react-icons/fi";
+import { useState, useEffect, useRef } from "react";
+import { FiX, FiPlus, FiChevronDown } from "react-icons/fi";
 import axiosClient from "../../axiosClient";
 import toast from "react-hot-toast";
 
@@ -37,7 +37,34 @@ function SetUpAccountModal({ showModal, onClose }) {
     servicesList:          [],
   });
 
+  // ── Lookup options from API ──────────────────────────────────────
+  const [options, setOptions] = useState({
+    specializations:    [],
+    subSpecializations: [],
+    boardCertificates:  [],
+    services:           [],
+  });
+
   const [loading, setLoading] = useState(false);
+
+  // ── Fetch lookup tables once on mount ───────────────────────────
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const res = await axiosClient.get("/lookup");
+        setOptions({
+          specializations:    res.data.specializations    || [],
+          subSpecializations: res.data.sub_specializations || [],
+          boardCertificates:  res.data.board_certificates  || [],
+          services:           res.data.services            || [],
+        });
+      } catch (err) {
+        console.error("[SetUpModal] Failed to load lookup options:", err);
+        // Silently fail — dropdowns will just be empty, user can still type
+      }
+    };
+    fetchOptions();
+  }, []);
 
   // ── Fetch existing profile when modal opens ──────────────────────
   useEffect(() => {
@@ -49,125 +76,41 @@ function SetUpAccountModal({ showModal, onClose }) {
         const user = res.data.user || {};
         const profileData = res.data.profile || {};
 
-        console.log("========== SETUP MODAL DATA DEBUG ==========");
-        console.log("[SetUpModal] Full API response:", res.data);
-        console.log("[SetUpModal] Profile data keys:", Object.keys(profileData));
-        console.log("[SetUpModal] Specializations:", profileData.specializations);
-        console.log("[SetUpModal] Services:", profileData.services);
-        console.log("[SetUpModal] Sub-Specializations:", profileData.sub_specializations);
-        console.log("[SetUpModal] Board Certificates:", profileData.board_certificates);
-        console.log("==========================================");
-
-        // Update basic form data
         setFormData((prev) => ({
           ...prev,
           profilePicture:    null,
           certificateImages: [],
           idPictures:        [],
-          description:       profileData.description || "",
-          professionalTitle: profileData.professional_title || "",
+          description:       profileData.description       || user.description       || "",
+          professionalTitle: profileData.professional_title || user.professionalTitle || "",
           yearsOfExperience: profileData.years_of_experience != null
-            ? String(profileData.years_of_experience) : "",
-          practicingSince:   profileData.practicing_since || "",
-          prcNumber:         profileData.prc_number || "",
-          licenseNumber:     profileData.license_number || "",
+            ? String(profileData.years_of_experience)
+            : (user.yearsOfExperience != null ? String(user.yearsOfExperience) : ""),
+          practicingSince:   profileData.practicing_since  || user.practicingSince   || "",
+          prcNumber:         profileData.prc_number        || user.prcNumber         || "",
+          licenseNumber:     profileData.license_number    || user.licenseNumber     || "",
         }));
 
-        // ── SAFE DATA EXTRACTION ──────────────────────────────────────
-        // Handle specializations - check if it's array of objects with name property
-        let specializationList = [];
-        if (Array.isArray(profileData.specializations)) {
-          specializationList = profileData.specializations
-            .map(s => {
-              // Handle both {name: "..."} and {name: "...", pivot: {...}}
-              if (typeof s === 'object' && s.name) {
-                return s.name;
-              }
-              // Fallback for string values
-              if (typeof s === 'string') {
-                return s;
-              }
-              return null;
-            })
-            .filter(Boolean);
-        }
-        console.log("[SetUpModal] Final Specialization List:", specializationList);
+        const extractNames = (arr) =>
+          Array.isArray(arr)
+            ? arr.map((s) => (typeof s === "object" && s.name ? s.name : s)).filter(Boolean)
+            : [];
 
-        // Handle services
-        let servicesList = [];
-        if (Array.isArray(profileData.services)) {
-          servicesList = profileData.services
-            .map(s => {
-              if (typeof s === 'object' && s.name) {
-                return s.name;
-              }
-              if (typeof s === 'string') {
-                return s;
-              }
-              return null;
-            })
-            .filter(Boolean);
-        }
-        console.log("[SetUpModal] Final Services List:", servicesList);
+        const mainSpecialtyList = Array.isArray(profileData.specializations)
+          ? profileData.specializations
+              .filter((s) => s?.pivot?.is_main === 1 || s?.pivot?.is_main === true)
+              .map((s) => s.name)
+              .filter(Boolean)
+          : [];
 
-        // Handle sub-specializations
-        let subSpecializationList = [];
-        if (Array.isArray(profileData.sub_specializations)) {
-          subSpecializationList = profileData.sub_specializations
-            .map(s => {
-              if (typeof s === 'object' && s.name) {
-                return s.name;
-              }
-              if (typeof s === 'string') {
-                return s;
-              }
-              return null;
-            })
-            .filter(Boolean);
-        }
-        console.log("[SetUpModal] Final Sub-Specialization List:", subSpecializationList);
-
-        // Handle board certificates
-        let boardCertificateList = [];
-        if (Array.isArray(profileData.board_certificates)) {
-          boardCertificateList = profileData.board_certificates
-            .map(c => {
-              if (typeof c === 'object' && c.name) {
-                return c.name;
-              }
-              if (typeof c === 'string') {
-                return c;
-              }
-              return null;
-            })
-            .filter(Boolean);
-        }
-        console.log("[SetUpModal] Final Board Certificate List:", boardCertificateList);
-
-        // Handle main specialties - filter by is_main pivot
-        let mainSpecialtyList = [];
-        if (Array.isArray(profileData.specializations)) {
-          mainSpecialtyList = profileData.specializations
-            .filter(s => s.pivot && s.pivot.is_main === 1 || s.pivot?.is_main === true)
-            .map(s => s.name)
-            .filter(Boolean);
-        }
-        console.log("[SetUpModal] Final Main Specialty List:", mainSpecialtyList);
-
-        // Set all lists
         setLists({
           mainSpecialtyList,
-          specializationList,
-          subSpecializationList,
-          boardCertificateList,
-          servicesList,
+          specializationList:    extractNames(profileData.specializations    || user.specializations),
+          subSpecializationList: extractNames(profileData.sub_specializations || user.subSpecializations),
+          boardCertificateList:  extractNames(profileData.board_certificates  || user.boardCertificates),
+          servicesList:          extractNames(profileData.services            || user.services),
         });
 
-        // Save to localStorage
-        const merged = { ...user, ...profileData };
-        localStorage.setItem("user", JSON.stringify(merged));
-
-        // Save profile image
         const rawImage = profileData.profile_picture || user.profilePictureUrl || null;
         const imageUrl = resolveImageUrl(rawImage);
         if (imageUrl) localStorage.setItem("profile_image", imageUrl);
@@ -188,9 +131,7 @@ function SetUpAccountModal({ showModal, onClose }) {
     setFormData((prev) => ({ ...prev, [field]: file }));
 
   const handleMultiFileAdd = (field, file) => {
-    if (file) {
-      setFormData((prev) => ({ ...prev, [field]: [...prev[field], file] }));
-    }
+    if (file) setFormData((prev) => ({ ...prev, [field]: [...prev[field], file] }));
   };
 
   const handleMultiFileRemove = (field, index) => {
@@ -212,13 +153,10 @@ function SetUpAccountModal({ showModal, onClose }) {
     const val     = formData[field]?.trim();
     const listKey = FIELD_TO_LIST_KEY[field];
     if (!val || !listKey) return;
-    
-    // Check for duplicates
     if (lists[listKey].includes(val)) {
       toast.error(`${val} is already added`);
       return;
     }
-    
     setLists((prev) => ({ ...prev, [listKey]: [...prev[listKey], val] }));
     handleInputChange(field, "");
   };
@@ -237,21 +175,12 @@ function SetUpAccountModal({ showModal, onClose }) {
     if (lists.specializationList.length === 0) return toast.error("Please add at least one Specialization.");
 
     setLoading(true);
-
     try {
       const payload = new FormData();
 
       if (formData.profilePicture) payload.append("profile_picture", formData.profilePicture);
-
-      // Append multiple certificate images
-      formData.certificateImages.forEach((file) => {
-        payload.append("certificate_images[]", file);
-      });
-
-      // Append multiple ID pictures
-      formData.idPictures.forEach((file) => {
-        payload.append("id_pictures[]", file);
-      });
+      formData.certificateImages.forEach((f) => payload.append("certificate_images[]", f));
+      formData.idPictures.forEach((f) => payload.append("id_pictures[]", f));
 
       payload.append("description",         formData.description);
       payload.append("professional_title",  formData.professionalTitle);
@@ -259,8 +188,6 @@ function SetUpAccountModal({ showModal, onClose }) {
       payload.append("practicing_since",    formData.practicingSince   || "");
       payload.append("prc_number",          formData.prcNumber);
       payload.append("license_number",      formData.licenseNumber);
-
-      // Send as JSON strings
       payload.append("main_specialties",    JSON.stringify(lists.mainSpecialtyList));
       payload.append("specializations",     JSON.stringify(lists.specializationList));
       payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
@@ -271,11 +198,8 @@ function SetUpAccountModal({ showModal, onClose }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("[SetUpModal] Setup successful:", res.data);
-
-      const updatedUser = res.data.user || {};
+      const updatedUser    = res.data.user    || {};
       const updatedProfile = res.data.profile || {};
-
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       const rawImage = updatedProfile.profile_picture || updatedUser.profilePictureUrl || null;
@@ -288,8 +212,7 @@ function SetUpAccountModal({ showModal, onClose }) {
 
     } catch (err) {
       console.error("[SetUpModal] Save error:", err);
-      const msg = err.response?.data?.message || "Upload failed. Please try again.";
-      toast.error(msg);
+      toast.error(err.response?.data?.message || "Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -333,7 +256,7 @@ function SetUpAccountModal({ showModal, onClose }) {
         <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
           <div className="row g-3">
 
-            {/* Profile Picture Preview + Upload */}
+            {/* Profile Picture */}
             <div className="col-12">
               {savedImage && !formData.profilePicture && (
                 <div className="mb-2 d-flex align-items-center gap-3">
@@ -341,15 +264,9 @@ function SetUpAccountModal({ showModal, onClose }) {
                     src={savedImage}
                     alt="Current profile"
                     onError={(e) => { e.target.style.display = "none"; }}
-                    style={{
-                      width: "56px", height: "56px",
-                      borderRadius: "10px", objectFit: "cover",
-                      border: "2px solid #4D227C",
-                    }}
+                    style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", border: "2px solid #4D227C" }}
                   />
-                  <small className="text-muted">
-                    Current profile picture. Upload a new one to replace it.
-                  </small>
+                  <small className="text-muted">Current profile picture. Upload a new one to replace it.</small>
                 </div>
               )}
               <FileInput
@@ -427,53 +344,63 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            {/* ── Tag Lists ── */}
-            <ListInput
+            {/* ── Tag Lists with Dropdowns ── */}
+            <DropdownListInput
               label="Main Specialty"
               value={formData.mainSpecialty}
               onChange={(val) => handleInputChange("mainSpecialty", val)}
               list={mainSpecialtyList}
               add={() => addToList("mainSpecialty")}
               remove={(i) => removeFromList("mainSpecialtyList", i)}
+              options={options.specializations.map((s) => s.name || s)}
+              excludeList={mainSpecialtyList}
             />
 
-            <ListInput
+            <DropdownListInput
               label="Specialization *"
               value={formData.specialization}
               onChange={(val) => handleInputChange("specialization", val)}
               list={specializationList}
               add={() => addToList("specialization")}
               remove={(i) => removeFromList("specializationList", i)}
+              options={options.specializations.map((s) => s.name || s)}
+              excludeList={specializationList}
             />
-            
-            <ListInput
+
+            <DropdownListInput
               label="Sub-specialization"
               value={formData.subSpecialization}
               onChange={(val) => handleInputChange("subSpecialization", val)}
               list={subSpecializationList}
               add={() => addToList("subSpecialization")}
               remove={(i) => removeFromList("subSpecializationList", i)}
+              options={options.subSpecializations.map((s) => s.name || s)}
+              excludeList={subSpecializationList}
             />
-            
-            <ListInput
+
+            <DropdownListInput
               label="Board Certificate"
               value={formData.boardCertificate}
               onChange={(val) => handleInputChange("boardCertificate", val)}
               list={boardCertificateList}
               add={() => addToList("boardCertificate")}
               remove={(i) => removeFromList("boardCertificateList", i)}
+              options={options.boardCertificates.map((s) => s.name || s)}
+              excludeList={boardCertificateList}
             />
-            
-            <ListInput
+
+            <DropdownListInput
               label="My Services"
               value={formData.myServices}
               onChange={(val) => handleInputChange("myServices", val)}
               list={servicesList}
               add={() => addToList("myServices")}
               remove={(i) => removeFromList("servicesList", i)}
+              options={options.services.map((s) => s.name || s)}
+              excludeList={servicesList}
             />
 
-            {/* Certificate Images — multi-upload */}
+            {/* Certificate Images */}
             <MultiFileInput
               label="Certificate Image"
               files={formData.certificateImages}
@@ -482,7 +409,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               onFileRemove={(i) => handleMultiFileRemove("certificateImages", i)}
             />
 
-            {/* ID Pictures — multi-upload */}
+            {/* ID Pictures */}
             <MultiFileInput
               label="Upload ID Card Picture"
               files={formData.idPictures}
@@ -518,8 +445,160 @@ function SetUpAccountModal({ showModal, onClose }) {
   );
 }
 
-// ── Helper Components ────────────────────────────────────────────────────────
+// ── DropdownListInput — same look as ListInput but with a searchable dropdown ──
+const DropdownListInput = ({ label, value, onChange, list, add, remove, options = [], excludeList = [] }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Filter: match typed text + exclude already-added items
+  const filtered = options.filter(
+    (opt) =>
+      !excludeList.includes(opt) &&
+      opt.toLowerCase().includes(value.toLowerCase())
+  );
+
+  const select = (opt) => {
+    onChange(opt);
+    setOpen(false);
+  };
+
+  return (
+    <div className="col-12" ref={ref}>
+      <div className="d-flex gap-2">
+        <div className="position-relative flex-grow-1">
+          <input
+            type="text"
+            placeholder={label}
+            value={value}
+            onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); add(); setOpen(false); }
+              if (e.key === "Escape") setOpen(false);
+            }}
+            className="form-control"
+            style={{ borderRadius: "12px", height: "40px", paddingRight: "36px" }}
+          />
+          {/* Chevron toggle */}
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            style={{
+              position: "absolute", right: "10px", top: "50%",
+              transform: "translateY(-50%)", background: "none",
+              border: "none", padding: 0, cursor: "pointer", color: "#4D227C",
+              display: "flex", alignItems: "center",
+            }}
+            tabIndex={-1}
+          >
+            <FiChevronDown
+              size={16}
+              style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+            />
+          </button>
+
+          {/* Dropdown list */}
+          {open && filtered.length > 0 && (
+            <div
+              style={{
+                position: "absolute", top: "44px", left: 0, right: 0,
+                backgroundColor: "#fff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                zIndex: 9999,
+                maxHeight: "200px",
+                overflowY: "auto",
+              }}
+            >
+              {filtered.map((opt) => (
+                <div
+                  key={opt}
+                  onMouseDown={(e) => { e.preventDefault(); select(opt); }}
+                  style={{
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    color: "#2D3748",
+                    borderBottom: "1px solid #f1f5f9",
+                    transition: "background 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EEFF")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  {opt}
+                </div>
+              ))}
+              {/* Allow typing custom values not in list */}
+              {value.trim() && !options.includes(value.trim()) && (
+                <div
+                  onMouseDown={(e) => { e.preventDefault(); add(); setOpen(false); }}
+                  style={{
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    color: "#4D227C",
+                    fontStyle: "italic",
+                    borderTop: "1px solid #e2e8f0",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EEFF")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  + Add &quot;{value.trim()}&quot;
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
+          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
+          onClick={() => { add(); setOpen(false); }}
+        >
+          <FiPlus size={18} />
+        </button>
+      </div>
+
+      {/* Tags */}
+      {list.length > 0 && (
+        <div className="mt-2 d-flex flex-wrap gap-2">
+          {list.map((item, i) => (
+            <span
+              key={i}
+              className="badge d-inline-flex align-items-center gap-2"
+              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
+            >
+              {item}
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                style={{
+                  background: "none", border: "none", color: "white",
+                  cursor: "pointer", display: "flex", alignItems: "center",
+                  padding: "0", lineHeight: "1",
+                }}
+                aria-label="Remove"
+              >
+                <FiX size={16} strokeWidth={2} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── FileInput ────────────────────────────────────────────────────────────────
 const FileInput = ({ label, file, onFileChange }) => {
   const inputId = label.replace(/\s+/g, "") + "Input";
   return (
@@ -533,125 +612,60 @@ const FileInput = ({ label, file, onFileChange }) => {
           className="form-control"
           style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
         />
-        <input
-          type="file"
-          accept="image/*"
-          id={inputId}
-          className="d-none"
-          onChange={(e) => onFileChange(e.target.files[0])}
-        />
+        <input type="file" accept="image/*" id={inputId} className="d-none"
+          onChange={(e) => onFileChange(e.target.files[0])} />
         <button
-          type="button"
-          className="btn position-absolute"
-          style={{
-            backgroundColor: "#C4B5D6", top: "0", right: "0",
-            height: "40px", borderRadius: "0 12px 12px 0",
-            border: "none", padding: "0 15px",
-          }}
+          type="button" className="btn position-absolute"
+          style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
           onClick={() => document.getElementById(inputId).click()}
-        >
-          Browse
-        </button>
+        >Browse</button>
       </div>
     </div>
   );
 };
 
+// ── MultiFileInput ───────────────────────────────────────────────────────────
 const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => {
   const inputId = fieldKey + "MultiInput";
-
   const handleChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      onFileAdd(file);
-      e.target.value = "";
-    }
+    if (file) { onFileAdd(file); e.target.value = ""; }
   };
-
   return (
     <div className="col-12">
       <div className="d-flex gap-2 align-items-center">
         <div className="position-relative flex-grow-1">
           <input
-            type="text"
-            placeholder={`Upload ${label}`}
-            readOnly
+            type="text" placeholder={`Upload ${label}`} readOnly
             value={files.length > 0 ? `${files.length} file(s) selected` : ""}
             className="form-control"
             style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }}
           />
-          <input
-            type="file"
-            accept="image/*"
-            id={inputId}
-            className="d-none"
-            onChange={handleChange}
-          />
+          <input type="file" accept="image/*" id={inputId} className="d-none" onChange={handleChange} />
           <button
-            type="button"
-            className="btn position-absolute"
-            style={{
-              backgroundColor: "#C4B5D6", top: "0", right: "0",
-              height: "40px", borderRadius: "0 12px 12px 0",
-              border: "none", padding: "0 15px",
-            }}
+            type="button" className="btn position-absolute"
+            style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
             onClick={() => document.getElementById(inputId).click()}
-          >
-            Browse
-          </button>
+          >Browse</button>
         </div>
-
         <button
           type="button"
           className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-          style={{
-            backgroundColor: "#4D227C",
-            width: "40px", height: "40px",
-            borderRadius: "12px",
-          }}
+          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
           onClick={() => document.getElementById(inputId).click()}
-        >
-          <FiPlus size={18} />
-        </button>
+        ><FiPlus size={18} /></button>
       </div>
-
       {files.length > 0 && (
         <div className="mt-2 d-flex flex-wrap gap-2">
           {files.map((file, i) => (
-            <span
-              key={i}
-              className="badge d-inline-flex align-items-center gap-2"
-              style={{
-                backgroundColor: "#4D227C",
-                padding: "6px 12px",
-                fontSize: "0.85rem",
-                fontWeight: "400",
-                maxWidth: "220px",
-              }}
-            >
-              <span
-                style={{
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: "160px",
-                }}
-                title={file.name}
-              >
+            <span key={i} className="badge d-inline-flex align-items-center gap-2"
+              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.85rem", fontWeight: "400", maxWidth: "220px" }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }} title={file.name}>
                 {file.name}
               </span>
-              <button
-                type="button"
-                onClick={() => onFileRemove(i)}
-                style={{
-                  background: "none", border: "none", color: "white",
-                  cursor: "pointer", display: "flex", alignItems: "center",
-                  justifyContent: "center", padding: "0", lineHeight: "1", flexShrink: 0,
-                }}
-                aria-label="Remove"
-              >
-                <FiX size={14} strokeWidth={2} />
-              </button>
+              <button type="button" onClick={() => onFileRemove(i)}
+                style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", lineHeight: "1", flexShrink: 0 }}
+                aria-label="Remove"><FiX size={14} strokeWidth={2} /></button>
             </span>
           ))}
         </div>
@@ -659,54 +673,5 @@ const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => 
     </div>
   );
 };
-
-const ListInput = ({ label, value, onChange, list, add, remove }) => (
-  <div className="col-12">
-    <div className="d-flex gap-2">
-      <input
-        type="text"
-        placeholder={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-        className="form-control"
-        style={{ borderRadius: "12px", height: "40px" }}
-      />
-      <button
-        type="button"
-        className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-        style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
-        onClick={add}
-      >
-        <FiPlus size={18} />
-      </button>
-    </div>
-    {list.length > 0 && (
-      <div className="mt-2 d-flex flex-wrap gap-2">
-        {list.map((item, i) => (
-          <span
-            key={i}
-            className="badge d-inline-flex align-items-center gap-2"
-            style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
-          >
-            {item}
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              style={{
-                background: "none", border: "none", color: "white",
-                cursor: "pointer", display: "flex", alignItems: "center",
-                padding: "0", lineHeight: "1",
-              }}
-              aria-label="Remove"
-            >
-              <FiX size={16} strokeWidth={2} />
-            </button>
-          </span>
-        ))}
-      </div>
-    )}
-  </div>
-);
 
 export default SetUpAccountModal;

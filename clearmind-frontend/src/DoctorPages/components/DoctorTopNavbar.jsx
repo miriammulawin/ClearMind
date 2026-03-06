@@ -4,7 +4,7 @@ import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "axios";
+import axiosClient from "../../axiosClient";
 
 import "../../index.css";
 import "../DoctorStyle/NotificationModal.css";
@@ -73,12 +73,10 @@ function DoctorTopNavbar({ activeMenu }) {
       });
 
       if (result.isConfirmed) {
-        await axios.post(
-          "http://localhost/ClearMind/clearmind-backend/logout.php",
-          {},
-          { withCredentials: true },
-        );
-
+        await axiosClient.post('/logout');
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("profile_image");
         Swal.fire({
           icon: "success",
           title: "Logged out successfully!",
