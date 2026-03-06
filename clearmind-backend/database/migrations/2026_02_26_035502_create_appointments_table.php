@@ -13,6 +13,9 @@ return new class extends Migration
             $table->foreignId('client_id')
                   ->constrained('clients')
                   ->onDelete('cascade');
+            $table->foreignId('doctor_id')
+                  ->constrained('doctors')
+                  ->onDelete('cascade');
             $table->date('appointment_date');
             $table->time('appointment_time');
             $table->enum('visit_type', ['Online', 'Physical'])->default('Online');

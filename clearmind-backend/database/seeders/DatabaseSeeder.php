@@ -6,6 +6,10 @@ use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Client;
 use App\Models\Appointment;
+use App\Models\Specialization;
+use App\Models\SubSpecialization;
+use App\Models\Service;
+use App\Models\BoardCertificate;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,49 +21,18 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
-        | SHARED DOCTOR DATA (Same For All Doctors)
+        | 1. SEED LOOKUP TABLES (Specializations, Services, etc.)
         |--------------------------------------------------------------------------
         */
 
-        $sharedDoctorData = [
-            'main_specializations' => json_encode([
-                'Psychological First Aid',
-                'Psycho Education',
-                'Wellness & Stress Management',
-                'Workplace Mental Health',
-            ]),
-
-            'specializations' => json_encode([
-                'Anxiety Disorders',
-                'Depression',
-                'Trauma & PTSD',
-                'Cognitive Behavioral Therapy',
-            ]),
-
-            'sub_specializations' => json_encode([
-                'Panic Disorder',
-                'OCD',
-                'Grief Counseling',
-                'Stress Management',
-            ]),
-
-            'board_certificates' => json_encode([
-                'Diplomate in Clinical Psychology',
-                'Certified CBT Therapist',
-                'Registered Psychologist (RPsy)',
-            ]),
-
-            'services' => json_encode([
-                'Individual Therapy',
-                'Couples Therapy',
-                'Online/Video Counseling',
-                'Psychological Assessment',
-            ]),
-        ];
+        $this->seedSpecializations();
+        $this->seedSubSpecializations();
+        $this->seedServices();
+        $this->seedBoardCertificates();
 
         /*
         |--------------------------------------------------------------------------
-        | 1. ADMIN
+        | 2. ADMIN
         |--------------------------------------------------------------------------
         */
 
@@ -77,11 +50,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Admin created/updated.');
+        $this->command->info('✓ Admin created/updated.');
 
         /*
         |--------------------------------------------------------------------------
-        | 2. MAIN DOCTOR
+        | 3. MAIN DOCTOR
         |--------------------------------------------------------------------------
         */
 
@@ -99,9 +72,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Doctor::updateOrCreate(
+        $mainDoctor = Doctor::updateOrCreate(
             ['user_id' => $mainDoctorUser->id],
-            array_merge([
+            [
                 'prc_number'          => 'PSY-0123456',
                 'professional_title'  => 'Clinical Psychologist',
                 'description'         => 'Experienced therapist specializing in anxiety, depression, and trauma.',
@@ -109,15 +82,17 @@ class DatabaseSeeder extends Seeder
                 'license_number'      => 'PRC-1234567',
                 'practicing_since'    => '2013',
                 'profile_picture'     => null,
-                'certificate_image'   => null,
-            ], $sharedDoctorData)
+            ]
         );
 
-        $this->command->info('Main doctor created/updated.');
+        // Attach relationships for main doctor
+        $this->attachDoctorRelationships($mainDoctor);
+
+        $this->command->info('✓ Main doctor created with normalized relationships.');
 
         /*
         |--------------------------------------------------------------------------
-        | 3. ADDITIONAL 10 DOCTORS (Same Specializations)
+        | 4. ADDITIONAL 10 DOCTORS (With Normalized Relationships)
         |--------------------------------------------------------------------------
         */
 
@@ -135,7 +110,6 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($additionalDoctors as $doc) {
-
             $user = User::firstOrCreate(
                 ['email' => $doc[5]],
                 [
@@ -150,26 +124,28 @@ class DatabaseSeeder extends Seeder
                 ]
             );
 
-            Doctor::updateOrCreate(
+            $doctor = Doctor::updateOrCreate(
                 ['user_id' => $user->id],
-                array_merge([
+                [
                     'prc_number'          => 'PSY-' . fake()->unique()->numerify('#######'),
                     'professional_title'  => 'Clinical Psychologist',
                     'description'         => fake()->paragraph(),
                     'years_of_experience' => fake()->numberBetween(5, 20),
                     'license_number'      => 'PRC-' . fake()->unique()->numerify('#########'),
-                    'practicing_since'    => (date('Y') - fake()->numberBetween(5, 20)),
+                    'practicing_since'    => (string)(date('Y') - fake()->numberBetween(5, 20)),
                     'profile_picture'     => null,
-                    'certificate_image'   => null,
-                ], $sharedDoctorData)
+                ]
             );
+
+            // Attach normalized relationships
+            $this->attachDoctorRelationships($doctor);
         }
 
-        $this->command->info('10 additional doctors created.');
+        $this->command->info('✓ 10 additional doctors created with normalized relationships.');
 
         /*
         |--------------------------------------------------------------------------
-        | 4. 500 CLIENTS + APPOINTMENTS
+        | 5. 500 CLIENTS + APPOINTMENTS
         |--------------------------------------------------------------------------
         */
 
@@ -191,11 +167,12 @@ class DatabaseSeeder extends Seeder
                 for ($i = 0; $i < $appointmentsCount; $i++) {
                     Appointment::factory()->create([
                         'client_id' => $client->id,
+                        'doctor_id' => Doctor::inRandomOrder()->first()->id,
                     ]);
                 }
             });
 
-        $this->command->info('500 clients + appointments created.');
+        $this->command->info('✓ 500 clients + appointments created.');
 
         /*
         |--------------------------------------------------------------------------
@@ -204,10 +181,232 @@ class DatabaseSeeder extends Seeder
         */
 
         $this->command->newLine();
-        $this->command->info('Seeding completed successfully:');
-        $this->command->info('  → Admin:   1');
-        $this->command->info('  → Doctors: 11');
-        $this->command->info('  → Clients: 500');
+        $this->command->info('ss Seeding completed successfully:');
+        $this->command->info('   → Admin:              1');
+        $this->command->info('   → Doctors:           11');
+        $this->command->info('   → Specializations:    4');
+        $this->command->info('   → Sub-specializations: 4');
+        $this->command->info('   → Services:          4');
+        $this->command->info('   → Board Certificates: 3');
+        $this->command->info('   → Clients:          500');
         $this->command->newLine();
+    }
+
+    /**
+     * Seed main specializations
+     */
+    private function seedSpecializations(): void
+    {
+        $specializations = [
+            ['name' => 'Psychological First Aid', 'description' => 'Crisis intervention and immediate support'],
+            ['name' => 'Psycho Education', 'description' => 'Education on mental health concepts'],
+            ['name' => 'Wellness & Stress Management', 'description' => 'Strategies for stress reduction and wellness'],
+            ['name' => 'Workplace Mental Health', 'description' => 'Mental health support in work environments'],
+            ['name' => 'Anxiety Disorders', 'description' => 'Treatment of various anxiety conditions'],
+            ['name' => 'Depression', 'description' => 'Therapeutic approaches for depression'],
+            ['name' => 'Trauma & PTSD', 'description' => 'Trauma-focused therapy'],
+            ['name' => 'Cognitive Behavioral Therapy', 'description' => 'Evidence-based CBT approaches'],
+        ];
+
+        foreach ($specializations as $spec) {
+            Specialization::firstOrCreate(
+                ['name' => $spec['name']],
+                ['description' => $spec['description']]
+            );
+        }
+
+        $this->command->info('✓ Specializations seeded.');
+    }
+
+    /**
+     * Seed sub-specializations
+     */
+    private function seedSubSpecializations(): void
+    {
+        $subSpecializations = [
+            'Anxiety Disorders' => [
+                'Panic Disorder',
+                'Generalized Anxiety Disorder',
+                'Social Anxiety',
+                'Specific Phobias',
+            ],
+            'Depression' => [
+                'Major Depressive Disorder',
+                'Bipolar Disorder',
+                'Persistent Depressive Disorder',
+            ],
+            'Trauma & PTSD' => [
+                'PTSD',
+                'Complex PTSD',
+                'Grief Counseling',
+            ],
+            'Cognitive Behavioral Therapy' => [
+                'Exposure Therapy',
+                'Cognitive Restructuring',
+                'Behavior Activation',
+            ],
+        ];
+
+        foreach ($subSpecializations as $specName => $subSpecs) {
+            $specialization = Specialization::where('name', $specName)->first();
+
+            if ($specialization) {
+                foreach ($subSpecs as $subSpecName) {
+                    SubSpecialization::firstOrCreate(
+                        ['name' => $subSpecName, 'specialization_id' => $specialization->id],
+                        ['description' => "Sub-specialization under $specName"]
+                    );
+                }
+            }
+        }
+
+        $this->command->info('✓ Sub-specializations seeded.');
+    }
+
+    /**
+     * Seed services
+     */
+    private function seedServices(): void
+    {
+        $services = [
+            ['name' => 'Individual Therapy', 'description' => 'One-on-one counseling sessions'],
+            ['name' => 'Couples Therapy', 'description' => 'Relationship counseling'],
+            ['name' => 'Online/Video Counseling', 'description' => 'Remote therapy sessions'],
+            ['name' => 'Psychological Assessment', 'description' => 'Comprehensive psychological testing'],
+            ['name' => 'Group Therapy', 'description' => 'Group-based therapeutic sessions'],
+            ['name' => 'Crisis Intervention', 'description' => 'Immediate crisis support'],
+        ];
+
+        foreach ($services as $service) {
+            Service::firstOrCreate(
+                ['name' => $service['name']],
+                ['description' => $service['description']]
+            );
+        }
+
+        $this->command->info('✓ Services seeded.');
+    }
+
+    /**
+     * Seed board certificates
+     */
+    private function seedBoardCertificates(): void
+    {
+        $certificates = [
+            ['name' => 'Diplomate in Clinical Psychology', 'description' => 'Advanced clinical psychology credential'],
+            ['name' => 'Certified CBT Therapist', 'description' => 'Certification in Cognitive Behavioral Therapy'],
+            ['name' => 'Registered Psychologist (RPsy)', 'description' => 'State registration as psychologist'],
+            ['name' => 'Crisis Intervention Specialist', 'description' => 'Specialized in crisis situations'],
+            ['name' => 'Trauma-Focused Specialist', 'description' => 'Specialization in trauma therapy'],
+        ];
+
+        foreach ($certificates as $cert) {
+            BoardCertificate::firstOrCreate(
+                ['name' => $cert['name']],
+                ['description' => $cert['description']]
+            );
+        }
+
+        $this->command->info('✓ Board certificates seeded.');
+    }
+
+    /**
+     * Attach standard relationships to a doctor
+     * This standardizes all doctors with the same specializations, services, etc.
+     */
+    private function attachDoctorRelationships(Doctor $doctor): void
+    {
+        // Detach all existing relationships to avoid duplicates
+        $doctor->specializations()->detach();
+        $doctor->subSpecializations()->detach();
+        $doctor->services()->detach();
+        $doctor->boardCertificates()->detach();
+
+        // Attach main specializations (first 4 are marked as part of main)
+        $mainSpecializations = [
+            'Psychological First Aid',
+            'Psycho Education',
+            'Wellness & Stress Management',
+            'Workplace Mental Health',
+        ];
+
+        foreach ($mainSpecializations as $index => $specName) {
+            $specialization = Specialization::where('name', $specName)->first();
+            if ($specialization) {
+                $doctor->specializations()->attach(
+                    $specialization->id,
+                    ['is_main' => $index === 0] // First one is main
+                );
+            }
+        }
+
+        // Attach secondary specializations
+        $secondarySpecializations = [
+            'Anxiety Disorders',
+            'Depression',
+            'Trauma & PTSD',
+            'Cognitive Behavioral Therapy',
+        ];
+
+        foreach ($secondarySpecializations as $specName) {
+            $specialization = Specialization::where('name', $specName)->first();
+            if ($specialization) {
+                $doctor->specializations()->attach(
+                    $specialization->id,
+                    ['is_main' => false]
+                );
+            }
+        }
+
+        // Attach sub-specializations
+        $subSpecializations = [
+            'Panic Disorder',
+            'OCD', // Note: This won't exist in our seed, so we'll skip if not found
+            'Grief Counseling',
+            'Stress Management',
+        ];
+
+        foreach ($subSpecializations as $subSpecName) {
+            $subSpecialization = SubSpecialization::where('name', $subSpecName)->first();
+            if ($subSpecialization) {
+                $doctor->subSpecializations()->attach($subSpecialization->id);
+            }
+        }
+
+        // Attach services
+        $serviceNames = [
+            'Individual Therapy',
+            'Couples Therapy',
+            'Online/Video Counseling',
+            'Psychological Assessment',
+        ];
+
+        foreach ($serviceNames as $serviceName) {
+            $service = Service::where('name', $serviceName)->first();
+            if ($service) {
+                $doctor->services()->attach($service->id);
+            }
+        }
+
+        // Attach board certificates with dates
+        $certificateNames = [
+            'Diplomate in Clinical Psychology',
+            'Certified CBT Therapist',
+            'Registered Psychologist (RPsy)',
+        ];
+
+        foreach ($certificateNames as $index => $certName) {
+            $certificate = BoardCertificate::where('name', $certName)->first();
+            if ($certificate) {
+                $doctor->boardCertificates()->attach(
+                    $certificate->id,
+                    [
+                        'certificate_number' => 'CERT-' . fake()->numerify('########'),
+                        'issued_date' => now()->subYears(fake()->numberBetween(3, 8))->toDateString(),
+                        'expiry_date' => now()->addYears(fake()->numberBetween(1, 5))->toDateString(),
+                    ]
+                );
+            }
+        }
     }
 }

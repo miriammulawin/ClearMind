@@ -15,7 +15,7 @@ return new class extends Migration
                   ->onDelete('cascade')
                   ->unique(); // enforce 1:1
 
-            // Doctor profile fields (moved from users)
+            // Doctor profile fields
             $table->string('prc_number')->nullable()->unique();
             $table->string('professional_title')->nullable();
             $table->text('description')->nullable();
@@ -23,12 +23,6 @@ return new class extends Migration
             $table->string('license_number')->nullable(); 
             $table->string('practicing_since')->nullable(); 
             $table->string('profile_picture')->nullable();
-            $table->string('certificate_image')->nullable();
-            $table->json('main_specializations')->nullable();
-            $table->json('specializations')->nullable();
-            $table->json('sub_specializations')->nullable();
-            $table->json('board_certificates')->nullable();
-            $table->json('services')->nullable();
 
             $table->timestamps();
         });

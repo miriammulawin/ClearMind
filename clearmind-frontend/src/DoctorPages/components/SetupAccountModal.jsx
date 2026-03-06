@@ -3,12 +3,6 @@ import { FiX, FiPlus } from "react-icons/fi";
 import axiosClient from "../../axiosClient";
 import toast from "react-hot-toast";
 
-const safeParse = (val) => {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  try { return JSON.parse(val); } catch { return []; }
-};
-
 const resolveImageUrl = (raw) => {
   if (!raw) return null;
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -51,45 +45,136 @@ function SetUpAccountModal({ showModal, onClose }) {
 
     const fetchProfile = async () => {
       try {
-        const res     = await axiosClient.get("/profile");
-        const user    = res.data.user    || {};
-        const profile = res.data.profile || {};
+        const res = await axiosClient.get("/profile");
+        const user = res.data.user || {};
+        const profileData = res.data.profile || {};
 
-        console.log("[SetUpModal] /profile response:", JSON.stringify(res.data, null, 2));
+        console.log("========== SETUP MODAL DATA DEBUG ==========");
+        console.log("[SetUpModal] Full API response:", res.data);
+        console.log("[SetUpModal] Profile data keys:", Object.keys(profileData));
+        console.log("[SetUpModal] Specializations:", profileData.specializations);
+        console.log("[SetUpModal] Services:", profileData.services);
+        console.log("[SetUpModal] Sub-Specializations:", profileData.sub_specializations);
+        console.log("[SetUpModal] Board Certificates:", profileData.board_certificates);
+        console.log("==========================================");
 
+        // Update basic form data
         setFormData((prev) => ({
           ...prev,
           profilePicture:    null,
           certificateImages: [],
           idPictures:        [],
-          description:       profile.description         || "",
-          professionalTitle: profile.professional_title  || "",
-          yearsOfExperience: profile.years_of_experience != null
-                               ? String(profile.years_of_experience) : "",
-          practicingSince:   profile.practicing_since    || "",
-          prcNumber:         profile.prc_number          || "",
-          licenseNumber:     profile.license_number      || "",
+          description:       profileData.description || "",
+          professionalTitle: profileData.professional_title || "",
+          yearsOfExperience: profileData.years_of_experience != null
+            ? String(profileData.years_of_experience) : "",
+          practicingSince:   profileData.practicing_since || "",
+          prcNumber:         profileData.prc_number || "",
+          licenseNumber:     profileData.license_number || "",
         }));
 
+        // ── SAFE DATA EXTRACTION ──────────────────────────────────────
+        // Handle specializations - check if it's array of objects with name property
+        let specializationList = [];
+        if (Array.isArray(profileData.specializations)) {
+          specializationList = profileData.specializations
+            .map(s => {
+              // Handle both {name: "..."} and {name: "...", pivot: {...}}
+              if (typeof s === 'object' && s.name) {
+                return s.name;
+              }
+              // Fallback for string values
+              if (typeof s === 'string') {
+                return s;
+              }
+              return null;
+            })
+            .filter(Boolean);
+        }
+        console.log("[SetUpModal] Final Specialization List:", specializationList);
+
+        // Handle services
+        let servicesList = [];
+        if (Array.isArray(profileData.services)) {
+          servicesList = profileData.services
+            .map(s => {
+              if (typeof s === 'object' && s.name) {
+                return s.name;
+              }
+              if (typeof s === 'string') {
+                return s;
+              }
+              return null;
+            })
+            .filter(Boolean);
+        }
+        console.log("[SetUpModal] Final Services List:", servicesList);
+
+        // Handle sub-specializations
+        let subSpecializationList = [];
+        if (Array.isArray(profileData.sub_specializations)) {
+          subSpecializationList = profileData.sub_specializations
+            .map(s => {
+              if (typeof s === 'object' && s.name) {
+                return s.name;
+              }
+              if (typeof s === 'string') {
+                return s;
+              }
+              return null;
+            })
+            .filter(Boolean);
+        }
+        console.log("[SetUpModal] Final Sub-Specialization List:", subSpecializationList);
+
+        // Handle board certificates
+        let boardCertificateList = [];
+        if (Array.isArray(profileData.board_certificates)) {
+          boardCertificateList = profileData.board_certificates
+            .map(c => {
+              if (typeof c === 'object' && c.name) {
+                return c.name;
+              }
+              if (typeof c === 'string') {
+                return c;
+              }
+              return null;
+            })
+            .filter(Boolean);
+        }
+        console.log("[SetUpModal] Final Board Certificate List:", boardCertificateList);
+
+        // Handle main specialties - filter by is_main pivot
+        let mainSpecialtyList = [];
+        if (Array.isArray(profileData.specializations)) {
+          mainSpecialtyList = profileData.specializations
+            .filter(s => s.pivot && s.pivot.is_main === 1 || s.pivot?.is_main === true)
+            .map(s => s.name)
+            .filter(Boolean);
+        }
+        console.log("[SetUpModal] Final Main Specialty List:", mainSpecialtyList);
+
+        // Set all lists
         setLists({
-          mainSpecialtyList:     safeParse(profile.main_specialties),
-          specializationList:    safeParse(profile.specializations),
-          subSpecializationList: safeParse(profile.sub_specializations),
-          boardCertificateList:  safeParse(profile.board_certificates),
-          servicesList:          safeParse(profile.services),
+          mainSpecialtyList,
+          specializationList,
+          subSpecializationList,
+          boardCertificateList,
+          servicesList,
         });
 
-        const merged = { ...user, ...profile };
+        // Save to localStorage
+        const merged = { ...user, ...profileData };
         localStorage.setItem("user", JSON.stringify(merged));
 
-        const rawImage = profile.profile_picture || user.profilePictureUrl || null;
-        console.log("[SetUpModal] raw image from /profile:", rawImage);
+        // Save profile image
+        const rawImage = profileData.profile_picture || user.profilePictureUrl || null;
         const imageUrl = resolveImageUrl(rawImage);
-        console.log("[SetUpModal] resolved image URL:", imageUrl);
         if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       } catch (error) {
-        console.error("Failed to fetch profile:", error);
+        console.error("[SetUpModal] Error fetching profile:", error);
+        toast.error("Failed to load profile data");
       }
     };
 
@@ -127,6 +212,13 @@ function SetUpAccountModal({ showModal, onClose }) {
     const val     = formData[field]?.trim();
     const listKey = FIELD_TO_LIST_KEY[field];
     if (!val || !listKey) return;
+    
+    // Check for duplicates
+    if (lists[listKey].includes(val)) {
+      toast.error(`${val} is already added`);
+      return;
+    }
+    
     setLists((prev) => ({ ...prev, [listKey]: [...prev[listKey], val] }));
     handleInputChange(field, "");
   };
@@ -168,6 +260,7 @@ function SetUpAccountModal({ showModal, onClose }) {
       payload.append("prc_number",          formData.prcNumber);
       payload.append("license_number",      formData.licenseNumber);
 
+      // Send as JSON strings
       payload.append("main_specialties",    JSON.stringify(lists.mainSpecialtyList));
       payload.append("specializations",     JSON.stringify(lists.specializationList));
       payload.append("sub_specializations", JSON.stringify(lists.subSpecializationList));
@@ -178,23 +271,15 @@ function SetUpAccountModal({ showModal, onClose }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log("[SetUpModal] /doctor/setup response:", JSON.stringify(res.data, null, 2));
+      console.log("[SetUpModal] Setup successful:", res.data);
 
-      const updatedUser    = res.data.user    || {};
+      const updatedUser = res.data.user || {};
       const updatedProfile = res.data.profile || {};
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      const rawImage =
-        updatedProfile.profile_picture   ||
-        updatedUser.profilePictureUrl    ||
-        updatedUser.profile_picture_url  ||
-        updatedUser.profile_picture      ||
-        null;
-
-      console.log("[SetUpModal] raw image after save:", rawImage);
+      const rawImage = updatedProfile.profile_picture || updatedUser.profilePictureUrl || null;
       const imageUrl = resolveImageUrl(rawImage);
-      console.log("[SetUpModal] resolved image URL after save:", imageUrl);
       if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
       window.dispatchEvent(new Event("profileUpdated"));
@@ -202,11 +287,8 @@ function SetUpAccountModal({ showModal, onClose }) {
       onClose();
 
     } catch (err) {
-      console.error("[SetUpModal] save error:", err.response?.data || err);
-      const msg =
-        err.response?.data?.message ||
-        Object.values(err.response?.data?.errors || {})[0]?.[0] ||
-        "Upload failed. Please try again.";
+      console.error("[SetUpModal] Save error:", err);
+      const msg = err.response?.data?.message || "Upload failed. Please try again.";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -323,7 +405,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            {/* Practicing Since */}
+            {/* Practicing Since + PRC Number */}
             <div className="col-12 col-sm-6">
               <input
                 type="text"
@@ -337,18 +419,6 @@ function SetUpAccountModal({ showModal, onClose }) {
             <div className="col-12 col-sm-6">
               <input
                 type="text"
-                placeholder="License Number"
-                value={formData.licenseNumber}
-                onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
-                className="form-control"
-                style={{ borderRadius: "12px", height: "40px" }}
-              />
-            </div>
-
-            {/* PRC Number */}
-            <div className="col-12">
-              <input
-                type="text"
                 placeholder="PRC License No. * (e.g. PSY-0123456)"
                 value={formData.prcNumber}
                 onChange={(e) => handleInputChange("prcNumber", e.target.value)}
@@ -357,7 +427,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            {/* Main Specialty — tag list */}
+            {/* ── Tag Lists ── */}
             <ListInput
               label="Main Specialty"
               value={formData.mainSpecialty}
@@ -367,7 +437,6 @@ function SetUpAccountModal({ showModal, onClose }) {
               remove={(i) => removeFromList("mainSpecialtyList", i)}
             />
 
-            {/* Tag Lists */}
             <ListInput
               label="Specialization *"
               value={formData.specialization}
@@ -376,6 +445,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               add={() => addToList("specialization")}
               remove={(i) => removeFromList("specializationList", i)}
             />
+            
             <ListInput
               label="Sub-specialization"
               value={formData.subSpecialization}
@@ -384,6 +454,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               add={() => addToList("subSpecialization")}
               remove={(i) => removeFromList("subSpecializationList", i)}
             />
+            
             <ListInput
               label="Board Certificate"
               value={formData.boardCertificate}
@@ -392,6 +463,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               add={() => addToList("boardCertificate")}
               remove={(i) => removeFromList("boardCertificateList", i)}
             />
+            
             <ListInput
               label="My Services"
               value={formData.myServices}
