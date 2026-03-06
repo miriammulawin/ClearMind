@@ -54,184 +54,6 @@
   background: #4a2273;
 }
 
-/* Carousel */
-
-.hcWrap {
-  width: 100%;
-}
-
-/* Clips everything outside the active slide */
-.hcViewport {
-  overflow: hidden;
-  width: 100%;
-  border-radius: 18px;
-}
-
-/* Flex row — each slide is exactly 100% of viewport width */
-.hcTrack {
-  display: flex;
-  width: 100%;
-  user-select: none;
-  -webkit-user-select: none;
-  will-change: transform;
-}
-
-/* Each slide fills the full viewport width */
-.hcSlide {
-  flex: 0 0 100%;
-  width: 100%;
-  height: clamp(155px, 42vw, 215px);
-  border-radius: 18px;
-  padding: clamp(14px, 3.5vw, 22px) clamp(16px, 4vw, 26px);
-  padding-bottom: clamp(40px, 9vw, 54px);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
-}
-
-/* Decorative circle */
-.hcSlideCircle {
-  position: absolute;
-  width: clamp(90px, 22vw, 170px);
-  height: clamp(90px, 22vw, 170px);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  right: -28px;
-  top: -28px;
-  pointer-events: none;
-}
-
-/* Pill label */
-.hcSlidePill {
-  align-self: flex-start;
-  font-size: clamp(0.58rem, 1.4vw, 0.68rem);
-  font-weight: 700;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.22);
-  border-radius: 20px;
-  padding: 3px 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* Big icon watermark */
-.hcSlideIcon {
-  position: absolute;
-  right: clamp(14px, 4vw, 24px);
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: clamp(2.2rem, 9vw, 4.5rem);
-  color: rgba(255, 255, 255, 0.15);
-  pointer-events: none;
-}
-
-/* Text */
-.hcSlideText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hcSlideHeading {
-  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
-  font-weight: 800;
-  color: #fff;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.hcSlideSubheading {
-  font-size: clamp(0.75rem, 2vw, 0.95rem);
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0;
-}
-
-.hcSlideDesc {
-  font-size: clamp(0.62rem, 1.5vw, 0.75rem);
-  color: rgba(255, 255, 255, 0.7);
-  margin: 4px 0 0;
-  max-width: 68%;
-  line-height: 1.4;
-}
-
-/* CTA */
-.hcSlideCta {
-  align-self: flex-start;
-  background: transparent;
-  border: 1.5px solid;
-  border-radius: 20px;
-  padding: clamp(4px, 1vw, 7px) clamp(12px, 3vw, 20px);
-  font-size: clamp(0.6rem, 1.5vw, 0.73rem);
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  transition: background 0.2s;
-}
-
-.hcSlideCta:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-/* Bottom overlay: dots + progress */
-.hcSlideOverlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 6px 14px 9px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.25), transparent);
-  border-radius: 0 0 18px 18px;
-}
-
-.hcDots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-
-.hcDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.2s, transform 0.2s;
-}
-
-.hcDotActive {
-  background: #fff;
-  transform: scale(1.45);
-}
-
-.hcProgress {
-  height: 3px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-}
-
-.hcProgressBar {
-  height: 100%;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.85);
-  animation: progressFill 3.5s linear forwards;
-}
-
-@keyframes progressFill {
-  from { width: 0%; }
-  to   { width: 100%; }
-}
-
 
 /* Next Available Session */
 .huWrap {
@@ -566,7 +388,6 @@
 /* Tablet landscape / small laptop (≥ 768px) */
 @media (min-width: 768px) {
   .bodyWrapper {
-    padding: 28px 48px 44px;
     gap: 28px;
     max-width: 700px;
     margin: 0 auto;
@@ -580,7 +401,6 @@
 /* Laptop / Desktop (≥ 1024px) */
 @media (min-width: 1024px) {
   .bodyWrapper {
-    padding: 36px 64px 56px;
     max-width: 860px;
     gap: 32px;
   }
@@ -594,7 +414,6 @@
 @media (min-width: 1280px) {
   .bodyWrapper {
     max-width: 960px;
-    padding: 40px 80px 60px;
   }
 
   .huViewAllBtn {

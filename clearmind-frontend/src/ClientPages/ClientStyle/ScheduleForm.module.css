@@ -6,14 +6,12 @@
 .section {
   margin-bottom: clamp(0.85rem, 3vw, 1.25rem);
 }
-
 .sectionTitle {
   font-size: clamp(0.78rem, 2.2vw, 0.88rem);
   font-weight: 600;
   color: #4b5563;
   margin-bottom: clamp(0.4rem, 1.5vw, 0.65rem);
 }
-
 .required {
   color: #ef4444;
   margin-right: 0.2rem;
@@ -34,11 +32,9 @@
   font-size: clamp(0.78rem, 2.2vw, 0.88rem);
   font-weight: 600;
 }
-
 .singleModeIcon {
   font-size: clamp(0.85rem, 2.2vw, 1rem);
 }
-
 .modeToggleRow {
   display: inline-flex;
   border: 1.5px solid #c4aee8;
@@ -46,7 +42,6 @@
   overflow: hidden;
   background: white;
 }
-
 .modeToggle {
   display: inline-flex;
   align-items: center;
@@ -61,21 +56,17 @@
   transition: all 0.2s ease;
   white-space: nowrap;
 }
-
 .modeToggle:first-child {
   border-right: 1.5px solid #c4aee8;
 }
-
 .modeToggle:hover {
   background: #f3eeff;
   color: #5B2C91;
 }
-
 .modeToggleActive {
   background: #5B2C91 !important;
   color: white !important;
 }
-
 .modeToggleIcon {
   font-size: clamp(0.8rem, 2vw, 0.95rem);
 }
@@ -90,8 +81,6 @@
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(91, 44, 145, 0.07);
 }
-
-/* Purple header */
 .calHeader {
   display: flex;
   align-items: center;
@@ -99,14 +88,12 @@
   padding: clamp(0.6rem, 2.5vw, 0.85rem) clamp(0.75rem, 3vw, 1.1rem);
   background: #5B2C91;
 }
-
 .calMonthLabel {
   font-size: clamp(0.85rem, 2.5vw, 0.98rem);
   font-weight: 700;
   color: white;
   letter-spacing: 0.3px;
 }
-
 .calNavBtn {
   display: flex;
   align-items: center;
@@ -122,24 +109,19 @@
   transition: background 0.18s ease;
   -webkit-tap-highlight-color: transparent;
 }
-
 .calNavBtn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.32);
 }
-
 .calNavBtn:disabled {
   opacity: 0.28;
   cursor: not-allowed;
 }
-
-/* Day-of-week row */
 .calDayHeaders {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   background: #f5f0fc;
   padding: clamp(0.28rem, 1.2vw, 0.42rem) clamp(0.4rem, 1.5vw, 0.6rem);
 }
-
 .calDayLabel {
   text-align: center;
   font-size: clamp(0.6rem, 1.8vw, 0.7rem);
@@ -148,15 +130,12 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
-/* Day grid */
 .calGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: clamp(2px, 0.6vw, 4px);
   padding: clamp(0.4rem, 1.8vw, 0.65rem) clamp(0.4rem, 1.5vw, 0.6rem);
 }
-
 .calDay {
   position: relative;
   display: flex;
@@ -178,32 +157,23 @@
   line-height: 1;
   gap: 2px;
 }
-
-/* Past / disabled */
 .calDayPast {
   color: #d1c4e9;
   cursor: not-allowed;
 }
-
-/* Today ring */
 .calDayToday {
   border: 2px solid #5B2C91;
   color: #5B2C91;
   font-weight: 700;
 }
-
-/* Has slots */
 .calDayAvailable {
   font-weight: 600;
   color: #3d2b5e;
 }
-
 .calDayAvailable:hover {
   background: #ede8f7;
   transform: scale(1.1);
 }
-
-/* Selected */
 .calDaySelected {
   background: #5B2C91 !important;
   color: white !important;
@@ -211,8 +181,11 @@
   box-shadow: 0 3px 10px rgba(91, 44, 145, 0.35);
   transform: scale(1.1);
 }
-
-
+.calDayUnavailable {
+  color: #d1c4e9;
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 
 /* ─────────────────────────────────────────
    TIME DROPDOWN
@@ -221,7 +194,6 @@
   position: relative;
   width: 100%;
 }
-
 .timeDropdownTrigger {
   width: 100%;
   display: flex;
@@ -239,29 +211,24 @@
   font-family: inherit;
   transition: all 0.2s ease;
 }
-
 .timeDropdownTrigger:hover {
   border-color: #5B2C91;
   background: #faf8ff;
 }
-
 .timeDropdownTriggerSelected {
   color: #3d2b5e;
   border-color: #c4aee8;
   font-weight: 600;
 }
-
 .timeDropdownIcon {
   font-size: 1.25rem;
   color: #9b8ab0;
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
-
 .timeDropdownIconOpen {
   transform: rotate(180deg);
 }
-
 .timeDropdownList {
   position: absolute;
   top: calc(100% + 6px);
@@ -278,11 +245,9 @@
   max-height: 220px;
   overflow-y: auto;
 }
-
 .timeDropdownList::-webkit-scrollbar { width: 4px; }
 .timeDropdownList::-webkit-scrollbar-track { background: #f3eeff; border-radius: 4px; }
 .timeDropdownList::-webkit-scrollbar-thumb { background: #c4aee8; border-radius: 4px; }
-
 .timeDropdownItem {
   padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.9rem);
   font-size: clamp(0.75rem, 2.2vw, 0.85rem);
@@ -292,18 +257,15 @@
   cursor: pointer;
   transition: all 0.15s ease;
 }
-
 .timeDropdownItem:hover {
   background: #f3eeff;
   color: #5B2C91;
 }
-
 .timeDropdownItemSelected {
   background: #5B2C91 !important;
   color: white !important;
   font-weight: 600;
 }
-
 .timeDropdownEmpty {
   padding: clamp(0.5rem, 1.5vw, 0.7rem) clamp(0.65rem, 2vw, 0.9rem);
   font-size: clamp(0.72rem, 2vw, 0.82rem);
@@ -311,14 +273,12 @@
   font-style: italic;
   text-align: center;
 }
-
 .sessionNote {
   font-size: clamp(0.65rem, 1.6vw, 0.72rem);
   color: #9b8ab0;
   font-weight: 400;
   font-style: italic;
 }
-
 .selectedTimeRange {
   margin-top: clamp(0.4rem, 1.5vw, 0.6rem);
   font-size: clamp(0.72rem, 2vw, 0.82rem);
@@ -340,7 +300,6 @@
   padding: clamp(0.85rem, 2.5vw, 1.25rem);
   margin-top: clamp(0.5rem, 2vw, 0.85rem);
 }
-
 .summaryTitle {
   font-size: clamp(0.8rem, 2.2vw, 0.9rem);
   font-weight: 700;
@@ -349,7 +308,6 @@
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-
 .summaryGrid {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -357,28 +315,24 @@
   column-gap: clamp(0.75rem, 2.5vw, 1.25rem);
   align-items: baseline;
 }
-
 .summaryLabel {
   font-size: clamp(0.72rem, 2vw, 0.82rem);
   color: #9b8ab0;
   font-weight: 500;
   white-space: nowrap;
 }
-
 .summaryValue {
   font-size: clamp(0.78rem, 2.2vw, 0.88rem);
   font-weight: 600;
   color: #3d2b5e;
   text-align: right;
 }
-
 .summaryFeeLabel {
   color: #5B2C91;
   font-weight: 700;
   padding-top: clamp(0.3rem, 1vw, 0.5rem);
   border-top: 1px solid #e9e0f8;
 }
-
 .summaryFee {
   color: #5B2C91;
   font-size: clamp(0.9rem, 2.5vw, 1.05rem) !important;
@@ -397,28 +351,115 @@
 }
 
 /* ─────────────────────────────────────────
-   CALENDAR — unavailable future dates
+   SAME-DAY HOT TOAST
 ───────────────────────────────────────── */
-
-/* Future dates that exist in the month but have no slots */
-.calDayUnavailable {
-  color: #d1c4e9;
-  cursor: not-allowed;
-  opacity: 0.45;
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-/* ─────────────────────────────────────────
-   SAME-DAY ALERT
-───────────────────────────────────────── */
-.sameDayAlert {
-  margin-top: 0.65rem !important;
-  font-size: clamp(0.75rem, 2vw, 0.84rem) !important;
-  border-radius: 10px !important;
-  padding: 0.65rem 0.9rem !important;
+@keyframes toastProgress {
+  from { width: 100%; }
+  to   { width: 0%; }
 }
 
-.sameDayAlert h6 {
-  font-size: clamp(0.78rem, 2.2vw, 0.88rem) !important;
-  font-weight: 700 !important;
-  margin-bottom: 0.2rem !important;
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1);   }
+  40%       { transform: scale(1.3); }
+  60%       { transform: scale(0.9); }
+}
+
+.toast {
+  position: fixed;
+  bottom: clamp(1rem, 4vw, 1.75rem);
+  right:  clamp(1rem, 4vw, 1.75rem);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: white;
+  border: 1.5px solid #f5c2c7;
+  border-left: 4px solid #be123c;
+  border-radius: clamp(8px, 2vw, 12px);
+  padding: clamp(0.65rem, 2vw, 0.9rem) clamp(0.75rem, 2.5vw, 1rem);
+  box-shadow: 0 8px 28px rgba(190, 18, 60, 0.14), 0 2px 8px rgba(0,0,0,0.08);
+  max-width: clamp(260px, 85vw, 340px);
+  animation: toastSlideIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  overflow: hidden;
+}
+
+.toastIconWrap {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fff5f5;
+  border: 1.5px solid #f5c2c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: iconPulse 0.6s ease 0.3s both;
+}
+
+.toastIcon {
+  font-size: 1.5rem;
+  color: #be123c;
+}
+
+.toastContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toastTitle {
+  margin: 0;
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  font-weight: 700;
+  color: #842029;
+  line-height: 1.3;
+}
+
+.toastDesc {
+  margin: 0;
+  font-size: clamp(0.8rem, 1.8vw, 1rem);
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.toastDesc strong {
+  color: #842029;
+  font-weight: 700;
+}
+
+.toastClose {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #842029;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-top: 1px;
+  transition: color 0.15s ease;
+}
+
+/* Progress bar that shrinks over 4s */
+.toastProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: #be123c;
+  border-radius: 0 0 0 12px;
+  animation: toastProgress 4s linear forwards;
 }

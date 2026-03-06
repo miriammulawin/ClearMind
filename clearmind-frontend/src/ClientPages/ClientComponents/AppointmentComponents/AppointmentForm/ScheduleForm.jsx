@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { FaVideo, FaHome } from 'react-icons/fa';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
-import { Alert } from 'react-bootstrap';
+import { TiWarningOutline } from 'react-icons/ti';
 import styles from '../../../ClientStyle/ScheduleForm.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,7 +59,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-  // Build lookup: dateString → slot object
   const availableMap = useMemo(() => {
     const map = {};
     availability.forEach(d => { map[d.date] = d; });
@@ -98,7 +97,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
     viewMonth === today.getMonth() &&
     viewYear  === today.getFullYear();
 
-  // A day is "past" only if it is strictly before today (yesterday and earlier)
   const isStrictPast = (day) => {
     const d = new Date(viewYear, viewMonth, day);
     d.setHours(0, 0, 0, 0);
@@ -110,7 +108,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
 
   const handleDayClick = (day) => {
     if (isToday(day)) {
-      // Notify parent to show "same day" error, clear any previous selection
       onTodayClick();
       return;
     }
@@ -120,7 +117,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
 
   return (
     <div className={styles.calendar}>
-      {/* Header */}
       <div className={styles.calHeader}>
         <button className={styles.calNavBtn} onClick={prevMonth} disabled={!canGoPrev} aria-label="Previous month">
           <IoChevronBack />
@@ -131,12 +127,10 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
         </button>
       </div>
 
-      {/* Day-of-week labels */}
       <div className={styles.calDayHeaders}>
         {DAY_LABELS.map(d => <span key={d} className={styles.calDayLabel}>{d}</span>)}
       </div>
 
-      {/* Day grid */}
       <div className={styles.calGrid}>
         {calendarDays.map((day, i) => {
           if (!day) return <span key={`e-${i}`} />;
@@ -145,11 +139,7 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
           const todayCell   = isToday(day);
           const available   = isAvailable(day);
           const selected    = isSelected(day);
-
-          // Clickable = today (shows error) OR future available date
-          const clickable = todayCell || (!strictPast && available);
-          // Visually disabled = strict past OR (future but not available)
-          const disabled  = strictPast || (!todayCell && !available);
+          const disabled    = strictPast || (!todayCell && !available);
 
           return (
             <button
@@ -158,11 +148,11 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
               onClick={() => handleDayClick(day)}
               className={[
                 styles.calDay,
-                strictPast                        ? styles.calDayPast      : '',
+                strictPast                              ? styles.calDayPast        : '',
                 !strictPast && !available && !todayCell ? styles.calDayUnavailable : '',
                 available && !strictPast && !todayCell  ? styles.calDayAvailable   : '',
-                todayCell  && !selected           ? styles.calDayToday     : '',
-                selected                          ? styles.calDaySelected  : '',
+                todayCell  && !selected                 ? styles.calDayToday       : '',
+                selected                                ? styles.calDaySelected    : '',
               ].filter(Boolean).join(' ')}
             >
               {day}
@@ -173,6 +163,33 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ─── Same-Day Toast ────────────────────────────────────────────────────────────
+const SameDayToast = ({ show, onClose }) => {
+  useEffect(() => {
+    if (!show) return;
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [show, onClose]);
+
+  if (!show) return null;
+
+  return (
+    <div className={styles.toast}>
+      <div className={styles.toastIconWrap}>
+        <TiWarningOutline className={styles.toastIcon} />
+      </div>
+      <div className={styles.toastContent}>
+        <p className={styles.toastTitle}>Same-Day Booking Not Allowed</p>
+        <p className={styles.toastDesc}>
+          Please select a <strong>future date</strong> to proceed.
+        </p>
+      </div>
+      <button className={styles.toastClose} onClick={onClose} aria-label="Dismiss">✕</button>
+      <div className={styles.toastProgress} key={String(show)} />
     </div>
   );
 };
@@ -189,7 +206,7 @@ const ScheduleForm = ({
   consultationFee,
 }) => {
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
-  const [sameDayError,  setSameDayError]  = useState(false);
+  const [sameDayModal,  setSameDayModal]  = useState(false);
 
   const availableModes = useMemo(() => {
     const modes = [];
@@ -214,14 +231,13 @@ const ScheduleForm = ({
   }, [selectedDate, availableModes, doctorData, consultationMode, setConsultationMode]);
 
   const handleSelectDate = (dateSlot) => {
-    setSameDayError(false);
     setSelectedDate(dateSlot);
     setSelectedTime(null);
     setDropdownOpen(false);
   };
 
   const handleTodayClick = () => {
-    setSameDayError(true);
+    setSameDayModal(true);   // ← show modal instead of inline alert
     setSelectedDate(null);
     setSelectedTime(null);
     setDropdownOpen(false);
@@ -236,6 +252,9 @@ const ScheduleForm = ({
 
   return (
     <>
+      {/* ── Same-Day Toast ── */}
+      <SameDayToast show={sameDayModal} onClose={() => setSameDayModal(false)} />
+
       {/* ── Consultation Mode ── */}
       <div className={styles.section}>
         <p className={styles.sectionTitle}>
@@ -252,13 +271,13 @@ const ScheduleForm = ({
           <div className={styles.modeToggleRow}>
             <button
               className={`${styles.modeToggle} ${consultationMode === 'ON-SITE' ? styles.modeToggleActive : ''}`}
-              onClick={() => { setConsultationMode('ON-SITE'); setSelectedDate(null); setSelectedTime(null); setSameDayError(false); }}
+              onClick={() => { setConsultationMode('ON-SITE'); setSelectedDate(null); setSelectedTime(null); }}
             >
               <FaHome className={styles.modeToggleIcon} /><span>On-Site</span>
             </button>
             <button
               className={`${styles.modeToggle} ${consultationMode === 'VIRTUAL' ? styles.modeToggleActive : ''}`}
-              onClick={() => { setConsultationMode('VIRTUAL'); setSelectedDate(null); setSelectedTime(null); setSameDayError(false); }}
+              onClick={() => { setConsultationMode('VIRTUAL'); setSelectedDate(null); setSelectedTime(null); }}
             >
               <FaVideo className={styles.modeToggleIcon} /><span>Virtual</span>
             </button>
@@ -277,23 +296,10 @@ const ScheduleForm = ({
           onSelectDate={handleSelectDate}
           onTodayClick={handleTodayClick}
         />
-
-        {/* Same-day error */}
-        {sameDayError && (
-          <Alert
-            variant="danger"
-            dismissible
-            onClose={() => setSameDayError(false)}
-            className={styles.sameDayAlert}
-          >
-            <Alert.Heading as="h6">Same-Day Booking Not Allowed</Alert.Heading>
-            Appointments cannot be scheduled for today. Please select a future date to proceed.
-          </Alert>
-        )}
       </div>
 
-      {/* ── Time Dropdown — only shown when a valid future date is selected ── */}
-      {selectedDate && !sameDayError && (
+      {/* ── Time Dropdown ── */}
+      {selectedDate && (
         <div className={styles.section}>
           <p className={styles.sectionTitle}>
             <span className={styles.required}>*</span> Select Time
@@ -332,7 +338,7 @@ const ScheduleForm = ({
       )}
 
       {/* ── Booking Summary ── */}
-      {isFormComplete && !sameDayError && (
+      {isFormComplete && (
         <div className={styles.summaryCard}>
           <p className={styles.summaryTitle}>Booking Summary</p>
           <div className={styles.summaryGrid}>

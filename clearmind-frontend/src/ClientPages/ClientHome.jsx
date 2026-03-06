@@ -1,7 +1,7 @@
 import styles from "./ClientStyle/ClientHome.module.css";
 import ClientHeader from "./ClientComponents/Header.jsx";
 import ClientFooter from "./ClientComponents/Footer.jsx";
-import HomeCarousel from "./ClientComponents/HomeCarousel.jsx";
+import ProfessionalsSection from "./ClientComponents/ProfessionalsSection.jsx";
 import Announcements from "./ClientComponents/Announcements.jsx";
 import NextAppointment from "./ClientComponents/NextAppointment.jsx";
 
@@ -14,7 +14,7 @@ function ClientHome() {
       </div>
 
       <div className={styles.bodyWrapper}>
-        <HomeCarousel />
+        <ProfessionalsSection />
         <Announcements />
         <NextAppointment />
       </div>
