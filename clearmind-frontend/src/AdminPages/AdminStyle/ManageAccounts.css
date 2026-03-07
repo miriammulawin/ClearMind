@@ -136,7 +136,7 @@ animation: modalSlideIn 0.3s ease;
   align-items: center;
   gap: 20px;
   padding: 24px 28px;
-  background:  #6a49a9;
+  background:  #4D227C;
   color: white;
 }
 
@@ -315,4 +315,635 @@ animation: modalSlideIn 0.3s ease;
 .empty-value {
   color: #999;
   font-style: italic;
+}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ===== CREATE DOCTOR ACCOUNT MODAL ===== */
+.doctor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.doctor-modal-lg {
+  width: 680px;
+  max-width: 95vw;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background-color: #fff;
+  box-shadow: 0 20px 60px rgba(77, 34, 124, 0.3);
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Header ── */
+.doctor-modal-header {
+  position: sticky;
+  top: 0;
+  background: #4D227C;
+  color: white;
+  z-index: 10;
+  padding: 24px 30px;
+  border-bottom: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doctor-modal-header h2 {
+  color: white;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.doctor-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.doctor-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(90deg);
+}
+
+/* ── Body ── */
+.doctor-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  background: #faf8fc;
+  padding: 24px;
+}
+
+.doctor-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.doctor-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.doctor-modal-body::-webkit-scrollbar-thumb {
+  background: #4D227C;
+  border-radius: 10px;
+}
+
+.doctor-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #4D227C;
+}
+
+/* ── Form section card ── */
+.doctor-modal-body form {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e3f0;
+  box-shadow: 0 2px 8px rgba(77, 34, 124, 0.05);
+  padding: 24px;
+}
+
+/* ── Labels ── */
+.doctor-modal-body .form-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* ── Inputs ── */
+.input-violet {
+  padding: 11px 16px !important;
+  border-radius: 10px !important;
+  border: 2px solid #e5d6f5 !important;
+  outline: none !important;
+  font-size: 14px !important;
+  font-family: 'Poppins', sans-serif !important;
+  transition: all 0.3s ease !important;
+  background: white !important;
+  color: #2d1a45 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-violet:focus {
+  border-color: #4D227C !important;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1) !important;
+}
+
+.input-violet::placeholder {
+  color: #aaa !important;
+}
+
+/* ── Footer ── */
+.doctor-modal-footer {
+  border-top: 2px solid #e8e3f0;
+  padding: 20px 30px;
+  background: white;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* ── Buttons ── */
+.doctor-modal-body .btn-secondary,
+.doctor-modal-body .btn.btn-secondary {
+  background: #f0ebf7;
+  color: #4D227C;
+  border: 2px solid #e5d6f5;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.doctor-modal-body .btn-secondary:hover,
+.doctor-modal-body .btn.btn-secondary:hover {
+  background: #e5d6f5;
+  border-color: #4D227C;
+}
+
+.create-btn,
+.doctor-modal-body .btn-primary.create-btn {
+  background: #4D227C !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 32px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(77, 34, 124, 0.35) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.create-btn:hover,
+.doctor-modal-body .btn-primary.create-btn:hover {
+  background: #3a1860 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 34, 124, 0.45) !important;
+}
+
+.create-btn:active {
+  transform: translateY(0) !important;
+}@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ================================================
+   VIEW ACCOUNT MODAL — matches appointment modal
+   ================================================ */
+
+.view-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.view-modal-lg {
+  width: 700px;
+  max-width: 95vw;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background-color: #fff;
+  box-shadow: 0 20px 60px rgba(77, 34, 124, 0.3);
+  animation: viewModalSlideIn 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+@keyframes viewModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Header ── */
+.view-modal-header {
+  position: sticky;
+  top: 0;
+  background: #4D227C;
+  z-index: 10;
+  padding: 20px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.view-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.view-modal-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.view-modal-header-info h2 {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.view-modal-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.view-modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.view-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(90deg);
+}
+
+/* ── Scrollable Body ── */
+.view-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  background: #faf8fc;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.view-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.view-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.view-modal-body::-webkit-scrollbar-thumb {
+  background: #4D227C;
+  border-radius: 10px;
+}
+
+.view-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #6a3fa5;
+}
+
+/* ── Section Cards ── */
+.view-modal-section {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e3f0;
+  box-shadow: 0 2px 8px rgba(77, 34, 124, 0.05);
+  padding: 20px 22px;
+}
+
+.view-modal-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 16px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #eadcf7;
+}
+
+/* ── Info Grid ── */
+.view-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.view-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-info-full {
+  grid-column: 1 / -1;
+}
+
+.view-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9b7ab8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.view-info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d1a45;
+}
+
+/* ── About / Description ── */
+.view-modal-description {
+  font-size: 14px;
+  color: #534457;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Roles ── */
+.view-roles-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.view-role-badge {
+  background: #f0e9f9;
+  color: #4D227C;
+  border: 1px solid #d4b8f0;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.view-empty {
+  font-size: 13px;
+  color: #aaa;
+  font-style: italic;
+}
+
+/* ── Certificate Image ── */
+.view-cert-container {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e8e3f0;
+}
+
+.view-cert-image {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* ── Footer ── */
+.view-modal-footer {
+  border-top: 2px solid #e8e3f0;
+  padding: 16px 24px;
+  background: white;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-btn-close {
+  background: #f0ebf7;
+  color: #4D227C;
+  border: 2px solid #e5d6f5;
+  border-radius: 10px;
+  padding: 10px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn-close:hover {
+  background: #e5d6f5;
+  border-color: #4D227C;
+}
+
+
+/* ================================================
+   CREATE DOCTOR ACCOUNT MODAL
+   ================================================ */
+
+.doctor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.doctor-modal-lg {
+  width: 680px;
+  max-width: 95vw;
+  max-height: 90vh;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background-color: #fff;
+  box-shadow: 0 20px 60px rgba(77, 34, 124, 0.3);
+  animation: viewModalSlideIn 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.doctor-modal-header {
+  position: sticky;
+  top: 0;
+  background: #4D227C;
+  color: white;
+  z-index: 10;
+  padding: 24px 30px;
+  border-bottom: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doctor-modal-header h2 {
+  color: white;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0;
+}
+
+.doctor-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.doctor-close-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: rotate(90deg);
+}
+
+.doctor-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  background: #faf8fc;
+  padding: 24px;
+}
+
+.doctor-modal-body::-webkit-scrollbar { width: 8px; }
+.doctor-modal-body::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.doctor-modal-body::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
+.doctor-modal-body::-webkit-scrollbar-thumb:hover { background: #6a3fa5; }
+
+.doctor-modal-body form {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e8e3f0;
+  box-shadow: 0 2px 8px rgba(77, 34, 124, 0.05);
+  padding: 24px;
+}
+
+.doctor-modal-body .form-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.input-violet {
+  padding: 11px 16px !important;
+  border-radius: 10px !important;
+  border: 2px solid #e5d6f5 !important;
+  outline: none !important;
+  font-size: 14px !important;
+  font-family: 'Poppins', sans-serif !important;
+  transition: all 0.3s ease !important;
+  background: white !important;
+  color: #2d1a45 !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-violet:focus {
+  border-color: #4D227C !important;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1) !important;
+}
+
+.input-violet::placeholder { color: #aaa !important; }
+
+.doctor-modal-body .btn-secondary,
+.doctor-modal-body .btn.btn-secondary {
+  background: #f0ebf7;
+  color: #4D227C;
+  border: 2px solid #e5d6f5;
+  border-radius: 10px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.doctor-modal-body .btn-secondary:hover,
+.doctor-modal-body .btn.btn-secondary:hover {
+  background: #e5d6f5;
+  border-color: #4D227C;
+}
+
+.create-btn,
+.doctor-modal-body .btn-primary.create-btn {
+  background: #4D227C !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 10px 32px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: 'Poppins', sans-serif !important;
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 15px rgba(77, 34, 124, 0.35) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.create-btn:hover,
+.doctor-modal-body .btn-primary.create-btn:hover {
+  background: #3a1860 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 34, 124, 0.45) !important;
 }

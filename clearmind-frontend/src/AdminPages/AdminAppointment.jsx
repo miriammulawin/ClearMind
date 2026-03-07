@@ -7,7 +7,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import "./AdminStyle/AdminAppointment.css";
-import { FiX } from "react-icons/fi";
+import CreateAppointmentModal from "../DoctorPages/components/CreateAppointmentModal"; // ← imported here
 
 const locales = { "en-US": enUS };
 
@@ -46,33 +46,8 @@ function AdminAppointment() {
     },
   ]);
 
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-  });
-
-  const handleAddEvent = () => {
-    if (
-      !newEvent.title ||
-      !newEvent.date ||
-      !newEvent.startTime ||
-      !newEvent.endTime
-    ) {
-      alert("Please complete all fields");
-      return;
-    }
-
-    const start = new Date(`${newEvent.date}T${newEvent.startTime}`);
-    const end = new Date(`${newEvent.date}T${newEvent.endTime}`);
-
-    setEvents([
-      ...events,
-      { title: newEvent.title, start, end, allDay: false },
-    ]);
-    setShowModal(false);
-    setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
+  const handleAddEvent = (newEvent) => {
+    setEvents([...events, newEvent]);
   };
 
   return (
@@ -82,184 +57,63 @@ function AdminAppointment() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className="admin-content" style={{ padding: "20px" }}>
           <br />
-  
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "-18px",
-              }}
-            >
-              <h3>Appointment Calendar</h3>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  className="btn-create"
-                  onClick={() => setShowModal(true)}
-                >
-                  + Create Appointment
-                </button>
-              </div>
-            </div>
-
-            <Calendar
-              localizer={localizer}
-              events={events}
-              date={currentDate}
-              view={currentView}
-              onNavigate={setCurrentDate}
-              onView={setCurrentView}
-              views={["month", "week", "day", "agenda"]}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
-              eventPropGetter={(event) => {
-                let backgroundColor;
-                if (event.title.includes("Online Clinic"))
-                  backgroundColor = "#4D227C";
-                else if (event.title.includes("New Year's Day"))
-                  backgroundColor = "#7A92D1";
-                else backgroundColor = "#4D227C";
-
-                return {
-                  style: {
-                    backgroundColor,
-                    color: "#fff",
-                    borderRadius: "16px",
-                    padding: "4px 8px",
-                    fontWeight: 500,
-                    marginBottom: "4px",
-                    fontSize: "13px",
-                  },
-                };
-              }}
-            />
-  
-        </div>
-      </div>
-
-      {showModal && (
-        <div className="appointment-modal-overlay">
-          <div className="appointment-modal-lg">
-            <div className="modal-header">
-              <h2>New Appointment</h2>
-              <span className="modal-date">
-                {newEvent.date
-                  ? format(new Date(newEvent.date), "MMMM d, yyyy")
-                  : format(new Date(), "MMMM d, yyyy")}
-              </span>
-              <button className="close-btn" onClick={() => setShowModal(false)}>
-                <FiX />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="modal-section">
-                <h4>Patient Information</h4>
-                <div className="form-grid">
-                  <input placeholder="Patient First Name" />
-                  <input placeholder="Patient Last Name" />
-                  <input placeholder="Patient Middle Initial" />
-                  <input placeholder="Patient Age" />
-                  <input placeholder="Patient Sex" />
-                  <input placeholder="Patient Contact No." />
-                </div>
-
-                <div className="radio-group">
-                  <div>
-                    <strong>Patient Type</strong>
-                    <div>
-                      <label>
-                        <input type="radio" name="ptype" /> Existing Patient
-                      </label>
-                      <label>
-                        <input type="radio" name="ptype" /> New Patient
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <strong>Patient Classification</strong>
-                    <div>
-                      <label>
-                        <input type="radio" name="class" /> PWD
-                      </label>
-                      <label>
-                        <input type="radio" name="class" /> Senior Citizen
-                      </label>
-                      <label>
-                        <input type="radio" name="class" /> Regular
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h4>Consultation Schedule</h4>
-                <div className="schedule-row">
-                  <input
-                    type="date"
-                    value={newEvent.date}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, date: e.target.value })
-                    }
-                  />
-                  <div className="time-input-wrapper">
-                    <label>Start Time</label>
-                    <input
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startTime: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div className="time-input-wrapper">
-                    <label>End Time</label>
-                    <input
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endTime: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="radio-group" style={{ marginTop: "20px" }}>
-                  <div>
-                    <strong>Schedule Visit</strong>
-                    <div>
-                      <label>
-                        <input type="radio" name="visit" /> Schedule Visit
-                      </label>
-                      <label>
-                        <input type="radio" name="visit" /> Virtual Consult
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-section">
-                <h4>Payment Details</h4>
-                <div className="payment-form-grid">
-                  <input placeholder="Paid Amount" />
-                  <input placeholder="Reference Number" />
-                  <input placeholder="Payment Option" />
-                  <input type="file" />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn-create" onClick={handleAddEvent}>
-                Add Appointment
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: "-18px",
+            }}
+          >
+            <h3>Appointment Calendar</h3>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button className="btn-create" onClick={() => setShowModal(true)}>
+                + Create Appointment
               </button>
             </div>
           </div>
+
+          <Calendar
+            localizer={localizer}
+            events={events}
+            date={currentDate}
+            view={currentView}
+            onNavigate={setCurrentDate}
+            onView={setCurrentView}
+            views={["month", "week", "day", "agenda"]}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
+            eventPropGetter={(event) => {
+              let backgroundColor;
+              if (event.title.includes("Online Clinic"))
+                backgroundColor = "#4D227C";
+              else if (event.title.includes("New Year's Day"))
+                backgroundColor = "#7A92D1";
+              else backgroundColor = "#4D227C";
+
+              return {
+                style: {
+                  backgroundColor,
+                  color: "#fff",
+                  borderRadius: "16px",
+                  padding: "4px 8px",
+                  fontWeight: 500,
+                  marginBottom: "4px",
+                  fontSize: "13px",
+                },
+              };
+            }}
+          />
         </div>
-      )}
+      </div>
+
+      {/* ── Create Appointment Modal ── */}
+      <CreateAppointmentModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onAdd={handleAddEvent}
+      />
     </div>
   );
 }
