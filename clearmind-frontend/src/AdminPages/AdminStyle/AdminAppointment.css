@@ -212,7 +212,7 @@ padding: 0;
   
 }
 
-.close-btn {
+/* .close-btn {
   background: rgba(255, 255, 255, 0.2) !important;
   border: none !important;
   cursor: pointer;
@@ -226,7 +226,7 @@ padding: 0;
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.3s ease;
-}
+} */
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.3) !important;

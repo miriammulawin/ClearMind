@@ -69,8 +69,8 @@ function ManageAccounts() {
   const allRoles = [
     "Add Clinic",
     "Edit Appointment",
+    "View Patients",
     "View Billing",
-    "Edit Clinic",
     "Manage Accounts",
   ];
 
