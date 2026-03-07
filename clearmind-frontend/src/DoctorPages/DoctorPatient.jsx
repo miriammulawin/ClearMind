@@ -830,5 +830,5 @@ function DoctorPatient() {
     </div>
   );
 }
-
+ 
 export default DoctorPatient;
