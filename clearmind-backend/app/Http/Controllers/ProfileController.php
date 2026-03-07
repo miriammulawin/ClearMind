@@ -116,5 +116,6 @@ class ProfileController extends Controller
             'board_certificates'  => BoardCertificate::select('id', 'name')->orderBy('name')->get(),
             'services'            => Service::select('id', 'name')->orderBy('name')->get(),
         ]);
+        
     }
 }
