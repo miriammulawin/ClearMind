@@ -4,12 +4,12 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
-import DoctorSideBar        from "./components/DoctorSideBar";
-import DoctorTopNavbar      from "./components/DoctorTopNavbar";
-import DayAppointmentsModal from "./components/DayAppointmentsModal";
+import DoctorSideBar          from "./components/DoctorSideBar";
+import DoctorTopNavbar        from "./components/DoctorTopNavbar";
+import DayAppointmentsModal   from "./components/DayAppointmentsModal";
 import CreateAppointmentModal from "./components/CreateAppointmentModal";
-import AddScheduleModal     from "./components/AddScheduleModal";
-import { calendarEvents, EVENT_COLORS } from "./data/appointmentsData";
+import AddScheduleModal       from "./components/AddScheduleModal";
+import { calendarEvents }     from "./data/appointmentsData";
 import "./DoctorStyle/DoctorAppointment.css";
 
 // ── Localizer ──────────────────────────────────────────────────────────────
@@ -21,23 +21,23 @@ const localizer = dateFnsLocalizer({
   locales: { "en-US": enUS },
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── Event color — matches image 2 exactly ─────────────────────────────────
 const getEventColor = (event) => {
-  if (event.title?.includes("Physical")) return EVENT_COLORS.physical;
-  if (event.title?.includes("Online"))   return EVENT_COLORS.online;
+  if (event.title?.includes("Physical")) return "#4D227C"; // solid purple
+  if (event.title?.includes("Online"))   return "#3d5a8a"; // navy blue
   return "#4D227C";
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
 function DoctorAppointment() {
-  const [activeMenu, setActiveMenu]         = useState("Appointment");
-  const [currentDate, setCurrentDate]       = useState(new Date());
-  const [currentView, setCurrentView]       = useState("month");
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeMenu, setActiveMenu]             = useState("Appointment");
+  const [currentDate, setCurrentDate]           = useState(new Date());
+  const [currentView, setCurrentView]           = useState("month");
+  const [showCreateModal, setShowCreateModal]   = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showDayModal, setShowDayModal]     = useState(false);
-  const [selectedDayDate, setSelectedDayDate] = useState(null);
-  const [events, setEvents]                 = useState(calendarEvents);
+  const [showDayModal, setShowDayModal]         = useState(false);
+  const [selectedDayDate, setSelectedDayDate]   = useState(null);
+  const [events, setEvents]                     = useState(calendarEvents);
 
   const handleAddEvent = (newEvent) => setEvents((prev) => [...prev, newEvent]);
 
@@ -46,7 +46,6 @@ function DoctorAppointment() {
     setShowDayModal(true);
   };
 
-  // Also open the modal when clicking directly on an event pill
   const handleSelectEvent = (event) => {
     setSelectedDayDate(event.start);
     setShowDayModal(true);
@@ -67,8 +66,6 @@ function DoctorAppointment() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3>Appointments Calendar</h3>
 
-
-              {/* Buttons */}
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
                   className="btn-create"
@@ -105,12 +102,11 @@ function DoctorAppointment() {
                   backgroundColor: getEventColor(event),
                   color: "#fff",
                   borderRadius: "16px",
+                  border: "none",
                   padding: "4px 8px",
                   fontWeight: 500,
                   marginBottom: "4px",
                   fontSize: "13px",
-                  opacity: event.isRescheduledGhost ? 0.85 : 1,
-                  fontStyle: event.isRescheduledGhost ? "italic" : "normal",
                 },
               })}
             />
