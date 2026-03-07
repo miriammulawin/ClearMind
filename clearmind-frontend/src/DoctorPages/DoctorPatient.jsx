@@ -248,9 +248,7 @@ function DoctorPatient() {
                       <td>{row.time}</td>
                       <td>{row.type}</td>
                       <td>
-                        <span
-                          className={`status ${row.status.toLowerCase()}`}
-                        >
+                        <span className={`status ${row.status.toLowerCase()}`}>
                           {row.status}
                         </span>
                       </td>
@@ -345,7 +343,7 @@ function DoctorPatient() {
                 <button
                   className="btn-view-profile"
                   onClick={() =>
-                    navigate(`/admin/patient-profile/${selectedPatient.id}`, {
+                    navigate(`/doctor/patient-profile/${selectedPatient.id}`, {
                       state: { patient: selectedPatient },
                     })
                   }
@@ -475,197 +473,189 @@ function DoctorPatient() {
                     </div>
                   </div>
                 </div>
-
-
               </div>
 
               {selectedPatient.status === "Completed" &&
-                selectedPatient.progressionNote ? (
+              selectedPatient.progressionNote ? (
+                <div
+                  className="modal-content-card"
+                  style={{ marginBottom: "12px" }}
+                >
                   <div
-                    className="modal-content-card"
-                    style={{ marginBottom: "12px" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid #ede9f6",
+                    }}
                   >
                     <div
                       style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "14px",
-                        paddingBottom: "12px",
-                        borderBottom: "1px solid #ede9f6",
+                        justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "8px",
-                          background:
-                            "linear-gradient(135deg, #7341A8, #4D227C)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <FiActivity size={14} color="#fff" />
-                      </div>
-                      <h4
-                        style={{
-                          margin: 0,
-                          fontSize: "17px",
-                          fontWeight: 800,
-                          color: "#3b1f6e",
-                        }}
-                      >
-                        Progression Note
-                      </h4>
+                      <FiActivity size={14} color="#fff" />
                     </div>
-                    <div
+                    <h4
                       style={{
-                        background: "#faf7ff",
-                        border: "1px solid #ede9f6",
-                        borderRadius: "10px",
-                        padding: "16px 18px",
+                        margin: 0,
+                        fontSize: "17px",
+                        fontWeight: 800,
+                        color: "#3b1f6e",
                       }}
                     >
-                      <p
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          color: "#7341A8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                          marginBottom: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FiFileText size={12} />
-                        Assessment
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "13.5px",
-                          color: "#374151",
-                          margin: 0,
-                          lineHeight: "1.75",
-                        }}
-                      >
-                        {selectedPatient.progressionNote.assessment}
-                      </p>
-                    </div>
+                      Progression Note
+                    </h4>
                   </div>
-                ) : selectedPatient.status !== "Completed" ? (
                   <div
-                    className="modal-content-card"
-                    style={{ marginBottom: "12px" }}
+                    style={{
+                      background: "#faf7ff",
+                      border: "1px solid #ede9f6",
+                      borderRadius: "10px",
+                      padding: "16px 18px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#7341A8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <FiFileText size={12} />
+                      Assessment
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "#374151",
+                        margin: 0,
+                        lineHeight: "1.75",
+                      }}
+                    >
+                      {selectedPatient.progressionNote.assessment}
+                    </p>
+                  </div>
+                </div>
+              ) : selectedPatient.status !== "Completed" ? (
+                <div
+                  className="modal-content-card"
+                  style={{ marginBottom: "12px" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid #ede9f6",
+                    }}
                   >
                     <div
                       style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "14px",
-                        paddingBottom: "12px",
-                        borderBottom: "1px solid #ede9f6",
+                        justifyContent: "center",
+                        flexShrink: 0,
                       }}
                     >
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "8px",
-                          background:
-                            "linear-gradient(135deg, #7341A8, #4D227C)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <FiEdit3 size={14} color="#fff" />
-                      </div>
-                      <h4
-                        style={{
-                          margin: 0,
-                          fontSize: "17px",
-                          fontWeight: 800,
-                          color: "#3b1f6e",
-                        }}
-                      >
-                        Progression Note
-                      </h4>
-                      <span
-                        style={{
-                          marginLeft: "auto",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "#1d4ed8",
-                          background: "#dbeafe",
-                          border: "1px solid #bfdbfe",
-                          borderRadius: "20px",
-                          padding: "3px 10px",
-                        }}
-                      >
-                        Draft
-                      </span>
+                      <FiEdit3 size={14} color="#fff" />
                     </div>
-                    <div
+                    <h4
                       style={{
-                        background: "#faf7ff",
-                        border: "1px solid #ede9f6",
-                        borderRadius: "10px",
-                        padding: "16px 18px",
+                        margin: 0,
+                        fontSize: "17px",
+                        fontWeight: 800,
+                        color: "#3b1f6e",
                       }}
                     >
-                      <p
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          color: "#7341A8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                          marginBottom: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FiFileText size={12} />
-                        Assessment
-                      </p>
-                      <textarea
-                        value={progressionDraft}
-                        onChange={(e) => setProgressionDraft(e.target.value)}
-                        placeholder="Write your clinical assessment here..."
-                        rows={5}
-                        style={{
-                          width: "100%",
-                          fontSize: "13.5px",
-                          color: "#374151",
-                          lineHeight: "1.75",
-                          border: "1px solid #d8ccf0",
-                          borderRadius: "8px",
-                          padding: "10px 12px",
-                          resize: "vertical",
-                          outline: "none",
-                          background: "#fff",
-                          fontFamily: "inherit",
-                          boxSizing: "border-box",
-                          transition: "border-color 0.2s",
-                        }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "#7341A8")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "#d8ccf0")
-                        }
-                      />
-                    </div>
+                      Progression Note
+                    </h4>
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#1d4ed8",
+                        background: "#dbeafe",
+                        border: "1px solid #bfdbfe",
+                        borderRadius: "20px",
+                        padding: "3px 10px",
+                      }}
+                    >
+                      Draft
+                    </span>
                   </div>
-                ) : null}
+                  <div
+                    style={{
+                      background: "#faf7ff",
+                      border: "1px solid #ede9f6",
+                      borderRadius: "10px",
+                      padding: "16px 18px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#7341A8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <FiFileText size={12} />
+                      Assessment
+                    </p>
+                    <textarea
+                      value={progressionDraft}
+                      onChange={(e) => setProgressionDraft(e.target.value)}
+                      placeholder="Write your clinical assessment here..."
+                      rows={5}
+                      style={{
+                        width: "100%",
+                        fontSize: "13.5px",
+                        color: "#374151",
+                        lineHeight: "1.75",
+                        border: "1px solid #d8ccf0",
+                        borderRadius: "8px",
+                        padding: "10px 12px",
+                        resize: "vertical",
+                        outline: "none",
+                        background: "#fff",
+                        fontFamily: "inherit",
+                        boxSizing: "border-box",
+                        transition: "border-color 0.2s",
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = "#7341A8")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d8ccf0")}
+                    />
+                  </div>
+                </div>
+              ) : null}
 
               <div className="modal-content-card">
                 <button
@@ -761,7 +751,7 @@ function DoctorPatient() {
               <button
                 className="btn-view-history"
                 onClick={() =>
-                  navigate(`/admin/patient-history/${selectedPatient.id}`, {
+                  navigate(`/doctor/patient-history/${selectedPatient.id}`, {
                     state: { patient: selectedPatient },
                   })
                 }
@@ -830,5 +820,5 @@ function DoctorPatient() {
     </div>
   );
 }
- 
+
 export default DoctorPatient;

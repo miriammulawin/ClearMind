@@ -15,6 +15,7 @@ import DoctorAppointment from "./DoctorPages/DoctorAppointment";
 import DoctorPatient from "./DoctorPages/DoctorPatient";
 import DoctorProfile from "./DoctorPages/DoctorProfile";
 import DoctorMessages from "./DoctorPages/DoctorMessages";
+import DoctorPatientProfile from "./DoctorPages/DoctorPatientProfile";
 
 import CreateAccounts from "./AdminPages/CreateAccounts";
 import AdminDashboard from "./AdminPages/AdminDashboard";
@@ -26,7 +27,6 @@ import AdminPatient from "./AdminPages/AdminPatient";
 import AdminAppointment from "./AdminPages/AdminAppointment";
 import AdminBilling from "./AdminPages/AdminBilling";
 import AdminPatientProfile from "./AdminPages/AdminPatientProfile";
-
 
 function App() {
   return (
@@ -55,6 +55,10 @@ function App() {
           <Route path="/doctor/patient" element={<DoctorPatient />} />
           <Route path="/doctor/profile" element={<DoctorProfile />} />
           <Route path="/doctor/messages" element={<DoctorMessages />} />
+          <Route
+            path="/doctor/patient-profile/:id"
+            element={<DoctorPatientProfile />}
+          />
         </Routes>
       </Router>
     </>
