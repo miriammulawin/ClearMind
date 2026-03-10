@@ -88,17 +88,25 @@
   width: 100%;
   font-size: 14px;
   cursor: pointer;
+  color: white;
   transition: background-color 0.3s ease;
+  box-shadow: none !important;
 }
 
 .continue-button:hover {
-  background-color: #5a3aa8;
+  background-color: #5B2C91;
+  color: white;
 }
 
-.continue-button:active {
-  background-color: #4a2f8f;
+.continue-button:active,
+.continue-button:focus,
+.continue-button:focus-visible,
+.continue-button:active:focus {
+  background-color: #4E237C;
+  color: white;
+  box-shadow: none !important;
+  outline: none;
 }
-
 .bottom-navigation {
   background-color: white;
   border-top: 1px solid #dee2e6;
