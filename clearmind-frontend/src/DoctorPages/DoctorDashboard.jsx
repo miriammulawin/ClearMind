@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorDashboard.css";
+import "./DoctorStyle/DoctorDashboard.module.css";
 import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
 import { FiX } from "react-icons/fi";
@@ -144,15 +144,32 @@ function DoctorDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Scheduled": return "#1E3A8A";
-      case "Completed": return "#16A34A";
-      case "Cancelled": return "#DC2626";
-      default: return "#000";
+      case "Scheduled":
+        return "#1E3A8A";
+      case "Completed":
+        return "#16A34A";
+      case "Cancelled":
+        return "#DC2626";
+      default:
+        return "#000";
     }
   };
 
   const barData = {
-    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
     datasets: [
       {
         label: "Monthly Patients",
@@ -178,10 +195,19 @@ function DoctorDashboard() {
       },
     },
     scales: {
-      x: { ticks: { color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
+      x: {
+        ticks: {
+          color: "#574a65",
+          font: { family: "Poppins, sans-serif", size: 12 },
+        },
+      },
       y: {
         beginAtZero: true,
-        ticks: { stepSize: 1, color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } },
+        ticks: {
+          stepSize: 1,
+          color: "#574a65",
+          font: { family: "Poppins, sans-serif", size: 12 },
+        },
       },
     },
   };
@@ -235,7 +261,12 @@ function DoctorDashboard() {
       },
     },
     layout: {
-      padding: { top: 10, bottom: 10, left: 10, right: window.innerWidth < 768 ? 10 : 60 },
+      padding: {
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: window.innerWidth < 768 ? 10 : 60,
+      },
     },
     cutout: "0%",
   };
@@ -329,7 +360,10 @@ function DoctorDashboard() {
                   <div className="card-header">
                     <h5>Calendar</h5>
                     <div className="week-navigation">
-                      <button className="week-nav-btn" onClick={() => navigateWeek(-1)}>
+                      <button
+                        className="week-nav-btn"
+                        onClick={() => navigateWeek(-1)}
+                      >
                         <FaChevronLeft />
                       </button>
                       <span className="week-range">
@@ -338,7 +372,10 @@ function DoctorDashboard() {
                           year: "numeric",
                         })}
                       </span>
-                      <button className="week-nav-btn" onClick={() => navigateWeek(1)}>
+                      <button
+                        className="week-nav-btn"
+                        onClick={() => navigateWeek(1)}
+                      >
                         <FaChevronRight />
                       </button>
                     </div>
@@ -347,29 +384,70 @@ function DoctorDashboard() {
                   <div className="card-body">
                     <div className="calendar-grid">
                       <div className="calendar-header">
-                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                          <div key={day} className="calendar-day-label">{day}</div>
-                        ))}
+                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(
+                          (day) => (
+                            <div key={day} className="calendar-day-label">
+                              {day}
+                            </div>
+                          ),
+                        )}
                       </div>
                       <div className="calendar-dates">
                         {(() => {
                           const dates = [];
-                          const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
-                          const lastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
+                          const firstDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth(),
+                            1,
+                          );
+                          const lastDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth() + 1,
+                            0,
+                          );
                           const startDay = firstDay.getDay();
                           const daysInMonth = lastDay.getDate();
-                          const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
+                          const prevMonthLastDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth(),
+                            0,
+                          ).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--) {
-                            dates.push(<div key={`prev-${i}`} className="calendar-date other-month">{prevMonthLastDay - i}</div>);
+                            dates.push(
+                              <div
+                                key={`prev-${i}`}
+                                className="calendar-date other-month"
+                              >
+                                {prevMonthLastDay - i}
+                              </div>,
+                            );
                           }
                           for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
-                            dates.push(<div key={day} className={`calendar-date ${isToday(date) ? "today" : ""}`}>{day}</div>);
+                            const date = new Date(
+                              currentWeekStart.getFullYear(),
+                              currentWeekStart.getMonth(),
+                              day,
+                            );
+                            dates.push(
+                              <div
+                                key={day}
+                                className={`calendar-date ${isToday(date) ? "today" : ""}`}
+                              >
+                                {day}
+                              </div>,
+                            );
                           }
                           const remainingCells = 42 - dates.length;
                           for (let day = 1; day <= remainingCells; day++) {
-                            dates.push(<div key={`next-${day}`} className="calendar-date other-month">{day}</div>);
+                            dates.push(
+                              <div
+                                key={`next-${day}`}
+                                className="calendar-date other-month"
+                              >
+                                {day}
+                              </div>,
+                            );
                           }
                           return dates;
                         })()}
@@ -410,7 +488,11 @@ function DoctorDashboard() {
                             <td>{patient.date}</td>
                             <td>{patient.time}</td>
                             <td>{patient.type}</td>
-                            <td style={{ color: getStatusColor(patient.status) }}>{patient.status}</td>
+                            <td
+                              style={{ color: getStatusColor(patient.status) }}
+                            >
+                              {patient.status}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -420,7 +502,9 @@ function DoctorDashboard() {
                     <span>Page 1 of 5</span>
                     <div className="pagination-buttons">
                       <button>{"< Previous"}</button>
-                      {[1, 2, 3, 4, 5].map((n) => (<button key={n}>{n}</button>))}
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button key={n}>{n}</button>
+                      ))}
                       <button>{"Next >"}</button>
                     </div>
                   </div>

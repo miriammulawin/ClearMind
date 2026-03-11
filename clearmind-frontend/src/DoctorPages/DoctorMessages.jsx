@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorMessages.css";
+import "./DoctorStyle/DoctorMessages.module.css";
 import { FiSearch, FiPaperclip, FiSend } from "react-icons/fi";
 
 function DoctorMessages() {
@@ -19,12 +19,25 @@ function DoctorMessages() {
 
   const messages = [
     { from: "patient", text: "goodmorning" },
-    { from: "admin", text: "goodmorning!, how's your day? eat your lunch, goodbye." },
+    {
+      from: "admin",
+      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
+    },
     { day: "JAN 20" },
-    { from: "patient", text: "goodmorning!, how's your day? eat your lunch, goodbye." },
-    { from: "patient", text: "goodmorning!, how's your day? eat your lunch, goodbye." },
+    {
+      from: "patient",
+      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
+    },
+    {
+      from: "patient",
+      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
+    },
     { time: "6:25 am" },
-    { from: "patient", text: "goodmorning!, how's your day? eat your lunch, goodbye.", seen: true },
+    {
+      from: "patient",
+      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
+      seen: true,
+    },
   ];
 
   return (
@@ -34,8 +47,9 @@ function DoctorMessages() {
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
-        <div className={`doctor-content msg-wrapper ${showList ? "show-list" : ""}`}>
-
+        <div
+          className={`doctor-content msg-wrapper ${showList ? "show-list" : ""}`}
+        >
           {/* Left panel — chat list */}
           <div className="msg-left">
             <select className="msg-filter">
@@ -83,10 +97,23 @@ function DoctorMessages() {
 
             <div className="msg-body">
               {messages.map((m, i) => {
-                if (m.day)  return <div key={i} className="msg-day">{m.day}</div>;
-                if (m.time) return <div key={i} className="msg-time">{m.time}</div>;
+                if (m.day)
+                  return (
+                    <div key={i} className="msg-day">
+                      {m.day}
+                    </div>
+                  );
+                if (m.time)
+                  return (
+                    <div key={i} className="msg-time">
+                      {m.time}
+                    </div>
+                  );
                 return (
-                  <div key={i} className={`bubble ${m.from === "admin" ? "admin" : "patient"}`}>
+                  <div
+                    key={i}
+                    className={`bubble ${m.from === "admin" ? "admin" : "patient"}`}
+                  >
                     {m.text}
                     {m.seen && <div className="seen">seen</div>}
                   </div>
@@ -100,7 +127,6 @@ function DoctorMessages() {
               <FiSend className="send" />
             </div>
           </div>
-
         </div>
       </div>
     </div>

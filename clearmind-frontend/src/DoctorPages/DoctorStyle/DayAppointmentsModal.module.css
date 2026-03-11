@@ -1,0 +1,708 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   DayAppointmentsModal.module.css
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Overlay & Modal ────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: clamp(12px, 3vw, 20px);
+}
+
+.modal {
+  background-color: #fff;
+  border-radius: clamp(12px, 2vw, 16px);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  max-width: 620px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Modal Header ───────────────────────────────────────────────────────── */
+.modalHeader {
+  background-color: #4d227c;
+  padding: clamp(14px, 2.5vw, 20px) clamp(16px, 3vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: clamp(12px, 2vw, 16px) clamp(12px, 2vw, 16px) 0 0;
+  flex-shrink: 0;
+  gap: clamp(8px, 1.5vw, 12px);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1vw, 8px);
+  flex: 1;
+  min-width: 0;
+}
+
+.modalHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 12px);
+  flex-shrink: 0;
+}
+
+.dateBadge {
+  background-color: #fff;
+  color: #4d227c;
+  padding: clamp(4px, 0.8vw, 6px) clamp(10px, 2vw, 16px);
+  border-radius: 20px;
+  font-size: clamp(11px, 1.5vw, 13px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.closeBtn {
+  background-color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: clamp(28px, 4vw, 32px);
+  height: clamp(28px, 4vw, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #4d227c;
+  font-size: clamp(15px, 2vw, 18px);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.clinicDot {
+  width: clamp(8px, 1.2vw, 10px);
+  height: clamp(8px, 1.2vw, 10px);
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.rescheduledBadge {
+  font-size: clamp(10px, 1.4vw, 12px);
+  font-weight: 600;
+  background-color: #fff3e0;
+  color: #b45309;
+  padding: 2px clamp(8px, 1.5vw, 10px);
+  border-radius: 10px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* ── Scrollable Body ────────────────────────────────────────────────────── */
+.scrollBody {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: clamp(16px, 3vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.5vw, 20px);
+  min-height: 0;
+}
+
+/* ── Info Row ───────────────────────────────────────────────────────────── */
+.infoRow {
+  display: flex;
+  gap: clamp(6px, 1vw, 8px);
+  font-size: clamp(12px, 1.8vw, 14px);
+}
+
+.infoLabel {
+  font-weight: 700;
+  color: #4d227c;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: #333;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: clamp(8px, 1.5vw, 12px);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: clamp(10px, 2vw, 14px) clamp(14px, 2.5vw, 20px);
+  border-bottom: 1px solid #e0e0e0;
+  font-size: clamp(13px, 2vw, 15px);
+  font-weight: 700;
+  color: #4d227c;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cardBody {
+  padding: clamp(12px, 2.5vw, 16px) clamp(14px, 2.5vw, 20px);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: clamp(8px, 1.5vw, 12px);
+}
+
+.cardFields {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vw, 10px);
+  flex: 1;
+}
+
+.cardFooter {
+  padding: clamp(10px, 1.5vw, 12px) clamp(14px, 2.5vw, 20px);
+  border-top: 1px solid #f0f0f0;
+}
+
+/* ── Accordion / Dropdown section ───────────────────────────────────────── */
+.accordionHeader {
+  padding: clamp(10px, 2vw, 14px) clamp(14px, 2.5vw, 20px);
+  font-size: clamp(13px, 2vw, 15px);
+  font-weight: 700;
+  color: #4d227c;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.accordionHeader:hover {
+  background-color: #faf7ff;
+}
+
+/* when content below is visible, add a bottom border to the header */
+.accordionHeader.open {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.accordionChevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: #4d227c;
+}
+
+.accordionChevron.rotated {
+  transform: rotate(180deg);
+}
+
+.accordionBody {
+  padding: clamp(12px, 2.5vw, 16px) clamp(14px, 2.5vw, 20px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.8vw, 14px);
+  /* smooth open/close */
+  overflow: hidden;
+}
+
+/* ── Purpose Badge Row ──────────────────────────────────────────────────── */
+.purposeRow {
+  display: flex;
+  gap: 8px;
+  font-size: clamp(12px, 1.8vw, 14px);
+  align-items: center;
+}
+
+.purposeBadge {
+  padding: 3px clamp(8px, 1.5vw, 12px);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: clamp(10px, 1.5vw, 12px);
+}
+
+.purposeVawc   { background-color: #fee2e2; color: #b91c1c; }
+.purposeLegal  { background-color: #e0f2fe; color: #0369a1; }
+.purposeSchool { background-color: #dcfce7; color: #15803d; }
+.purposeWork   { background-color: #fef9c3; color: #a16207; }
+
+/* ── Payment Badge ──────────────────────────────────────────────────────── */
+.paymentWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: clamp(12px, 1.8vw, 14px);
+}
+
+.paymentLabel {
+  font-weight: 700;
+  color: #4d227c;
+  white-space: nowrap;
+}
+
+.paymentPaid {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 2px clamp(8px, 1.5vw, 12px);
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: clamp(11px, 1.5vw, 13px);
+}
+
+.paymentUnpaid {
+  background-color: #fff3e0;
+  color: #b45309;
+  padding: 2px clamp(8px, 1.5vw, 12px);
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: clamp(11px, 1.5vw, 13px);
+}
+
+/* ── VAWC dot ───────────────────────────────────────────────────────────── */
+.vawcDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #dc2626;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Complaint Box ──────────────────────────────────────────────────────── */
+.complaintLabel {
+  font-weight: 700;
+  color: #4d227c;
+  font-size: clamp(11px, 1.6vw, 13px);
+  margin-bottom: 6px;
+}
+
+.complaintBox {
+  background-color: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: clamp(10px, 1.8vw, 12px) clamp(10px, 2vw, 14px);
+  font-size: clamp(11px, 1.6vw, 13px);
+  color: #374151;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.complaintEmpty {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ── Supporting Documents ───────────────────────────────────────────────── */
+.docsSection {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vw, 8px);
+}
+
+.docsSectionLabel {
+  font-weight: 700;
+  color: #4d227c;
+  font-size: clamp(11px, 1.6vw, 13px);
+  margin-bottom: 2px;
+}
+
+/* chips sit side by side and wrap */
+.docsChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* File chip — light purple pill matching reference */
+.pdfChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #e8deff;
+  color: #4d227c;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: clamp(11px, 1.5vw, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  max-width: 220px;
+  text-align: left;
+}
+
+.pdfChip:hover {
+  background-color: #d4c4ff;
+}
+
+.pdfChipIcon {
+  flex-shrink: 0;
+  color: #6b34b8;
+}
+
+.pdfChipLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Full PDF Viewer Modal ───────────────────────────────────────────────── */
+.pdfViewerOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  padding: clamp(12px, 2vw, 24px);
+}
+
+.pdfViewerModal {
+  background-color: #1e1e1e;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 860px;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.pdfViewerHeader {
+  background-color: #2a2a2a;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.pdfViewerTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e5e5e5;
+  font-size: clamp(12px, 1.8vw, 14px);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdfViewerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pdfViewerDownload {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #4d227c;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: clamp(11px, 1.5vw, 13px);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.pdfViewerDownload:hover { background-color: #3a1a5c; }
+
+.pdfViewerClose {
+  background-color: #3a3a3a;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e5e5;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  flex-shrink: 0;
+}
+
+.pdfViewerClose:hover { background-color: #555; }
+
+.pdfViewerFrame {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background-color: #525659;
+}
+
+/* ── PDF Toolbar (pagination + zoom) ────────────────────────────────────── */
+.pdfToolbar {
+  background-color: #3a3a3a;
+  border-bottom: 1px solid #4a4a4a;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  flex-shrink: 0;
+}
+
+.pdfPagination,
+.pdfZoom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdfNavBtn {
+  background-color: #555;
+  border: none;
+  border-radius: 6px;
+  color: #e5e5e5;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+  line-height: 1;
+}
+
+.pdfNavBtn:hover:not(:disabled) { background-color: #4d227c; }
+.pdfNavBtn:disabled              { opacity: 0.35; cursor: default; }
+
+.pdfPageInfo {
+  color: #e5e5e5;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 52px;
+  text-align: center;
+}
+
+/* ── Scrollable page canvas area ────────────────────────────────────────── */
+.pdfViewerBody {
+  flex: 1;
+  overflow: auto;
+  background-color: #525659;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+/* react-pdf canvas natural sizing */
+.pdfViewerBody :global(.react-pdf__Page) {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.pdfViewerBody :global(.react-pdf__Page canvas) {
+  max-width: 100%;
+  height: auto !important;
+}
+
+.pdfLoading,
+.pdfError {
+  color: #ccc;
+  font-size: 14px;
+  padding: 40px;
+  text-align: center;
+}
+
+/* ── School section — uploaded file metadata & empty state ─────────────── */
+.uploadedFileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  background-color: #f7f2ff;
+  border: 1px solid #d9c8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.uploadedFileMetaItem {
+  font-size: clamp(11px, 1.5vw, 13px);
+  color: #374151;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.uploadedFileMetaLabel {
+  font-weight: 700;
+  color: #4d227c;
+}
+
+.noUploadBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fafafa;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.noUploadIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.noUploadText {
+  font-size: clamp(11px, 1.5vw, 13px);
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ── Assessment Session Section ─────────────────────────────────────────── */
+.sessionTypeBadge {
+  margin-left: 8px;
+  padding: 2px clamp(8px, 1.5vw, 12px);
+  border-radius: 10px;
+  font-size: clamp(10px, 1.4vw, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sessionBox {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vw, 10px);
+}
+
+.certReminderBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 4px;
+}
+
+.certReminderIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.certReminderText {
+  font-size: clamp(11px, 1.6vw, 13px);
+  color: #92400e;
+  line-height: 1.5;
+}
+
+/* ── Reschedule Box ─────────────────────────────────────────────────────── */
+.rescheduleBox {
+  background-color: #f7f2ff;
+  border: 1px solid #d9c8f0;
+  border-radius: 10px;
+  padding: clamp(10px, 2vw, 14px) clamp(14px, 2.5vw, 18px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 1vw, 8px);
+}
+
+.rescheduledStatusBadge {
+  background-color: #fff3e0;
+  color: #b45309;
+  padding: 3px clamp(10px, 2vw, 14px);
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: clamp(10px, 1.5vw, 12px);
+  white-space: nowrap;
+}
+
+/* ── List view card header badges ───────────────────────────────────────── */
+.newScheduleBadge {
+  background-color: #fff3e0;
+  color: #b45309;
+  padding: 2px clamp(8px, 1.5vw, 12px);
+  border-radius: 10px;
+  font-size: clamp(10px, 1.5vw, 12px);
+  font-weight: 600;
+}
+
+.listPurposeBadge {
+  padding: 2px clamp(6px, 1.2vw, 10px);
+  border-radius: 10px;
+  font-size: clamp(10px, 1.4vw, 11px);
+  font-weight: 600;
+}
+
+.badgeGroup {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btnPurple {
+  padding: clamp(8px, 1.2vw, 10px) clamp(20px, 3.5vw, 28px);
+  background-color: #4d227c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: clamp(12px, 1.8vw, 14px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btnPurple:hover { background-color: #3a1a5c; }
+
+.btnGreen {
+  padding: clamp(6px, 1vw, 8px) clamp(14px, 2.5vw, 20px);
+  background-color: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: clamp(11px, 1.6vw, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btnGreen:hover { background-color: #15803d; }
+
+/* ── Media Queries (structural shifts only) ─────────────────────────────── */
+@media (max-width: 640px) {
+  .overlay        { padding: 0; align-items: flex-end; }
+  .modal          { max-width: 100%; border-radius: 16px 16px 0 0; max-height: 95vh; }
+  .cardBody       { flex-direction: column; }
+  .pdfViewerModal { height: 94vh; border-radius: 12px 12px 0 0; }
+  .btnPurple      { width: 100%; }
+}
+
+@media (max-width: 400px) {
+  .dateBadge { display: none; }
+  .infoRow   { flex-direction: column; gap: 2px; }
+}

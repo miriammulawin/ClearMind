@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DoctorSidebar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorPatient.css";
+import "./DoctorStyle/DoctorPatient.module.css";
 import {
   FiX,
   FiCheck,

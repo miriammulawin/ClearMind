@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
-import "../DoctorStyle/Modal.css";
+import "../DoctorStyle/Modal.module.css";
 
 function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
@@ -230,7 +230,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         {/* FOOTER */}
         <div className="modal-footer">
           <button className="btn-completed" onClick={handleSave}>
-            Save 
+            Save
           </button>
         </div>
       </div>

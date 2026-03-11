@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { FiX, FiCheck, FiTrash2, FiFilter } from "react-icons/fi";
-import "../DoctorStyle/AllNotifications.css";
+import "../DoctorStyle/AllNotifications.module.css";
 
 function AllNotifications({ onClose, notifications, setNotifications }) {
-  const [filter, setFilter] = useState("all"); 
+  const [filter, setFilter] = useState("all");
 
   const filteredNotifications = notifications.filter((notif) => {
     if (filter === "unread") return !notif.isRead;
@@ -53,7 +53,6 @@ function AllNotifications({ onClose, notifications, setNotifications }) {
   return (
     <div className="all-notifications-overlay">
       <div className="all-notifications-container">
-       
         <div className="all-notifications-header">
           <div className="header-left">
             <h2>All Notifications</h2>
@@ -65,7 +64,6 @@ function AllNotifications({ onClose, notifications, setNotifications }) {
             <FiX />
           </button>
         </div>
-
 
         <div className="notifications-toolbar">
           <div className="filter-buttons">
@@ -99,7 +97,6 @@ function AllNotifications({ onClose, notifications, setNotifications }) {
           </div>
         </div>
 
-     
         <div className="all-notifications-list">
           {filteredNotifications.length === 0 ? (
             <div className="no-notifications-message">
