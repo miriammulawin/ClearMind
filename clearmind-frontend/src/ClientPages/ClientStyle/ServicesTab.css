@@ -44,16 +44,15 @@
   background: #4a2273;
 }
 
-.accordion-item-custom {
-  border-bottom: 3px solid #4E237C;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  overflow: hidden;
+.appointment-services-container .accordion-item {
+  border: none !important;
+  border-bottom: 3px solid #4E237C !important;
   border-radius: 15px !important;
+  margin-bottom: 12px !important;
+  overflow: hidden;
 }
 
 .accordion-header-custom {
-  background-color: transparent;
   padding: 12px 16px;
 }
 
@@ -78,7 +77,7 @@
   margin-bottom: 20px;
 }
 
-.continue-button {
+.appointment-services-container .continue-button {
   background-color: #4E237C;
   max-width: min-content;
   border: none;
@@ -93,15 +92,15 @@
   box-shadow: none !important;
 }
 
-.continue-button:hover {
+.appointment-services-container .continue-button:hover {
   background-color: #5B2C91;
   color: white;
 }
 
-.continue-button:active,
-.continue-button:focus,
-.continue-button:focus-visible,
-.continue-button:active:focus {
+.appointment-services-container .continue-button:active,
+.appointment-services-container .continue-button:focus,
+.appointment-services-container .continue-button:focus-visible,
+.appointment-services-container .continue-button:active:focus {
   background-color: #4E237C;
   color: white;
   box-shadow: none !important;
@@ -148,6 +147,7 @@
 /* Remove the inset shadow from accordion items */
 .accordion-item {
   box-shadow: none !important;
+  
 }
 
 .accordion-item:focus-within {
@@ -222,7 +222,6 @@
   
   .scrollable-body {
     padding: 12px 10px;
-    padding-right: 6px !important;
   }
   
   .services-heading {

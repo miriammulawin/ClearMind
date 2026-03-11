@@ -2,6 +2,7 @@
 // Helps users decide between Psychotherapy & Counseling vs Psychological Assessment
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../../ClientStyle/iHelp.module.css';
 
 /* -----------------------------------------------------------------
@@ -62,14 +63,12 @@ const QUESTIONS = [
   },
 ];
 
-const MAX_PER_Q   = 4;   // options per question
-const TOTAL_MAX   = 16;  // 4 questions x 4 options
+const MAX_PER_Q      = 4;
+const TOTAL_MAX      = 16;
 const MIN_SELECTIONS = 2;
 
 /* -----------------------------------------------------------------
    Result Logic
-   Returns: { winner, therapyCount, assessmentCount, totalSelected, confidence }
-   confidence: 'strong' | 'moderate' | 'mixed'
 ------------------------------------------------------------------ */
 function analyzeAnswers(answers) {
   const counts = { therapy: 0, assessment: 0 };
@@ -88,24 +87,17 @@ function analyzeAnswers(answers) {
   const loser  = winner === 'therapy' ? 'assessment' : 'therapy';
   const diff   = counts[winner] - counts[loser];
 
-  // confidence based on how lopsided the selections are
   let confidence;
-  if (totalSelected >= 14) {
-    // chose almost everything — mixed signal
-    confidence = 'mixed';
-  } else if (diff >= 5 || (counts[loser] === 0)) {
-    confidence = 'strong';
-  } else if (diff >= 2) {
-    confidence = 'moderate';
-  } else {
-    confidence = 'mixed';
-  }
+  if (totalSelected >= 14)          confidence = 'mixed';
+  else if (diff >= 5 || counts[loser] === 0) confidence = 'strong';
+  else if (diff >= 2)               confidence = 'moderate';
+  else                              confidence = 'mixed';
 
   return { winner, therapyCount: counts.therapy, assessmentCount: counts.assessment, totalSelected, confidence };
 }
 
 /* -----------------------------------------------------------------
-   Conclusion copy — based on winner + confidence
+   Conclusion copy
 ------------------------------------------------------------------ */
 const CONCLUSIONS = {
   therapy: {
@@ -162,9 +154,10 @@ const RESULTS = {
     title: "Psychotherapy & Counseling",
     primary: {
       emoji: '🛋️',
-      title: 'Psychotherapy & Counseling',
+      title: 'Psychotherapy and Counseling',
       badge: 'Best Match',
       desc: 'Regular one-on-one sessions with a licensed therapist to help you process emotions, develop coping skills, and heal from stress, anxiety, grief, or trauma.',
+      navigable: true,   // <-- only this service has a booking route
     },
     secondary: {
       emoji: '🔬',
@@ -180,10 +173,11 @@ const RESULTS = {
       title: 'Psychological Assessment & Evaluation',
       badge: 'Best Match',
       desc: 'A series of standardized tests and interviews to assess your cognitive, behavioral, and emotional functioning - results in a professional report.',
+      navigable: false,
     },
     secondary: {
       emoji: '🛋️',
-      title: 'Psychotherapy & Counseling',
+      title: 'Psychotherapy and Counseling',
       desc: 'If you also need emotional support, counseling pairs well with assessment to help you process the findings and move forward.',
     },
   },
@@ -193,6 +187,8 @@ const RESULTS = {
    Main Component
 ------------------------------------------------------------------ */
 const IHelp = ({ onClose, onSelectService }) => {
+  const navigate = useNavigate();
+
   const [step, setStep]       = useState(0);
   const [answers, setAnswers] = useState([[], [], [], []]);
   const [animKey, setAnimKey] = useState(0);
@@ -203,7 +199,6 @@ const IHelp = ({ onClose, onSelectService }) => {
   const canProceed = currentSel.length >= MIN_SELECTIONS;
   const remaining  = Math.max(0, MIN_SELECTIONS - currentSel.length);
 
-  // compute result only on step 5
   const analysis   = step === 5 ? analyzeAnswers(answers) : null;
   const result     = step === 5 ? RESULTS[analysis.winner] : null;
   const conclusion = step === 5 ? CONCLUSIONS[analysis.winner][analysis.confidence] : null;
@@ -223,6 +218,22 @@ const IHelp = ({ onClose, onSelectService }) => {
   const goNext  = () => { setAnimKey(k => k + 1); setStep(s => s + 1); };
   const goBack  = () => { setAnimKey(k => k + 1); setStep(s => s - 1); };
   const restart = () => { setAnswers([[], [], [], []]); setAnimKey(k => k + 1); setStep(1); };
+
+  // Handles the primary Book button on the result screen
+  const handleBook = () => {
+    const serviceTitle = result.primary.title;
+    if (result.primary.navigable) {
+      // Psychotherapy and Counseling — go directly to set-appointment
+      onClose();
+      navigate('/client/appointment/set-appointment', {
+        state: { selectedService: serviceTitle },
+      });
+    } else {
+      // Assessment — not yet bookable online
+      alert(`${serviceTitle} booking will be available soon. This feature is currently under development.`);
+    }
+    onSelectService && onSelectService(serviceTitle);
+  };
 
   return (
     <div className={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -367,13 +378,7 @@ const IHelp = ({ onClose, onSelectService }) => {
             </div>
 
             <div className={styles.resultActions}>
-              <button
-                className={styles.primaryAction}
-                onClick={() => {
-                  onSelectService && onSelectService(result.primary.title);
-                  onClose();
-                }}
-              >
+              <button className={styles.primaryAction} onClick={handleBook}>
                 Book {result.primary.title} →
               </button>
               <button className={styles.secondaryAction} onClick={restart}>

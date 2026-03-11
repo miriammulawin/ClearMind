@@ -20,6 +20,7 @@ import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentComponents/AppointmentDetails";
 import SetAppointment from "./ClientPages/ClientComponents/AppointmentComponents/SetAppointment";
 import SetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/AppointmentForm/SetAppointmentForm';
+import PAEAppointment from "./ClientPages/ClientComponents/AppointmentComponents/PAEAppointment";
 
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
           <Route path="services" element={<ServicesTab />} />
           <Route path="set-appointment" element={<SetAppointment />} />
           <Route path="set-appointment-form" element={<SetAppointmentForm />} />
+          <Route path="psychological-assessment" element={<PAEAppointment />} />
           <Route path="pending" element={<PendingTab />} />
           <Route path="upcoming" element={<UpcomingTab />} />
           <Route path="history" element={<HistoryTab />} />

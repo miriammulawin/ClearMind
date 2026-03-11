@@ -1,0 +1,259 @@
+/* PAEAppointment.module.css */
+/* Matches ServicesTab.css + SetAppointment.module.css design language */
+
+/* ── Page Container ── */
+.container {
+  max-width: 768px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  height: calc(100vh - 230px);
+  margin-bottom: 30px;
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 25px 15px 25px;
+}
+
+/* ── Heading ── */
+.heading {
+  color: #4E237C;
+  font-weight: bold;
+  margin-top:25px;           /* remove the 25px margin */
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+}
+
+/* ── Back Button ── */
+.backBtn {
+  color: white;
+  background: #5B2C91;
+  border: none;
+  border-radius: 6px;
+  padding: clamp(0.3rem, 1.5vw, 0.5rem) clamp(0.6rem, 2vw, 1rem);
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;  /* prevents button text from wrapping on small screens */
+  flex-shrink: 0;       /* prevents button from squishing */
+}
+
+.backBtn:hover {
+  background-color: #4A2273;
+  color: white;
+}
+
+/* ── Scrollable Body ── */
+.scrollableBody {
+  background-color: transparent;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 22px !important;
+}
+
+.scrollableBody::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollableBody::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+.scrollableBody::-webkit-scrollbar-thumb {
+  background: #5B2C91;
+  border-radius: 10px;
+}
+.scrollableBody::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
+
+/* ── Accordion Item ── */
+.accordionItem {
+  border-bottom: 3px solid #4E237C !important;
+  border-radius: 15px !important;
+  margin-bottom: 12px;
+  overflow: hidden;
+  padding: 12px 16px;
+}
+
+/* ── Accordion Header overrides ── */
+.accordionItem :global(.accordion-button) {
+  background-color: transparent !important;
+  color: #4E237C !important;
+  font-weight: 500 !important;
+  font-size: clamp(13px, 3.5vw, 14px) !important;
+  box-shadow: none !important;
+  border: none !important;
+  transition: background-color 0.3s ease !important;
+}
+
+.accordionItem :global(.accordion-button:not(.collapsed)) {
+  background-color: #f0ebf8 !important;
+  color: #2d1b69 !important;
+  box-shadow: none !important;
+}
+
+.accordionItem :global(.accordion-button:focus) {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.accordionItem :global(.accordion-button:active) {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.accordionItem :global(.accordion-button::after) {
+  filter: invert(15%) sepia(60%) saturate(700%) hue-rotate(255deg) brightness(55%);
+}
+
+.accordionItem :global(.accordion-item) {
+  box-shadow: none !important;
+}
+
+.accordionItem :global(.accordion-collapse) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Title row inside header ── */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 12px);
+}
+
+.serviceIcon {
+  font-size: clamp(16px, 4vw, 20px);
+  flex-shrink: 0;
+}
+
+.accordionTitle {
+  color: #4E237C;
+  font-weight: 500;
+  font-size: clamp(13px, 3.5vw, 14px);
+}
+
+/* ── Coming Soon badge ── */
+.comingSoon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FDF0CC;
+  color: #7A5500;
+  font-size: clamp(9px, 2vw, 10px);
+  font-weight: 800;
+  border-radius: 99px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* ── Accordion Body ── */
+.accordionBody {
+  background-color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* ── Description ── */
+.description {
+  color: #495057;
+  font-size: clamp(12px, 3vw, 13px);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+/* ── Continue Button — identical to ServicesTab ── */
+.continueBtn {
+  background-color: #4E237C;
+  max-width: min-content;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 32px;
+  font-weight: bold;
+  width: 100%;
+  font-size: clamp(12px, 3vw, 14px);
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+.continueBtn:hover {
+  background-color: #5B2C91;
+  color: white;
+}
+.continueBtn:active,
+.continueBtn:focus,
+.continueBtn:focus-visible {
+  background-color: #4E237C;
+  color: white;
+  box-shadow: none !important;
+  outline: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 576px) {
+  .container {
+    margin: auto;
+    max-width: 450px;
+    height: 87.5%;
+  }
+  .scrollableBody {
+    padding-right: 20px !important;
+  }
+  .scrollableBody::-webkit-scrollbar { width: 6px; }
+  .heading { font-size: clamp(1.1rem, 5vw, 1.5rem); margin-bottom: 16px; }
+  .accordionItem { border-radius: 6px !important; }
+  .accordionTitle { font-size: 14px; }
+  .accordionBody { padding: 16px 12px; }
+  .description { font-size: 12px; margin-bottom: 16px; }
+  .continueBtn { padding: 12px 24px; font-size: 13px; border-radius: 18px; }
+}
+
+@media (max-width: 376px) {
+  .container { height: 84%; }
+  .heading { font-size: 1.3rem; margin-bottom: 12px; }
+  .accordionTitle { font-size: 14px; }
+  .description { font-size: 12px; }
+  .continueBtn { padding: 10px 20px; font-size: 12px; }
+}
+
+@media (min-width: 577px) and (max-width: 767px) {
+  .heading { font-size: 1.4rem; }
+  .accordionTitle { font-size: 14px; }
+}
+
+@media (min-width: 768px) {
+  .container { margin: 0 auto; }
+  .heading { font-size: 1.75rem; }
+  .accordionTitle { font-size: 15px; }
+  .continueBtn { font-size: 15px; }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .scrollableBody { padding: 12px 16px; }
+  .heading { font-size: 1.1rem; margin-bottom: 12px; }
+  .accordionItem { margin-bottom: 8px; }
+}
+
+@supports (padding: max(0px)) {
+  .scrollableBody {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+}
