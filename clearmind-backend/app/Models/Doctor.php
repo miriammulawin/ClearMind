@@ -18,15 +18,31 @@ class Doctor extends Model
         'practicing_since',
         'profile_picture',
         'prc_number',
+        // certificate_images and id_pictures removed — now in doctor_images table
     ];
 
-    // Relationships
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Many-to-Many: Specializations
+    // ── Images (normalized separate table) ───────────────────────
+    public function images()
+    {
+        return $this->hasMany(DoctorImage::class);
+    }
+
+    public function certificateImages()
+    {
+        return $this->hasMany(DoctorImage::class)->where('type', 'certificate');
+    }
+
+    public function idPictures()
+    {
+        return $this->hasMany(DoctorImage::class)->where('type', 'id_picture');
+    }
+
+    // ── Specializations ───────────────────────────────────────────
     public function specializations()
     {
         return $this->belongsToMany(
@@ -37,7 +53,6 @@ class Doctor extends Model
         )->withPivot('is_main')->withTimestamps();
     }
 
-    // Get only main specialization
     public function mainSpecialization()
     {
         return $this->specializations()
@@ -45,7 +60,6 @@ class Doctor extends Model
             ->first();
     }
 
-    // Many-to-Many: Sub-Specializations
     public function subSpecializations()
     {
         return $this->belongsToMany(
@@ -56,7 +70,6 @@ class Doctor extends Model
         )->withTimestamps();
     }
 
-    // Many-to-Many: Services
     public function services()
     {
         return $this->belongsToMany(
@@ -67,7 +80,6 @@ class Doctor extends Model
         )->withTimestamps();
     }
 
-    // Many-to-Many: Board Certificates
     public function boardCertificates()
     {
         return $this->belongsToMany(
@@ -79,7 +91,6 @@ class Doctor extends Model
          ->withTimestamps();
     }
 
-    // Helper method to check if doctor has expired certificates
     public function hasValidBoardCertificates()
     {
         return $this->boardCertificates()

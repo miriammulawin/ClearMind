@@ -57,23 +57,19 @@ class ProfileController extends Controller
             ->get()
             ->map(fn($s) => ['id' => $s->id, 'name' => $s->name]);
 
-        // ── Certificate images array ───────────────────────────────────────
-        $certificateImages = [];
-        if (!empty($doctor->certificate_images)) {
-            $raw = is_array($doctor->certificate_images)
-                ? $doctor->certificate_images
-                : json_decode($doctor->certificate_images, true) ?? [];
-            $certificateImages = array_map(fn($p) => asset('storage/' . $p), $raw);
-        }
+        // ── Certificate images — from doctor_images table ──────────────────
+        $certificateImages = $doctor->certificateImages()
+            ->get()
+            ->map(fn($img) => asset('storage/' . $img->path))
+            ->values()
+            ->toArray();
 
-        // ── ID pictures array ──────────────────────────────────────────────
-        $idPictures = [];
-        if (!empty($doctor->id_pictures)) {
-            $raw = is_array($doctor->id_pictures)
-                ? $doctor->id_pictures
-                : json_decode($doctor->id_pictures, true) ?? [];
-            $idPictures = array_map(fn($p) => asset('storage/' . $p), $raw);
-        }
+        // ── ID pictures — from doctor_images table ─────────────────────────
+        $idPictures = $doctor->idPictures()
+            ->get()
+            ->map(fn($img) => asset('storage/' . $img->path))
+            ->values()
+            ->toArray();
 
         return response()->json([
             'user' => [
@@ -102,8 +98,8 @@ class ProfileController extends Controller
                 'sub_specializations' => $subSpecializations,
                 'board_certificates'  => $boardCertificates,
                 'services'            => $services,
-                'certificate_images'  => $certificateImages,
-                'id_pictures'         => $idPictures,
+                'certificate_images'  => $certificateImages,  // ← from doctor_images table
+                'id_pictures'         => $idPictures,         // ← from doctor_images table
             ],
         ]);
     }
@@ -116,6 +112,5 @@ class ProfileController extends Controller
             'board_certificates'  => BoardCertificate::select('id', 'name')->orderBy('name')->get(),
             'services'            => Service::select('id', 'name')->orderBy('name')->get(),
         ]);
-        
     }
 }

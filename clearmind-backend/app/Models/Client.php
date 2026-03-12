@@ -10,29 +10,14 @@ class Client extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'user_id',
+        'doctor_id',           // ← ADDED
         'appointment_status',
-        // Add more later, e.g.:
-        // 'preferred_language',
-        // 'emergency_contact',
-        // 'notes',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'appointment_status' => 'string', // or 'enum:Pending,Scheduled,Cancelled,Completed' in Laravel 11+
-        // 'created_at' => 'datetime',
-        // 'updated_at' => 'datetime',
+        'appointment_status' => 'string',
     ];
 
     /**
@@ -43,17 +28,24 @@ class Client extends Model
         return $this->belongsTo(User::class);
     }
 
-        public function appointments()
+    /**
+     * Get the doctor assigned to this client.
+     */
+    public function doctor(): BelongsTo  // ← ADDED
+    {
+        return $this->belongsTo(Doctor::class);
+    }
+
+    public function appointments()
     {
         return $this->hasMany(Appointment::class);
     }
 
     public function latestAppointment()
-        {
-            return $this->hasOne(Appointment::class)->latestOfMany();
-        }
+    {
+        return $this->hasOne(Appointment::class)->latestOfMany();
+    }
 
-    // Optional: helpful scopes for cleaner queries
     public function scopePending($query)
     {
         return $query->where('appointment_status', 'Pending');

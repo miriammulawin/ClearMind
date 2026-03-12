@@ -13,9 +13,13 @@ return new class extends Migration
             $table->foreignId('user_id')
                   ->constrained()
                   ->onDelete('cascade')
-                  ->unique(); 
+                  ->unique();
 
-           
+            $table->foreignId('doctor_id')   // ← ADDED directly here
+                  ->nullable()
+                  ->constrained('doctors')
+                  ->nullOnDelete();
+
             $table->enum('appointment_status', ['Pending', 'Scheduled', 'Cancelled', 'Completed'])
                   ->default('Pending');
             $table->timestamps();

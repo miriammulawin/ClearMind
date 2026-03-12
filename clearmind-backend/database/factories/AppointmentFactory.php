@@ -2,43 +2,26 @@
 
 namespace Database\Factories;
 
+use App\Models\Appointment;
+use App\Models\Client;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AppointmentFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Appointment::class;
+
     public function definition(): array
     {
-        $createdAt = $this->faker->dateTimeBetween(
-            date('Y') . '-01-01',
-            date('Y') . '-12-31'
-        );
+        // Pull a random client that already has a doctor assigned
+        $client = Client::whereNotNull('doctor_id')->inRandomOrder()->first();
 
         return [
-            'doctor_id' => \App\Models\Doctor::inRandomOrder()->first()->id,
-            
-            'appointment_date' => $this->faker->dateTimeBetween(
-                date('Y') . '-01-01',
-                date('Y') . '-12-31'
-            )->format('Y-m-d'),
-            
-            'appointment_time' => $this->faker->randomElement([
-                '08:00:00', '09:00:00', '10:00:00', '11:00:00',
-                '13:00:00', '14:00:00', '15:00:00', '16:00:00',
-            ]),
-            
-            'visit_type' => $this->faker->randomElement(['Online', 'Physical']),
-            
-            'status'     => $this->faker->randomElement([
-                'Pending', 'Scheduled', 'Cancelled', 'Completed',
-            ]),
-            
-            'created_at' => $createdAt,
-            'updated_at' => $createdAt,
+            'client_id'        => $client?->id ?? Client::factory(),
+            'doctor_id'        => $client?->doctor_id,  
+            'appointment_date' => fake()->dateTimeBetween('-6 months', '+3 months'),
+            'appointment_time' => fake()->time('H:i:s'),
+            'visit_type'       => fake()->randomElement(['Online', 'Physical']),
+            'status'           => fake()->randomElement(['Pending', 'Scheduled', 'Cancelled', 'Completed']),
         ];
     }
 }

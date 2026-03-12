@@ -37,7 +37,6 @@ function SetUpAccountModal({ showModal, onClose }) {
     servicesList:          [],
   });
 
-  // ── Lookup options from API ──────────────────────────────────────
   const [options, setOptions] = useState({
     specializations:    [],
     subSpecializations: [],
@@ -60,7 +59,6 @@ function SetUpAccountModal({ showModal, onClose }) {
         });
       } catch (err) {
         console.error("[SetUpModal] Failed to load lookup options:", err);
-        // Silently fail — dropdowns will just be empty, user can still type
       }
     };
     fetchOptions();
@@ -73,7 +71,7 @@ function SetUpAccountModal({ showModal, onClose }) {
     const fetchProfile = async () => {
       try {
         const res = await axiosClient.get("/profile");
-        const user = res.data.user || {};
+        const user        = res.data.user    || {};
         const profileData = res.data.profile || {};
 
         setFormData((prev) => ({
@@ -81,14 +79,14 @@ function SetUpAccountModal({ showModal, onClose }) {
           profilePicture:    null,
           certificateImages: [],
           idPictures:        [],
-          description:       profileData.description       || user.description       || "",
-          professionalTitle: profileData.professional_title || user.professionalTitle || "",
+          description:       profileData.description        || user.description       || "",
+          professionalTitle: profileData.professional_title || user.professionalTitle  || "",
           yearsOfExperience: profileData.years_of_experience != null
             ? String(profileData.years_of_experience)
             : (user.yearsOfExperience != null ? String(user.yearsOfExperience) : ""),
-          practicingSince:   profileData.practicing_since  || user.practicingSince   || "",
-          prcNumber:         profileData.prc_number        || user.prcNumber         || "",
-          licenseNumber:     profileData.license_number    || user.licenseNumber     || "",
+          practicingSince:   profileData.practicing_since   || user.practicingSince    || "",
+          prcNumber:         profileData.prc_number         || user.prcNumber          || "",
+          licenseNumber:     profileData.license_number     || user.licenseNumber      || "",
         }));
 
         const extractNames = (arr) =>
@@ -180,7 +178,7 @@ function SetUpAccountModal({ showModal, onClose }) {
 
       if (formData.profilePicture) payload.append("profile_picture", formData.profilePicture);
       formData.certificateImages.forEach((f) => payload.append("certificate_images[]", f));
-      formData.idPictures.forEach((f) => payload.append("id_pictures[]", f));
+      formData.idPictures.forEach((f)        => payload.append("id_pictures[]", f));
 
       payload.append("description",         formData.description);
       payload.append("professional_title",  formData.professionalTitle);
@@ -200,12 +198,34 @@ function SetUpAccountModal({ showModal, onClose }) {
 
       const updatedUser    = res.data.user    || {};
       const updatedProfile = res.data.profile || {};
-      localStorage.setItem("user", JSON.stringify(updatedUser));
 
+      // ── Merge existing localStorage user with updated fields ──
+      // This ensures sidebar immediately reflects new prc_number,
+      // professional title, and profile picture after saving.
+      const existingUser = (() => {
+        try { return JSON.parse(localStorage.getItem("user") || "{}"); }
+        catch { return {}; }
+      })();
+
+      const mergedUser = {
+        ...existingUser,
+        ...updatedUser,
+        // Explicitly set every field the sidebar reads
+        prcNumber:         updatedUser.prc_number        || updatedUser.prcNumber        || formData.prcNumber,
+        prc_number:        updatedUser.prc_number        || updatedUser.prcNumber        || formData.prcNumber,
+        licenseNumber:     updatedUser.license_number    || updatedUser.licenseNumber    || formData.licenseNumber,
+        professionalTitle: updatedUser.professional_title|| updatedUser.professionalTitle|| formData.professionalTitle,
+        profilePictureUrl: updatedProfile.profile_picture || updatedUser.profilePictureUrl || null,
+      };
+
+      localStorage.setItem("user", JSON.stringify(mergedUser));
+
+      // ── Update profile image in localStorage ──────────────────
       const rawImage = updatedProfile.profile_picture || updatedUser.profilePictureUrl || null;
       const imageUrl = resolveImageUrl(rawImage);
       if (imageUrl) localStorage.setItem("profile_image", imageUrl);
 
+      // ── Notify sidebar and other components to re-read ────────
       window.dispatchEvent(new Event("profileUpdated"));
       toast.success("Profile setup complete!");
       onClose();
@@ -344,7 +364,7 @@ function SetUpAccountModal({ showModal, onClose }) {
               />
             </div>
 
-            {/* ── Tag Lists with Dropdowns ── */}
+            {/* Tag Lists with Dropdowns */}
             <DropdownListInput
               label="Main Specialty"
               value={formData.mainSpecialty}
@@ -445,29 +465,22 @@ function SetUpAccountModal({ showModal, onClose }) {
   );
 }
 
-// ── DropdownListInput — same look as ListInput but with a searchable dropdown ──
+// ── DropdownListInput ─────────────────────────────────────────────────────────
 const DropdownListInput = ({ label, value, onChange, list, add, remove, options = [], excludeList = [] }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Filter: match typed text + exclude already-added items
   const filtered = options.filter(
-    (opt) =>
-      !excludeList.includes(opt) &&
-      opt.toLowerCase().includes(value.toLowerCase())
+    (opt) => !excludeList.includes(opt) && opt.toLowerCase().includes(value.toLowerCase())
   );
 
-  const select = (opt) => {
-    onChange(opt);
-    setOpen(false);
-  };
+  const select = (opt) => { onChange(opt); setOpen(false); };
 
   return (
     <div className="col-12" ref={ref}>
@@ -480,74 +493,38 @@ const DropdownListInput = ({ label, value, onChange, list, add, remove, options 
             onChange={(e) => { onChange(e.target.value); setOpen(true); }}
             onFocus={() => setOpen(true)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); add(); setOpen(false); }
+              if (e.key === "Enter")  { e.preventDefault(); add(); setOpen(false); }
               if (e.key === "Escape") setOpen(false);
             }}
             className="form-control"
             style={{ borderRadius: "12px", height: "40px", paddingRight: "36px" }}
           />
-          {/* Chevron toggle */}
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            style={{
-              position: "absolute", right: "10px", top: "50%",
-              transform: "translateY(-50%)", background: "none",
-              border: "none", padding: 0, cursor: "pointer", color: "#4D227C",
-              display: "flex", alignItems: "center",
-            }}
+            style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", padding: 0, cursor: "pointer", color: "#4D227C", display: "flex", alignItems: "center" }}
             tabIndex={-1}
           >
-            <FiChevronDown
-              size={16}
-              style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
-            />
+            <FiChevronDown size={16} style={{ transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }} />
           </button>
 
-          {/* Dropdown list */}
           {open && filtered.length > 0 && (
-            <div
-              style={{
-                position: "absolute", top: "44px", left: 0, right: 0,
-                backgroundColor: "#fff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-                zIndex: 9999,
-                maxHeight: "200px",
-                overflowY: "auto",
-              }}
-            >
+            <div style={{ position: "absolute", top: "44px", left: 0, right: 0, backgroundColor: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", zIndex: 9999, maxHeight: "200px", overflowY: "auto" }}>
               {filtered.map((opt) => (
                 <div
                   key={opt}
                   onMouseDown={(e) => { e.preventDefault(); select(opt); }}
-                  style={{
-                    padding: "10px 16px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    color: "#2D3748",
-                    borderBottom: "1px solid #f1f5f9",
-                    transition: "background 0.15s",
-                  }}
+                  style={{ padding: "10px 16px", cursor: "pointer", fontSize: "0.9rem", color: "#2D3748", borderBottom: "1px solid #f1f5f9", transition: "background 0.15s" }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EEFF")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   {opt}
                 </div>
               ))}
-              {/* Allow typing custom values not in list */}
               {value.trim() && !options.includes(value.trim()) && (
                 <div
                   onMouseDown={(e) => { e.preventDefault(); add(); setOpen(false); }}
-                  style={{
-                    padding: "10px 16px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    color: "#4D227C",
-                    fontStyle: "italic",
-                    borderTop: "1px solid #e2e8f0",
-                  }}
+                  style={{ padding: "10px 16px", cursor: "pointer", fontSize: "0.9rem", color: "#4D227C", fontStyle: "italic", borderTop: "1px solid #e2e8f0" }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3EEFF")}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
@@ -568,26 +545,12 @@ const DropdownListInput = ({ label, value, onChange, list, add, remove, options 
         </button>
       </div>
 
-      {/* Tags */}
       {list.length > 0 && (
         <div className="mt-2 d-flex flex-wrap gap-2">
           {list.map((item, i) => (
-            <span
-              key={i}
-              className="badge d-inline-flex align-items-center gap-2"
-              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}
-            >
+            <span key={i} className="badge d-inline-flex align-items-center gap-2" style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.9rem", fontWeight: "400" }}>
               {item}
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                style={{
-                  background: "none", border: "none", color: "white",
-                  cursor: "pointer", display: "flex", alignItems: "center",
-                  padding: "0", lineHeight: "1",
-                }}
-                aria-label="Remove"
-              >
+              <button type="button" onClick={() => remove(i)} style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", padding: "0", lineHeight: "1" }} aria-label="Remove">
                 <FiX size={16} strokeWidth={2} />
               </button>
             </span>
@@ -604,21 +567,9 @@ const FileInput = ({ label, file, onFileChange }) => {
   return (
     <div className="col-12">
       <div className="position-relative">
-        <input
-          type="text"
-          placeholder={`Upload ${label}`}
-          readOnly
-          value={file ? file.name : ""}
-          className="form-control"
-          style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
-        />
-        <input type="file" accept="image/*" id={inputId} className="d-none"
-          onChange={(e) => onFileChange(e.target.files[0])} />
-        <button
-          type="button" className="btn position-absolute"
-          style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
-          onClick={() => document.getElementById(inputId).click()}
-        >Browse</button>
+        <input type="text" placeholder={`Upload ${label}`} readOnly value={file ? file.name : ""} className="form-control" style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }} />
+        <input type="file" accept="image/*" id={inputId} className="d-none" onChange={(e) => onFileChange(e.target.files[0])} />
+        <button type="button" className="btn position-absolute" style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }} onClick={() => document.getElementById(inputId).click()}>Browse</button>
       </div>
     </div>
   );
@@ -635,37 +586,22 @@ const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => 
     <div className="col-12">
       <div className="d-flex gap-2 align-items-center">
         <div className="position-relative flex-grow-1">
-          <input
-            type="text" placeholder={`Upload ${label}`} readOnly
-            value={files.length > 0 ? `${files.length} file(s) selected` : ""}
-            className="form-control"
-            style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }}
-          />
+          <input type="text" placeholder={`Upload ${label}`} readOnly value={files.length > 0 ? `${files.length} file(s) selected` : ""} className="form-control" style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }} />
           <input type="file" accept="image/*" id={inputId} className="d-none" onChange={handleChange} />
-          <button
-            type="button" className="btn position-absolute"
-            style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }}
-            onClick={() => document.getElementById(inputId).click()}
-          >Browse</button>
+          <button type="button" className="btn position-absolute" style={{ backgroundColor: "#C4B5D6", top: "0", right: "0", height: "40px", borderRadius: "0 12px 12px 0", border: "none", padding: "0 15px" }} onClick={() => document.getElementById(inputId).click()}>Browse</button>
         </div>
-        <button
-          type="button"
-          className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
-          onClick={() => document.getElementById(inputId).click()}
-        ><FiPlus size={18} /></button>
+        <button type="button" className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center" style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }} onClick={() => document.getElementById(inputId).click()}>
+          <FiPlus size={18} />
+        </button>
       </div>
       {files.length > 0 && (
         <div className="mt-2 d-flex flex-wrap gap-2">
           {files.map((file, i) => (
-            <span key={i} className="badge d-inline-flex align-items-center gap-2"
-              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.85rem", fontWeight: "400", maxWidth: "220px" }}>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }} title={file.name}>
-                {file.name}
-              </span>
-              <button type="button" onClick={() => onFileRemove(i)}
-                style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", lineHeight: "1", flexShrink: 0 }}
-                aria-label="Remove"><FiX size={14} strokeWidth={2} /></button>
+            <span key={i} className="badge d-inline-flex align-items-center gap-2" style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.85rem", fontWeight: "400", maxWidth: "220px" }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }} title={file.name}>{file.name}</span>
+              <button type="button" onClick={() => onFileRemove(i)} style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0", lineHeight: "1", flexShrink: 0 }} aria-label="Remove">
+                <FiX size={14} strokeWidth={2} />
+              </button>
             </span>
           ))}
         </div>

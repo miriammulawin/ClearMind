@@ -28,13 +28,13 @@ ChartJS.register(
 );
 
 function DoctorDashboard() {
-  const [activeMenu, setActiveMenu]           = useState("Dashboard");
-  const [today, setToday]                     = useState(new Date());
+  const [activeMenu, setActiveMenu]             = useState("Dashboard");
+  const [today, setToday]                       = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement]     = useState(null);
-  const [announcementTab, setAnnouncementTab] = useState("received");
-  const [showSetupModal, setShowSetupModal]   = useState(true);
+  const [announcementTab, setAnnouncementTab]   = useState("received");
+  const [showSetupModal, setShowSetupModal]     = useState(true);
   const [announcementForm, setAnnouncementForm] = useState({ title: "", message: "", priority: "normal" });
 
   // ── API Data ─────────────────────────────────────────────────────
@@ -46,18 +46,25 @@ function DoctorDashboard() {
   const [statusCounts, setStatusCounts]   = useState({ Scheduled: 0, Cancelled: 0, Pending: 0, Completed: 0 });
   const [monthlyData, setMonthlyData]     = useState(Array(12).fill(0));
 
+  // ── TODAY'S APPOINTMENT COUNTS (dynamic) ─────────────────────────
+  const [todayCounts, setTodayCounts] = useState({
+    online:   0,
+    physical: 0,
+    total:    0,
+  });
+
   // ── Announcements (static for now) ───────────────────────────────
   const [adminAnnouncements, setAdminAnnouncements] = useState([
-    { id: 1, title: "TIME OUT",                   message: "MAG TIME OUT NA TAYO",                                                                                                    priority: "urgent", postedDate: "Feb 24, 2026" },
-    { id: 2, title: "Clinic Holiday Schedule",    message: "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule accordingly.", priority: "urgent", postedDate: "Feb 20, 2026" },
-    { id: 3, title: "New Online Consultation Hours", message: "Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday.",              priority: "normal", postedDate: "Feb 18, 2026" },
+    { id: 1, title: "TIME OUT",                      message: "MAG TIME OUT NA TAYO",                                                                                                    priority: "urgent", postedDate: "Feb 24, 2026" },
+    { id: 2, title: "Clinic Holiday Schedule",        message: "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule accordingly.", priority: "urgent", postedDate: "Feb 20, 2026" },
+    { id: 3, title: "New Online Consultation Hours",  message: "Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday.",                  priority: "normal", postedDate: "Feb 18, 2026" },
   ]);
 
   const [doctorAnnouncements, setDoctorAnnouncements] = useState([
     { id: 1, title: "Office Hours Update", message: "Please note that consultation hours for this week have been adjusted. Morning slots start at 9:00 AM.", priority: "normal", postedDate: "Feb 25, 2026" },
   ]);
 
-  // ── Fetch API data ───────────────────────────────────────────────
+  // ── Fetch: patients table ────────────────────────────────────────
   const fetchPatients = async (page = 1) => {
     setLoading(true);
     try {
@@ -74,6 +81,7 @@ function DoctorDashboard() {
     }
   };
 
+  // ── Fetch: appointment status counts (pie chart) ─────────────────
   const fetchStatusCounts = async () => {
     try {
       const res = await axiosClient.get("/doctor/status-counts");
@@ -83,6 +91,7 @@ function DoctorDashboard() {
     }
   };
 
+  // ── Fetch: monthly patients (bar chart) ──────────────────────────
   const fetchMonthlyPatients = async () => {
     try {
       const res = await axiosClient.get("/doctor/monthly-patients");
@@ -92,10 +101,27 @@ function DoctorDashboard() {
     }
   };
 
+  // ── Fetch: today's online / physical counts ───────────────────────
+  const fetchTodayCounts = async () => {
+    try {
+      // Format today as YYYY-MM-DD
+      const dateStr = new Date().toISOString().split("T")[0];
+      const res = await axiosClient.get(`/doctor/today-appointments-count?date=${dateStr}`);
+      setTodayCounts({
+        online:   res.data.online   ?? 0,
+        physical: res.data.physical ?? 0,
+        total:    res.data.total    ?? 0,
+      });
+    } catch (err) {
+      console.error("Failed to fetch today's counts:", err);
+    }
+  };
+
   useEffect(() => {
     fetchPatients(1);
     fetchStatusCounts();
     fetchMonthlyPatients();
+    fetchTodayCounts();        // ← NEW
   }, []);
 
   useEffect(() => {
@@ -105,7 +131,7 @@ function DoctorDashboard() {
 
   useEffect(() => {
     const startOfWeek = new Date(today);
-    const day = startOfWeek.getDay();
+    const day  = startOfWeek.getDay();
     const diff = day === 0 ? -6 : 1 - day;
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     setCurrentWeekStart(startOfWeek);
@@ -169,7 +195,9 @@ function DoctorDashboard() {
 
   const handleSubmitAnnouncement = () => {
     if (editingAnnouncement) {
-      setDoctorAnnouncements(doctorAnnouncements.map((a) => a.id === editingAnnouncement.id ? { ...a, ...announcementForm } : a));
+      setDoctorAnnouncements(doctorAnnouncements.map((a) =>
+        a.id === editingAnnouncement.id ? { ...a, ...announcementForm } : a
+      ));
     } else {
       setDoctorAnnouncements([{
         id: doctorAnnouncements.length + 1,
@@ -341,23 +369,28 @@ function DoctorDashboard() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <h5>Today's Appointment</h5>
-                    <div className="card-date">{formattedDate} <span>1</span></div>
+                    {/* ── DYNAMIC total badge ── */}
+                    <div className="card-date">
+                      {formattedDate} <span>{todayCounts.total}</span>
+                    </div>
                   </div>
                   <hr />
                   <div className="card-body">
+                    {/* ── DYNAMIC online count ── */}
                     <div className="appointment-items">
                       <div className="appointment-icon-text">
                         <IoVideocam className="appointment-icon" />
                         <strong>Online Clinic</strong>
                       </div>
-                      <p>1 Appointment</p>
+                      <p>{todayCounts.online} Appointment{todayCounts.online !== 1 ? "s" : ""}</p>
                     </div>
+                    {/* ── DYNAMIC physical count ── */}
                     <div className="appointment-items">
                       <div className="appointment-icon-text">
                         <FaClinicMedical className="appointment-icon" />
                         <strong>Physical Clinic</strong>
                       </div>
-                      <p>0 Appointment</p>
+                      <p>{todayCounts.physical} Appointment{todayCounts.physical !== 1 ? "s" : ""}</p>
                     </div>
                   </div>
                 </div>
@@ -386,10 +419,10 @@ function DoctorDashboard() {
                       <div className="calendar-dates">
                         {(() => {
                           const dates = [];
-                          const firstDay   = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
-                          const lastDay    = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
-                          const startDay   = firstDay.getDay();
-                          const daysInMonth = lastDay.getDate();
+                          const firstDay        = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+                          const lastDay         = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
+                          const startDay        = firstDay.getDay();
+                          const daysInMonth     = lastDay.getDate();
                           const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--) {
@@ -442,11 +475,11 @@ function DoctorDashboard() {
                             <tr key={index}>
                               <td>{patient.first_name} {patient.last_name}</td>
                               <td>{patient.sex ?? "—"}</td>
-                             <td>
-                              {patient.dob
-                                ? new Date(patient.dob).toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" })
-                                : "—"}
-                            </td>
+                              <td>
+                                {patient.dob
+                                  ? new Date(patient.dob).toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" })
+                                  : "—"}
+                              </td>
                               <td>{patient.contact_no}</td>
                               <td>{patient.email}</td>
                               <td style={{ color: getStatusColor(patient.appointment_status), fontWeight: "600" }}>
