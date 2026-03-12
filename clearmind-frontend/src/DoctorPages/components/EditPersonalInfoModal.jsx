@@ -7,7 +7,7 @@ import {
   FiChevronRight,
   FiEdit,
 } from "react-icons/fi";
-import "../DoctorStyle/Modal.css";
+import "../DoctorStyle/Modal.module.css";
 
 const iconClose = { color: "#fff", fontSize: "18px", fontWeight: "bold" };
 const iconCarouselAction = { color: "#fff", fontSize: "16px" };
@@ -73,10 +73,14 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   };
 
   const prevImage = (field, setIndex, currentIndex) =>
-    setIndex(currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1);
+    setIndex(
+      currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1,
+    );
 
   const nextImage = (field, setIndex, currentIndex) =>
-    setIndex(currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1);
+    setIndex(
+      currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1,
+    );
 
   const handleSave = () => {
     onSave && onSave(formData);
@@ -102,7 +106,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 handleChange(field, updated);
               }}
             />
-            <button onClick={() => handleRemoveItem(field, i)} className="icon-btn delete">
+            <button
+              onClick={() => handleRemoveItem(field, i)}
+              className="icon-btn delete"
+            >
               <FiTrash2 />
             </button>
           </div>
@@ -125,23 +132,41 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         )}
         {formData[field].length > 0 && (
           <>
-            <button className="carousel-btn left" onClick={() => prevImage(field, setIndex, index)}>
+            <button
+              className="carousel-btn left"
+              onClick={() => prevImage(field, setIndex, index)}
+            >
               <FiChevronLeft style={iconNav} />
             </button>
-            <button className="carousel-btn right" onClick={() => nextImage(field, setIndex, index)}>
+            <button
+              className="carousel-btn right"
+              onClick={() => nextImage(field, setIndex, index)}
+            >
               <FiChevronRight style={iconNav} />
             </button>
             <label className="carousel-btn edit" style={{ cursor: "pointer" }}>
               <FiEdit style={iconEdit} />
-              <input type="file" hidden onChange={(e) => handleImageChange(field, index, e.target.files[0])} />
+              <input
+                type="file"
+                hidden
+                onChange={(e) =>
+                  handleImageChange(field, index, e.target.files[0])
+                }
+              />
             </label>
-            <button className="carousel-btn delete" onClick={() => handleRemoveImage(field, index, setIndex)}>
+            <button
+              className="carousel-btn delete"
+              onClick={() => handleRemoveImage(field, index, setIndex)}
+            >
               <FiTrash2 style={iconCarouselAction} />
             </button>
           </>
         )}
       </div>
-      <button onClick={() => handleAddImage(field, setIndex)} className="add-btn">
+      <button
+        onClick={() => handleAddImage(field, setIndex)}
+        className="add-btn"
+      >
         <FiPlus /> Add Image
       </button>
     </div>
@@ -207,7 +232,9 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 <input
                   className="modal-input"
                   value={formData.contactNumber}
-                  onChange={(e) => handleChange("contactNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleChange("contactNumber", e.target.value)
+                  }
                 />
               </div>
               <div className="input-group">
@@ -256,7 +283,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </div>
           </div>
 
-          {renderCarousel("boardCertImages", boardIndex, setBoardIndex, "Board Certifications")}
+          {renderCarousel(
+            "boardCertImages",
+            boardIndex,
+            setBoardIndex,
+            "Board Certifications",
+          )}
           {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
           {renderDynamicField("subspecialty", "Subspecialty")}
           {renderDynamicField("services", "Services")}

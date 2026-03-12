@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import axios from "axios";
 
 import "../../index.css";
-import "../DoctorStyle/NotificationModal.css";
+import "../DoctorStyle/NotificationModal.module.css";
 import AllNotifications from "./AllNotifications";
 
 function DoctorTopNavbar({ activeMenu }) {

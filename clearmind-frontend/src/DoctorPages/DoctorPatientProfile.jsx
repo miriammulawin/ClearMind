@@ -2,7 +2,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorPatient.css";
+import "./DoctorStyle/DoctorPatient.module.css";
 import {
   FiArrowLeft,
   FiUser,
