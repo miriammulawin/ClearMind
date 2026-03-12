@@ -471,7 +471,8 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
 
           <div className="modal-body">
             {/* ── PATIENT INFORMATION ── */}
-            <div className="modal-section">
+            <div className="modal-section" style={{ marginTop: "-13px" }}>
+
               <h4>Patient Information</h4>
 
               <div style={{ marginBottom: "8px" }}>

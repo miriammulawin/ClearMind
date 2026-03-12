@@ -8,11 +8,13 @@ import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
 
 import "../../index.css";
-
 import logo from "../../assets/CMPS_Logo.png";
 
 function DoctorSideBar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("doctorSidebarCollapsed") === "true";
+  });
+
   const [tooltip, setTooltip] = useState({
     text: "",
     x: 0,
@@ -30,17 +32,22 @@ function DoctorSideBar() {
       icon: <FaCalendarDays />,
       path: "/doctor/appointment",
     },
-    {
-      name: "Patients",
-      icon: <BsPersonLinesFill />,
-      path: "/doctor/patient",
-    },
+    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
     {
       name: "My Profile",
       icon: <BiSolidUserCircle />,
       path: "/doctor/profile",
     },
   ];
+
+  const toggleCollapsed = (e) => {
+    e.stopPropagation();
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("doctorSidebarCollapsed", String(next));
+      return next;
+    });
+  };
 
   const handleMenuClick = (item) => {
     navigate(item.path);
@@ -52,10 +59,7 @@ function DoctorSideBar() {
         <div className="sidebar">
           <div className="sidebar-header">
             <img src={logo} alt="Logo" className="sidebar-logo" />
-            <FiMenu
-              className="menu-icon"
-              onClick={() => setCollapsed(!collapsed)}
-            />
+            <FiMenu className="menu-icon" onClick={toggleCollapsed} />
           </div>
 
           <div className="profile-section">
@@ -85,7 +89,9 @@ function DoctorSideBar() {
                     visible: true,
                   });
                 }}
-                onMouseLeave={() => setTooltip({ ...tooltip, visible: false })}
+                onMouseLeave={() =>
+                  setTooltip((prev) => ({ ...prev, visible: false }))
+                }
               >
                 <span className="menu-icon-left">{item.icon}</span>
                 <span className="menu-text">{item.name}</span>
