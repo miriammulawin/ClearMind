@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Doctor;
 use App\Models\Client;
 use App\Models\Appointment;
+use App\Models\Announcement;
 use App\Models\Specialization;
 use App\Models\SubSpecialization;
 use App\Models\Service;
@@ -185,6 +186,13 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
+        | 7. ANNOUNCEMENTS (NEW)
+        |--------------------------------------------------------------------------
+        */
+        $this->seedAnnouncements($mainDoctor->id, $otherDoctorIds);
+
+        /*
+        |--------------------------------------------------------------------------
         | FINAL SUMMARY
         |--------------------------------------------------------------------------
         */
@@ -197,7 +205,133 @@ class DatabaseSeeder extends Seeder
         $this->command->info('   → Total clients:        500');
         $this->command->info('   → Appointments:     500-1500 (random)');
         $this->command->info('   → Today\'s Appointments:  20');
+        $this->command->info('   → Clinic Announcements:  3');
+        $this->command->info('   → Doctor Announcements: 11 (1 per doctor)');
         $this->command->newLine();
+    }
+
+    /**
+     * Seed announcements for clinic and doctors
+     */
+    private function seedAnnouncements(int $mainDoctorId, array $otherDoctorIds): void
+    {
+        // Clinic announcements (created by system, attributed to admin or first doctor)
+        $clinicAnnouncements = [
+            [
+                'title' => 'Clinic Holiday Schedule',
+                'message' => 'The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule your appointments accordingly.',
+                'priority' => 'urgent',
+            ],
+            [
+                'title' => 'New Online Consultation Hours',
+                'message' => 'Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday. Book your slots now!',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'System Maintenance Notice',
+                'message' => 'Our appointment booking system will be undergoing maintenance on March 5 from 2:00 AM to 4:00 AM. Please plan accordingly.',
+                'priority' => 'normal',
+            ],
+        ];
+
+        $firstDoctorId = $mainDoctorId;
+
+        foreach ($clinicAnnouncements as $index => $announcement) {
+            Announcement::firstOrCreate(
+                [
+                    'doctor_id' => $firstDoctorId,
+                    'title' => $announcement['title'],
+                ],
+                [
+                    'message' => $announcement['message'],
+                    'priority' => $announcement['priority'],
+                    'type' => 'clinic',
+                    'is_pinned' => $index === 0, // Pin the first one
+                ]
+            );
+        }
+
+        // Doctor-specific announcements (one per doctor)
+        $doctorAnnouncements = [
+            [
+                'title' => 'Office Hours Update',
+                'message' => 'Please note that consultation hours for this week have been adjusted. Morning slots start at 9:00 AM instead of 8:00 AM.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'New Therapy Techniques Available',
+                'message' => 'I\'ve completed advanced training in EMDR therapy and am now offering this service for trauma and PTSD clients.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Virtual Consultation Available',
+                'message' => 'I am now accepting virtual consultation requests for existing patients. Book your online session through the app.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Weekend Appointments',
+                'message' => 'Due to demand, I am now offering Saturday appointments. Limited slots available - book early!',
+                'priority' => 'urgent',
+            ],
+            [
+                'title' => 'Professional Development Update',
+                'message' => 'Recently completed certification in Cognitive Behavioral Therapy (CBT). Available for CBT-focused sessions.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Emergency Contact Update',
+                'message' => 'Updated emergency protocols. In case of crisis, patients can contact the clinic hotline 24/7.',
+                'priority' => 'urgent',
+            ],
+            [
+                'title' => 'Group Therapy Sessions',
+                'message' => 'New anxiety management group therapy sessions starting next month. Interest forms available at reception.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Specialized Services',
+                'message' => 'Now offering specialized services for adolescent mental health. Parents welcome to attend initial consultation.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Patient Privacy Reminder',
+                'message' => 'As part of our commitment to patient privacy, all sessions are now conducted in soundproof consultation rooms.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Continuing Education',
+                'message' => 'Completed advanced course in mindfulness-based stress reduction. Now offering MBSR workshops.',
+                'priority' => 'normal',
+            ],
+            [
+                'title' => 'Appointment Reminders',
+                'message' => 'Automated SMS reminders will now be sent 24 hours before your appointment. Enable notifications in your profile.',
+                'priority' => 'normal',
+            ],
+        ];
+
+        $allDoctorIds = array_merge([$mainDoctorId], $otherDoctorIds);
+
+        foreach ($allDoctorIds as $index => $doctorId) {
+            if (isset($doctorAnnouncements[$index])) {
+                $announcement = $doctorAnnouncements[$index];
+
+                Announcement::firstOrCreate(
+                    [
+                        'doctor_id' => $doctorId,
+                        'title' => $announcement['title'],
+                    ],
+                    [
+                        'message' => $announcement['message'],
+                        'priority' => $announcement['priority'],
+                        'type' => 'doctor',
+                        'is_pinned' => false,
+                    ]
+                );
+            }
+        }
+
+        $this->command->info('✓ Announcements seeded (3 clinic + 11 doctor announcements).');
     }
 
     /**

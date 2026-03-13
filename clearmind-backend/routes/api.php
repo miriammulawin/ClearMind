@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminPatientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminCreateAccountController;
 use App\Http\Controllers\DoctorAppointmentController;
+use App\Http\Controllers\AnnouncementController; // ← ADD THIS IMPORT
 
 // ── Public Routes ──────────────────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
@@ -30,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/doctor/patients',                 [DoctorDashboardController::class, 'patients']);
     Route::get('/doctor/status-counts',            [DoctorDashboardController::class, 'statusCounts']);
     Route::get('/doctor/monthly-patients',         [DoctorDashboardController::class, 'monthlyPatients']);
-    Route::get('/doctor/today-appointments-count', [DoctorDashboardController::class, 'todayAppointmentsCount']); // ← NEW
+    Route::get('/doctor/today-appointments-count', [DoctorDashboardController::class, 'todayAppointmentsCount']);
     Route::post('/doctor/setup',                   [DoctorDashboardController::class, 'setup']);
     Route::put('/doctor/profile',                  [DoctorDashboardController::class, 'updateProfile']);
 
@@ -40,6 +41,33 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/doctor/appointments/{id}/status', [DoctorAppointmentController::class, 'updateStatus']);
     Route::delete('/doctor/appointments/{id}',       [DoctorAppointmentController::class, 'destroy']);
     Route::get('/doctor/patients-list',              [DoctorAppointmentController::class, 'patientsList']);
+
+    // ── ANNOUNCEMENT ROUTES (NEW) ──────────────────────────────────
+    Route::prefix('announcements')->group(function () {
+        // Get all announcements for authenticated doctor
+        Route::get('/', [AnnouncementController::class, 'index'])->name('announcements.index');
+
+        // Get clinic-wide announcements
+        Route::get('/clinic', [AnnouncementController::class, 'getClinicAnnouncements'])->name('announcements.clinic');
+
+        // Get doctor's own announcements
+        Route::get('/doctor', [AnnouncementController::class, 'getDoctorAnnouncements'])->name('announcements.doctor');
+
+        // Create announcement (POST BEFORE {id} routes to avoid conflicts)
+        Route::post('/', [AnnouncementController::class, 'store'])->name('announcements.store');
+
+        // Show single announcement
+        Route::get('{id}', [AnnouncementController::class, 'show'])->name('announcements.show');
+
+        // Update announcement
+        Route::put('{id}', [AnnouncementController::class, 'update'])->name('announcements.update');
+
+        // Delete announcement
+        Route::delete('{id}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+
+        // Toggle pin status
+        Route::patch('{id}/toggle-pin', [AnnouncementController::class, 'togglePin'])->name('announcements.togglePin');
+    });
 
     // Admin Dashboard
     Route::get('/admin/dashboard',        [AdminDashboardController::class, 'patients']);

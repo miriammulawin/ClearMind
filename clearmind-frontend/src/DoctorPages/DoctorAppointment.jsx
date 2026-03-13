@@ -10,6 +10,7 @@ import "./DoctorStyle/DoctorAppointment.css";
 import { FiX, FiPlus, FiTrash2, FiChevronDown, FiSearch, FiZoomIn } from "react-icons/fi";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 const locales = { "en-US": enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -202,7 +203,12 @@ function DoctorAppointment() {
       setEvents(calEvents);
     } catch (err) {
       console.error("Failed to fetch appointments:", err);
-      toast.error("Failed to load appointments");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to load appointments",
+        confirmButtonColor: "#dc2626",
+      });
     } finally {
       setLoadingAppointments(false);
     }
@@ -226,20 +232,67 @@ function DoctorAppointment() {
   // ── When a patient is selected, auto-fill their info ────────────────────
   useEffect(() => {
     if (!selectedPatient) return;
+
+    // Auto-fill all patient data
     setDob(selectedPatient.dob || "");
     setNewAppt((prev) => ({
       ...prev,
-      sex:       selectedPatient.sex       || "",
+      sex: selectedPatient.sex || "",
       contactNo: selectedPatient.contact_no || "",
+      address: selectedPatient.address || "",
+      civilStatus: selectedPatient.civil_status || "",
+      patientType: "existing", // Mark as existing patient
     }));
   }, [selectedPatient]);
 
+  // ── Form validation ──────────────────────────────────────────────────────
+  const validateAppointmentForm = () => {
+    if (!selectedPatient) {
+      Swal.fire({
+        icon: "warning",
+        title: "Patient Required",
+        text: "Please select a patient",
+        confirmButtonColor: "#4d227c",
+      });
+      return false;
+    }
+
+    if (!newAppt.date) {
+      Swal.fire({
+        icon: "warning",
+        title: "Date Required",
+        text: "Please select an appointment date",
+        confirmButtonColor: "#4d227c",
+      });
+      return false;
+    }
+
+    if (!newAppt.startTime) {
+      Swal.fire({
+        icon: "warning",
+        title: "Start Time Required",
+        text: "Please select a start time",
+        confirmButtonColor: "#4d227c",
+      });
+      return false;
+    }
+
+    if (!newAppt.visitType) {
+      Swal.fire({
+        icon: "warning",
+        title: "Visit Type Required",
+        text: "Please select a visit type",
+        confirmButtonColor: "#4d227c",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   // ── Create Appointment ───────────────────────────────────────────────────
   const handleAddEvent = async () => {
-    if (!selectedPatient)   return toast.error("Please select a patient.");
-    if (!newAppt.date)      return toast.error("Please select a date.");
-    if (!newAppt.startTime) return toast.error("Please select a start time.");
-    if (!newAppt.visitType) return toast.error("Please select a visit type.");
+    if (!validateAppointmentForm()) return;
 
     setSaving(true);
     try {
@@ -257,12 +310,28 @@ function DoctorAppointment() {
         { ...evt, start: new Date(evt.start), end: new Date(evt.end) },
       ]);
 
-      toast.success("Appointment created!");
+      // Show success alert
+      await Swal.fire({
+        icon: "success",
+        title: "Appointment Created!",
+        html: `<p style="margin: 0; color: #666;">Appointment scheduled for</p>
+               <p style="margin: 5px 0 0 0; font-weight: 600; color: #333;">${selectedPatient.first_name} ${selectedPatient.last_name}</p>
+               <p style="margin: 5px 0 0 0; color: #999; font-size: 14px;">${format(new Date(newAppt.date + "T00:00:00"), "MMMM d, yyyy")} at ${newAppt.startTime}</p>`,
+        confirmButtonColor: "#4d227c",
+        timer: 2500,
+        timerProgressBar: true,
+      });
+
       setShowModal(false);
       resetForm();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Failed to create appointment");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.error || "Failed to create appointment",
+        confirmButtonColor: "#dc2626",
+      });
     } finally {
       setSaving(false);
     }
@@ -289,18 +358,98 @@ function DoctorAppointment() {
     }[event.status] ?? "Scheduled";
 
     if (event.status === "Completed" || event.status === "Cancelled") {
-      toast(`This appointment is already ${event.status}.`);
+      await Swal.fire({
+        icon: "info",
+        title: "Status Locked",
+        text: `This appointment is already ${event.status}.`,
+        confirmButtonColor: "#4d227c",
+      });
       return;
     }
+
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: `Update Status to ${next}?`,
+      html: `<p style="margin: 0; color: #666;">Current Status:</p>
+             <p style="margin: 5px 0 0 0; font-weight: 600; color: #F59E0B;">${event.status}</p>
+             <p style="margin: 12px 0 0 0; color: #666;">New Status:</p>
+             <p style="margin: 5px 0 0 0; font-weight: 600; color: #10B981;">${next}</p>`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#4d227c",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Update It!",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await axiosClient.patch(`/doctor/appointments/${event.id}/status`, { status: next });
       setEvents((prev) =>
         prev.map((e) => e.id === event.id ? { ...e, status: next } : e)
       );
-      toast.success(`Marked as ${next}`);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Status Updated!",
+        text: `Appointment marked as ${next}`,
+        confirmButtonColor: "#4d227c",
+        timer: 2000,
+        timerProgressBar: true,
+      });
     } catch (err) {
-      toast.error("Failed to update status");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update appointment status",
+        confirmButtonColor: "#dc2626",
+      });
+    }
+  };
+
+  // ── Delete appointment ───────────────────────────────────────────────────
+  const handleDeleteEvent = async (event) => {
+    const patientName = event.title || "Unknown Patient";
+
+    const result = await Swal.fire({
+      title: "Delete Appointment?",
+      html: `<p style="margin: 0; color: #666;">Are you sure you want to delete</p>
+             <p style="margin: 5px 0 0 0; font-weight: 600; color: #333;">${patientName}</p>
+             <p style="margin: 5px 0 0 0; color: #999; font-size: 14px;">This action cannot be undone.</p>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Delete It!",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await axiosClient.delete(`/doctor/appointments/${event.id}`);
+      setEvents((prev) => prev.filter((e) => e.id !== event.id));
+
+      await Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "The appointment has been deleted.",
+        confirmButtonColor: "#4d227c",
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to delete appointment",
+        confirmButtonColor: "#dc2626",
+      });
     }
   };
 
@@ -312,14 +461,40 @@ function DoctorAppointment() {
     slots[i] = { ...slots[i], [field]: val };
     setWeeklySchedule((prev) => ({ ...prev, [day]: slots }));
   };
-  const handleSaveSchedule = () => {
+
+  const handleSaveSchedule = async () => {
     for (const day of DAYS_OF_WEEK) {
       for (const slot of weeklySchedule[day]) {
-        if (!slot.startTime || !slot.endTime) return toast.error("Please fill all time slots");
-        if (!slot.clinicType) return toast.error("Please select clinic type for all slots");
+        if (!slot.startTime || !slot.endTime) {
+          Swal.fire({
+            icon: "warning",
+            title: "Incomplete Schedule",
+            text: "Please fill all time slots with start and end times",
+            confirmButtonColor: "#4d227c",
+          });
+          return;
+        }
+        if (!slot.clinicType) {
+          Swal.fire({
+            icon: "warning",
+            title: "Clinic Type Missing",
+            text: "Please select clinic type for all slots",
+            confirmButtonColor: "#4d227c",
+          });
+          return;
+        }
       }
     }
-    toast.success("Schedule saved!");
+
+    await Swal.fire({
+      icon: "success",
+      title: "Schedule Saved!",
+      text: "Your weekly schedule has been saved",
+      confirmButtonColor: "#4d227c",
+      timer: 2000,
+      timerProgressBar: true,
+    });
+
     setShowScheduleModal(false);
   };
 
@@ -372,7 +547,7 @@ function DoctorAppointment() {
                   {status}
                 </div>
               ))}
-              <span style={{ fontSize: "12px", color: "#aaa", marginLeft: "auto" }}>Click an event to advance its status</span>
+              <span style={{ fontSize: "12px", color: "#aaa", marginLeft: "auto" }}>Click an event to change status • Right-click to delete</span>
             </div>
 
             <Calendar
@@ -398,6 +573,10 @@ function DoctorAppointment() {
                   fontSize: "13px",
                   cursor: "pointer",
                 },
+                onContextMenu: (e) => {
+                  e.preventDefault();
+                  handleDeleteEvent(event);
+                },
               })}
             />
           </div>
@@ -410,7 +589,14 @@ function DoctorAppointment() {
           <div className="appointment-modal-lg">
             {/* Header */}
             <div className="modal-header">
-              <h2>New Appointment</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <h2>New Appointment</h2>
+                {selectedPatient && (
+                  <span style={{ background: "#f3ecfc", color: "#4D227C", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: "600" }}>
+                    ✓ Existing Patient
+                  </span>
+                )}
+              </div>
               <span className="modal-date">
                 {newAppt.date ? format(new Date(newAppt.date + "T00:00:00"), "MMMM d, yyyy") : format(new Date(), "MMMM d, yyyy")}
               </span>
@@ -431,6 +617,11 @@ function DoctorAppointment() {
                 {/* Patient dropdown — fetched from API */}
                 <div style={{ marginBottom: "8px" }}>
                   <PatientDropdown patients={patients} selected={selectedPatient} onSelect={setSelectedPatient} />
+                  {selectedPatient && (
+                    <div style={{ marginTop: "8px", padding: "10px", backgroundColor: "#f3ecfc", borderRadius: "8px", fontSize: "12px", color: "#4D227C" }}>
+                      📋 Patient data auto-filled from existing records
+                    </div>
+                  )}
                 </div>
 
                 {/* DOB + Age */}

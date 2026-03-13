@@ -8,6 +8,7 @@ import { FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 import { BsMegaphone } from "react-icons/bs";
 import AccountSetupModal from "./components/SetupAccountModal";
 import axiosClient from "../axiosClient";
+import Swal from "sweetalert2";
 
 import {
   Chart as ChartJS,
@@ -35,7 +36,7 @@ function DoctorDashboard() {
   const [editingAnnouncement, setEditingAnnouncement]     = useState(null);
   const [announcementTab, setAnnouncementTab]   = useState("received");
   const [showSetupModal, setShowSetupModal]     = useState(true);
-  const [announcementForm, setAnnouncementForm] = useState({ title: "", message: "", priority: "normal" });
+  const [announcementForm, setAnnouncementForm] = useState({ title: "", message: "", priority: "normal", is_pinned: false });
 
   // ── API Data ─────────────────────────────────────────────────────
   const [patientsData, setPatientsData]   = useState([]);
@@ -46,23 +47,18 @@ function DoctorDashboard() {
   const [statusCounts, setStatusCounts]   = useState({ Scheduled: 0, Cancelled: 0, Pending: 0, Completed: 0 });
   const [monthlyData, setMonthlyData]     = useState(Array(12).fill(0));
 
-  // ── TODAY'S APPOINTMENT COUNTS (dynamic) ─────────────────────────
+  // ── TODAY'S APPOINTMENT COUNTS ───────────────────────────────────
   const [todayCounts, setTodayCounts] = useState({
     online:   0,
     physical: 0,
     total:    0,
   });
 
-  // ── Announcements (static for now) ───────────────────────────────
-  const [adminAnnouncements, setAdminAnnouncements] = useState([
-    { id: 1, title: "TIME OUT",                      message: "MAG TIME OUT NA TAYO",                                                                                                    priority: "urgent", postedDate: "Feb 24, 2026" },
-    { id: 2, title: "Clinic Holiday Schedule",        message: "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule accordingly.", priority: "urgent", postedDate: "Feb 20, 2026" },
-    { id: 3, title: "New Online Consultation Hours",  message: "Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday.",                  priority: "normal", postedDate: "Feb 18, 2026" },
-  ]);
-
-  const [doctorAnnouncements, setDoctorAnnouncements] = useState([
-    { id: 1, title: "Office Hours Update", message: "Please note that consultation hours for this week have been adjusted. Morning slots start at 9:00 AM.", priority: "normal", postedDate: "Feb 25, 2026" },
-  ]);
+  // ── Announcements (from API) ─────────────────────────────────────
+  const [adminAnnouncements, setAdminAnnouncements]     = useState([]);
+  const [doctorAnnouncements, setDoctorAnnouncements]   = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
 
   // ── Fetch: patients table ────────────────────────────────────────
   const fetchPatients = async (page = 1) => {
@@ -104,7 +100,6 @@ function DoctorDashboard() {
   // ── Fetch: today's online / physical counts ───────────────────────
   const fetchTodayCounts = async () => {
     try {
-      // Format today as YYYY-MM-DD
       const dateStr = new Date().toISOString().split("T")[0];
       const res = await axiosClient.get(`/doctor/today-appointments-count?date=${dateStr}`);
       setTodayCounts({
@@ -117,11 +112,30 @@ function DoctorDashboard() {
     }
   };
 
+  // ── Fetch: announcements (from API) ──────────────────────────────
+  const fetchAnnouncements = async () => {
+    setAnnouncementsLoading(true);
+    try {
+      const res = await axiosClient.get("/announcements?per_page=50");
+      if (res.data.success) {
+        const clinic = res.data.data.filter((a) => a.type === "clinic");
+        const doctor = res.data.data.filter((a) => a.type === "doctor");
+        setAdminAnnouncements(clinic);
+        setDoctorAnnouncements(doctor);
+      }
+    } catch (err) {
+      console.error("Failed to fetch announcements:", err);
+    } finally {
+      setAnnouncementsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPatients(1);
     fetchStatusCounts();
     fetchMonthlyPatients();
-    fetchTodayCounts();        // ← NEW
+    fetchTodayCounts();
+    fetchAnnouncements();
   }, []);
 
   useEffect(() => {
@@ -175,14 +189,20 @@ function DoctorDashboard() {
     return pages;
   };
 
-  // ── Announcements ────────────────────────────────────────────────
+  // ── Announcements with SweetAlert ────────────────────────────────
+
   const handleOpenAnnouncementModal = (announcement = null) => {
     if (announcement) {
       setEditingAnnouncement(announcement);
-      setAnnouncementForm({ title: announcement.title, message: announcement.message, priority: announcement.priority });
+      setAnnouncementForm({ 
+        title: announcement.title, 
+        message: announcement.message, 
+        priority: announcement.priority,
+        is_pinned: announcement.is_pinned,
+      });
     } else {
       setEditingAnnouncement(null);
-      setAnnouncementForm({ title: "", message: "", priority: "normal" });
+      setAnnouncementForm({ title: "", message: "", priority: "normal", is_pinned: false });
     }
     setShowAnnouncementModal(true);
   };
@@ -190,27 +210,126 @@ function DoctorDashboard() {
   const handleCloseAnnouncementModal = () => {
     setShowAnnouncementModal(false);
     setEditingAnnouncement(null);
-    setAnnouncementForm({ title: "", message: "", priority: "normal" });
+    setAnnouncementForm({ title: "", message: "", priority: "normal", is_pinned: false });
   };
 
-  const handleSubmitAnnouncement = () => {
-    if (editingAnnouncement) {
-      setDoctorAnnouncements(doctorAnnouncements.map((a) =>
-        a.id === editingAnnouncement.id ? { ...a, ...announcementForm } : a
-      ));
-    } else {
-      setDoctorAnnouncements([{
-        id: doctorAnnouncements.length + 1,
-        ...announcementForm,
-        postedDate: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-      }, ...doctorAnnouncements]);
+  const validateAnnouncementForm = () => {
+    if (!announcementForm.title.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Title Required",
+        text: "Please enter an announcement title",
+        confirmButtonColor: "#4d227c",
+        confirmButtonText: "OK",
+      });
+      return false;
     }
-    handleCloseAnnouncementModal();
+
+    if (!announcementForm.message.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Message Required",
+        text: "Please enter an announcement message",
+        confirmButtonColor: "#4d227c",
+        confirmButtonText: "OK",
+      });
+      return false;
+    }
+
+    return true;
   };
 
-  const handleDeleteAnnouncement = (id) => {
-    if (window.confirm("Are you sure you want to delete this announcement?")) {
-      setDoctorAnnouncements(doctorAnnouncements.filter((a) => a.id !== id));
+  const handleSubmitAnnouncement = async () => {
+    if (!validateAnnouncementForm()) return;
+
+    setIsSubmittingAnnouncement(true);
+
+    try {
+      if (editingAnnouncement) {
+        // Update existing announcement
+        await axiosClient.put(`/announcements/${editingAnnouncement.id}`, announcementForm);
+        
+        await Swal.fire({
+          icon: "success",
+          title: "Updated Successfully!",
+          text: `"${announcementForm.title}" has been updated.`,
+          confirmButtonColor: "#4d227c",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      } else {
+        // Create new announcement
+        await axiosClient.post("/announcements", announcementForm);
+        
+        await Swal.fire({
+          icon: "success",
+          title: "Created Successfully!",
+          text: `"${announcementForm.title}" has been created.`,
+          confirmButtonColor: "#4d227c",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+      }
+
+      // Refresh announcements
+      fetchAnnouncements();
+      handleCloseAnnouncementModal();
+    } catch (err) {
+      console.error("Failed to save announcement:", err);
+      
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.response?.data?.message || "Failed to save announcement. Please try again.",
+        confirmButtonColor: "#dc2626",
+        confirmButtonText: "Try Again",
+      });
+    } finally {
+      setIsSubmittingAnnouncement(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id, title) => {
+    const result = await Swal.fire({
+      title: "Delete Announcement?",
+      html: `<p style="margin: 0; color: #666;">Are you sure you want to delete</p><p style="margin: 5px 0 0 0; font-weight: 600; color: #333;">"${title}"</p><p style="margin: 5px 0 0 0; color: #999; font-size: 14px;">This action cannot be undone.</p>`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Delete It!",
+      cancelButtonText: "Cancel",
+      buttonsStyling: true,
+      reverseButtons: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axiosClient.delete(`/announcements/${id}`);
+        
+        await Swal.fire({
+          icon: "success",
+          title: "Deleted!",
+          text: "The announcement has been deleted.",
+          confirmButtonColor: "#4d227c",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+
+        fetchAnnouncements();
+      } catch (err) {
+        console.error("Failed to delete announcement:", err);
+        
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: err.response?.data?.message || "Failed to delete announcement.",
+          confirmButtonColor: "#dc2626",
+          confirmButtonText: "OK",
+        });
+      }
     }
   };
 
@@ -332,7 +451,9 @@ function DoctorDashboard() {
                   </div>
 
                   <div className="announcements-list">
-                    {getCurrentAnnouncements().length === 0 ? (
+                    {announcementsLoading ? (
+                      <div className="no-announcements"><p>Loading announcements...</p></div>
+                    ) : getCurrentAnnouncements().length === 0 ? (
                       <div className="no-announcements"><p>No announcements yet.</p></div>
                     ) : (
                       getCurrentAnnouncements().map((announcement) => (
@@ -340,17 +461,32 @@ function DoctorDashboard() {
                           <div className="announcement-content">
                             <div className="announcement-header-line">
                               {announcement.priority === "urgent" && <span className="priority-badge">URGENT</span>}
+                              {announcement.is_pinned && <span className="pinned-badge">📌 PINNED</span>}
                               <h6 className="announcement-title">{announcement.title}</h6>
                             </div>
                             <p className="announcement-message">{announcement.message}</p>
-                            <small className="announcement-date">Posted: {announcement.postedDate}</small>
+                            <small className="announcement-date">
+                              Posted: {new Date(announcement.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                            </small>
                           </div>
                           {announcementTab === "created" && (
                             <div style={{ display: "flex", gap: "8px", marginLeft: "16px" }}>
-                              <button onClick={() => handleOpenAnnouncementModal(announcement)} title="Edit" style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", background: "#4d227c", color: "#fff" }}>
+                              <button 
+                                onClick={() => handleOpenAnnouncementModal(announcement)} 
+                                title="Edit" 
+                                style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", background: "#4d227c", color: "#fff", transition: "all 0.2s ease" }}
+                                onMouseEnter={(e) => e.target.style.transform = "scale(1.1)"}
+                                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                              >
                                 <FiEdit2 />
                               </button>
-                              <button onClick={() => handleDeleteAnnouncement(announcement.id)} title="Delete" style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", background: "#dc2626", color: "#fff" }}>
+                              <button 
+                                onClick={() => handleDeleteAnnouncement(announcement.id, announcement.title)} 
+                                title="Delete" 
+                                style={{ border: "none", width: "40px", height: "40px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", background: "#dc2626", color: "#fff", transition: "all 0.2s ease" }}
+                                onMouseEnter={(e) => e.target.style.transform = "scale(1.1)"}
+                                onMouseLeave={(e) => e.target.style.transform = "scale(1)"}
+                              >
                                 <FiTrash2 />
                               </button>
                             </div>
@@ -369,14 +505,12 @@ function DoctorDashboard() {
                 <div className="dashboard-card">
                   <div className="card-header">
                     <h5>Today's Appointment</h5>
-                    {/* ── DYNAMIC total badge ── */}
                     <div className="card-date">
                       {formattedDate} <span>{todayCounts.total}</span>
                     </div>
                   </div>
                   <hr />
                   <div className="card-body">
-                    {/* ── DYNAMIC online count ── */}
                     <div className="appointment-items">
                       <div className="appointment-icon-text">
                         <IoVideocam className="appointment-icon" />
@@ -384,7 +518,6 @@ function DoctorDashboard() {
                       </div>
                       <p>{todayCounts.online} Appointment{todayCounts.online !== 1 ? "s" : ""}</p>
                     </div>
-                    {/* ── DYNAMIC physical count ── */}
                     <div className="appointment-items">
                       <div className="appointment-icon-text">
                         <FaClinicMedical className="appointment-icon" />
@@ -561,8 +694,8 @@ function DoctorDashboard() {
           <div className="announcement-modal">
             <div className="modal-header-announcement">
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <h2>Create Announcement</h2>
-                {editingAnnouncement?.priority === "urgent" && (
+                <h2>{editingAnnouncement ? "Edit Announcement" : "Create Announcement"}</h2>
+                {announcementForm.priority === "urgent" && (
                   <span style={{ background: "#DC2626", color: "#fff", fontSize: "11px", fontWeight: "700", padding: "4px 10px", borderRadius: "4px", textTransform: "uppercase" }}>URGENT</span>
                 )}
               </div>
@@ -571,23 +704,71 @@ function DoctorDashboard() {
             <div className="modal-body-announcement">
               <div className="form-group-announcement">
                 <p>Title:</p>
-                <input type="text" className="form-input-announcement" placeholder="Enter announcement title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} />
+                <input 
+                  type="text" 
+                  className="form-input-announcement" 
+                  placeholder="Enter announcement title" 
+                  value={announcementForm.title} 
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} 
+                  maxLength={255}
+                  disabled={isSubmittingAnnouncement}
+                />
               </div>
               <div className="form-group-announcement">
                 <p>Message:</p>
-                <textarea className="form-textarea-announcement" placeholder="Enter announcement message" rows="4" value={announcementForm.message} onChange={(e) => setAnnouncementForm({ ...announcementForm, message: e.target.value })} />
+                <textarea 
+                  className="form-textarea-announcement" 
+                  placeholder="Enter announcement message" 
+                  rows="4" 
+                  value={announcementForm.message} 
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, message: e.target.value })} 
+                  maxLength={5000}
+                  disabled={isSubmittingAnnouncement}
+                />
               </div>
               <div className="form-group-announcement">
                 <p>Priority:</p>
-                <select className="form-select-announcement" value={announcementForm.priority} onChange={(e) => setAnnouncementForm({ ...announcementForm, priority: e.target.value })}>
+                <select 
+                  className="form-select-announcement" 
+                  value={announcementForm.priority} 
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, priority: e.target.value })}
+                  disabled={isSubmittingAnnouncement}
+                >
                   <option value="normal">Normal</option>
                   <option value="urgent">Urgent / High Priority</option>
                 </select>
               </div>
+              <div className="form-group-announcement">
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                  <input 
+                    type="checkbox" 
+                    checked={announcementForm.is_pinned || false} 
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, is_pinned: e.target.checked })}
+                    disabled={isSubmittingAnnouncement}
+                  />
+                  <span>📌 Pin this announcement</span>
+                </label>
+              </div>
             </div>
             <div className="modal-footer-announcement">
-              <button className="btn-cancel-announcement" onClick={handleCloseAnnouncementModal}>Cancel</button>
-              <button className="btn-post-announcement" onClick={handleSubmitAnnouncement}>Create</button>
+              <button 
+                className="btn-cancel-announcement" 
+                onClick={handleCloseAnnouncementModal}
+                disabled={isSubmittingAnnouncement}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-post-announcement" 
+                onClick={handleSubmitAnnouncement}
+                disabled={isSubmittingAnnouncement}
+                style={{
+                  opacity: isSubmittingAnnouncement ? 0.6 : 1,
+                  cursor: isSubmittingAnnouncement ? "not-allowed" : "pointer",
+                }}
+              >
+                {isSubmittingAnnouncement ? "Processing..." : (editingAnnouncement ? "Update" : "Create")}
+              </button>
             </div>
           </div>
         </div>
