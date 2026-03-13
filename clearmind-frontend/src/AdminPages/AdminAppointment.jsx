@@ -7,7 +7,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import "./AdminStyle/AdminAppointment.css";
-import CreateAppointmentModal from "../DoctorPages/components/CreateAppointmentModal"; // ← imported here
+import CreateAppointmentModal from "../DoctorPages/components/CreateAppointmentModal"; 
 
 const locales = { "en-US": enUS };
 

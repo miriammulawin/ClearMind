@@ -2,18 +2,21 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { RiDashboardFill } from "react-icons/ri";
-import { FaUserPlus, FaCalendarDays } from "react-icons/fa6";
+import { FaCalendarDays } from "react-icons/fa6";
 import { FaClinicMedical, FaMoneyCheck } from "react-icons/fa";
 import { BsPersonLinesFill } from "react-icons/bs";
 import { MdManageAccounts } from "react-icons/md";
 import { BiSolidUserCircle } from "react-icons/bi";
 
-
 import "../index.css";
 import logo from "../assets/CMPS_Logo.png";
 
 function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // ── Persist collapsed state in localStorage so it survives remounts on navigation ──
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("sidebarCollapsed") === "true";
+  });
+
   const [tooltip, setTooltip] = useState({
     text: "",
     x: 0,
@@ -26,7 +29,6 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
 
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin/dashboard" },
-   
     {
       name: "Appointment",
       icon: <FaCalendarDays />,
@@ -35,12 +37,25 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/admin/patients" },
     { name: "Clinic", icon: <FaClinicMedical />, path: "/admin/clinic" },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/admin/billing" },
-    { name: "Manage Account", icon: <MdManageAccounts />, path: "/manage/account" },
+    {
+      name: "Manage Account",
+      icon: <MdManageAccounts />,
+      path: "/manage/account",
+    },
     { name: "My Profile", icon: <BiSolidUserCircle />, path: "/admin/profile" },
   ];
 
+  const toggleCollapsed = (e) => {
+    e.stopPropagation();
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebarCollapsed", String(next)); // persist
+      return next;
+    });
+  };
+
   const handleMenuClick = (item) => {
-    navigate(item.path);
+    navigate(item.path); // never touch collapsed
   };
 
   return (
@@ -49,10 +64,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
         <div className="sidebar">
           <div className="sidebar-header">
             <img src={logo} alt="Logo" className="sidebar-logo" />
-            <FiMenu
-              className="menu-icon"
-              onClick={() => setCollapsed(!collapsed)}
-            />
+            <FiMenu className="menu-icon" onClick={toggleCollapsed} />
           </div>
 
           <div className="profile-section">
@@ -62,7 +74,10 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
               <p className="profile-contact">admin@gmail.com · 09123456767</p>
               <FiEdit
                 className="edit-icon"
-                onClick={() => navigate("/admin/profile")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/admin/profile");
+                }}
                 style={{ cursor: "pointer" }}
               />
             </div>
@@ -72,9 +87,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`menu-item ${
-                  location.pathname === item.path ? "active" : ""
-                }`}
+                className={`menu-item ${location.pathname === item.path ? "active" : ""}`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
@@ -86,7 +99,9 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
                     visible: true,
                   });
                 }}
-                onMouseLeave={() => setTooltip({ ...tooltip, visible: false })}
+                onMouseLeave={() =>
+                  setTooltip((prev) => ({ ...prev, visible: false }))
+                }
               >
                 <span className="menu-icon-left">{item.icon}</span>
                 <span className="menu-text">{item.name}</span>
