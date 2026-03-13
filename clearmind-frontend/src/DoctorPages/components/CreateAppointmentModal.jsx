@@ -442,16 +442,36 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
           }}
         >
           {/* ── Sticky header ────────────────────────────────────────────── */}
-          <div className="modal-header" style={{ flexShrink: 0 }}>
-            <h2 style={{ margin: 0, flex: 1, minWidth: 0 }}>
+          <div
+            className="modal-header"
+            style={{
+              flexShrink: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "nowrap",
+              gap: "8px",
+              minWidth: 0,
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "clamp(13px, 2.5vw, 20px)",
+                fontWeight: 700,
+                whiteSpace: "nowrap",
+                overflow: "visible",
+                flexShrink: 1,
+                minWidth: 0,
+              }}
+            >
               Create Appointment
             </h2>
             <div
               style={{
-                marginLeft: "auto",
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
+                gap: "8px",
                 flexShrink: 0,
               }}
             >
@@ -459,16 +479,13 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                 className="modal-date"
                 style={{
                   whiteSpace: "nowrap",
-                  fontSize: "12px",
+                  fontSize: "clamp(10px, 1.5vw, 12px)",
                   flexShrink: 0,
                 }}
               >
                 {newEvent.date
-                  ? format(
-                      new Date(newEvent.date + "T00:00:00"),
-                      "MMMM d, yyyy",
-                    )
-                  : format(new Date(), "MMMM d, yyyy")}
+                  ? format(new Date(newEvent.date + "T00:00:00"), "MMM d, yyyy")
+                  : format(new Date(), "MMM d, yyyy")}
               </span>
               <button
                 className="close-btn"
@@ -490,7 +507,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
 
           {/* ── Scrollable body ──────────────────────────────────────────── */}
           <div
-            className="modal-body"
+            className="modal-body cam-modal-body"
             style={{
               flex: 1,
               overflowY: "auto",
@@ -499,8 +516,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             }}
           >
             {/* ── PATIENT INFORMATION ── */}
-            <div className="modal-section" style={{ marginTop: "-13px" }}>
-
+            <div className="modal-section">
               <h4>Patient Information</h4>
 
               <div style={{ marginBottom: "8px" }}>
@@ -669,96 +685,6 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                   </div>
                 </div>
               </div>
-
-              {/* ── Type of Service ── */}
-              <div
-                style={{ borderTop: "1px solid #f0eaf8", paddingTop: "14px" }}
-              >
-                <p style={sectionLabelStyle}>Type of Service</p>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: "24px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <label style={radioLabelStyle}>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="counseling"
-                      style={radioInputStyle}
-                      checked={serviceType === "counseling"}
-                      onChange={() => {
-                        setServiceType("counseling");
-                        setAssessmentPurpose("");
-                      }}
-                    />
-                    Counseling / Therapy
-                  </label>
-                  <label style={radioLabelStyle}>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="assessment"
-                      style={radioInputStyle}
-                      checked={serviceType === "assessment"}
-                      onChange={() => setServiceType("assessment")}
-                    />
-                    Psychological Assessment and Evaluation
-                  </label>
-                </div>
-
-                {/* Purpose of Assessment — only enabled when assessment is selected */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <label
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: serviceType === "assessment" ? "#4D227C" : "#bbb",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.4px",
-                      transition: "color 0.2s",
-                    }}
-                  >
-                    Purpose of Assessment
-                  </label>
-                  <select
-                    disabled={serviceType !== "assessment"}
-                    value={assessmentPurpose}
-                    onChange={(e) => setAssessmentPurpose(e.target.value)}
-                    style={{
-                      ...selectStyle,
-                      opacity: serviceType === "assessment" ? 1 : 0.4,
-                      cursor:
-                        serviceType === "assessment"
-                          ? "pointer"
-                          : "not-allowed",
-                      border:
-                        serviceType === "assessment"
-                          ? "1.5px solid #4D227C"
-                          : "1px solid #ddd",
-                      color: assessmentPurpose ? "#333" : "#999",
-                      transition: "opacity 0.2s, border 0.2s",
-                    }}
-                  >
-                    <option value="">Select Purpose of Assessment</option>
-                    <option value="VAWC">VAWC</option>
-                    <option value="Adoption or Legal">Adoption or Legal</option>
-                    <option value="School / Academic Support">
-                      School / Academic Support
-                    </option>
-                    <option value="Work-Related">Work-Related</option>
-                  </select>
-                </div>
-              </div>
             </div>
 
             {/* ── CONSULTATION SCHEDULE ── */}
@@ -834,6 +760,100 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                     />{" "}
                     Virtual Consultation
                   </label>
+                </div>
+              </div>
+
+              {/* ── Type of Service ── */}
+              <div
+                style={{
+                  borderTop: "1px solid #f0eaf8",
+                  paddingTop: "14px",
+                  marginTop: "14px",
+                }}
+              >
+                <p style={sectionLabelStyle}>Type of Service</p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    gap: "24px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  <label style={radioLabelStyle}>
+                    <input
+                      type="radio"
+                      name="serviceType"
+                      value="counseling"
+                      style={radioInputStyle}
+                      checked={serviceType === "counseling"}
+                      onChange={() => {
+                        setServiceType("counseling");
+                        setAssessmentPurpose("");
+                      }}
+                    />
+                    Counseling / Therapy
+                  </label>
+                  <label style={radioLabelStyle}>
+                    <input
+                      type="radio"
+                      name="serviceType"
+                      value="assessment"
+                      style={radioInputStyle}
+                      checked={serviceType === "assessment"}
+                      onChange={() => setServiceType("assessment")}
+                    />
+                    Psychological Assessment and Evaluation
+                  </label>
+                </div>
+
+                {/* Purpose of Assessment */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      color: serviceType === "assessment" ? "#4D227C" : "#bbb",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Purpose of Assessment
+                  </label>
+                  <select
+                    disabled={serviceType !== "assessment"}
+                    value={assessmentPurpose}
+                    onChange={(e) => setAssessmentPurpose(e.target.value)}
+                    style={{
+                      ...selectStyle,
+                      opacity: serviceType === "assessment" ? 1 : 0.4,
+                      cursor:
+                        serviceType === "assessment"
+                          ? "pointer"
+                          : "not-allowed",
+                      border:
+                        serviceType === "assessment"
+                          ? "1.5px solid #4D227C"
+                          : "1px solid #ddd",
+                      color: assessmentPurpose ? "#333" : "#999",
+                      transition: "opacity 0.2s, border 0.2s",
+                    }}
+                  >
+                    <option value="">Select Purpose of Assessment</option>
+                    <option value="VAWC">VAWC</option>
+                    <option value="Adoption or Legal">Adoption or Legal</option>
+                    <option value="School / Academic Support">
+                      School / Academic Support
+                    </option>
+                    <option value="Work-Related">Work-Related</option>
+                  </select>
                 </div>
               </div>
             </div>

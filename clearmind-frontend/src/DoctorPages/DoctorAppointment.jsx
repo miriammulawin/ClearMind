@@ -138,35 +138,6 @@ function DoctorAppointment() {
   return (
     <div className="doctor-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
-
-      {/* Override react-big-calendar event text alignment */}
-      <style>{`
-        .rbc-event-content { text-align: left !important; justify-content: flex-start !important; }
-        .rbc-event { text-align: left !important; }
-
-        /* Agenda view — strip all background/border from event wrapper, color text only */
-        .rbc-agenda-view .rbc-event {
-          background-color: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-          padding: 0 !important;
-          border-radius: 0 !important;
-        }
-        .rbc-agenda-view .rbc-event-content {
-          font-weight: 600 !important;
-        }
-        .rbc-agenda-view table tbody tr:hover td {
-          background-color: #f9f7ff !important;
-        }
-
-        /* Agenda date and time — plain dark text, no color */
-        .rbc-agenda-date-cell,
-        .rbc-agenda-time-cell {
-          color: #333 !important;
-          background-color: transparent !important;
-        }
-      `}</style>
-
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
@@ -179,10 +150,12 @@ function DoctorAppointment() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                flexWrap: "wrap",
+                gap: "10px",
               }}
             >
-              <h3>Appointments Calendar</h3>
-              <div style={{ display: "flex", gap: "10px" }}>
+              <h3 style={{ margin: 0 }}>Appointments Calendar</h3>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <button
                   className="btn-create"
                   onClick={() => setShowScheduleModal(true)}
@@ -228,7 +201,11 @@ function DoctorAppointment() {
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
               onShowMore={handleShowMore}
-              style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
+              style={{
+                height: "clamp(380px, 60vh, 650px)",
+                marginTop: 20,
+                borderRadius: "12px",
+              }}
               eventPropGetter={(event) => {
                 const palette = getEventPalette(event);
                 const isAgenda = currentView === "agenda";
