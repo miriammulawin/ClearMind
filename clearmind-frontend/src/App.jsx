@@ -18,8 +18,8 @@ import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndCondition
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentComponents/AppointmentDetails";
-import SetAppointment from "./ClientPages/ClientComponents/AppointmentComponents/SetAppointment";
-import SetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/AppointmentForm/SetAppointmentForm';
+import PACAppointment from "./ClientPages/ClientComponents/AppointmentComponents/PACAppointment";
+import PACSetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/AppointmentForm/PACSetAppointmentForm';
 import PAEAppointment from "./ClientPages/ClientComponents/AppointmentComponents/PAEAppointment";
 
 
@@ -38,15 +38,20 @@ function App() {
         <Route path="/client/appointment" element={<ClientAppointment />}>
           <Route index element={<Navigate to="services" replace />} />
           <Route path="services" element={<ServicesTab />} />
-          <Route path="set-appointment" element={<SetAppointment />} />
-          <Route path="set-appointment-form" element={<SetAppointmentForm />} />
-          <Route path="psychological-assessment" element={<PAEAppointment />} />
+          
+          <Route path="psychotherapy-and-counseling" element={<PACAppointment />}>
+            <Route path="set-appointment-form" element={<PACSetAppointmentForm />} />
+          </Route>
+          
+          <Route path="psychological-assessment" element={<PAEAppointment />}>
+            {/* <Route path="set-appointment-form" element={<SetAppointmentForm />} /> */}
+          </Route>
+          
           <Route path="pending" element={<PendingTab />} />
           <Route path="upcoming" element={<UpcomingTab />} />
           <Route path="history" element={<HistoryTab />} />
           <Route path="upcoming/:id" element={<AppointmentDetails />} />
         </Route>
-        
         <Route path="/client/messages" element={<ClientMessages />} />
         <Route path="/client/profile" element={<ClientProfile />} />
         

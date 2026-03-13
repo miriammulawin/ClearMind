@@ -15,15 +15,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 25px 15px 25px;
+  margin: 20px 25px 0px 25px;
 }
+
 
 /* ── Heading ── */
 .heading {
   color: #4E237C;
   font-weight: bold;
-  margin-top:25px;           /* remove the 25px margin */
-  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  /* margin-top:25px;           */
+  font-size: clamp(1.2rem, 2vw,2rem);
 }
 
 /* ── Back Button ── */
@@ -33,7 +34,7 @@
   border: none;
   border-radius: 6px;
   padding: clamp(0.3rem, 1.5vw, 0.5rem) clamp(0.6rem, 2vw, 1rem);
-  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+  font-size: clamp(0.5rem, 2.5vw, 0.9rem);
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -217,7 +218,6 @@
     padding-right: 20px !important;
   }
   .scrollableBody::-webkit-scrollbar { width: 6px; }
-  .heading { font-size: clamp(1.1rem, 5vw, 1.5rem); margin-bottom: 16px; }
   .accordionItem { border-radius: 6px !important; }
   .accordionTitle { font-size: 14px; }
   .accordionBody { padding: 16px 12px; }
@@ -227,20 +227,17 @@
 
 @media (max-width: 376px) {
   .container { height: 84%; }
-  .heading { font-size: 1.3rem; margin-bottom: 12px; }
   .accordionTitle { font-size: 14px; }
   .description { font-size: 12px; }
   .continueBtn { padding: 10px 20px; font-size: 12px; }
 }
 
 @media (min-width: 577px) and (max-width: 767px) {
-  .heading { font-size: 1.4rem; }
   .accordionTitle { font-size: 14px; }
 }
 
 @media (min-width: 768px) {
   .container { margin: 0 auto; }
-  .heading { font-size: 1.75rem; }
   .accordionTitle { font-size: 15px; }
   .continueBtn { font-size: 15px; }
 }

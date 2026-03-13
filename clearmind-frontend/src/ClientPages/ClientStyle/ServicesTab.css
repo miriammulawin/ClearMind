@@ -36,12 +36,12 @@
 }
 
 .scrollable-body::-webkit-scrollbar-thumb {
-  background: #5B2C91;
+  background: #aa80d4;
   border-radius: 10px;
 }
 
 .scrollable-body::-webkit-scrollbar-thumb:hover {
-  background: #4a2273;
+  background: #aa80d4;
 }
 
 .appointment-services-container .accordion-item {

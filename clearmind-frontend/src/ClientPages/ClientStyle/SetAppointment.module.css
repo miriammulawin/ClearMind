@@ -41,15 +41,7 @@
   margin-bottom: 1.5rem;
 }
 
-.serviceAlert {
-  background-color: #e2ccfc;
-  border-color: #b06bf5;
-  color: #4A2273;
-  border-radius: 8px;
-  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem);
-  margin-bottom: 1rem;
-  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
-}
+
 
 /* ── Doctor List View ── */
 .doctorsList {
@@ -62,7 +54,7 @@
 
 .doctorsList::-webkit-scrollbar { width: 8px; }
 .doctorsList::-webkit-scrollbar-track { background: #f0e6ff; border-radius: 10px; }
-.doctorsList::-webkit-scrollbar-thumb { background: #5B2C91; border-radius: 10px; }
+.doctorsList::-webkit-scrollbar-thumb { background: #aa80d4; border-radius: 10px; }
 .doctorsList::-webkit-scrollbar-thumb:hover { background: #4a2273; }
 
 .bookingView {

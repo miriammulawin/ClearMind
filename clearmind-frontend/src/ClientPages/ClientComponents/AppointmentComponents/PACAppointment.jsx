@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Card, Button, Alert } from 'react-bootstrap';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { FaVideo, FaClinicMedical, FaCalendarCheck, FaUserCircle, FaArrowLeft } from 'react-icons/fa';
 import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
 import DoctorProfile from './DoctorProfile.jsx';
+import ServiceAlert from '../../component/ServiceAlert.jsx';
 import styles from '../../ClientStyle/SetAppointment.module.css';
 
-const SetAppointment = () => {
+const PACAppointment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const selectedService = location.state?.selectedService;
@@ -42,7 +43,7 @@ const SetAppointment = () => {
   const handleSetAppointment = (doctorId) => {
     const doctor = MOCK_DOCTORS.find(d => d.id === doctorId);
     if (doctor) {
-      navigate('/client/appointment/set-appointment-form', {
+      navigate('/client/appointment/psychotherapy-and-counseling/set-appointment-form', {
         state: { 
           doctor: doctor,
           selectedService: selectedService
@@ -97,11 +98,7 @@ const SetAppointment = () => {
         </Button>
       </div>
 
-      {selectedService && (
-        <Alert className={styles.serviceAlert}>
-          <strong>Selected Service:</strong> {selectedService}
-        </Alert>
-      )}
+      <ServiceAlert selectedService={selectedService} />
 
       {!selectedDoctor ? (
         <div className={styles.doctorsList}>
@@ -179,8 +176,11 @@ const SetAppointment = () => {
           />
         )
       )}
+
+      {/* PACSetAppointmentForm renders here */}
+      <Outlet />
     </Container>
   );
 };
 
-export default SetAppointment;
+export default PACAppointment;

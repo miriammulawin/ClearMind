@@ -1,0 +1,10 @@
+.serviceAlert {
+  background-color: #e2ccfc;
+  border-color: #b06bf5;
+  color: #4A2273;
+  border-radius: 8px;
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1rem);
+  margin: clamp(1rem, 2vw, 0.75rem) ;
+  /* margin-bottom: 1rem; */
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+}

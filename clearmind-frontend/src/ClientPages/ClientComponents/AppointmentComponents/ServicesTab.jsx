@@ -10,11 +10,13 @@ const ClientAppointmentServices = () => {
 
   const handleContinue = (serviceTitle) => {
     if (serviceTitle === 'Psychotherapy and Counseling') {
-      navigate('/client/appointment/set-appointment', {
+      navigate('/client/appointment/psychotherapy-and-counseling', {
         state: { selectedService: serviceTitle },
       });
     } else if (serviceTitle === 'Psychological Assessment and Evaluation') {
-      navigate('/client/appointment/psychological-assessment');
+      navigate('/client/appointment/psychological-assessment', {
+        state: { selectedService: serviceTitle }, // add this
+      });
     } else {
       alert(`${serviceTitle} booking will be available soon. This feature is currently under development.`);
     }

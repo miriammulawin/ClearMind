@@ -3,9 +3,10 @@
 
 import React from 'react';
 import { Accordion, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useLocation } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import ServiceAlert from '../../component/ServiceAlert.jsx';
 import styles from '../../ClientStyle/PAEAppointment.module.css';
 
 /* -----------------------------------------------------------------
@@ -75,7 +76,9 @@ const PAE_SERVICES = [
 ------------------------------------------------------------------ */
 const PAEAppointment = () => {
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const selectedService = location.state?.selectedService;
+  
   const handleContinue = (service) => {
     if (service.available) {
       navigate('/client/appointment/set-appointment', {
@@ -100,6 +103,8 @@ const PAEAppointment = () => {
           <FaArrowLeft /> Back to Services
         </button>
       </div>
+      <ServiceAlert selectedService={selectedService} />
+
 
       {/* Scrollable Body */}
       <div className={styles.scrollableBody}>
