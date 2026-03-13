@@ -1,336 +1,474 @@
 import { useState } from "react";
-import { FiX, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiX, FiPlus, FiTrash2, FiChevronDown, FiEdit2 } from "react-icons/fi";
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 
+/* ── Mock Saved Schedule ────────────────────────────────────────────────── */
+const INITIAL_SAVED = {
+  Monday:    [{ startTime: "09:00", endTime: "12:00", clinicType: "physical" }, { startTime: "13:00", endTime: "17:00", clinicType: "online" }],
+  Tuesday:   [{ startTime: "10:00", endTime: "13:00", clinicType: "physical" }],
+  Wednesday: [{ startTime: "09:00", endTime: "12:00", clinicType: "physical" }, { startTime: "14:00", endTime: "17:00", clinicType: "online" }],
+  Thursday:  [{ startTime: "10:00", endTime: "14:00", clinicType: "physical" }],
+  Friday:    [{ startTime: "09:00", endTime: "12:00", clinicType: "online" }, { startTime: "13:00", endTime: "15:00", clinicType: "physical" }],
+  Saturday:  [{ startTime: "09:00", endTime: "12:00", clinicType: "physical" }],
+  Sunday:    [],
+};
+
+const formatTime = (time) => {
+  if (!time) return "—";
+  const [hours, minutes] = time.split(":");
+  const hour = parseInt(hours);
+  return `${hour % 12 || 12}:${minutes} ${hour >= 12 ? "PM" : "AM"}`;
+};
+
+/* ── Saved Schedule Dropdown ────────────────────────────────────────────── */
+function SavedScheduleDropdown({ savedSchedule, onEdit, onDeleteSlot }) {
+  const [open, setOpen] = useState(false);
+  const hasSaved = DAYS_OF_WEEK.some((d) => savedSchedule[d]?.length > 0);
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      {/* Toggle Button */}
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 16px", borderRadius: 8,
+          border: "1.5px solid #4D227C",
+          backgroundColor: open ? "#4D227C" : "#fff",
+          color: open ? "#fff" : "#4D227C",
+          cursor: "pointer", fontWeight: 700,
+          fontSize: "clamp(13px, 2vw, 15px)",
+          transition: "all 0.2s", boxSizing: "border-box",
+        }}
+      >
+        <span>View Schedule</span>
+        <FiChevronDown
+          size={16}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s", flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {/* Dropdown Panel */}
+      {open && (
+        <div style={{
+          marginTop: 8, border: "1px solid #e0d4f5", borderRadius: 10,
+          overflow: "hidden", boxShadow: "0 4px 16px rgba(77,34,124,0.10)",
+        }}>
+          {!hasSaved ? (
+            <div style={{ padding: "16px 20px", color: "#666", fontSize: "clamp(12px,1.8vw,13px)", textAlign: "center" }}>
+              No saved schedule yet.
+            </div>
+          ) : (
+            DAYS_OF_WEEK.map((day) => {
+              const slots = savedSchedule[day] || [];
+              if (slots.length === 0) return null;
+              return (
+                <div key={day} style={{ borderBottom: "1px solid #f0eaf8", padding: "12px 16px", backgroundColor: "#faf7ff" }}>
+                  {/* Day Row */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}>
+                    <span style={{ fontWeight: 700, fontSize: "clamp(13px,1.8vw,14px)", color: "#4D227C" }}>
+                      {day}
+                    </span>
+                    <button
+                      onClick={() => onEdit(day)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "4px 12px", borderRadius: 6,
+                        border: "1px solid #4D227C", backgroundColor: "transparent",
+                        color: "#4D227C", fontSize: "clamp(11px,1.5vw,12px)",
+                        fontWeight: 600, cursor: "pointer",
+                      }}
+                    >
+                      <FiEdit2 size={11} /> Edit
+                    </button>
+                  </div>
+
+                  {/* Slot Items */}
+                  {slots.map((slot, idx) => (
+                    <div key={idx} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      flexWrap: "wrap", gap: 8,
+                      padding: "8px 12px",
+                      marginBottom: idx < slots.length - 1 ? 6 : 0,
+                      backgroundColor: "#fff", borderRadius: 8, border: "1px solid #e0d4f5",
+                    }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", alignItems: "center" }}>
+                        <span style={{ fontSize: "clamp(12px,1.8vw,13px)", color: "#333", fontWeight: 500 }}>
+                          {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                        </span>
+                        <span style={{
+                          fontSize: "clamp(10px,1.5vw,12px)", fontWeight: 600,
+                          padding: "2px 10px", borderRadius: 10,
+                          backgroundColor: slot.clinicType === "online" ? "#e0f0ff" : "#ede7f6",
+                          color: slot.clinicType === "online" ? "#1e6091" : "#4D227C",
+                        }}>
+                          {slot.clinicType === "online" ? "Online Clinic" : "Physical Clinic"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => onDeleteSlot(day, idx)}
+                        title="Delete slot"
+                        style={{
+                          padding: "5px 8px", borderRadius: 6, border: "none",
+                          backgroundColor: "#fff0f0", color: "#e53e3e",
+                          cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0,
+                        }}
+                      >
+                        <FiTrash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main Component ─────────────────────────────────────────────────────── */
 function AddScheduleModal({ isOpen, onClose }) {
   const [selectedDay, setSelectedDay] = useState("Monday");
+
+  // Editor: starts with only 1 empty slot for Monday
   const [weeklySchedule, setWeeklySchedule] = useState({
-    Monday: [],
-    Tuesday: [],
+    Monday:    [{ startTime: "", endTime: "", clinicType: "" }],
+    Tuesday:   [],
     Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: [],
+    Thursday:  [],
+    Friday:    [],
+    Saturday:  [],
+    Sunday:    [],
   });
 
+  // Saved schedule — separate from editor
+  const [savedSchedule, setSavedSchedule] = useState(INITIAL_SAVED);
+
+  /* Handlers */
+  const handleEditDay = (day) => {
+    setSelectedDay(day);
+    setWeeklySchedule((prev) => ({
+      ...prev,
+      [day]: savedSchedule[day].map((s) => ({ ...s })),
+    }));
+  };
+
+  const handleDeleteSavedSlot = (day, idx) => {
+    setSavedSchedule((prev) => ({
+      ...prev,
+      [day]: prev[day].filter((_, i) => i !== idx),
+    }));
+  };
+
   const handleAddTimeSlot = () => {
-    setWeeklySchedule({
-      ...weeklySchedule,
-      [selectedDay]: [
-        ...weeklySchedule[selectedDay],
-        { startTime: "", endTime: "", clinicType: "" },
-      ],
-    });
+    setWeeklySchedule((prev) => ({
+      ...prev,
+      [selectedDay]: [...prev[selectedDay], { startTime: "", endTime: "", clinicType: "" }],
+    }));
   };
 
-  const handleRemoveTimeSlot = (dayName, index) => {
-    setWeeklySchedule({
-      ...weeklySchedule,
-      [dayName]: weeklySchedule[dayName].filter((_, i) => i !== index),
-    });
+  const handleRemoveTimeSlot = (index) => {
+    setWeeklySchedule((prev) => ({
+      ...prev,
+      [selectedDay]: prev[selectedDay].filter((_, i) => i !== index),
+    }));
   };
 
-  const handleTimeSlotChange = (dayName, index, field, value) => {
-    const updatedSlots = [...weeklySchedule[dayName]];
-    updatedSlots[index][field] = value;
-    setWeeklySchedule({ ...weeklySchedule, [dayName]: updatedSlots });
+  const handleTimeSlotChange = (index, field, value) => {
+    setWeeklySchedule((prev) => {
+      const updated = [...prev[selectedDay]];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, [selectedDay]: updated };
+    });
   };
 
   const handleSaveSchedule = () => {
     for (const day of DAYS_OF_WEEK) {
       for (const slot of weeklySchedule[day]) {
         if (!slot.startTime || !slot.endTime) {
-          alert("Please fill in all time slots or remove empty ones");
+          alert("Please fill in all time slots or remove empty ones.");
           return;
         }
         if (!slot.clinicType) {
-          alert("Please select a clinic type for all time slots");
+          alert("Please select a clinic type for all time slots.");
           return;
         }
       }
     }
+    setSavedSchedule((prev) => {
+      const merged = { ...prev };
+      DAYS_OF_WEEK.forEach((day) => {
+        if (weeklySchedule[day].length > 0)
+          merged[day] = weeklySchedule[day].map((s) => ({ ...s }));
+      });
+      return merged;
+    });
     alert("Schedule saved successfully!");
     onClose();
   };
 
-  const formatTime = (time) => {
-    if (!time) return "";
-    const [hours, minutes] = time.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
   if (!isOpen) return null;
 
+  /* Shared inline styles */
+  const labelSt = {
+    fontSize: "clamp(11px, 1.6vw, 12px)", fontWeight: 700, color: "#333",
+    textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 8,
+  };
+  const timeInputSt = {
+    padding: "9px 12px", borderRadius: 6, border: "1px solid #ddd",
+    fontSize: "clamp(12px, 1.8vw, 14px)", color: "#333",
+    width: "100%", boxSizing: "border-box", outline: "none",
+  };
+
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "20px",
-        overflowY: "auto",
-      }}
-    >
-      <div className="appointment-modal-lg">
+    <>
+      <style>{`
+        .asm-day-btn {
+          padding: 8px 16px; border-radius: 8px; cursor: pointer;
+          font-size: clamp(12px, 1.8vw, 14px); transition: all 0.2s; white-space: nowrap;
+          font-family: inherit;
+        }
+        .asm-time-row {
+          display: grid;
+          grid-template-columns: 56px 1fr 28px 1fr;
+          align-items: center; gap: 10px;
+        }
+        .asm-time-sep { text-align: center; font-size: clamp(12px,1.8vw,13px); color: #555; font-weight: 500; }
+        .asm-time-lbl { font-size: clamp(12px,1.8vw,13px); font-weight: 600; color: #333; }
+        @media (max-width: 768px) {
+          .asm-day-buttons { gap: 6px !important; }
+          .asm-time-row { grid-template-columns: 1fr 1fr; }
+          .asm-time-sep { display: none; }
+          .asm-time-lbl { grid-column: 1 / -1; margin-bottom: 0; }
+        }
+        @media (max-width: 576px) {
+          .asm-day-btn { padding: 6px 10px !important; flex: 1 1 60px; }
+          .asm-time-row { grid-template-columns: 1fr; }
+          .asm-slot-header { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+        }
+      `}</style>
 
-        {/* Header */}
-        <div className="modal-header">
-          <h2>Add Weekly Schedule</h2>
-          <button
-            className="close-btn"
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "20px",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <FiX />
-          </button>
-        </div>
+      <div style={{
+        position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 9999, padding: 20, boxSizing: "border-box",
+      }}>
+        <div
+          className="appointment-modal-lg"
+          style={{ display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 40px)", overflow: "hidden" }}
+        >
 
-        <div className="modal-body">
-          <div className="modal-section">
+          {/* ── Header ── */}
+          <div className="modal-header" style={{ flexShrink: 0 }}>
+            <h2 style={{ margin: 0, fontSize: "clamp(15px, 2.5vw, 20px)" }}>
+              Add Weekly Schedule
+            </h2>
+            <button
+              className="close-btn" onClick={onClose}
+              style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center" }}
+            >
+              <FiX />
+            </button>
+          </div>
 
-            {/* Day Selector */}
-            <h4>Select Day of the Week</h4>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-              {DAYS_OF_WEEK.map((day) => (
-                <button
-                  key={day}
-                  onClick={() => setSelectedDay(day)}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    border: selectedDay === day ? "2px solid #4D227C" : "1px solid #ddd",
-                    backgroundColor: selectedDay === day ? "#4D227C" : "#fff",
-                    color: selectedDay === day ? "#fff" : "#333",
-                    cursor: "pointer",
-                    fontWeight: selectedDay === day ? "600" : "400",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
+          {/* ── Scrollable Body ── */}
+          <div className="modal-body" style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+            <div className="modal-section">
 
-            {/* Time Slots */}
-            <div style={{ marginTop: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h4>Time Slots for {selectedDay}</h4>
-                <button
-                  onClick={handleAddTimeSlot}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    border: "none",
-                    backgroundColor: "#4D227C",
-                    color: "#fff",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    fontWeight: "500",
-                  }}
-                >
-                  <FiPlus /> Add Time Slot
-                </button>
+              {/* Saved Schedule Dropdown */}
+              <SavedScheduleDropdown
+                savedSchedule={savedSchedule}
+                onEdit={handleEditDay}
+                onDeleteSlot={handleDeleteSavedSlot}
+              />
+
+              {/* Day Selector */}
+              <p style={{ ...labelSt, marginBottom: 10 }}>Select Day of the Week</p>
+              <div className="asm-day-buttons" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+                {DAYS_OF_WEEK.map((day) => (
+                  <button
+                    key={day}
+                    className="asm-day-btn"
+                    onClick={() => setSelectedDay(day)}
+                    style={{
+                      border: selectedDay === day ? "2px solid #4D227C" : "1px solid #ddd",
+                      backgroundColor: selectedDay === day ? "#4D227C" : "#fff",
+                      color: selectedDay === day ? "#fff" : "#333",
+                      fontWeight: selectedDay === day ? 700 : 400,
+                    }}
+                  >
+                    {day}
+                  </button>
+                ))}
               </div>
 
-              {weeklySchedule[selectedDay].length === 0 ? (
+              {/* Time Slots */}
+              <div>
                 <div
-                  style={{
-                    padding: "20px",
-                    textAlign: "center",
-                    color: "#666",
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: "8px",
-                  }}
+                  className="asm-slot-header"
+                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}
                 >
-                  No time slots added for {selectedDay}. Click "Add Time Slot" to get started.
+                  <p style={{ ...labelSt, margin: 0 }}>
+                    Time Slots for{" "}
+                    <span style={{ color: "#4D227C", fontWeight: 800 }}>{selectedDay}</span>
+                  </p>
+                  <button
+                    onClick={handleAddTimeSlot}
+                    style={{
+                      padding: "8px 14px", borderRadius: 8, border: "none",
+                      backgroundColor: "#4D227C", color: "#fff", cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 5,
+                      fontWeight: 600, fontSize: "clamp(12px, 1.8vw, 13px)",
+                      flexShrink: 0, fontFamily: "inherit",
+                    }}
+                  >
+                    <FiPlus size={14} /> Add Time Slot
+                  </button>
                 </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {weeklySchedule[selectedDay].map((slot, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "16px",
-                        padding: "16px",
-                        backgroundColor: "#f9f9f9",
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0",
-                      }}
-                    >
-                      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                        <span style={{ fontWeight: "500", minWidth: "80px" }}>
-                          Slot {index + 1}:
-                        </span>
-                        <input
-                          type="time"
-                          value={slot.startTime}
-                          onChange={(e) => handleTimeSlotChange(selectedDay, index, "startTime", e.target.value)}
-                          style={{
-                            padding: "10px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #ddd",
-                            fontSize: "14px",
-                            minWidth: "150px",
-                          }}
-                        />
-                        <span style={{ fontWeight: "500" }}>to</span>
-                        <input
-                          type="time"
-                          value={slot.endTime}
-                          onChange={(e) => handleTimeSlotChange(selectedDay, index, "endTime", e.target.value)}
-                          style={{
-                            padding: "10px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #ddd",
-                            fontSize: "14px",
-                            minWidth: "150px",
-                          }}
-                        />
-                        <button
-                          onClick={() => handleRemoveTimeSlot(selectedDay, index)}
-                          style={{
-                            padding: "8px",
-                            borderRadius: "6px",
-                            border: "none",
-                            backgroundColor: "#ff4444",
-                            color: "#fff",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
 
-                      {/* Clinic Type */}
-                      <div style={{ paddingLeft: "90px" }}>
-                        <h5
-                          style={{
-                            marginBottom: "10px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            color: "#333",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                          }}
-                        >
-                          Clinic Type
-                        </h5>
-                        <div style={{ display: "flex", gap: "20px" }}>
-                          {["online", "physical"].map((type) => (
-                            <label
-                              key={type}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                                color: "#555",
-                              }}
-                            >
-                              <input
-                                type="radio"
-                                name={`clinicType-${selectedDay}-${index}`}
-                                value={type}
-                                checked={slot.clinicType === type}
-                                onChange={(e) => handleTimeSlotChange(selectedDay, index, "clinicType", e.target.value)}
+                {weeklySchedule[selectedDay].length === 0 ? (
+                  <div style={{
+                    padding: 20, textAlign: "center", color: "#555",
+                    backgroundColor: "#f5f5f5", borderRadius: 8,
+                    fontSize: "clamp(12px,1.8vw,14px)", border: "1px dashed #ddd",
+                  }}>
+                    No time slots for <strong style={{ color: "#333" }}>{selectedDay}</strong>.
+                    Click <strong style={{ color: "#4D227C" }}>+ Add Time Slot</strong> to get started.
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {weeklySchedule[selectedDay].map((slot, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: 16, backgroundColor: "#f9f9f9",
+                          borderRadius: 8, border: "1px solid #e0e0e0",
+                        }}
+                      >
+                        {/* Slot number + delete */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <span style={{ fontSize: "clamp(12px,1.8vw,13px)", fontWeight: 700, color: "#4D227C" }}>
+                            Slot {index + 1}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveTimeSlot(index)}
+                            style={{
+                              padding: "6px 8px", borderRadius: 6, border: "none",
+                              backgroundColor: "#ff4444", color: "#fff", cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}
+                          >
+                            <FiTrash2 size={13} />
+                          </button>
+                        </div>
+
+                        {/* Time inputs */}
+                        <div className="asm-time-row">
+                          <span className="asm-time-lbl">Start</span>
+                          <input
+                            type="time" value={slot.startTime}
+                            onChange={(e) => handleTimeSlotChange(index, "startTime", e.target.value)}
+                            style={timeInputSt}
+                          />
+                          <span className="asm-time-sep">to</span>
+                          <input
+                            type="time" value={slot.endTime}
+                            onChange={(e) => handleTimeSlotChange(index, "endTime", e.target.value)}
+                            style={timeInputSt}
+                          />
+                        </div>
+
+                        {/* End label row (shown on larger screens via grid, hidden on mobile) */}
+                        <div className="asm-time-row" style={{ marginTop: 4 }}>
+                          <span />
+                          <span style={{ fontSize: "clamp(10px,1.5vw,11px)", color: "#888", paddingLeft: 2 }}>Start Time</span>
+                          <span />
+                          <span style={{ fontSize: "clamp(10px,1.5vw,11px)", color: "#888", paddingLeft: 2 }}>End Time</span>
+                        </div>
+
+                        {/* Clinic Type */}
+                        <div style={{ marginTop: 14 }}>
+                          <span style={labelSt}>Clinic Type</span>
+                          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+                            {["online", "physical"].map((type) => (
+                              <label
+                                key={type}
                                 style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  accentColor: "#4D227C",
+                                  display: "flex", alignItems: "center", gap: 8,
                                   cursor: "pointer",
+                                  fontSize: "clamp(12px,1.8vw,13px)", color: "#333",
                                 }}
-                              />
-                              <span>{type === "online" ? "Online Clinic" : "Physical Clinic"}</span>
-                            </label>
-                          ))}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`clinicType-${selectedDay}-${index}`}
+                                  value={type}
+                                  checked={slot.clinicType === type}
+                                  onChange={(e) => handleTimeSlotChange(index, "clinicType", e.target.value)}
+                                  style={{ width: 16, height: 16, accentColor: "#4D227C", cursor: "pointer" }}
+                                />
+                                <span>{type === "online" ? "Online Clinic" : "Physical Clinic"}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Schedule Summary */}
-            <div
-              style={{
-                marginTop: "30px",
-                padding: "15px",
-                backgroundColor: "#f0f0f0",
-                borderRadius: "8px",
-              }}
-            >
-              <h4 style={{ marginBottom: "10px" }}>Schedule Summary</h4>
-              {DAYS_OF_WEEK.map(
-                (day) =>
-                  weeklySchedule[day].length > 0 && (
-                    <div key={day} style={{ marginBottom: "8px" }}>
-                      <strong>{day}:</strong>{" "}
-                      {weeklySchedule[day].map((slot, idx) => {
-                        const clinicTypeLabel =
-                          slot.clinicType === "online"
-                            ? " (Online Clinic)"
-                            : slot.clinicType === "physical"
-                            ? " (Physical Clinic)"
-                            : "";
-                        return (
-                          <span key={idx}>
-                            {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
-                            {clinicTypeLabel}
-                            {idx < weeklySchedule[day].length - 1 ? ", " : ""}
-                          </span>
-                        );
-                      })}
+              {/* Schedule Summary */}
+              <div style={{
+                marginTop: 28, padding: 16,
+                backgroundColor: "#f5f3ff", borderRadius: 10, border: "1px solid #e0d4f5",
+              }}>
+                <p style={{ ...labelSt, color: "#4D227C", marginBottom: 12 }}>Schedule Summary</p>
+                {DAYS_OF_WEEK.map((day) => {
+                  const slots = weeklySchedule[day];
+                  if (!slots?.length) return null;
+                  return (
+                    <div key={day} style={{ marginBottom: 8, fontSize: "clamp(12px,1.8vw,13px)", color: "#333", lineHeight: 1.6 }}>
+                      <strong style={{ color: "#4D227C" }}>{day}:</strong>{" "}
+                      {slots.map((slot, idx) => (
+                        <span key={idx}>
+                          {formatTime(slot.startTime)} – {formatTime(slot.endTime)}
+                          {slot.clinicType
+                            ? ` (${slot.clinicType === "online" ? "Online" : "Physical"} Clinic)`
+                            : ""}
+                          {idx < slots.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
                     </div>
-                  )
-              )}
-              {DAYS_OF_WEEK.every((day) => weeklySchedule[day].length === 0) && (
-                <div style={{ color: "#666" }}>No schedules added yet.</div>
-              )}
+                  );
+                })}
+                {DAYS_OF_WEEK.every((d) => !weeklySchedule[d]?.length) && (
+                  <div style={{ color: "#999", fontSize: "clamp(12px,1.8vw,13px)" }}>No slots added yet.</div>
+                )}
+              </div>
+
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="modal-footer">
-          <button className="btn-add" onClick={handleSaveSchedule}>
-            Save Schedule
-          </button>
+          {/* ── Footer ── */}
+          <div className="modal-footer" style={{ flexShrink: 0 }}>
+            <button className="btn-add" onClick={handleSaveSchedule}>
+              Save Schedule
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
