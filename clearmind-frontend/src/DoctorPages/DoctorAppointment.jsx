@@ -21,12 +21,57 @@ const localizer = dateFnsLocalizer({
   locales: { "en-US": enUS },
 });
 
-// ── Event color ────────────────────────────────────────────────────────────
-const getEventColor = (event) => {
-  if (event.title?.includes("Physical")) return "#4D227C";
-  if (event.title?.includes("Online")) return "#3d5a8a";
-  return "#4D227C";
+// ── Event color system ────────────────────────────────────────────────────
+// Counseling / Therapy  → teal family
+// Psych Assessment      → color by Purpose
+//   VAWC                → rose/red
+//   Adoption or Legal   → amber/gold
+//   School / Academic   → sky blue
+//   Work-Related        → slate/indigo
+
+const isPsychAssessment = (serviceType) =>
+  serviceType?.toLowerCase().includes("psychological assessment") ||
+  serviceType?.toLowerCase().includes("assessment and evaluation");
+
+// Base palette — tones inspired by the app's purple/maroon theme
+export const EVENT_PALETTE = {
+  counseling: { bg: "#6b7280", border: "#4b5563" }, // muted gray
+  vawc: { bg: "#4D227C", border: "#3b1a5e" }, // deep purple (calendar header tone)
+  legal: { bg: "#8B4545", border: "#6e3535" }, // maroon (Add Schedule button tone)
+  school: { bg: "#1e6091", border: "#154c73" }, // navy blue — softer
+  work: { bg: "#2d6a4f", border: "#1e4d38" }, // forest green — muted
 };
+
+const getEventPalette = (event) => {
+  const svc = event.serviceType || event.visitType || "";
+
+  if (isPsychAssessment(svc)) {
+    switch (event.assessmentPurpose) {
+      case "VAWC":
+        return EVENT_PALETTE.vawc;
+      case "Adoption or Legal":
+        return EVENT_PALETTE.legal;
+      case "School / Academic Support":
+        return EVENT_PALETTE.school;
+      case "Work-Related":
+        return EVENT_PALETTE.work;
+      default:
+        return EVENT_PALETTE.work; // fallback for PA without purpose
+    }
+  }
+
+  // Counseling / Therapy (or any other service)
+  return EVENT_PALETTE.counseling;
+};
+
+// Legend entries shown below the calendar
+const LEGEND = [
+  { label: "Counseling / Therapy", color: EVENT_PALETTE.counseling.bg },
+  { label: "PA — VAWC", color: EVENT_PALETTE.vawc.bg },
+  { label: "PA — Adoption / Legal", color: EVENT_PALETTE.legal.bg },
+  { label: "PA — School / Academic", color: EVENT_PALETTE.school.bg },
+  { label: "PA — Work-Related", color: EVENT_PALETTE.work.bg },
+];
 
 // ── Component ──────────────────────────────────────────────────────────────
 function DoctorAppointment() {
@@ -94,6 +139,34 @@ function DoctorAppointment() {
     <div className="doctor-layout">
       <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
 
+      {/* Override react-big-calendar event text alignment */}
+      <style>{`
+        .rbc-event-content { text-align: left !important; justify-content: flex-start !important; }
+        .rbc-event { text-align: left !important; }
+
+        /* Agenda view — strip all background/border from event wrapper, color text only */
+        .rbc-agenda-view .rbc-event {
+          background-color: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          border-radius: 0 !important;
+        }
+        .rbc-agenda-view .rbc-event-content {
+          font-weight: 600 !important;
+        }
+        .rbc-agenda-view table tbody tr:hover td {
+          background-color: #f9f7ff !important;
+        }
+
+        /* Agenda date and time — plain dark text, no color */
+        .rbc-agenda-date-cell,
+        .rbc-agenda-time-cell {
+          color: #333 !important;
+          background-color: transparent !important;
+        }
+      `}</style>
+
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
@@ -156,19 +229,69 @@ function DoctorAppointment() {
               onSelectEvent={handleSelectEvent}
               onShowMore={handleShowMore}
               style={{ height: 600, marginTop: 20, borderRadius: "12px" }}
-              eventPropGetter={(event) => ({
-                style: {
-                  backgroundColor: getEventColor(event),
-                  color: "#fff",
-                  borderRadius: "16px",
-                  border: "none",
-                  padding: "4px 8px",
-                  fontWeight: 500,
-                  marginBottom: "4px",
-                  fontSize: "13px",
-                },
-              })}
+              eventPropGetter={(event) => {
+                const palette = getEventPalette(event);
+                const isAgenda = currentView === "agenda";
+                return {
+                  style: {
+                    backgroundColor: isAgenda ? "transparent" : palette.bg,
+                    borderLeft: isAgenda
+                      ? "none"
+                      : `4px solid ${palette.border}`,
+                    border: isAgenda ? "none" : undefined,
+                    color: isAgenda ? palette.bg : "#fff",
+                    borderRadius: isAgenda ? "0" : "4px",
+                    padding: isAgenda ? "0" : "3px 8px",
+                    fontWeight: isAgenda ? 600 : 500,
+                    marginBottom: "3px",
+                    fontSize: "12px",
+                    boxShadow: "none",
+                  },
+                };
+              }}
             />
+
+            {/* ── Color Legend ──────────────────────────────────────────── */}
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: "8px 24px",
+                marginTop: "14px",
+                padding: "10px 20px",
+                backgroundColor: "#f9f7ff",
+                borderRadius: "10px",
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              {LEGEND.map(({ label, color }) => (
+                <div
+                  key={label}
+                  style={{ display: "flex", alignItems: "center", gap: "7px" }}
+                >
+                  <span
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "3px",
+                      backgroundColor: color,
+                      flexShrink: 0,
+                      display: "inline-block",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "#374151",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -314,32 +314,14 @@ const SchoolSection = ({ appt }) => {
       titleLeft={<span>School / Academic — Supporting Documents</span>}
     >
       <div className={styles.docsSection}>
-        <div className={styles.docsSectionLabel}>
-          Patient-Uploaded Documents:
+        <div
+          className={styles.docsChipRow}
+          style={{ flexWrap: "wrap", gap: 8 }}
+        >
+          {docs.map((doc, i) => (
+            <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
+          ))}
         </div>
-        {docs.map((doc, i) => (
-          <div key={i}>
-            {/* Per-file metadata row */}
-            <div
-              className={styles.uploadedFileMeta}
-              style={{ marginBottom: 6 }}
-            >
-              <span className={styles.uploadedFileMetaItem}>
-                <span className={styles.uploadedFileMetaLabel}>
-                  Uploaded by:
-                </span>
-                {doc.uploadedBy}
-              </span>
-              <span className={styles.uploadedFileMetaItem}>
-                <span className={styles.uploadedFileMetaLabel}>Date:</span>
-                {format(new Date(doc.uploadedAt), "MMMM dd, yyyy")}
-              </span>
-            </div>
-            <div className={styles.docsChipRow}>
-              <PdfFileChip label={doc.label} filename={doc.filename} />
-            </div>
-          </div>
-        ))}
       </div>
     </Accordion>
   );
@@ -462,7 +444,6 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const endTime = toTime12(toTime24(appt.end));
   const isOnline = appt.title?.toLowerCase().includes("online");
   const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
-  const clinicColor = isOnline ? EVENT_COLORS.online : EVENT_COLORS.physical;
 
   const isRescheduled = appt.status === "Rescheduled" || isGhost;
   const displayDate = format(new Date(appt.start), "MMMM dd, yyyy");
@@ -474,6 +455,19 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
     ? "Psychological Assessment and Evaluation"
     : "Counseling / Therapy";
   const purpose = isAssessment ? getPurpose(appt) : null;
+
+  // Dot color: purpose-aware for PA, teal for counseling
+  const clinicColor = isAssessment
+    ? purpose === PURPOSES.VAWC
+      ? EVENT_COLORS.vawc
+      : purpose === PURPOSES.LEGAL
+        ? EVENT_COLORS.legal
+        : purpose === PURPOSES.SCHOOL
+          ? EVENT_COLORS.school
+          : purpose === PURPOSES.WORK
+            ? EVENT_COLORS.work
+            : EVENT_COLORS.work
+    : EVENT_COLORS.online; // teal for counseling
 
   // VAWC only for female patients
   const showVawc =
@@ -687,9 +681,6 @@ function DayAppointmentsModal({
                 const clinicType = isOnline
                   ? "Online Clinic"
                   : "Physical Clinic";
-                const dotColor = isOnline
-                  ? EVENT_COLORS.online
-                  : EVENT_COLORS.physical;
                 const cardDate = format(new Date(appt.start), "MMMM dd, yyyy");
 
                 const serviceType = appt.serviceType || appt.visitType || "";
@@ -698,6 +689,17 @@ function DayAppointmentsModal({
                   ? "Psychological Assessment and Evaluation"
                   : "Counseling / Therapy";
                 const purpose = isAssessment ? getPurpose(appt) : null;
+
+                // Dot color mirrors calendar event color
+                const dotColor = isAssessment
+                  ? purpose === PURPOSES.VAWC
+                    ? EVENT_COLORS.vawc
+                    : purpose === PURPOSES.LEGAL
+                      ? EVENT_COLORS.legal
+                      : purpose === PURPOSES.SCHOOL
+                        ? EVENT_COLORS.school
+                        : EVENT_COLORS.work
+                  : EVENT_COLORS.online;
 
                 const displayPurpose =
                   purpose === PURPOSES.VAWC
