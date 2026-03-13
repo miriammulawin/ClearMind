@@ -16,6 +16,7 @@ import DoctorPatient from "./DoctorPages/DoctorPatient";
 import DoctorProfile from "./DoctorPages/DoctorProfile";
 import DoctorMessages from "./DoctorPages/DoctorMessages";
 import DoctorPatientProfile from "./DoctorPages/DoctorPatientProfile";
+import DoctorSchedule from "./DoctorPages/DoctorSchedule";
 
 import CreateAccounts from "./AdminPages/CreateAccounts";
 import AdminDashboard from "./AdminPages/AdminDashboard";
@@ -59,6 +60,7 @@ function App() {
             path="/doctor/patient-profile/:id"
             element={<DoctorPatientProfile />}
           />
+          <Route path="/doctor/schedule" element={<DoctorSchedule />} />
         </Routes>
       </Router>
     </>

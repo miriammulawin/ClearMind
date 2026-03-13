@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { FiX, FiDownload, FiChevronDown, FiFile } from "react-icons/fi";
 import { EVENT_COLORS } from "../data/appointmentsData";
 import styles from "../DoctorStyle/DayAppointmentsModal.module.css";
+import CompleteAppointmentModal from "./CompleteAppointmentModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const toTime24 = (date) =>
@@ -60,11 +61,20 @@ const purposeClass = (purpose) => {
 // ── Reusable accordion wrapper ─────────────────────────────────────────────
 function Accordion({ title, titleLeft, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
+  const ref = useRef(null);
+
+  const handleToggle = () => {
+    setOpen((o) => !o);
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 0);
+  };
+
   return (
-    <section className={styles.card}>
+    <section className={styles.card} ref={ref}>
       <button
         className={`${styles.accordionHeader} ${open ? styles.open : ""}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggle}
       >
         <span className={styles.cardHeaderLeft}>{titleLeft || title}</span>
         <FiChevronDown
@@ -100,8 +110,6 @@ const InfoRow = ({ label, value, minWidth = 190 }) => (
 );
 
 // ── react-pdf setup ────────────────────────────────────────────────────────
-// Import Document + Page from react-pdf (must be installed: npm i react-pdf)
-// pdfjs worker is set to the CDN copy that ships with pdfjs-dist.
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -111,7 +119,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-// ── Full-screen PDF Viewer Modal (react-pdf) ───────────────────────────────
+// ── Full-screen PDF Viewer Modal ───────────────────────────────────────────
 function PdfViewerModal({ label, filename, onClose }) {
   const src = `/forms/${filename}`;
   const [numPages, setNumPages] = useState(null);
@@ -132,7 +140,6 @@ function PdfViewerModal({ label, filename, onClose }) {
         className={styles.pdfViewerModal}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ──────────────────────────────────────────────────── */}
         <div className={styles.pdfViewerHeader}>
           <span className={styles.pdfViewerTitle}>
             <FiFile size={15} />
@@ -144,16 +151,13 @@ function PdfViewerModal({ label, filename, onClose }) {
               download={filename}
               className={styles.pdfViewerDownload}
             >
-              <FiDownload size={14} />
-              Download
+              <FiDownload size={14} /> Download
             </a>
             <button className={styles.pdfViewerClose} onClick={onClose}>
               <FiX size={16} />
             </button>
           </div>
         </div>
-
-        {/* ── Toolbar: pagination + zoom ───────────────────────────────── */}
         <div className={styles.pdfToolbar}>
           <div className={styles.pdfPagination}>
             <button
@@ -174,7 +178,6 @@ function PdfViewerModal({ label, filename, onClose }) {
               ›
             </button>
           </div>
-
           <div className={styles.pdfZoom}>
             <button
               className={styles.pdfNavBtn}
@@ -197,8 +200,6 @@ function PdfViewerModal({ label, filename, onClose }) {
             </button>
           </div>
         </div>
-
-        {/* ── Document canvas ─────────────────────────────────────────── */}
         <div className={styles.pdfViewerBody}>
           <Document
             file={src}
@@ -220,7 +221,6 @@ function PdfViewerModal({ label, filename, onClose }) {
 }
 
 // ── PDF File Chip ──────────────────────────────────────────────────────────
-// Renders as a clickable file pill. Clicking opens the full viewer modal.
 function PdfFileChip({ label, filename }) {
   const [open, setOpen] = useState(false);
   return (
@@ -254,7 +254,7 @@ const ComplaintBox = ({ text }) => (
   </div>
 );
 
-// ── VAWC Section — collapsible, female patients only ──────────────────────
+// ── Purpose sections ───────────────────────────────────────────────────────
 const VawcSection = ({ appt }) => (
   <Accordion
     defaultOpen={false}
@@ -279,7 +279,6 @@ const VawcSection = ({ appt }) => (
   </Accordion>
 );
 
-// ── Adoption or Legal Section — collapsible ───────────────────────────────
 const LegalSection = ({ appt }) => (
   <Accordion
     defaultOpen={false}
@@ -302,12 +301,9 @@ const LegalSection = ({ appt }) => (
   </Accordion>
 );
 
-// ── School / Academic Section — collapsible ───────────────────────────────
-// Only rendered when schoolDocuments array has entries. Hidden when empty.
 const SchoolSection = ({ appt }) => {
   const docs = appt.schoolDocuments || [];
-  if (docs.length === 0) return null; // ← no section at all if nothing uploaded
-
+  if (docs.length === 0) return null;
   return (
     <Accordion
       defaultOpen={false}
@@ -327,7 +323,6 @@ const SchoolSection = ({ appt }) => {
   );
 };
 
-// ── Work-Related Section — collapsible ────────────────────────────────────
 const WorkSection = ({ appt }) => (
   <Accordion
     defaultOpen={false}
@@ -346,7 +341,6 @@ const WorkSection = ({ appt }) => (
   </Accordion>
 );
 
-// ── Assessment Session Section — collapsible ──────────────────────────────
 const SESSION_TYPE_COLORS = {
   "Discussion of Psychological Assessment Results": {
     bg: "#e0f2fe",
@@ -355,19 +349,15 @@ const SESSION_TYPE_COLORS = {
   "Release of Certificate": { bg: "#dcfce7", color: "#15803d" },
 };
 
-const AssessmentSessionSection = ({ appt, allEvents }) => {
+const AssessmentSessionSection = ({ appt }) => {
   const session = appt.assessmentSession;
   if (!session) return null;
-
   const isCertRelease = session.sessionType === "Release of Certificate";
   const badgeStyle = SESSION_TYPE_COLORS[session.sessionType] || {
     bg: "#f3f4f6",
     color: "#374151",
   };
-
-  // Date of this appointment = certificate release date
   const releaseDate = format(new Date(appt.start), "MMMM dd, yyyy");
-
   return (
     <Accordion
       defaultOpen={true}
@@ -384,7 +374,6 @@ const AssessmentSessionSection = ({ appt, allEvents }) => {
     >
       <div className={styles.sessionBox}>
         <InfoRow minWidth={160} label="Type" value={session.sessionType} />
-
         {isCertRelease && (
           <>
             <InfoRow minWidth={160} label="Release Date" value={releaseDate} />
@@ -440,6 +429,9 @@ const RescheduleSection = ({ appt }) => (
 
 // ── Detail View ────────────────────────────────────────────────────────────
 function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
+  // ── CompleteAppointmentModal state (local to this detail view) ──
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+
   const startTime = toTime12(toTime24(appt.start));
   const endTime = toTime12(toTime24(appt.end));
   const isOnline = appt.title?.toLowerCase().includes("online");
@@ -456,7 +448,6 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
     : "Counseling / Therapy";
   const purpose = isAssessment ? getPurpose(appt) : null;
 
-  // Dot color: purpose-aware for PA, teal for counseling
   const clinicColor = isAssessment
     ? purpose === PURPOSES.VAWC
       ? EVENT_COLORS.vawc
@@ -464,140 +455,139 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
         ? EVENT_COLORS.legal
         : purpose === PURPOSES.SCHOOL
           ? EVENT_COLORS.school
-          : purpose === PURPOSES.WORK
-            ? EVENT_COLORS.work
-            : EVENT_COLORS.work
-    : EVENT_COLORS.online; // teal for counseling
+          : EVENT_COLORS.work
+    : EVENT_COLORS.online;
 
-  // VAWC only for female patients
   const showVawc =
     isAssessment && purpose === PURPOSES.VAWC && isFemalePatient(appt);
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <ModalHeader
-          title={
-            <>
-              <span
-                className={styles.clinicDot}
-                style={{ backgroundColor: clinicColor }}
-              />
-              {isGhost ? "↪ " : ""}
-              {startTime} — {clinicType}
-              {isGhost && (
-                <span className={styles.rescheduledBadge}>Rescheduled</span>
-              )}
-            </>
-          }
-          dateLabel={displayDateShort}
-          onClose={onClose}
-        />
-
-        <div className={styles.scrollBody}>
-          {/* ── Appointment Info (always visible, not a dropdown) ───────── */}
-          <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              {isGhost
-                ? "Rescheduled Appointment Information"
-                : "Appointment Information"}
-            </div>
-
-            <div className={styles.cardBody}>
-              <div className={styles.cardFields}>
-                <InfoRow label="Name" value={appt.patientName || "—"} />
-                <InfoRow label="Visit Type" value={appt.visitType || "—"} />
-                <InfoRow label="Type of Service" value={serviceLabel} />
-
-                {isAssessment && purpose && (
-                  <div className={styles.purposeRow}>
-                    <span
-                      className={styles.infoLabel}
-                      style={{ minWidth: 190 }}
-                    >
-                      Purpose:
-                    </span>
-                    <span
-                      className={`${styles.purposeBadge} ${purposeClass(purpose)}`}
-                    >
-                      {purpose}
-                    </span>
-                  </div>
-                )}
-
-                <InfoRow
-                  label="Status"
-                  value={isGhost ? "Rescheduled" : appt.status || "—"}
-                />
-                <InfoRow
-                  label="Reason for Consultation"
-                  value={appt.reason || "Not specified"}
-                />
-                <InfoRow
-                  label="Appointment Date & Time"
-                  value={`${displayDate} | ${startTime} – ${endTime}`}
-                />
-
-                {isGhost && appt.rescheduledTo?.reason && (
-                  <InfoRow
-                    label="Reason for Reschedule"
-                    value={appt.rescheduledTo.reason}
-                  />
-                )}
-              </div>
-
-              <div className={styles.paymentWrap}>
-                <span className={styles.paymentLabel}>Payment:</span>
+    <>
+      <div className={styles.overlay} onClick={onClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          <ModalHeader
+            title={
+              <>
                 <span
-                  className={
-                    appt.payment === "Paid"
-                      ? styles.paymentPaid
-                      : styles.paymentUnpaid
-                  }
-                >
-                  {appt.payment || "—"}
-                </span>
-              </div>
-            </div>
+                  className={styles.clinicDot}
+                  style={{ backgroundColor: clinicColor }}
+                />
+                {isGhost ? "↪ " : ""}
+                {startTime} — {clinicType}
+                {isGhost && (
+                  <span className={styles.rescheduledBadge}>Rescheduled</span>
+                )}
+              </>
+            }
+            dateLabel={displayDateShort}
+            onClose={onClose}
+          />
 
-            {/* Completed button always visible here */}
-            {(!isRescheduled || isGhost) && (
-              <div className={styles.cardFooter}>
-                <button className={styles.btnGreen}>Completed</button>
+          <div className={styles.scrollBody}>
+            {/* ── Appointment Info ── */}
+            <section className={styles.card}>
+              <div className={styles.cardHeader}>
+                {isGhost
+                  ? "Rescheduled Appointment Information"
+                  : "Appointment Information"}
               </div>
+              <div className={styles.cardBody}>
+                <div className={styles.cardFields}>
+                  <InfoRow label="Name" value={appt.patientName || "—"} />
+                  <InfoRow label="Visit Type" value={appt.visitType || "—"} />
+                  <InfoRow label="Type of Service" value={serviceLabel} />
+                  {isAssessment && purpose && (
+                    <div className={styles.purposeRow}>
+                      <span
+                        className={styles.infoLabel}
+                        style={{ minWidth: 190 }}
+                      >
+                        Purpose:
+                      </span>
+                      <span
+                        className={`${styles.purposeBadge} ${purposeClass(purpose)}`}
+                      >
+                        {purpose}
+                      </span>
+                    </div>
+                  )}
+                  <InfoRow
+                    label="Status"
+                    value={isGhost ? "Rescheduled" : appt.status || "—"}
+                  />
+                  <InfoRow
+                    label="Reason for Consultation"
+                    value={appt.reason || "Not specified"}
+                  />
+                  <InfoRow
+                    label="Appointment Date & Time"
+                    value={`${displayDate} | ${startTime} – ${endTime}`}
+                  />
+                  {isGhost && appt.rescheduledTo?.reason && (
+                    <InfoRow
+                      label="Reason for Reschedule"
+                      value={appt.rescheduledTo.reason}
+                    />
+                  )}
+                </div>
+                <div className={styles.paymentWrap}>
+                  <span className={styles.paymentLabel}>Payment:</span>
+                  <span
+                    className={
+                      appt.payment === "Paid"
+                        ? styles.paymentPaid
+                        : styles.paymentUnpaid
+                    }
+                  >
+                    {appt.payment || "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* ── Add Clinical Notes button — opens CompleteAppointmentModal ── */}
+              {(!isRescheduled || isGhost) && (
+                <div className={styles.cardFooter}>
+                  <button
+                    className={styles.btnGreen}
+                    onClick={() => setShowCompleteModal(true)}
+                  >
+                    Add Clinical Notes
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {showVawc && <VawcSection appt={appt} />}
+            {isAssessment && purpose === PURPOSES.LEGAL && (
+              <LegalSection appt={appt} />
             )}
-          </section>
-
-          {/* ── VAWC — collapsible dropdown ──────────────────────────────── */}
-          {showVawc && <VawcSection appt={appt} />}
-
-          {/* ── Adoption / Legal — collapsible dropdown ──────────────────── */}
-          {isAssessment && purpose === PURPOSES.LEGAL && (
-            <LegalSection appt={appt} />
-          )}
-
-          {/* ── School / Academic — only shown when docs exist ───────────── */}
-          {isAssessment && purpose === PURPOSES.SCHOOL && (
-            <SchoolSection appt={appt} />
-          )}
-
-          {/* ── Work-Related — reason for assessment ─────────────────────── */}
-          {isAssessment && purpose === PURPOSES.WORK && (
-            <WorkSection appt={appt} />
-          )}
-
-          {/* ── Session info (Session 2 / Release of Certificate) ────────── */}
-          {isAssessment && appt.assessmentSession && (
-            <AssessmentSessionSection appt={appt} allEvents={allEvents} />
-          )}
-
-          {/* ── Reschedule Status — collapsible dropdown ─────────────────── */}
-          {!isGhost && isRescheduled && appt.rescheduledTo && (
-            <RescheduleSection appt={appt} />
-          )}
+            {isAssessment && purpose === PURPOSES.SCHOOL && (
+              <SchoolSection appt={appt} />
+            )}
+            {isAssessment && purpose === PURPOSES.WORK && (
+              <WorkSection appt={appt} />
+            )}
+            {isAssessment && appt.assessmentSession && (
+              <AssessmentSessionSection appt={appt} allEvents={allEvents} />
+            )}
+            {!isGhost && isRescheduled && appt.rescheduledTo && (
+              <RescheduleSection appt={appt} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* ── CompleteAppointmentModal — rendered outside .overlay so z-index is independent ── */}
+      <CompleteAppointmentModal
+        isOpen={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        appt={appt}
+        onConfirm={() => {
+          // TODO: update appointment status in parent state if needed
+          setShowCompleteModal(false);
+        }}
+      />
+    </>
   );
 }
 
@@ -619,7 +609,7 @@ function DayAppointmentsModal({
     isSameDay(e.start, selectedDateObj),
   );
 
-  // ── Week / Day view: jump straight to the clicked event's detail ──────────
+  // Week / Day view → jump straight to clicked event detail
   if (singleEventId && !activeAppt) {
     const target = events.find((e) => e.id === singleEventId);
     if (target) {
@@ -634,7 +624,7 @@ function DayAppointmentsModal({
     }
   }
 
-  // ── "View More" inside list → show detail ─────────────────────────────────
+  // "View More" → show detail
   if (activeAppt) {
     return (
       <DetailView
@@ -646,7 +636,7 @@ function DayAppointmentsModal({
     );
   }
 
-  // ── Month view / "+X more" → show full list for the day ───────────────────
+  // Month view / "+X more" → full list
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -671,7 +661,12 @@ function DayAppointmentsModal({
             </p>
           ) : (
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                padding: "0 20px",
+              }}
             >
               {dayAppointments.map((appt) => {
                 const isGhost = !!appt.isRescheduledGhost;
@@ -690,7 +685,6 @@ function DayAppointmentsModal({
                   : "Counseling / Therapy";
                 const purpose = isAssessment ? getPurpose(appt) : null;
 
-                // Dot color mirrors calendar event color
                 const dotColor = isAssessment
                   ? purpose === PURPOSES.VAWC
                     ? EVENT_COLORS.vawc
