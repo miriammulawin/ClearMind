@@ -1,0 +1,628 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ══════════════════════════════════════════════
+   PAGE
+══════════════════════════════════════════════ */
+.clinicPage {
+  padding: 24px;
+  background-color: #ffffff;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+.clinicHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.clinicHeader h3 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #4D227C;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════════ */
+.btnCreate {
+  background: #1f6aa5;
+  color: white;
+  border: 2px solid #1f6aa5;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.btnCreate:hover {
+  background: #ffffff;
+  color: #1f6aa5;
+  border-color: #1f6aa5;
+}
+
+.btnSubmit {
+  background: #1f6aa5;
+  color: white;
+  border: 2px solid #1f6aa5;
+  border-radius: 10px;
+  padding: 11px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 14px rgba(31, 106, 165, 0.3);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.btnSubmit:hover {
+  background: #ffffff;
+  color: #1f6aa5;
+  box-shadow: 0 4px 14px rgba(31, 106, 165, 0.15);
+}
+
+.btnSubmit:active {
+  transform: translateY(1px);
+}
+
+.btnCancel {
+  background: #f0ebf7;
+  color: #4D227C;
+  border: 2px solid #c9b8f0;
+  border-radius: 10px;
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btnCancel:hover {
+  background: #4D227C;
+  color: #fff;
+  border-color: #4D227C;
+}
+
+/* ══════════════════════════════════════════════
+   CLINIC CARDS
+══════════════════════════════════════════════ */
+.clinicCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 28px;
+}
+
+.clinicCard {
+  background: rgba(78, 35, 124, 0.04);
+  border: 1px solid #e5d6f5;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 4px 12px rgba(77, 34, 124, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.clinicCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(77, 34, 124, 0.14);
+}
+
+.clinicCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.clinicCardHeader h4 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #4D227C;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.clinicIcon {
+  font-size: 20px;
+  color: #4D227C;
+}
+
+.editBtn {
+  background: rgba(77, 34, 124, 0.8);
+  border: 1px solid rgba(77, 34, 124, 0.8);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.editBtn:hover {
+  background: #ffffff;
+  color: #4D227C;
+}
+
+.clinicCardBody p {
+  margin: 8px 0;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.7;
+  font-family: 'Poppins', sans-serif;
+}
+
+.clinicCardBody strong {
+  color: #4D227C;
+  font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL BACKDROP
+══════════════════════════════════════════════ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL SHELL
+══════════════════════════════════════════════ */
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 860px;
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: auto;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(77, 34, 124, 0.3);
+  animation: modalIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ══════════════════════════════════════════════
+   MODAL HEADER
+══════════════════════════════════════════════ */
+.modalHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #4D227C;
+  padding: 20px 28px;
+  border-radius: 16px 16px 0 0;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: clamp(15px, 2.5vw, 20px);
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* ══════════════════════════════════════════════
+   MODAL BODY
+══════════════════════════════════════════════ */
+.modalBody {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  background: #f5f0fb;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalBody::-webkit-scrollbar { width: 5px; }
+.modalBody::-webkit-scrollbar-track { background: #f0eaf8; border-radius: 10px; }
+.modalBody::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
+.modalBody::-webkit-scrollbar-thumb:hover { background: #6a3fa5; }
+
+/* ══════════════════════════════════════════════
+   SECTIONS (cards inside body)
+══════════════════════════════════════════════ */
+.section {
+  background: #fff;
+  border: 1px solid #ede5f7;
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 10px rgba(77, 34, 124, 0.06);
+}
+
+.sectionTitle {
+  margin: 0 0 18px 0;
+  color: #4D227C;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ede5f7;
+}
+
+.infoNote {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 4px 0;
+  padding: 10px 14px;
+  background: #faf7ff;
+  border-left: 3px solid #4D227C;
+  border-radius: 6px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   FORM FIELDS
+══════════════════════════════════════════════ */
+.fieldRow {
+  margin-bottom: 12px;
+}
+
+.fieldRow:last-child { margin-bottom: 0; }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.gridFull {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 5px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 9px;
+  border: 1.5px solid #e2d5f5;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #4D227C;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
+}
+
+.input::placeholder,
+.textarea::placeholder { color: #aaa; }
+
+.select { cursor: pointer; appearance: auto; }
+
+.textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════
+   CLINIC TYPE TOGGLE
+══════════════════════════════════════════════ */
+.typeToggle {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.typeBtn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 2px solid #e2d5f5;
+  background: #fff;
+  color: #888;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.typeBtn:hover {
+  border-color: #4D227C;
+  color: #4D227C;
+  background: #faf7ff;
+}
+
+.typeBtnActive {
+  border-color: #4D227C;
+  background: #4D227C;
+  color: #fff;
+}
+
+.typeBtnActive:hover {
+  background: #3a1860;
+  border-color: #3a1860;
+  color: #fff;
+}
+
+/* ══════════════════════════════════════════════
+   FILE UPLOAD
+══════════════════════════════════════════════ */
+.fileUploadRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fileInput {
+  flex: 1;
+  padding: 9px 13px;
+  border-radius: 9px;
+  border: 1.5px dashed #c9b8f0;
+  background: #faf7ff;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #555;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.fileInput:hover { border-color: #4D227C; }
+
+.fileAddBtn {
+  background: #4D227C;
+  color: #fff;
+  border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.fileAddBtn:hover {
+  background: #6a3fa5;
+  transform: scale(1.05);
+}
+
+/* ══════════════════════════════════════════════
+   SCHEDULE TABLE
+══════════════════════════════════════════════ */
+.scheduleDays {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduleDay {
+  background: #faf7ff;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #ede5f7;
+}
+
+.scheduleDayLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.scheduleInputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: 10px;
+}
+
+/* ══════════════════════════════════════════════
+   PAYMENT SECTION
+══════════════════════════════════════════════ */
+.paymentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* ══════════════════════════════════════════════
+   CONFIRM CHECKBOX
+══════════════════════════════════════════════ */
+.confirmBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #faf7ff;
+  border-radius: 10px;
+  border: 1.5px solid #e2d5f5;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.confirmBox:has(input:checked) {
+  border-color: #4D227C;
+  background: #f3ecfc;
+}
+
+.confirmCheckbox {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #4D227C;
+}
+
+.confirmText {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL FOOTER
+══════════════════════════════════════════════ */
+.modalFooter {
+  flex-shrink: 0;
+  border-top: 2px solid #ede5f7;
+  padding: 16px 24px;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  border-radius: 0 0 16px 16px;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .clinicPage { padding: 14px; }
+
+  .clinicHeader h3 { font-size: 20px; }
+
+  .clinicCards { grid-template-columns: 1fr; gap: 16px; }
+
+  .backdrop { padding: 16px 10px; }
+
+  .modal {
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+  }
+
+  .modalHeader {
+    padding: 16px 18px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .modalBody { padding: 14px; gap: 12px; }
+
+  .section { padding: 16px; }
+
+  .grid2,
+  .grid3 { grid-template-columns: 1fr; }
+
+  .scheduleInputs { grid-template-columns: 1fr 1fr; }
+  .scheduleInputs .input:last-child { grid-column: 1 / -1; }
+
+  .paymentGrid { grid-template-columns: 1fr; }
+
+  .typeToggle { flex-direction: column; }
+
+  .modalFooter {
+    padding: 14px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .btnSubmit,
+  .btnCancel { width: 100%; text-align: center; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .scheduleInputs { grid-template-columns: 1fr; }
+  .scheduleInputs .input:last-child { grid-column: unset; }
+}

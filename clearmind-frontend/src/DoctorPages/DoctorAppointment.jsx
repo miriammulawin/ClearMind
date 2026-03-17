@@ -9,9 +9,9 @@ import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import DayAppointmentsModal from "./components/DayAppointmentsModal";
 import CreateAppointmentModal from "./components/CreateAppointmentModal";
-// ← AddScheduleModal removed: it now lives at /doctor/schedule
 import { calendarEvents } from "./data/appointmentsData";
-import "./DoctorStyle/DoctorAppointment.module.css";
+
+import styles from "./DoctorStyle/DoctorAppointment.module.css";
 
 // ── Localizer ──────────────────────────────────────────────────────────────
 const localizer = dateFnsLocalizer({
@@ -64,7 +64,7 @@ const LEGEND = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 function DoctorAppointment() {
-  const navigate = useNavigate(); // ← used for "Add Schedule" button
+  const navigate = useNavigate();
 
   const [activeMenu, setActiveMenu] = useState("Appointment");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -98,11 +98,8 @@ function DoctorAppointment() {
 
   const handleSelectEvent = useCallback(
     (event) => {
-      if (currentView === "month") {
-        openDayModal(event.start, null);
-      } else {
-        openDayModal(event.start, event.id);
-      }
+      if (currentView === "month") openDayModal(event.start, null);
+      else openDayModal(event.start, event.id);
     },
     [currentView, openDayModal],
   );
@@ -121,54 +118,25 @@ function DoctorAppointment() {
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
 
-        <div className="doctor-content" style={{ padding: "20px" }}>
-          <br />
-          <div className="appointment-card">
-            {/* ── Toolbar ── */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "10px",
-              }}
-            >
-              <h3 style={{ margin: 0 }}>Appointments Calendar</h3>
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                {/* Add Schedule → navigates to /doctor/schedule */}
-                <button
-                  className="btn-create"
-                  onClick={() => navigate("/doctor/schedule")}
-                  style={{
-                    backgroundColor: "#8B4545",
-                    color: "#fff",
-                    border: "2px solid #8B4545",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "#8B4545";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#8B4545";
-                    e.currentTarget.style.color = "#fff";
-                  }}
-                >
-                  + Add Schedule
-                </button>
-
-                {/* Create Appointment → opens modal as before */}
-                <button
-                  className="btn-create"
-                  onClick={() => setShowCreateModal(true)}
-                >
-                  + Create Appointment
-                </button>
-              </div>
+        <div className={`doctor-content ${styles.appointmentPage}`}>
+          {/* ── Page Header ── */}
+          <div className={styles.pageHeader}>
+            <h3 className={styles.pageTitle}>Appointment Calendar</h3>
+            <div className={styles.headerActions}>
+            
+              <button
+                className={styles.btnCreate}
+                onClick={() => setShowCreateModal(true)}
+              >
+                + Create Appointment
+              </button>
             </div>
+          </div>
 
-            {/* ── Calendar ── */}
+          <hr className={styles.hr} />
+
+          {/* ── Calendar ── */}
+          <div className={styles.calendarWrapper}>
             <Calendar
               localizer={localizer}
               events={events}
@@ -184,11 +152,7 @@ function DoctorAppointment() {
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
               onShowMore={handleShowMore}
-              style={{
-                height: "clamp(380px, 60vh, 650px)",
-                marginTop: 20,
-                borderRadius: "12px",
-              }}
+              style={{ height: 600 }}
               eventPropGetter={(event) => {
                 const palette = getEventPalette(event);
                 const isAgenda = currentView === "agenda";
@@ -200,11 +164,11 @@ function DoctorAppointment() {
                       : `4px solid ${palette.border}`,
                     border: isAgenda ? "none" : undefined,
                     color: isAgenda ? palette.bg : "#fff",
-                    borderRadius: isAgenda ? "0" : "4px",
-                    padding: isAgenda ? "0" : "3px 8px",
+                    borderRadius: isAgenda ? "0" : "16px",
+                    padding: isAgenda ? "0" : "4px 8px",
                     fontWeight: isAgenda ? 600 : 500,
-                    marginBottom: "3px",
-                    fontSize: "12px",
+                    marginBottom: "4px",
+                    fontSize: "13px",
                     boxShadow: "none",
                   },
                 };
@@ -212,43 +176,14 @@ function DoctorAppointment() {
             />
 
             {/* ── Color Legend ── */}
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                gap: "8px 24px",
-                marginTop: "14px",
-                padding: "10px 20px",
-                backgroundColor: "#f9f7ff",
-                borderRadius: "10px",
-                border: "1px solid #e5e7eb",
-              }}
-            >
+            <div className={styles.legend}>
               {LEGEND.map(({ label, color }) => (
-                <div
-                  key={label}
-                  style={{ display: "flex", alignItems: "center", gap: "7px" }}
-                >
+                <div key={label} className={styles.legendItem}>
                   <span
-                    style={{
-                      width: "12px",
-                      height: "12px",
-                      borderRadius: "3px",
-                      backgroundColor: color,
-                      flexShrink: 0,
-                      display: "inline-block",
-                    }}
+                    className={styles.legendDot}
+                    style={{ backgroundColor: color }}
                   />
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#374151",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {label}
-                  </span>
+                  <span className={styles.legendLabel}>{label}</span>
                 </div>
               ))}
             </div>
@@ -269,7 +204,6 @@ function DoctorAppointment() {
         onClose={() => setShowCreateModal(false)}
         onAdd={handleAddEvent}
       />
-      {/* AddScheduleModal is gone — it now lives at /doctor/schedule */}
     </div>
   );
 }

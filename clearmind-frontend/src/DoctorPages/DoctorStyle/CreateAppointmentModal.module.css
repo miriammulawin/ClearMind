@@ -1,0 +1,732 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ══════════════════════════════════════════════
+   BACKDROP
+══════════════════════════════════════════════ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   MODAL SHELL
+══════════════════════════════════════════════ */
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: auto;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(77, 34, 124, 0.3);
+  animation: modalIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-width: 0;
+  background: #4D227C;
+  padding: 20px 28px;
+  border-radius: 16px 16px 0 0;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: clamp(14px, 2.5vw, 20px);
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.headerDate {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: clamp(10px, 1.5vw, 13px);
+  font-weight: 500;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  font-family: 'Poppins', sans-serif;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+/* ══════════════════════════════════════════════
+   SCROLLABLE BODY
+══════════════════════════════════════════════ */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  background: #f5f0fb;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.body::-webkit-scrollbar {
+  width: 5px;
+}
+.body::-webkit-scrollbar-track {
+  background: #f0eaf8;
+  border-radius: 10px;
+}
+.body::-webkit-scrollbar-thumb {
+  background: #4D227C;
+  border-radius: 10px;
+}
+.body::-webkit-scrollbar-thumb:hover {
+  background: #6a3fa5;
+}
+
+/* ══════════════════════════════════════════════
+   SECTIONS
+══════════════════════════════════════════════ */
+.section {
+  background: #fff;
+  border: 1px solid #ede5f7;
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: 0 2px 10px rgba(77, 34, 124, 0.06);
+}
+
+.sectionTitle {
+  margin: 0 0 18px 0;
+  color: #4D227C;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #ede5f7;
+}
+
+/* ══════════════════════════════════════════════
+   FORM FIELDS
+══════════════════════════════════════════════ */
+.fieldRow {
+  margin-bottom: 10px;
+}
+
+.fieldRow:last-child {
+  margin-bottom: 0;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 9px;
+  border: 1.5px solid #e2d5f5;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input:focus {
+  border-color: #4D227C;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
+}
+
+.input::placeholder {
+  color: #aaa;
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  background: #faf7fd;
+  color: #999;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 13px;
+  border-radius: 9px;
+  border: 1.5px solid #e2d5f5;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: auto;
+}
+
+.select:focus {
+  border-color: #4D227C;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
+}
+
+.select option[value=""] {
+  color: #aaa;
+}
+
+/* ── Labeled input wrapper ── */
+.labeledField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.fieldLabelDisabled {
+  color: #bbb;
+}
+
+/* ══════════════════════════════════════════════
+   RADIO GROUPS
+══════════════════════════════════════════════ */
+.radioSection {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radioGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 0 4px 0;
+}
+
+.radioRow {
+  display: flex;
+  flex-direction: row;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #444;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  user-select: none;
+  padding: 3px 6px;
+  border-radius: 7px;
+  transition: background 0.15s;
+}
+
+.radioLabel:hover {
+  background: #f5f0fb;
+}
+
+.radioInput {
+  width: 15px;
+  height: 15px;
+  accent-color: #4D227C;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════
+   DIVIDER
+══════════════════════════════════════════════ */
+.divider {
+  border: none;
+  border-top: 1px solid #ede5f7;
+  margin: 14px 0;
+}
+
+/* ══════════════════════════════════════════════
+   RECEIPT DROPDOWN
+══════════════════════════════════════════════ */
+.receiptToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 13px;
+  border-radius: 9px;
+  border: 1.5px solid #e2d5f5;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s, color 0.2s;
+  margin-bottom: 10px;
+}
+
+.receiptToggle.open {
+  border-color: #4D227C;
+  color: #4D227C;
+  font-weight: 600;
+}
+
+.receiptToggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+}
+
+.receiptToggleLabelDefault {
+  color: #999;
+}
+
+.receiptChevron {
+  color: #4D227C;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.receiptChevronOpen {
+  transform: rotate(180deg);
+}
+
+.receiptPreviewBox {
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 1px solid #e0d4f5;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(77, 34, 124, 0.1);
+  background: #faf7ff;
+}
+
+.receiptImageWrapper {
+  position: relative;
+  max-height: 160px;
+  overflow: hidden;
+}
+
+.receiptPreviewImg {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: top;
+  filter: blur(1.5px) brightness(0.7);
+  transform: scale(1.03);
+}
+
+.receiptOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.receiptViewBtn {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 2px solid #fff;
+  background: rgba(77, 34, 124, 0.85);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.receiptViewBtn:hover {
+  background: #4D227C;
+  transform: scale(1.05);
+}
+
+.receiptHint {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   RECEIPT FULL VIEW MODAL
+══════════════════════════════════════════════ */
+.receiptModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  padding: 20px;
+}
+
+.receiptModalShell {
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.25s ease;
+}
+
+.receiptModalHeader {
+  background: #4D227C;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.receiptModalBody {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.receiptModalFooter {
+  padding: 14px 20px;
+  border-top: 1px solid #ede5f7;
+  display: flex;
+  justify-content: flex-end;
+  background: #fff;
+}
+
+.receiptFullImg {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.receiptNotFound {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 48px 24px;
+  background: #f3ecfc;
+  color: #4D227C;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ══════════════════════════════════════════════
+   UPLOAD RECEIPT
+══════════════════════════════════════════════ */
+.uploadLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-family: 'Poppins', sans-serif;
+  margin: 10px 0 6px 0;
+}
+
+.uploadZone {
+  border: 2px dashed #c9b8f0;
+  border-radius: 10px;
+  background: #faf7ff;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  overflow: hidden;
+}
+
+.uploadZone:hover {
+  border-color: #4D227C;
+  background: #f3ecfc;
+}
+
+.uploadPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 16px;
+}
+
+.uploadIcon {
+  font-size: 28px;
+  color: #4D227C;
+  opacity: 0.6;
+}
+
+.uploadText {
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #555;
+  font-weight: 500;
+}
+
+.uploadHint {
+  font-size: 11px;
+  font-family: 'Poppins', sans-serif;
+  color: #aaa;
+}
+
+.uploadedFile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.uploadedFileIcon {
+  font-size: 20px;
+  color: #4D227C;
+  flex-shrink: 0;
+}
+
+.uploadedFileName {
+  flex: 1;
+  font-size: 13px;
+  font-family: 'Poppins', sans-serif;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadedFileRemove {
+  background: #fde8e8;
+  border: none;
+  cursor: pointer;
+  color: #e05555;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+
+.uploadedFileRemove:hover {
+  background: #e05555;
+  color: #fff;
+}
+
+/* ══════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════ */
+.footer {
+  flex-shrink: 0;
+  border-top: 2px solid #ede5f7;
+  padding: 16px 24px;
+  background: #fff;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  border-radius: 0 0 16px 16px;
+}
+
+/* ── Add / Submit button ── */
+.btnAdd {
+  background: #1f6aa5;
+  color: #fff;
+  border: 2px solid #1f6aa5;
+  padding: 11px 32px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 14px rgba(31, 106, 165, 0.3);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.btnAdd:hover {
+  background: #fff;
+  color: #1f6aa5;
+  box-shadow: 0 4px 14px rgba(31, 106, 165, 0.15);
+}
+
+.btnAdd:active {
+  transform: translateY(1px);
+}
+
+/* ── Cancel button ── */
+.btnCancel {
+  background: #f0ebf7;
+  color: #4D227C;
+  border: 2px solid #c9b8f0;
+  padding: 11px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.btnCancel:hover {
+  background: #4D227C;
+  color: #fff;
+  border-color: #4D227C;
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .backdrop {
+    padding: 16px 10px;
+  }
+
+  .modal {
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+  }
+
+  .header {
+    padding: 16px 18px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .headerDate {
+    display: none;
+  }
+
+  .body {
+    padding: 14px 14px;
+    gap: 12px;
+  }
+
+  .section {
+    padding: 16px 16px;
+  }
+
+  .grid2,
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+
+  .radioSection {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .footer {
+    padding: 14px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .btnAdd,
+  .btnCancel {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .radioRow {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

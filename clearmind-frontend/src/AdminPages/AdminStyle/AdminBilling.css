@@ -1,45 +1,70 @@
-.billing-container .btn-primary {
-  background: #4D227C;
-  color: white;
-  border: 1px solid #4D227C;
+/* ── Tabs ── */
+.billing-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.billing-container .btn-primary:hover {
-  background: #4D227C;
-  color: white;
-  border: 1px solid #4D227C;
-  opacity: 0.9;
-}
-
-.billing-container .btn-primary:focus,
-.billing-container .btn-primary:active {
-  background: #4D227C !important;
-  color: white !important;
-  border: 1px solid #4D227C !important;
-  box-shadow: none !important;
-}
-
-.billing-container .btn-outline-secondary {
+.billing-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  border: 1.5px solid #c4a8e8;
   background: #ffffff;
   color: #4D227C;
-  border: 1px solid #4D227C;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  white-space: nowrap;
 }
 
-.billing-container .btn-outline-secondary:hover {
+.billing-tab-btn:hover:not(.billing-tab-active) {
+  background: #f3ecfc;
+  border-color: #9b6dcc;
+}
+
+.billing-tab-active {
+  background: #4D227C;
+  color: #ffffff;
+  border-color: #4D227C;
+}
+
+/* Count badge — default (white bg on active, purple bg on inactive) */
+.billing-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #4D227C;
+  color: #ffffff;
+  min-width: 22px;
+  line-height: 1.4;
+}
+
+.billing-tab-active .billing-tab-count {
   background: #ffffff;
   color: #4D227C;
-  border: 1px solid #4D227C;
-  opacity: 0.9;
 }
 
-.billing-container .btn-outline-secondary:focus,
-.billing-container .btn-outline-secondary:active {
-  background: #ffffff !important;
-  color: #4D227C !important;
-  border: 1px solid #4D227C !important;
-  box-shadow: none !important;
+/* Red badge for Unsettled */
+.billing-tab-count-red {
+  background: #DC2626 !important;
+  color: #ffffff !important;
 }
 
+.billing-tab-active .billing-tab-count-red {
+  background: #DC2626 !important;
+  color: #ffffff !important;
+}
+
+/* ── Table ── */
 .billing-container .cursor-pointer {
   cursor: pointer;
 }
@@ -48,26 +73,24 @@
   font-size: 0.875rem;
 }
 
-.billing-container .table thead {
-  background-color: #4D227C;
-}
-
 .billing-container .table thead th {
   background-color: #4D227C;
   color: #ffffff;
   font-weight: 600;
   border: none;
-text-align:center;
+  text-align: center;
 }
 
 .billing-container .table tbody td {
   text-align: center;
+  color: #333333;
+  font-size: 14px;
 }
 
-/* Status text styling */
+/* ── Status ── */
 .billing-container .status {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .billing-container .status.cleared {
@@ -80,8 +103,4 @@ text-align:center;
 
 .billing-container .status.void {
   color: #ef4444;
-}
-
-.billing-container .table tbody td {
-  color: #333333;
 }

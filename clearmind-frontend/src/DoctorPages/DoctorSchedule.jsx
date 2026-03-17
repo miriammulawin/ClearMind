@@ -86,8 +86,8 @@ function DoctorSchedule() {
     <>
       <style>{`
         .schedule-page {
-          background: #f7f4fc;
-          padding: 32px 24px;
+          background: #ffffff;
+         
           box-sizing: border-box;
           min-height: 100%;
         }

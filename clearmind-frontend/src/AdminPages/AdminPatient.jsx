@@ -20,6 +20,8 @@ import {
   FiFileText,
   FiActivity,
   FiAlertCircle,
+  FiFilter,
+  FiDollarSign,
 } from "react-icons/fi";
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
@@ -73,6 +75,13 @@ function AdminPatient() {
   const [modalSource, setModalSource] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [patientTypeFilter, setPatientTypeFilter] = useState("all");
+
+  // ── Refund modal state ──
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [refundProcessed, setRefundProcessed] = useState({});
+
   const navigate = useNavigate();
 
   const [rescheduleRequests, setRescheduleRequests] = useState([
@@ -221,7 +230,7 @@ function AdminPatient() {
       },
       progressionNote: {
         assessment:
-          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed. Patient appears fatigued and stressed. Advised adequate rest, hydration, and stress management techniques. Follow-up recommended in 2 weeks or sooner if symptoms worsen.",
+          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed.",
       },
     },
     {
@@ -245,7 +254,7 @@ function AdminPatient() {
       },
       progressionNote: {
         assessment:
-          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin. Topical hydrocortisone 1% cream prescribed for application twice daily for 7 days. Patient advised to avoid potential allergens and irritants. Allergy patch testing recommended if no improvement within 7 days. Follow-up in 1 week.",
+          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin.",
       },
     },
     {
@@ -283,17 +292,64 @@ function AdminPatient() {
       assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
       progressionNote: {
         assessment:
-          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg — within acceptable range and showing marked improvement from last visit. Patient is fully compliant with amlodipine 5mg once daily. No changes to current medication regimen. Advised to continue home blood pressure monitoring and maintain low-sodium diet. Next check-up in 1 month.",
+          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg.",
       },
     },
   ];
 
-  const activeData =
+  const cancelledAppointments = [
+    {
+      id: 301,
+      name: "John Doe",
+      date: "January 22, 2026",
+      time: "11:00 am",
+      type: "Check Up",
+      status: "Cancelled",
+      contact: "09201234567",
+      email: "john@email.com",
+      address: "10 Magnolia St, Biñan, Laguna",
+      consultationMode: "On-Site",
+      patientType: "Existing Patient",
+      age: 45,
+      gender: "Male",
+      totalVisits: 8,
+      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
+    },
+    {
+      id: 302,
+      name: "Sofia Dela Cruz",
+      date: "February 3, 2026",
+      time: "3:00 pm",
+      type: "Follow Up",
+      status: "Cancelled",
+      contact: "09301234567",
+      email: "sofia@email.com",
+      address: "11 Sampaguita Ave, Sta. Rosa, Laguna",
+      consultationMode: "Virtual",
+      patientType: "New Patient",
+      age: 25,
+      gender: "Female",
+      totalVisits: 1,
+      assignedDoctor: {
+        name: "Dr. Maria Reyes",
+        specialization: "General Physician",
+      },
+    },
+  ];
+
+  const rawData =
     activeTab === "consultation"
       ? consultationRequests
       : activeTab === "patients"
         ? patients
-        : rescheduleRequests;
+        : activeTab === "cancelled"
+          ? cancelledAppointments
+          : rescheduleRequests;
+
+  const activeData =
+    patientTypeFilter === "all"
+      ? rawData
+      : rawData.filter((r) => r.patientType === patientTypeFilter);
 
   const totalPages = Math.ceil(activeData.length / rowsPerPage);
   const displayedData = activeData.slice(
@@ -307,12 +363,10 @@ function AdminPatient() {
     setShowModal(true);
     setPaymentOpen(false);
   };
-
   const handleViewReschedule = (row) => {
     setSelectedReschedule(row);
     setShowRescheduleModal(true);
   };
-
   const handleRescheduleAction = (id, action) => {
     setRescheduleRequests((prev) =>
       prev.map((r) =>
@@ -322,6 +376,24 @@ function AdminPatient() {
       ),
     );
     setShowRescheduleModal(false);
+  };
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    setPatientTypeFilter("all");
+  };
+  const handleFilterChange = (e) => {
+    setPatientTypeFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleRefundOpen = (row) => {
+    setSelectedRefund(row);
+    setShowRefundModal(true);
+  };
+  const handleRefundConfirm = (id) => {
+    setRefundProcessed((prev) => ({ ...prev, [id]: true }));
+    setShowRefundModal(false);
   };
 
   const getRescheduleStatusBadge = (status) => {
@@ -346,7 +418,6 @@ function AdminPatient() {
         };
     }
   };
-
   const getStatusBadgeStyle = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -375,7 +446,6 @@ function AdminPatient() {
         };
     }
   };
-
   const getConsultationModeBadge = (mode) => ({
     display: "inline-flex",
     alignItems: "center",
@@ -396,47 +466,60 @@ function AdminPatient() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className="admin-content" style={{ padding: "20px" }}>
           <div className="patient-card">
-            <div className="patient-tabs">
-              <button
-                className={activeTab === "patients" ? "tab-active" : ""}
-                onClick={() => {
-                  setActiveTab("patients");
-                  setCurrentPage(1);
-                }}
-              >
-                Total's Patients <span>{patients.length}</span>
-              </button>
-              <button
-                className={activeTab === "consultation" ? "tab-active" : ""}
-                onClick={() => {
-                  setActiveTab("consultation");
-                  setCurrentPage(1);
-                }}
-              >
-                Consultation Request <span>{consultationRequests.length}</span>
-              </button>
-              <button
-                className={activeTab === "reschedule" ? "tab-active" : ""}
-                onClick={() => {
-                  setActiveTab("reschedule");
-                  setCurrentPage(1);
-                }}
-              >
-                Reschedule Request{" "}
-                <span
-                  className={
-                    rescheduleRequests.filter((r) => r.status === "Pending")
-                      .length > 0
-                      ? "tab-badge-pending"
-                      : ""
-                  }
+            {/* ── Tabs + Dropdown Filter Row ── */}
+            <div className="patient-tabs-row">
+              <div className="patient-tabs">
+                <button
+                  className={activeTab === "patients" ? "tab-active" : ""}
+                  onClick={() => handleTabChange("patients")}
                 >
-                  {
-                    rescheduleRequests.filter((r) => r.status === "Pending")
-                      .length
-                  }
-                </span>
-              </button>
+                  Total's Patients <span>{patients.length}</span>
+                </button>
+                <button
+                  className={activeTab === "consultation" ? "tab-active" : ""}
+                  onClick={() => handleTabChange("consultation")}
+                >
+                  Consultation Request{" "}
+                  <span>{consultationRequests.length}</span>
+                </button>
+                <button
+                  className={activeTab === "reschedule" ? "tab-active" : ""}
+                  onClick={() => handleTabChange("reschedule")}
+                >
+                  Reschedule Request{" "}
+                  <span
+                    className={
+                      rescheduleRequests.filter((r) => r.status === "Pending")
+                        .length > 0
+                        ? "tab-badge-pending"
+                        : ""
+                    }
+                  >
+                    {
+                      rescheduleRequests.filter((r) => r.status === "Pending")
+                        .length
+                    }
+                  </span>
+                </button>
+                <button
+                  className={`tab-cancelled-btn ${activeTab === "cancelled" ? "tab-cancelled-active" : ""}`}
+                  onClick={() => handleTabChange("cancelled")}
+                >
+                  Cancelled{" "}
+                  <span className="tab-cancelled-count">
+                    {cancelledAppointments.length}
+                  </span>
+                </button>
+              </div>
+
+              <div className="patient-filter-dropdown">
+                <FiFilter size={13} />
+                <select value={patientTypeFilter} onChange={handleFilterChange}>
+                  <option value="all">All Patients</option>
+                  <option value="Existing Patient">Existing Patient</option>
+                  <option value="New Patient">New Patient</option>
+                </select>
+              </div>
             </div>
 
             <div className="patient-table-wrapper">
@@ -445,6 +528,7 @@ function AdminPatient() {
                   {activeTab === "reschedule" ? (
                     <tr>
                       <th>Name</th>
+                      <th>Patient Type</th>
                       <th>Original Date & Time</th>
                       <th>Requested Date & Time</th>
                       <th>Visit Type</th>
@@ -454,6 +538,17 @@ function AdminPatient() {
                   ) : activeTab === "consultation" ? (
                     <tr>
                       <th>Name</th>
+                      <th>Patient Type</th>
+                      <th>Date of Appointment</th>
+                      <th>Time</th>
+                      <th>Visit Type</th>
+                      <th>Consultation Mode</th>
+                      <th>Action</th>
+                    </tr>
+                  ) : activeTab === "cancelled" ? (
+                    <tr>
+                      <th>Name</th>
+                      <th>Patient Type</th>
                       <th>Date of Appointment</th>
                       <th>Time</th>
                       <th>Visit Type</th>
@@ -463,133 +558,216 @@ function AdminPatient() {
                   ) : (
                     <tr>
                       <th>Name</th>
-                      <th>Date of Appointment</th>
-                      <th>Time</th>
-                      <th>Visit Type</th>
+                      <th>Patient Type</th>
+                      <th>Age</th>
+                      <th>Gender</th>
+                      <th>Address</th>
                       <th>Status</th>
                       <th>Action</th>
                     </tr>
                   )}
                 </thead>
                 <tbody>
-                  {activeTab === "reschedule"
-                    ? displayedData.map((row) => (
-                        <tr key={row.id}>
-                          <td>{row.name}</td>
-                          <td>
-                            <span className="date-original">
-                              {row.originalDate}
-                            </span>
-                            <br />
-                            <small style={{ color: "#aaa" }}>
-                              {row.originalTime}
-                            </small>
-                          </td>
-                          <td>
-                            <span className="date-requested">
-                              {row.requestedDate}
-                            </span>
-                            <br />
-                            <small
-                              style={{ color: "#4D227C", fontWeight: 600 }}
-                            >
-                              {row.requestedTime}
-                            </small>
-                          </td>
-                          <td>{row.type}</td>
-                          <td>
-                            <span
-                              style={getConsultationModeBadge(
-                                row.consultationMode,
-                              )}
-                            >
-                              {row.consultationMode === "Virtual" ? (
-                                <FiMonitor size={11} />
-                              ) : (
-                                <FiHome size={11} />
-                              )}
-                              {row.consultationMode}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className="btn-view"
-                              onClick={() => handleViewReschedule(row)}
-                            >
-                              View
-                            </button>
-                            <button
-                              className="btn-confirm"
-                              disabled={row.status !== "Pending"}
-                              onClick={() =>
-                                handleRescheduleAction(row.id, "approve")
-                              }
-                            >
-                              Approve
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    : activeTab === "consultation"
-                      ? displayedData.map((row) => (
-                          <tr key={row.id}>
-                            <td>{row.name}</td>
-                            <td>{row.date}</td>
-                            <td>{row.time}</td>
-                            <td>{row.type}</td>
-                            <td>
-                              <span
-                                style={getConsultationModeBadge(
-                                  row.consultationMode,
-                                )}
-                              >
-                                {row.consultationMode === "Virtual" ? (
-                                  <FiMonitor size={11} />
-                                ) : (
-                                  <FiHome size={11} />
-                                )}
-                                {row.consultationMode}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                className="btn-view"
-                                onClick={() => handleView(row, activeTab)}
-                              >
-                                View
-                              </button>
-                              <button
-                                className="btn-confirm"
-                                disabled={row.status === "Cancelled"}
-                              >
-                                Confirm
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : displayedData.map((row) => (
-                          <tr key={row.id}>
-                            <td>{row.name}</td>
-                            <td>{row.date}</td>
-                            <td>{row.time}</td>
-                            <td>{row.type}</td>
-                            <td>
-                              <span
-                                className={`status ${row.status.toLowerCase()}`}
-                              >
-                                {row.status}
-                              </span>
-                            </td>
-                            <td>
-                              <button
-                                className="btn-view"
-                                onClick={() => handleView(row, activeTab)}
-                              >
-                                View
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                  {displayedData.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#aaa",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        No{" "}
+                        {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
+                        records found.
+                      </td>
+                    </tr>
+                  ) : activeTab === "reschedule" ? (
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="date-original">
+                            {row.originalDate}
+                          </span>
+                          <br />
+                          <small style={{ color: "#aaa" }}>
+                            {row.originalTime}
+                          </small>
+                        </td>
+                        <td>
+                          <span className="date-requested">
+                            {row.requestedDate}
+                          </span>
+                          <br />
+                          <small style={{ color: "#4D227C", fontWeight: 600 }}>
+                            {row.requestedTime}
+                          </small>
+                        </td>
+                        <td>{row.type}</td>
+                        <td>
+                          <span
+                            style={getConsultationModeBadge(
+                              row.consultationMode,
+                            )}
+                          >
+                            {row.consultationMode === "Virtual" ? (
+                              <FiMonitor size={11} />
+                            ) : (
+                              <FiHome size={11} />
+                            )}
+                            {row.consultationMode}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => handleViewReschedule(row)}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn-confirm"
+                            disabled={row.status !== "Pending"}
+                            onClick={() =>
+                              handleRescheduleAction(row.id, "approve")
+                            }
+                          >
+                            Approve
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : activeTab === "consultation" ? (
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>{row.date}</td>
+                        <td>{row.time}</td>
+                        <td>{row.type}</td>
+                        <td>
+                          <span
+                            style={getConsultationModeBadge(
+                              row.consultationMode,
+                            )}
+                          >
+                            {row.consultationMode === "Virtual" ? (
+                              <FiMonitor size={11} />
+                            ) : (
+                              <FiHome size={11} />
+                            )}
+                            {row.consultationMode}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => handleView(row, activeTab)}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="btn-confirm"
+                            disabled={row.status === "Cancelled"}
+                          >
+                            Confirm
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : activeTab === "cancelled" ? (
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>{row.date}</td>
+                        <td>{row.time}</td>
+                        <td>{row.type}</td>
+                        <td>
+                          <span
+                            style={getConsultationModeBadge(
+                              row.consultationMode,
+                            )}
+                          >
+                            {row.consultationMode === "Virtual" ? (
+                              <FiMonitor size={11} />
+                            ) : (
+                              <FiHome size={11} />
+                            )}
+                            {row.consultationMode}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => handleView(row, "cancelled")}
+                          >
+                            View
+                          </button>
+                          <button
+                            className={`btn-refund ${refundProcessed[row.id] ? "btn-refund-done" : ""}`}
+                            disabled={refundProcessed[row.id]}
+                            onClick={() => handleRefundOpen(row)}
+                          >
+                            {refundProcessed[row.id] ? "Refunded" : "Refund"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>{row.age}</td>
+                        <td>{row.gender}</td>
+                        <td>{row.address}</td>
+                        <td>
+                          <span
+                            className={`status ${row.status.toLowerCase()}`}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => handleView(row, activeTab)}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -611,19 +789,20 @@ function AdminPatient() {
                 </button>
               ))}
               <button
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage(currentPage + 1)}
               >
                 Next ›
               </button>
             </div>
             <div className="page-info">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPages || 1}
             </div>
           </div>
         </div>
       </div>
 
+      {/* ── View Modal ── */}
       {showModal && selectedPatient && (
         <div
           className="patient-modal-overlay"
@@ -681,7 +860,6 @@ function AdminPatient() {
                 </button>
               </div>
             </div>
-
             <div className="modal-body">
               <div
                 className="modal-content-card"
@@ -801,7 +979,6 @@ function AdminPatient() {
                     </div>
                   </div>
                 </div>
-
                 {selectedPatient.assignedDoctor && (
                   <div
                     style={{
@@ -818,9 +995,6 @@ function AdminPatient() {
                         textTransform: "uppercase",
                         letterSpacing: "0.07em",
                         marginBottom: "10px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
                       }}
                     >
                       Assigned Doctor
@@ -958,7 +1132,6 @@ function AdminPatient() {
                     </div>
                   </div>
                 )}
-              
               <div className="modal-content-card">
                 <button
                   className="payment-collapse-toggle"
@@ -1078,7 +1251,6 @@ function AdminPatient() {
                 )}
               </div>
             </div>
-
             <div className="modal-footer">
               <button
                 className="btn-view-history"
@@ -1116,6 +1288,7 @@ function AdminPatient() {
         </div>
       )}
 
+      {/* ── Reschedule Modal ── */}
       {showRescheduleModal && selectedReschedule && (
         <div
           className="patient-modal-overlay"
@@ -1177,7 +1350,6 @@ function AdminPatient() {
                 </button>
               </div>
             </div>
-
             <div className="modal-body">
               <div
                 className="modal-content-card"
@@ -1302,7 +1474,6 @@ function AdminPatient() {
                     </div>
                   </div>
                 </div>
-
                 <div
                   style={{
                     marginTop: "14px",
@@ -1336,7 +1507,6 @@ function AdminPatient() {
                   </span>
                 </div>
               </div>
-
               <div className="modal-content-card">
                 <div
                   style={{
@@ -1394,7 +1564,6 @@ function AdminPatient() {
                 </div>
               </div>
             </div>
-
             <div className="modal-footer">
               <button
                 className="btn-decline"
@@ -1403,7 +1572,8 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "decline")
                 }
               >
-                <FiXCircle style={{ marginRight: "6px" }} /> Decline
+                <FiXCircle style={{ marginRight: "6px" }} />
+                Decline
               </button>
               <button
                 className="btn-confirm"
@@ -1423,7 +1593,198 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "approve")
                 }
               >
-                <FiCheck size={15} /> Approve
+                <FiCheck size={15} />
+                Approve
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Refund Confirmation Modal ── */}
+      {showRefundModal && selectedRefund && (
+        <div
+          className="patient-modal-overlay"
+          onClick={() => setShowRefundModal(false)}
+        >
+          <div className="refund-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="refund-modal-header">
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "10px",
+                    background: "rgba(255,255,255,0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <FiDollarSign size={18} color="#fff" />
+                </div>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: "#fff",
+                    fontSize: "17px",
+                    fontWeight: 700,
+                  }}
+                >
+                  Process Refund
+                </h3>
+              </div>
+              <button
+                className="close-btn"
+                onClick={() => setShowRefundModal(false)}
+              >
+                <FiX />
+              </button>
+            </div>
+            <div className="refund-modal-body">
+              <div
+                style={{
+                  background: "#fff8f8",
+                  border: "1px solid #fecaca",
+                  borderRadius: "12px",
+                  padding: "16px 18px",
+                  marginBottom: "16px",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 4px 0",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    color: "#dc2626",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                  }}
+                >
+                  Cancelled Appointment
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    color: "#1f2937",
+                  }}
+                >
+                  {selectedRefund.name}
+                </p>
+                <p
+                  style={{
+                    margin: "4px 0 0",
+                    fontSize: "13px",
+                    color: "#6b7280",
+                  }}
+                >
+                  {selectedRefund.date} · {selectedRefund.time} ·{" "}
+                  {selectedRefund.type}
+                </p>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "12px",
+                  marginBottom: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#faf7fd",
+                    border: "1px solid #e5d6f5",
+                    borderRadius: "10px",
+                    padding: "12px 14px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#9ca3af",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      display: "block",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Paid Amount
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: "#4D227C",
+                    }}
+                  >
+                    —
+                  </span>
+                </div>
+                <div
+                  style={{
+                    background: "#faf7fd",
+                    border: "1px solid #e5d6f5",
+                    borderRadius: "10px",
+                    padding: "12px 14px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#9ca3af",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.4px",
+                      display: "block",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Reference No.
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 700,
+                      color: "#4D227C",
+                    }}
+                  >
+                    —
+                  </span>
+                </div>
+              </div>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#6b7280",
+                  margin: 0,
+                  lineHeight: "1.6",
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "8px",
+                  padding: "10px 14px",
+                }}
+              >
+                ⚠️ Confirming this will mark the payment as refunded. This
+                action cannot be undone.
+              </p>
+            </div>
+            <div className="refund-modal-footer">
+              <button
+                className="refund-cancel-btn"
+                onClick={() => setShowRefundModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="refund-confirm-btn"
+                onClick={() => handleRefundConfirm(selectedRefund.id)}
+              >
+                <FiDollarSign size={14} /> Confirm Refund
               </button>
             </div>
           </div>
@@ -1448,7 +1809,7 @@ function AdminPatient() {
           >
             <img
               src={zoomImage}
-              alt="Zoomed Payment Proof"
+              alt="Zoomed"
               style={{
                 maxWidth: "100%",
                 maxHeight: "90vh",

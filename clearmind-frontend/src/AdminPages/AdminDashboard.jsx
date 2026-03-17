@@ -1,15 +1,10 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
-import "./AdminStyle/AdminDashboard.css";
-import {
-  FaClinicMedical,
-  FaBullhorn,
-  FaTimes,
-  FaTrash,
-  FaEdit,
-} from "react-icons/fa";
+import styles from "./AdminStyle/AdminDashboard.module.css";
+import { FaClinicMedical, FaBullhorn, FaTrash, FaEdit } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
+import { FiX, FiMessageSquare, FiFlag } from "react-icons/fi";
 
 import {
   Chart as ChartJS,
@@ -274,106 +269,123 @@ function AdminDashboard() {
     cutout: "0%",
   };
 
+  const priorityOptions = [
+    {
+      value: "normal",
+      label: "Normal",
+      desc: "Standard announcement",
+      activeClass: styles.normalActive,
+      accentColor: "#4D227C",
+    },
+    {
+      value: "high",
+      label: "Urgent",
+      desc: "High priority alert",
+      activeClass: styles.urgentActive,
+      accentColor: "#dc2626",
+    },
+  ];
+
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
-        <div className="admin-content">
-          <div className="container-fluid">
+
+        <div className={`admin-content ${styles.adminContent}`}>
+          <div className={`container-fluid ${styles.containerFluid}`}>
             <div className="row g-4">
-              {/* Announcements */}
-              <div className="row mt-4">
-                <div className="col-12">
-                  <div className="dashboard-card announcement-card">
-                    <div className="card-header">
-                      <h5 className="announcement-title">
-                        <FaBullhorn className="announce-icon" /> Announcements
-                      </h5>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <button
-                          className="btn-post-announce"
-                          onClick={openAddModal}
-                        >
-                          Create Announcement
-                        </button>
-                      </div>
-                    </div>
-                    <hr />
-                    {announcements.length === 0 ? (
-                      <div className="no-announce">No announcements yet.</div>
-                    ) : (
-                      <div className="announce-list">
-                        {announcements.map((ann) => (
-                          <div
-                            key={ann.id}
-                            className={`announce-item ${ann.priority === "high" ? "announce-high" : "announce-normal"}`}
-                          >
-                            <div className="announce-left">
-                              <div className="announce-item-header">
-                                {ann.priority === "high" && (
-                                  <span className="priority-badge">Urgent</span>
-                                )}
-                                <strong className="announce-item-title">
-                                  {ann.title}
-                                </strong>
-                              </div>
-                              <p className="announce-message">{ann.message}</p>
-                              <small className="announce-date">
-                                Posted: {ann.date}
-                              </small>
-                            </div>
-                            <div className="announce-actions">
-                              <button
-                                className="ann-btn ann-edit"
-                                onClick={() => openEditModal(ann)}
-                                title="Edit"
-                              >
-                                <FaEdit />
-                              </button>
-                              <button
-                                className="ann-btn ann-delete"
-                                onClick={() => handleDelete(ann.id)}
-                                title="Delete"
-                              >
-                                <FaTrash />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+              {/* ── Announcements ── */}
+              <div className="col-12">
+                <div
+                  className={`${styles.dashboardCard} ${styles.announcementCard}`}
+                >
+                  <div className={styles.cardHeader}>
+                    <h5 className={styles.announcementTitle}>
+                      <FaBullhorn className={styles.announceIcon} />{" "}
+                      Announcements
+                    </h5>
+                    <button
+                      className={styles.btnPostAnnounce}
+                      onClick={openAddModal}
+                    >
+                     + Create Announcement
+                    </button>
                   </div>
+                  <hr />
+                  {announcements.length === 0 ? (
+                    <div className={styles.noAnnounce}>
+                      No announcements yet.
+                    </div>
+                  ) : (
+                    <div className={styles.announceList}>
+                      {announcements.map((ann) => (
+                        <div
+                          key={ann.id}
+                          className={`${styles.announceItem} ${ann.priority === "high" ? styles.announceHigh : styles.announceNormal}`}
+                        >
+                          <div className={styles.announceLeft}>
+                            <div className={styles.announceItemHeader}>
+                              {ann.priority === "high" && (
+                                <span className={styles.priorityBadge}>
+                                  Urgent
+                                </span>
+                              )}
+                              <strong className={styles.announceItemTitle}>
+                                {ann.title}
+                              </strong>
+                            </div>
+                            <p className={styles.announceMessage}>
+                              {ann.message}
+                            </p>
+                            <small className={styles.announceDate}>
+                              Posted: {ann.date}
+                            </small>
+                          </div>
+                          <div className={styles.announceActions}>
+                            <button
+                              className={`${styles.annBtn} ${styles.annEdit}`}
+                              onClick={() => openEditModal(ann)}
+                              title="Edit"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              className={`${styles.annBtn} ${styles.annDelete}`}
+                              onClick={() => handleDelete(ann.id)}
+                              title="Delete"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Today's Appointment */}
+              {/* ── Today's Appointment ── */}
               <div className="col-md-6">
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Today's Appointment</h5>
-                    <div className="card-date">
+                    <div className={styles.cardDate}>
                       {formattedDate} <span>1</span>
                     </div>
                   </div>
                   <hr />
-                  <div className="card-body">
-                    <div className="appointment-items">
-                      <div className="appointment-icon-text">
-                        <IoVideocam className="appointment-icon" />
+                  <div className={styles.cardBody}>
+                    <div className={styles.appointmentItems}>
+                      <div className={styles.appointmentIconText}>
+                        <IoVideocam className={styles.appointmentIcon} />
                         <strong>Online Clinic</strong>
                       </div>
                       <p>1 Appointment</p>
                     </div>
-                    <div className="appointment-items">
-                      <div className="appointment-icon-text">
-                        <FaClinicMedical className="appointment-icon" />
+                    <div className={styles.appointmentItems}>
+                      <div className={styles.appointmentIconText}>
+                        <FaClinicMedical className={styles.appointmentIcon} />
                         <strong>Physical Clinic</strong>
                       </div>
                       <p>0 Appointment</p>
@@ -382,18 +394,18 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Consultation Request */}
+              {/* ── Consultation Request ── */}
               <div className="col-md-6">
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Consultation Request</h5>
-                    <div className="card-date">
+                    <div className={styles.cardDate}>
                       {formattedDate} <span>1</span>
                     </div>
                   </div>
                   <hr />
-                  <div className="card-body">
-                    <div className="consult-item">
+                  <div className={styles.cardBody}>
+                    <div className={styles.consultItem}>
                       <div>
                         <p>
                           <strong>Name:</strong> Liezel Paciente
@@ -402,26 +414,28 @@ function AdminDashboard() {
                           <strong>Time:</strong> 2:00 PM
                         </p>
                       </div>
-                      <button className="btn-view">View</button>
+                      <button className={styles.btnView}>View</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Patients Table */}
-            <div className="row mt-4">
+            {/* ── Patients Table ── */}
+            <div className="row g-4 mt-0">
               <div className="col-12">
-                <div className="dashboard-card">
-                  <div className="card-header">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Total's Patients</h5>
-                    <div className="card-date">
+                    <div className={styles.cardDate}>
                       <span>{patientsData.length}</span>
                     </div>
                   </div>
                   <hr />
-                  <div className="card-body table-responsive">
-                    <table className="patients-table">
+                  <div
+                    className={`${styles.cardBody} ${styles.tableResponsive}`}
+                  >
+                    <table className={styles.patientsTable}>
                       <thead>
                         <tr>
                           <th>Name</th>
@@ -450,9 +464,9 @@ function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="table-pagination">
+                  <div className={styles.tablePagination}>
                     <span>Page 1 of 5</span>
-                    <div className="pagination-buttons">
+                    <div className={styles.paginationButtons}>
                       <button>{"< Previous"}</button>
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n}>{n}</button>
@@ -464,10 +478,10 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Charts */}
-            <div className="row mt-4">
+            {/* ── Charts ── */}
+            <div className="row g-4 mt-0">
               <div className="col-md-6">
-                <div className="dashboard-card">
+                <div className={styles.dashboardCard}>
                   <h5>Monthly Patients</h5>
                   <div style={{ overflowX: "auto" }}>
                     <div style={{ minWidth: "900px", height: "300px" }}>
@@ -477,9 +491,9 @@ function AdminDashboard() {
                 </div>
               </div>
               <div className="col-md-6">
-                <div className="dashboard-card">
+                <div className={styles.dashboardCard}>
                   <h5>Appointment Status</h5>
-                  <div className="pie-chart-container">
+                  <div className={styles.pieChartContainer}>
                     <Pie data={pieData} options={pieOptions} />
                   </div>
                 </div>
@@ -489,58 +503,132 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* ── Announcement Modal ── */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h5>{editingId ? "Edit Announcement" : "Post Announcement"}</h5>
-              <div className="modal-header-right">
-                <span className="modal-header-date">{formattedDate}</span>
-                <button
-                  className="modal-close"
-                  onClick={() => setShowModal(false)}
-                >
-                  <FaTimes />
-                </button>
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowModal(false)}
+        >
+          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
+            {/* Purple Header */}
+            <div className={styles.modalProfileHeader}>
+              <button
+                className={styles.profileCloseBtn}
+                onClick={() => setShowModal(false)}
+              >
+                <FiX />
+              </button>
+              <div className={styles.modalProfileRow}>
+                <div className={styles.iconBubble}>
+                  <FaBullhorn size={22} color="#fff" />
+                </div>
+                <div>
+                  <h3 className={styles.modalProfileName}>
+                    {editingId ? "Edit Announcement" : "Create Announcement"}
+                  </h3>
+                  <p className={styles.modalProfileContact}>{formattedDate}</p>
+                </div>
               </div>
             </div>
-            <div className="modal-body">
-              <label>Title</label>
-              <input
-                type="text"
-                className="modal-input"
-                placeholder="Announcement title..."
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-              <label>Message</label>
-              <textarea
-                className="modal-input modal-textarea"
-                placeholder="Write your announcement here..."
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                rows={4}
-              />
-              <label>Priority</label>
-              <select
-                className="modal-input"
-                value={form.priority}
-                onChange={(e) => setForm({ ...form, priority: e.target.value })}
-              >
-                <option value="normal">Normal</option>
-                <option value="high">Urgent / High Priority</option>
-              </select>
+
+            {/* Body */}
+            <div className={styles.modalBody}>
+              <div className={styles.modalContentCard}>
+                {/* Announcement Details section */}
+                <div className={styles.fieldGroup}>
+                  <div className={styles.sectionHeader}>
+                    <div className={styles.sectionIconBox}>
+                      <FiMessageSquare size={13} color="#fff" />
+                    </div>
+                    <h4 className={styles.sectionTitle}>
+                      Announcement Details
+                    </h4>
+                  </div>
+
+                  <label className={styles.fieldLabel}>Title</label>
+                  <input
+                    type="text"
+                    className={styles.fieldInput}
+                    placeholder="Enter announcement title..."
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Message */}
+                <div className={styles.fieldGroup}>
+                  <label className={styles.fieldLabel}>Message</label>
+                  <textarea
+                    className={styles.fieldTextarea}
+                    placeholder="Write your announcement here..."
+                    value={form.message}
+                    onChange={(e) =>
+                      setForm({ ...form, message: e.target.value })
+                    }
+                    rows={4}
+                  />
+                </div>
+
+                {/* Priority Level section */}
+                <div>
+                  <div className={styles.sectionHeader}>
+                    <div className={styles.sectionIconBox}>
+                      <FiFlag size={13} color="#fff" />
+                    </div>
+                    <h4 className={styles.sectionTitle}>Priority Level</h4>
+                  </div>
+
+                  <div className={styles.priorityGroup}>
+                    {priorityOptions.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`${styles.priorityCard} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="priority"
+                          value={opt.value}
+                          checked={form.priority === opt.value}
+                          onChange={() =>
+                            setForm({ ...form, priority: opt.value })
+                          }
+                          style={{
+                            accentColor: opt.accentColor,
+                            width: 16,
+                            height: 16,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div>
+                          <div
+                            className={`${styles.priorityCardLabel} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                          >
+                            {opt.label}
+                          </div>
+                          <div className={styles.priorityCardDesc}>
+                            {opt.desc}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="modal-footer">
+
+            {/* Footer */}
+            <div className={styles.modalFooter}>
               <button
-                className="modal-cancel"
+                className={styles.btnCancel}
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
-              <button className="modal-save" onClick={handleSave}>
-                {editingId ? "Save Changes" : "Post"}
+              <button className={styles.btnSave} onClick={handleSave}>
+                
+                {editingId ? "Save Changes" : "Post Announcement"}
               </button>
             </div>
           </div>

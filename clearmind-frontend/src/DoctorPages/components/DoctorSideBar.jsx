@@ -6,6 +6,7 @@ import { FaMoneyCheck } from "react-icons/fa";
 import { BsPersonLinesFill } from "react-icons/bs";
 import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
+import { BsCalendarCheckFill } from "react-icons/bs";
 
 import "../../index.css";
 import logo from "../../assets/CMPS_Logo.png";
@@ -31,6 +32,11 @@ function DoctorSideBar() {
       name: "Appointment",
       icon: <FaCalendarDays />,
       path: "/doctor/appointment",
+    },
+    {
+      name: "Schedule",
+      icon: <BsCalendarCheckFill />,
+      path: "/doctor/schedule",
     },
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
     {

@@ -1,0 +1,752 @@
+/* ── Layout ── */
+.adminContent {
+  background-color: white;
+}
+
+.containerFluid {
+  background-color: white;
+}
+
+.row {
+  background-color: white;
+}
+
+/* ── Dashboard Card ── */
+.dashboardCard {
+  background: rgb(255, 255, 255);
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0d4ff;
+  height: 100%;
+}
+
+.dashboardCard h5 {
+  font-weight: 700;
+  color: #2e104e;
+  margin: 0 0 1rem 0;
+}
+
+.dashboardCard hr {
+  margin-top: -17px;
+}
+
+/* ── Card Header ── */
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.cardHeader h5 {
+  font-weight: 700;
+  color: #2e104e;
+  margin: 0;
+}
+
+.cardDate {
+  font-size: 0.85rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardDate span {
+  background: #4D227C;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+/* ── Card Body ── */
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Appointment Items ── */
+.appointmentItems {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointmentItems p {
+  color: #555555a8;
+  margin: 0;
+}
+
+.appointmentIconText {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  color: #4D227C;
+}
+
+.appointmentIcon {
+  font-size: 1.5rem;
+  color: #4D227C;
+}
+
+/* ── Consult Item ── */
+.consultItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.consultItem p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* ── Patients Table ── */
+.patientsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.patientsTable th,
+.patientsTable td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e0d4ff;
+}
+
+.patientsTable th {
+  color: #4D227C;
+  font-weight: 600;
+}
+
+.patientsTable td {
+  color: #4d4952;
+}
+
+.tableResponsive {
+  overflow-x: auto;
+}
+
+/* ── Table Pagination ── */
+.tablePagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.paginationButtons button {
+  background: #f0e6ff;
+  border: none;
+  margin: 0 2px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+}
+
+.paginationButtons button:hover {
+  background: #4D227C;
+  color: #fff;
+}
+
+/* ── Pie Chart ── */
+.pieChartContainer {
+  position: relative;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Announcements ── */
+.announcementCard {
+  /* inherits dashboardCard */
+}
+
+.announcementTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #2e104e;
+  margin: 0;
+}
+
+.announceIcon {
+  color: #4D227C;
+  font-size: 1.1rem;
+}
+
+.btnPostAnnounce {
+  background: #4D227C;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size:15px;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  margin-top: -10px;
+   border:1px solid #3a1860;
+}
+
+.btnPostAnnounce:hover {
+  background: #ffffff;
+  color: #3a1860;
+  border:1px solid #3a1860;
+}
+
+.announceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.announceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 14px 16px;
+  gap: 12px;
+  border: 1px solid #e0d4ff;
+  background: #faf7ff;
+  transition: box-shadow 0.2s;
+}
+
+.announceItem:hover {
+  box-shadow: 0 4px 14px rgba(77, 34, 124, 0.1);
+}
+
+.announceHigh {
+  border-left: 4px solid #DC2626;
+  background: #fff8f8;
+}
+
+.announceNormal {
+  border-left: 4px solid #4D227C;
+}
+
+.announceLeft {
+  flex: 1;
+}
+
+.announceItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.priorityBadge {
+  background: #DC2626;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.announceItemTitle {
+  font-size: 0.95rem;
+  color: #2e104e;
+  font-weight: 600;
+}
+
+.announceMessage {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0 0 6px 0;
+  line-height: 1.5;
+}
+
+.announceDate {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.announceActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.annBtn {
+  border: none;
+  border-radius: 7px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.annBtn:active {
+  transform: scale(0.95);
+}
+
+.annEdit {
+  background: #ede8ff;
+  color: #4D227C;
+}
+
+.annEdit:hover {
+  background: #d9cfff;
+}
+
+.annDelete {
+  background: #fff0f0;
+  color: #DC2626;
+}
+
+.annDelete:hover {
+  background: #ffe0e0;
+}
+
+.noAnnounce {
+  text-align: center;
+  color: #bbb;
+  padding: 20px 0;
+  font-size: 0.9rem;
+}
+
+/* ── View Button (matching patient table) ── */
+.btnView {
+  height: 32px;
+  width: 90px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  box-sizing: border-box;
+  text-align: center;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #7341A8;
+  background: #7341A8;
+  color: #fff;
+  transition: background 0.2s ease, color 0.2s ease;
+  font-family: "Poppins", sans-serif;
+}
+
+.btnView:hover {
+  background: #ffffff;
+  color: #7341A8;
+}
+
+/* ── Announcement Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modalLg {
+  width: 100%;
+  max-width: 560px;
+  max-height: 92vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background-color: #f4f0fa;
+  padding: 0;
+  position: relative;
+  animation: modalSlideIn 0.3s ease;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Modal Header ── */
+.modalProfileHeader {
+  background: #4D227C;
+  border-radius: 20px 20px 0 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.modalProfileRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px 20px 24px;
+}
+
+.profileCloseBtn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: none !important;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff !important;
+  font-size: 19px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.profileCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.35) !important;
+}
+
+.iconBubble {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modalProfileName {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 3px 0;
+}
+
+.modalProfileContact {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Modal Body ── */
+.modalBody {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  box-sizing: border-box;
+  background: #f4f0fa;
+  padding: 20px 10px 10px 10px;
+}
+
+.modalContentCard {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px 28px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ── Section sub-headers inside card ── */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ede9f6;
+}
+
+.sectionIconBox {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7341A8, #4D227C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #3b1f6e;
+}
+
+/* ── Form fields ── */
+.fieldGroup {
+  margin-bottom: 18px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4D227C;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 2px solid #e5d6f5;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  color: #2d1a45;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.fieldInput:focus {
+  border-color: #4D227C;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
+}
+
+.fieldTextarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 2px solid #e5d6f5;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  color: #2d1a45;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  line-height: 1.65;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+.fieldTextarea:focus {
+  border-color: #4D227C;
+  box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
+}
+
+/* ── Priority radio cards ── */
+.priorityGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.priorityCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 2px solid #e5d6f5;
+  background: #faf8fc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.priorityCard.normalActive {
+  border-color: #4D227C;
+  background: #f3eeff;
+}
+
+.priorityCard.urgentActive {
+  border-color: #dc2626;
+  background: #fff0f0;
+}
+
+.priorityCardLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.priorityCardLabel.normalActive {
+  color: #4D227C;
+}
+
+.priorityCardLabel.urgentActive {
+  color: #dc2626;
+}
+
+.priorityCardDesc {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+
+/* ── Modal Footer ── */
+.modalFooter {
+  background: #f4f0fa;
+  border-top: none;
+  padding: 16px 28px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btnCancel {
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid #e5d6f5;
+  background: #f0ebf7;
+  color: #4D227C;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: background 0.2s;
+}
+
+.btnCancel:hover {
+  background: #e5d6f5;
+}
+
+.btnSave {
+  padding: 10px 26px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  background:  #4D227C;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 4px 14px rgba(77, 34, 124, 0.35);
+  font-family: "Poppins", sans-serif;
+  transition: filter 0.2s, transform 0.15s;
+}
+
+.btnSave:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 992px) {
+  .dashboardCard {
+    margin-top: 8px;
+  }
+
+  .cardHeader h5 {
+    font-size: 1.05rem;
+  }
+
+  .pieChartContainer {
+    height: 260px;
+  }
+
+  .appointmentItems {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .adminContent {
+    padding: 0.8rem;
+  }
+
+  .dashboardCard {
+    padding: 1rem;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .cardHeader h5 {
+    font-size: 1rem;
+  }
+
+  .appointmentIconText {
+    font-size: 1rem;
+  }
+
+  .appointmentIcon {
+    font-size: 1.2rem;
+  }
+
+  .patientsTable {
+    font-size: 0.8rem;
+  }
+
+  .patientsTable th,
+  .patientsTable td {
+    padding: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .tablePagination {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pieChartContainer {
+    height: 240px;
+  }
+
+  .btnPostAnnounce {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+
+  .announceItem {
+    flex-direction: column;
+  }
+
+  .announceActions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .priorityGroup {
+    flex-direction: column;
+  }
+
+  .modalLg {
+    max-width: 95vw;
+  }
+}
+
+@media (max-width: 400px) {
+  .paginationButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
