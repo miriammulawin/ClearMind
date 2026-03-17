@@ -7,21 +7,21 @@ import Registration from "./Registration";
 import AdminDashboard from "./AdminPages/AdminDashboard";
 import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
-import ServicesTab from "./ClientPages/ClientComponents/AppointmentComponents/ServicesTab";
-import PendingTab from "./ClientPages/ClientComponents/AppointmentComponents/PendingTab";
-import UpcomingTab from "./ClientPages/ClientComponents/AppointmentComponents/ScheduleTab";
-import HistoryTab from "./ClientPages/ClientComponents/AppointmentComponents/HistoryTab";
+import ServicesTab from "./ClientPages/AppointmentNavPages/ServicesTab";
+import PendingTab from "./ClientPages/AppointmentNavPages/PendingTab";
+import ScheduleTab from "./ClientPages/AppointmentNavPages/ScheduleTab";
+import HistoryTab from "./ClientPages/AppointmentNavPages/HistoryTab";
 import ClientMessages from "./ClientPages/ClientMessages";
 import ClientProfile from "./ClientPages/ClientProfile";
 import Help from "./ClientPages/ClientComponents/Help";
 import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndConditions";
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
 import About from "./ClientPages/ClientComponents/About";
-import AppointmentDetails from "./ClientPages/ClientComponents/AppointmentComponents/AppointmentDetails";
-import PACAppointment from "./ClientPages/ClientComponents/AppointmentComponents/PACAppointment";
-import PACSetAppointmentForm from './ClientPages/ClientComponents/AppointmentComponents/AppointmentForm/PACSetAppointmentForm';
-import PAEAppointment from "./ClientPages/ClientComponents/AppointmentComponents/PAEAppointment";
-
+import AppointmentDetails from "./ClientPages/AppointmentNavPages/AppointmentComponents/AppointmentDetails";
+import PACAppointment from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/PACAppointment";
+import PACSetAppointmentForm from './ClientPages/AppointmentNavPages/PaCAssesmentPages/AppointmentForm/PACSetAppointmentForm';
+import PAEAppointment from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/PAaEAppointment";
+import PAaESetAppointmentForm from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/AppointmentForm/PAaESetAppoitnmentForm";
 
 function App() {
   return (
@@ -44,11 +44,11 @@ function App() {
           </Route>
           
           <Route path="psychological-assessment" element={<PAEAppointment />}>
-            {/* <Route path="set-appointment-form" element={<SetAppointmentForm />} /> */}
+            <Route path="set-appointment-form" element={<PAaESetAppointmentForm />} />
           </Route>
           
           <Route path="pending" element={<PendingTab />} />
-          <Route path="upcoming" element={<UpcomingTab />} />
+          <Route path="upcoming" element={<ScheduleTab />} />
           <Route path="history" element={<HistoryTab />} />
           <Route path="upcoming/:id" element={<AppointmentDetails />} />
         </Route>

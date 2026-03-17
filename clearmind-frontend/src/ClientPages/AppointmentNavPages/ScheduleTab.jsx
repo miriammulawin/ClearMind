@@ -1,12 +1,15 @@
-import React from 'react';
-import { Container, Card, Button, Badge } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Container, Card, Button, Dropdown, Badge } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaVideo, FaClinicMedical } from "react-icons/fa";
-import MOCK_APPOINTMENTS from '../../../MockData/MockAppointment.js';
-import "../../ClientStyle/UpcomingTab.css";
+import MOCK_APPOINTMENTS from '../../MockData/MockAppointment';
+import "./styles/PendingTab.css";
 
-const PendingTab = () => {
+const UpcomingTab = () => {
   const navigate = useNavigate();
+
+  // No more Pending here — only Confirmed and Rescheduled
+  const [selectedStatus, setSelectedStatus] = useState('Confirmed');
 
   const getDayOfWeek = (dateString) => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -21,32 +24,70 @@ const PendingTab = () => {
     return <FaVideo className='appointment-icon' />;
   };
 
+  const getEmptyMessage = (status) => {
+    const messages = {
+      'Confirmed': 'You have no confirmed appointments.',
+      'Rescheduled': 'You have no rescheduled appointments.',
+    };
+    return messages[status] || 'You have no upcoming appointments.';
+  };
+
+  const getStatusBadgeVariant = (status) => {
+    const variants = {
+      'Confirmed': 'info',
+      'Rescheduled': 'orange',
+    };
+    return variants[status] || 'secondary';
+  };
+
   const handleViewDetails = (appointmentId) => {
     navigate(`/client/appointment/upcoming/${appointmentId}`);
   };
 
-  // Only Pending appointments
-  const pendingAppointments = MOCK_APPOINTMENTS.filter(
-    (apt) => apt.status === 'Pending'
+  // Only Confirmed and Rescheduled — Pending is handled by PendingTab
+  const statusOptions = ['Confirmed', 'Rescheduled'];
+
+  const filteredAppointments = MOCK_APPOINTMENTS.filter(
+    (apt) => apt.status === selectedStatus
   );
 
   return (
     <Container className="py-4 upcoming-container">
       <div className="d-flex justify-content-between align-items-center mb-3 header-section">
-        <h5 className='title-upcoming'>PENDING APPOINTMENTS</h5>
+        <h5 className='title-upcoming'>SCHEDULED APPOINTMENTS</h5>
+
+        <Dropdown className="status-dropdown">
+          <Dropdown.Toggle variant="outline-purple" id="dropdown-status">
+            {selectedStatus}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {statusOptions.map((status) => (
+              <Dropdown.Item
+                key={status}
+                active={selectedStatus === status}
+                onClick={() => setSelectedStatus(status)}
+              >
+                {status}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
       </div>
 
       <div className='appointments-list'>
-        {pendingAppointments.length === 0 ? (
+        {filteredAppointments.length === 0 ? (
           <div className='no-appointments'>
             <FaCalendarTimes className='calendar-icon' />
-            <p>You have no pending appointments.</p>
+            <p>{getEmptyMessage(selectedStatus)}</p>
           </div>
         ) : (
-          pendingAppointments.map((appointment) => (
+          filteredAppointments.map((appointment) => (
             <Card key={appointment.id} className='appointment-card'>
               <Card.Body>
-                <Badge bg="warning" className='status-badge-upcoming'>
+                <Badge
+                  bg={getStatusBadgeVariant(appointment.status)}
+                  className='status-badge-upcoming'
+                >
                   {appointment.status}
                 </Badge>
 
@@ -94,4 +135,4 @@ const PendingTab = () => {
   );
 };
 
-export default PendingTab;
+export default UpcomingTab;

@@ -3,8 +3,8 @@ import { Container, Card, Button, Alert } from 'react-bootstrap';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { FaVideo, FaClinicMedical, FaCalendarCheck, FaUserCircle, FaArrowLeft } from 'react-icons/fa';
 import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
-import DoctorProfile from './DoctorProfile.jsx';
-import ServiceAlert from '../../component/ServiceAlert.jsx';
+import DoctorProfile from '../AppointmentComponents/DoctorProfile.jsx';
+import ServiceAlert from '../AppointmentComponents/ServiceAlert.jsx';
 import styles from '../../ClientStyle/SetAppointment.module.css';
 
 const PACAppointment = () => {

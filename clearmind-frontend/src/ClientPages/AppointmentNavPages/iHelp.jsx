@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from '../../ClientStyle/iHelp.module.css';
+import styles from './styles/iHelp.module.css';
 
 /* -----------------------------------------------------------------
    Survey Data

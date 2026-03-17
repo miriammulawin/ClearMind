@@ -2,7 +2,7 @@ import React from 'react';
 import { Accordion, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import "../../ClientStyle/ServicesTab.css";
+import "./styles/ServicesTab.css";
 import { IHelpTrigger } from './iHelp';
 
 const ClientAppointmentServices = () => {
