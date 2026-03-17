@@ -21,6 +21,7 @@
   align-items: center;
   margin: clamp(12px, 3vw, 20px) clamp(12px, 4vw, 25px) 0;
   gap: 8px;
+
 }
 
 /* ── Heading ── */
@@ -38,6 +39,7 @@
   font-weight: 600;
   margin: clamp(2px, 1vw, 4px) clamp(12px, 4vw, 25px) 0;
   opacity: 0.85;
+  margin-bottom: 10px;
 }
 
 /* ── Back Button ── */

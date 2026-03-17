@@ -1,68 +1,49 @@
-import React, { useState } from 'react';
-import { Container, Card, ListGroup, Modal, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import "../ClientStyle/ProfileBody.css"
+import React, { useState, useRef  } from "react";
+import { Container, Card, ListGroup, Modal, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "../ClientStyle/ProfileBody.css";
 import { LuHandHeart } from "react-icons/lu";
 import { LuBookOpenText } from "react-icons/lu";
 import { MdOutlineShield } from "react-icons/md";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { IoLogOutOutline } from "react-icons/io5";
 import { FaRegEdit } from "react-icons/fa";
+import { FaCamera } from "react-icons/fa";
 import { Image } from "react-bootstrap";
 import logo_login from "../../assets/CMPS_Logo.png";
+import ProfileAvatar from "../ClientComponents/ProfileAvatar"; 
+import { mockUser } from "../../MockData/MockUser"; 
 
-export default function ProfilePage({ onEditClick }) {
+export default function ProfilePage({ userData, onEditClick }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogoutClick = () => {
-    setShowLogoutModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowLogoutModal(false);
-  };
+  const handleLogoutClick = () => setShowLogoutModal(true);
+  const handleCloseModal = () => setShowLogoutModal(false);
 
   const handleLogout = () => {
-
-    console.log("Logging out...");
     setShowLogoutModal(false);
-   
     navigate("/login");
   };
 
   const handleMenuClick = (item) => {
-    if (item.action) {
-      item.action();
-    } else if (item.link) {
-      navigate(item.link);
-    }
+    if (item.action) item.action();
+    else if (item.link) navigate(item.link);
   };
 
   const menuItems = [
     { icon: <LuHandHeart />, label: "Help", link: "/client/help" },
-    {
-      icon: <LuBookOpenText />,
-      label: "Terms and Conditions",
-      link: "/client/terms-and-conditions",
-    },
-    {
-      icon: <MdOutlineShield />,
-      label: "Privacy Policy",
-      link: "/client/privacy-policy",
-    },
-    {
-      icon: <IoMdInformationCircleOutline />,
-      label: "About",
-      link: "/client/about",
-    },
+    { icon: <LuBookOpenText />, label: "Terms and Conditions", link: "/client/terms-and-conditions" },
+    { icon: <MdOutlineShield />, label: "Privacy Policy", link: "/client/privacy-policy" },
+    { icon: <IoMdInformationCircleOutline />, label: "About", link: "/client/about" },
     { icon: <IoLogOutOutline />, label: "Log Out", action: handleLogoutClick },
   ];
 
   return (
     <div className="profile-page-container">
       <Container fluid className="p-0 profile-container">
+
         {/* Profile Header */}
         <div className="profile-header">
           <h5 className="profile-title">PROFILE</h5>
@@ -72,14 +53,35 @@ export default function ProfilePage({ onEditClick }) {
         <div className="user-info-section">
           <Card className="user-info-card">
             <Card.Body className="user-info-body">
-              <div className="user-avatar">JD</div>
-              <div className="user-details">
-                <h5 className="user-name">Juan Dela Cruz</h5>
-                <p className="user-email">example@gmail.com</p>
+
+              {/* Avatar — clicking opens Edit Modal */}
+              <div className="user-avatar-wrapper" onClick={onEditClick}>
+                <ProfileAvatar
+                  firstName={userData.firstName}
+                  lastName={userData.lastName}
+                  profilePic={userData.profilePic}
+                  size={52}
+                />
+                <div className="avatar-edit-btn">
+                  <FaCamera size={10} />
+                </div>
               </div>
+
+              <div className="user-details">
+                <h5 className="user-name">
+                  {userData.firstName}{" "}
+                  {userData.middleName && userData.middleName !== "N/A"
+                    ? `${userData.middleName[0]}. `
+                    : ""}
+                  {userData.lastName}
+                </h5>
+                <p className="user-email">{userData.email}</p>
+              </div>
+
               <button className="edit-button" onClick={onEditClick}>
                 <FaRegEdit />
               </button>
+
             </Card.Body>
           </Card>
         </div>
@@ -115,29 +117,19 @@ export default function ProfilePage({ onEditClick }) {
           </div>
           <p className="branding-year">Est. 2024</p>
         </div>
+
       </Container>
 
       {/* Logout Modal */}
-      <Modal
-        show={showLogoutModal}
-        onHide={handleCloseModal}
-        centered
-        className="logout-modal"
-      >
+      <Modal show={showLogoutModal} onHide={handleCloseModal} centered className="logout-modal">
         <Modal.Body className="text-center p-4">
           <div className="mb-3">
             <IoLogOutOutline size={40} className="text-custom" />
           </div>
           <h5 className="mb-3">Log out ?</h5>
-          <p className="text-muted mb-4">
-            Are you sure you want to log out your account?
-          </p>
+          <p className="text-muted mb-4">Are you sure you want to log out your account?</p>
           <div className="d-flex gap-3 justify-content-center">
-            <Button
-              variant="outline-secondary"
-              onClick={handleCloseModal}
-              className="px-4"
-            >
+            <Button variant="outline-secondary" onClick={handleCloseModal} className="px-4">
               CANCEL
             </Button>
             <Button variant="primary" onClick={handleLogout} className="px-4">

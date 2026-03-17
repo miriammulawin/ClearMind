@@ -4,23 +4,21 @@ import "./ClientStyle/ClientProfile.css";
 import ClientHeader from "./ClientComponents/Header";
 import ClientFooter from "./ClientComponents/Footer";
 import ProfilePage from "./ClientComponents/ProfileBody";
-import EditProfileModal from "./EditProfileModal"; 
+import EditProfileModal from "./EditProfileModal";
+import { mockUser } from "../MockData/MockUser";
+
 function ClientAccount() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [userData, setUserData] = useState({
-    firstName: "Juan",
-    lastName: "Dela Cruz",
-    dateOfBirth: "1995-06-15",
-    sex: "Male",
-    contactNo: "09123456789",
-    email: "example@gmail.com",
-  });
+  const [userData, setUserData] = useState(mockUser);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleSave = (updatedData) => {
-   
     setUserData(updatedData);
+    setIsModalOpen(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000); 
     console.log("Saved:", updatedData);
+
   };
 
   return (
@@ -29,8 +27,15 @@ function ClientAccount() {
         <ClientHeader />
       </div>
 
+      {/* Success Toast */}
+      {showSuccess && (
+        <div className="profile-success-toast">
+          <span className="profile-success-icon">✓</span>
+          Profile updated successfully!
+        </div>
+      )}
+
       <div className="tab-content-wrapper">
-       
         <ProfilePage
           userData={userData}
           onEditClick={() => setIsModalOpen(true)}

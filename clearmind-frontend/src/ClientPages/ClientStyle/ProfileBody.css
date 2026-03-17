@@ -48,19 +48,56 @@
   gap: 15px;
 }
 
+.user-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
 .user-avatar {
-  width: 60px;
-  height: 60px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #b8a1d9 0%, #9b7ec4 100%);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  color: #fff;
+  font-size: 20px;
   font-weight: 600;
+  font-family: 'Google Sans', Roboto, sans-serif;
+  letter-spacing: 0.5px;
   flex-shrink: 0;
+  user-select: none;
 }
+.user-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.user-avatar-wrapper:hover .avatar-edit-btn {
+  opacity: 1;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #542982;
+  border: 1.5px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+
 
 .user-details {
   flex: 1;
