@@ -1,7 +1,7 @@
 // ServiceAlert.jsx
 import React from 'react';
 import { Alert } from 'react-bootstrap';
-import styles from '../styles/ServiceAlert.module.css';
+import styles from './styles/ServiceAlert.module.css';
 
 
 const ServiceAlert = ({ selectedService }) => {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Badge } from 'react-bootstrap';
 import { FaUserCircle, FaVideo, FaClinicMedical } from 'react-icons/fa';
 import { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
-import styles from '../../ClientStyle/SetAppointment.module.css';
+import styles from '../PaCAssesmentPages/style/SetAppointment.module.css';
 
 const DoctorProfile = ({ 
   doctorData, 

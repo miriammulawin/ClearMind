@@ -1,5 +1,4 @@
 // PAaEAppointment.jsx
-// Route: /client/appointment/psychological-assessment
 // Navigates to child: psychological-assessment/set-appointment-form
 
 import React from 'react';
@@ -8,7 +7,7 @@ import { useNavigate, useLocation, Outlet, useMatch } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import ServiceAlert from '../AppointmentComponents/ServiceAlert';
-import styles from '../../ClientStyle/PAaEAppointment.module.css';
+import styles from './style/PAaEAppointment.module.css';
 
 /* -----------------------------------------------------------------
    Services Data
@@ -30,41 +29,34 @@ const PAE_SERVICES = [
   },
   {
     id: '2',
-    title: 'Psychological Assessment and Evaluation',
-    description:
-      "The purpose of psychological assessment and evaluation is to better understand a person's thoughts, emotions, behavior, and cognitive functioning. It helps professionals identify concerns, provide accurate diagnoses, and recommend appropriate support or treatment.",
-    available: true,
-  },
-  {
-    id: '3',
     title: 'School / Academic Support',
     description:
       'The purpose of psychological assessment for school or academic support is to identify learning difficulties, behavioral concerns, or developmental needs in order to provide appropriate educational guidance, accommodations, or interventions.',
     available: true,
   },
   {
-    id: '4',
+    id: '3',
     title: 'Work-related Purpose',
     description:
       "The purpose of psychological assessment for work-related concerns is to evaluate an individual's mental and emotional well-being in relation to workplace challenges, stress, or performance in order to recommend appropriate support or interventions.",
     available: true,
   },
   {
-    id: '5',
+    id: '4',
     title: 'Pre-Employment Purpose',
     description:
       "The purpose of psychological assessment for pre-employment is to evaluate a candidate's personality traits, cognitive abilities, and psychological readiness to determine suitability for a specific job role or work environment.",
     available: true,
   },
   {
-    id: '6',
+    id: '5',
     title: 'Emotional Support Animal (ESA) Certification',
     description:
       'The purpose of ESA certification as prescribed by a mental health professional is for clients with animals to provide emotional comfort, relieve anxiety, or help with psychiatric or mental health conditions, even if they are not trained to perform specific tasks.',
     available: true,
   },
   {
-    id: '7',
+    id: '6',
     title: 'Mental Health Certification',
     description:
       "The purpose of mental health certification is to provide professional documentation from a licensed mental health professional regarding an individual's psychological condition, which may be required for medical, workplace, educational, or legal purposes.",

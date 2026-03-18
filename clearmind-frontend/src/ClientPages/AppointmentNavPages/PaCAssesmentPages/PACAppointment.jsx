@@ -5,7 +5,7 @@ import { FaVideo, FaClinicMedical, FaCalendarCheck, FaUserCircle, FaArrowLeft } 
 import MOCK_DOCTORS, { CONSULTATION_FEES } from '../../../MockData/MockDoctors.js';
 import DoctorProfile from '../AppointmentComponents/DoctorProfile.jsx';
 import ServiceAlert from '../AppointmentComponents/ServiceAlert.jsx';
-import styles from '../../ClientStyle/SetAppointment.module.css';
+import styles from './style/SetAppointment.module.css';
 
 const PACAppointment = () => {
   const location = useLocation();

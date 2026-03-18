@@ -3,7 +3,7 @@ import { Container, Card, Button, Badge } from 'react-bootstrap';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaFileAlt } from 'react-icons/fa';
 import { getAppointmentById } from '../../../MockData/MockAppointment.js';
-import '../../ClientStyle/AppointmentDetails.css';
+import './styles/AppointmentDetails.css';
 
 const AppointmentDetails = () => {
   const { id } = useParams();

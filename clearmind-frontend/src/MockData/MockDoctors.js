@@ -121,6 +121,48 @@ const SLOTS_3_30PM_7_30PM = [
   { time: "7:00 PM", available: true },
 ];
 
+const SLOTS_9AM_12PM = [
+  { time: "9:00 AM",  available: true },
+  { time: "9:30 AM",  available: true },
+  { time: "10:00 AM", available: true },
+  { time: "10:30 AM", available: true },
+  { time: "11:00 AM", available: true },
+  { time: "11:30 AM", available: true },
+];
+
+const SLOTS_8AM_12PM = [
+  { time: "8:00 AM",  available: true },
+  { time: "8:30 AM",  available: true },
+  { time: "9:00 AM",  available: true },
+  { time: "9:30 AM",  available: true },
+  { time: "10:00 AM", available: true },
+  { time: "10:30 AM", available: true },
+  { time: "11:00 AM", available: true },
+  { time: "11:30 AM", available: true },
+];
+
+const SLOTS_1PM_5PM = [
+  { time: "1:00 PM", available: true },
+  { time: "1:30 PM", available: true },
+  { time: "2:00 PM", available: true },
+  { time: "2:30 PM", available: true },
+  { time: "3:00 PM", available: true },
+  { time: "3:30 PM", available: true },
+  { time: "4:00 PM", available: true },
+  { time: "4:30 PM", available: true },
+];
+
+const SLOTS_10AM_2PM = [
+  { time: "10:00 AM", available: true },
+  { time: "10:30 AM", available: true },
+  { time: "11:00 AM", available: true },
+  { time: "11:30 AM", available: true },
+  { time: "12:00 PM", available: true },
+  { time: "12:30 PM", available: true },
+  { time: "1:00 PM",  available: true },
+  { time: "1:30 PM",  available: true },
+];
+
 // ─── Doctor definitions ───────────────────────────────────────────────────────
 export const MOCK_DOCTORS = [
   {
@@ -201,6 +243,94 @@ export const MOCK_DOCTORS = [
     get availability() {
       return buildAvailability([
         { days: ["Saturday"], slots: SLOTS_3_30PM_7_30PM },
+      ], 12);
+    },
+  },
+
+  // ─── Psychometricians ─────────────────────────────────────────────────────────
+
+  {
+    // Female #1 — existing
+    id: 5,
+    name: "Maria Lourdes R. Santos",
+    title: "Psychometrician",
+    credentials: "RPm",
+    avatar: null,
+    consultationType: "On-Site Clinic (CMPS)",
+    consultationMode: "Onsite",
+    onSiteDays: ["Wednesday", "Saturday"],
+    virtualDays: [],
+    schedule: {
+      days: ["Wednesday", "Saturday"],
+      time: "9:00 AM - 12:00 PM",
+    },
+    get availability() {
+      return buildAvailability([
+        { days: ["Wednesday", "Saturday"], slots: SLOTS_9AM_12PM },
+      ], 12);
+    },
+  },
+  {
+    // Female #2
+    id: 6,
+    name: "Angela Faye D. Reyes",
+    title: "Psychometrician",
+    credentials: "RPm",
+    avatar: null,
+    consultationType: "On-Site Clinic (CMPS) & Virtual",
+    consultationMode: "Both",
+    onSiteDays: ["Monday", "Wednesday"],
+    virtualDays: ["Friday"],
+    schedule: {
+      days: ["Monday", "Wednesday", "Friday"],
+      time: "8:00 AM - 12:00 PM (On-Site Mon & Wed) · 1:00 PM - 5:00 PM (Virtual Fri)",
+    },
+    get availability() {
+      return buildAvailability([
+        { days: ["Monday", "Wednesday"], slots: SLOTS_8AM_12PM },
+        { days: ["Friday"],             slots: SLOTS_1PM_5PM  },
+      ], 12);
+    },
+  },
+  {
+    // Female #3
+    id: 7,
+    name: "Patricia Joy B. Navarro",
+    title: "Psychometrician",
+    credentials: "RPm",
+    avatar: null,
+    consultationType: "Virtual Clinic",
+    consultationMode: "Virtual",
+    onSiteDays: [],
+    virtualDays: ["Tuesday", "Thursday"],
+    schedule: {
+      days: ["Tuesday", "Thursday"],
+      time: "10:00 AM - 2:00 PM",
+    },
+    get availability() {
+      return buildAvailability([
+        { days: ["Tuesday", "Thursday"], slots: SLOTS_10AM_2PM },
+      ], 12);
+    },
+  },
+  {
+    // Male #1
+    id: 8,
+    name: "Ramon Miguel C. Dela Cruz",
+    title: "Psychometrician",
+    credentials: "RPm",
+    avatar: null,
+    consultationType: "On-Site Clinic (CMPS)",
+    consultationMode: "Onsite",
+    onSiteDays: ["Tuesday", "Thursday", "Saturday"],
+    virtualDays: [],
+    schedule: {
+      days: ["Tuesday", "Thursday", "Saturday"],
+      time: "1:00 PM - 5:00 PM",
+    },
+    get availability() {
+      return buildAvailability([
+        { days: ["Tuesday", "Thursday", "Saturday"], slots: SLOTS_1PM_5PM },
       ], 12);
     },
   },
