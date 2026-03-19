@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   DayAppointmentsModal.module.css — NARROW COMPACT VERSION
-   Reduced width, padding, gaps, and spacing
+   DayAppointmentsModal.module.css — FINAL VERSION
+   Full content display for all accordion sections
 ───────────────────────────────────────────────────────────────────────── */
 
 /* ── Overlay & Modal ────────────────────────────────────────────────────── */
@@ -19,7 +19,7 @@
 
 .modal {
   width: 95%;
-  max-width: 600px;  /* ✅ Reduced from 900px to 600px */
+  max-width: 600px;  /* ✅ Narrow width */
   max-height: 90vh;
   background: #fff;
   border-radius: 12px;
@@ -31,7 +31,7 @@
 /* ── Modal Header ───────────────────────────────────────────────────────── */
 .modalHeader {
   background-color: #4d227c;
-  padding: 10px 14px;  /* ✅ Reduced padding */
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -42,7 +42,7 @@
 
 .modalTitle {
   margin: 0;
-  font-size: 15px;  /* ✅ Reduced from 16px */
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   display: flex;
@@ -50,22 +50,21 @@
   gap: 6px;
   flex: 1;
   min-width: 0;
-  flex-wrap: wrap;
 }
 
 .modalHeaderRight {
   display: flex;
   align-items: center;
-  gap: 6px;  /* ✅ Reduced gap */
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .dateBadge {
   background-color: #fff;
   color: #4d227c;
-  padding: 3px 8px;  /* ✅ Reduced padding */
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 11px;  /* ✅ Reduced from 12px */
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -74,26 +73,20 @@
   background-color: #fff;
   border: none;
   border-radius: 50%;
-  width: 28px;  /* ✅ Reduced from 32px */
+  width: 28px;
   height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #4d227c;
-  font-size: 16px;  /* ✅ Reduced from 18px */
+  font-size: 16px;
   padding: 0;
   flex-shrink: 0;
-  transition: background-color 0.15s, transform 0.2s;
-}
-
-.closeBtn:hover {
-  background-color: #f3ecfc;
-  transform: rotate(90deg);
 }
 
 .clinicDot {
-  width: 7px;  /* ✅ Reduced from 8px */
+  width: 7px;
   height: 7px;
   border-radius: 50%;
   display: inline-block;
@@ -101,13 +94,13 @@
 }
 
 .rescheduledBadge {
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   font-weight: 600;
   background-color: #fff3e0;
   color: #b45309;
-  padding: 2px 6px;  /* ✅ Reduced padding */
+  padding: 2px 6px;
   border-radius: 10px;
-  margin-left: 4px;  /* ✅ Reduced margin */
+  margin-left: 4px;
   white-space: nowrap;
 }
 
@@ -116,162 +109,175 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px 14px;  /* ✅ Reduced from 12px 16px */
+  padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;  /* ✅ Reduced from 10px */
+  gap: 8px;
   min-height: 0;
-  background: #f5f0fb;
 }
-
-.scrollBody::-webkit-scrollbar { width: 5px; }
-.scrollBody::-webkit-scrollbar-track { background: #f0eaf8; border-radius: 10px; }
-.scrollBody::-webkit-scrollbar-thumb { background: #4d227c; border-radius: 10px; }
-.scrollBody::-webkit-scrollbar-thumb:hover { background: #6a3fa5; }
 
 /* ── Info Row ───────────────────────────────────────────────────────────── */
 .infoRow {
   display: flex;
-  gap: clamp(6px, 1vw, 8px);
-  font-size: clamp(12px, 1.8vw, 14px);
-  align-items: flex-start;
-  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 11px;
 }
 
 .infoLabel {
   font-weight: 700;
-  color: #4d227c;
+  color: #070707;
   flex-shrink: 0;
-  min-width: clamp(130px, 20vw, 190px);
-  font-size: clamp(12px, 1.8vw, 14px);
+  min-width: 100px;
 }
 
 .infoValue {
-  color: #333;
-  font-size: clamp(12px, 1.8vw, 14px);
-  flex: 1;
-  min-width: 0;
+  color: #1f2937;  /* ✅ Dark gray - visible text */
   word-break: break-word;
+  font-weight: 500;  /* ✅ Added slight weight for clarity */
+}
+
+/* ✅ NEW: Specific styling for Status value */
+.infoRow:has(+ .infoRow) .infoValue {
+  color: #1f2937;  /* Ensure all values are dark */
 }
 
 /* ── Cards ──────────────────────────────────────────────────────────────── */
 .card {
-  border: 1px solid #ede5f7;
-  border-radius: clamp(8px, 1.5vw, 12px);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(77, 34, 124, 0.06);
 }
 
 .cardHeader {
-  padding: clamp(10px, 2vw, 14px) clamp(14px, 2.5vw, 20px);
-  border-bottom: 1px solid #ede5f7;
-  font-size: clamp(13px, 2vw, 15px);
+  padding: 7px 10px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 12px;
   font-weight: 700;
   color: #4d227c;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  background: #f9f5ff;
+  gap: 6px;
+}
+
 .cardHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 5px;  /* ✅ Reduced from 6px */
-  gap: 6px;
-  flex-wrap: wrap;
-}
+  gap: 5px;
 }
 
 .cardBody {
-  padding: 8px 10px;  /* ✅ Reduced from 10px 12px */
+  padding: 8px 10px;
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 6px;  /* ✅ Reduced from 8px */
+  gap: 6px;
 }
 
 .cardFields {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.2vw, 10px);
-  overflow-x: auto;
+  gap: 4px;
   flex: 1;
 }
 
 .cardFooter {
-  padding: clamp(10px, 1.5vw, 12px) clamp(14px, 2.5vw, 20px);
-  border-top: 1px solid #ede5f7;
-  background: #faf7ff;
-  display: flex;
-  justify-content: flex-end;
-  gap: clamp(6px, 1vw, 10px);
-  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-top: 1px solid #f0f0f0;
 }
 
 /* ── Accordion / Dropdown section ───────────────────────────────────────── */
 .accordionHeader {
-  padding: 7px 10px;  /* ✅ Reduced from 8px 12px */
-  font-size: 12px;  /* ✅ Reduced from 13px */
+  padding: 7px 10px;
+  font-size: 12px;
   font-weight: 700;
   color: #4d227c;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;  /* ✅ Reduced from 8px */
+  gap: 6px;
   cursor: pointer;
   user-select: none;
-  background: #f9f5ff;
+  background: none;
   border: none;
   width: 100%;
   text-align: left;
   transition: background-color 0.15s;
 }
 
-.accordionHeader:hover { background-color: #f0eafc; }
+.accordionHeader:hover {
+  background-color: #faf7ff;
+}
 
-.accordionHeader.open { border-bottom: 1px solid #ede5f7; }
+.accordionHeader.open {
+  border-bottom: 1px solid #e0e0e0;
+}
 
 .accordionChevron {
   flex-shrink: 0;
   transition: transform 0.2s ease;
   color: #4d227c;
-  width: 16px;  /* ✅ Consistent sizing */
+  width: 16px;
   height: 16px;
 }
 
-.accordionChevron.rotated { transform: rotate(180deg); }
+.accordionChevron.rotated {
+  transform: rotate(180deg);
+}
 
-/* ✅ NEW: Full content wrapper for accordion — shows all content when expanded */
+/* ✅ UPDATED: Scrollable accordion content with internal scroll */
 .accordionBodyWrapper {
-  max-height: none;  /* ✅ CHANGED: Allow unlimited height when expanded */
-  overflow-y: visible;  /* ✅ CHANGED: Show all content */
+  max-height: 400px;  /* ✅ Set max height for scroll */
+  overflow-y: auto;   /* ✅ Enable vertical scroll */
   overflow-x: hidden;
   border-top: 1px solid #f0f0f0;
 }
 
+/* ✅ Custom scrollbar styling for accordions */
+.accordionBodyWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.accordionBodyWrapper::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.accordionBodyWrapper::-webkit-scrollbar-thumb {
+  background: #c4a4ff;
+  border-radius: 3px;
+}
+
+.accordionBodyWrapper::-webkit-scrollbar-thumb:hover {
+  background: #9d7dd4;
+}
+
+/* Firefox scrollbar */
+.accordionBodyWrapper {
+  scrollbar-color: #c4a4ff #f5f5f5;
+  scrollbar-width: thin;
+}
+
 .accordionBody {
-  padding: 8px 10px;  /* ✅ Reduced from 10px 12px */
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.8vw, 14px);
-  overflow: hidden;
+  gap: 6px;
 }
 
 /* ── Purpose Badge Row ──────────────────────────────────────────────────── */
 .purposeRow {
   display: flex;
-  gap: 4px;  /* ✅ Reduced from 6px */
-  font-size: 11px;  /* ✅ Reduced from 12px */
+  gap: 4px;
+  font-size: 11px;
   align-items: center;
 }
 
 .purposeBadge {
-  padding: 2px 8px;  /* ✅ Reduced from 2px 10px */
+  padding: 2px 8px;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   white-space: nowrap;
 }
 
@@ -280,67 +286,42 @@
 .purposeSchool { background-color: #dcfce7; color: #15803d; }
 .purposeWork   { background-color: #fef9c3; color: #a16207; }
 
-/* ── Payment Badge — inline pill ────────────────────────────────────────── */
-.paymentPaid {
-  display: inline-flex;
-  align-items: center;
-  background-color: #dcfce7;
-  color: #15803d;
-  padding: clamp(2px, 0.4vw, 3px) clamp(8px, 1.5vw, 12px);
-  border-radius: 20px;
+/* ── Payment Badge ──────────────────────────────────────────────────────── */
+.paymentWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.paymentLabel {
   font-weight: 700;
-  font-size: clamp(10px, 1.3vw, 12px);
-  border: 1px solid #bbf7d0;
+  color: #4d227c;
   white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.paymentPaid {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 10px;
 }
 
 .paymentUnpaid {
-  display: inline-flex;
-  align-items: center;
-  background-color: #fee2e2;
-  color: #b91c1c;
-  padding: clamp(2px, 0.4vw, 3px) clamp(8px, 1.5vw, 12px);
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: clamp(10px, 1.3vw, 12px);
-  border: 1px solid #fca5a5;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* ── Status Badges — colored text only ──────────────────────────────────── */
-.statusScheduled {
-  font-size: clamp(12px, 1.8vw, 14px);
-  font-weight: 500;
-  color: #1d4ed8;
-  white-space: nowrap;
-}
-
-.statusCancelled {
-  font-size: clamp(12px, 1.8vw, 14px);
-  font-weight: 500;
-  color: #b91c1c;
-  white-space: nowrap;
-}
-
-.statusCompleted {
-  font-size: clamp(12px, 1.8vw, 14px);
-  font-weight: 500;
-  color: #15803d;
-  white-space: nowrap;
-}
-
-.statusRescheduled {
-  font-size: clamp(12px, 1.8vw, 14px);
-  font-weight: 500;
+  background-color: #fff3e0;
   color: #b45309;
-  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 10px;
 }
 
 /* ── VAWC dot ───────────────────────────────────────────────────────────── */
 .vawcDot {
-  width: 7px;  /* ✅ Reduced from 8px */
+  width: 7px;
   height: 7px;
   border-radius: 50%;
   background-color: #dc2626;
@@ -352,23 +333,19 @@
 .complaintLabel {
   font-weight: 700;
   color: #4d227c;
-  font-size: clamp(11px, 1.6vw, 13px);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  font-size: 11px;
+  margin-bottom: 3px;
 }
 
 .complaintBox {
-  background-color: #faf7ff;
-  border: 1px solid #e0d4f5;
-  border-radius: 8px;
-  padding: clamp(10px, 1.8vw, 12px) clamp(10px, 2vw, 14px);
-  font-size: clamp(11px, 1.6vw, 13px);
+  background-color: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
   color: #374151;
-  line-height: 1.6;
-  min-height: 60px;
-  max-height: clamp(100px, 16vw, 160px);
-  overflow-y: auto;
+  line-height: 1.4;
+  min-height: 45px;
 }
 
 .complaintEmpty {
@@ -380,45 +357,49 @@
 .docsSection {
   display: flex;
   flex-direction: column;
-  gap: 3px;  /* ✅ Reduced from 4px */
+  gap: 3px;
 }
 
 .docsSectionLabel {
   font-weight: 700;
   color: #4d227c;
-  font-size: clamp(11px, 1.6vw, 13px);
-  margin-bottom: 2px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  font-size: 11px;
+  margin-bottom: 1px;
 }
 
 .docsChipRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;  /* ✅ Reduced from 6px */
+  gap: 4px;
 }
 
 .pdfChip {
   display: inline-flex;
   align-items: center;
-  gap: 3px;  /* ✅ Reduced from 4px */
+  gap: 3px;
   background-color: #e8deff;
   color: #4d227c;
   border: none;
-  border-radius: 5px;  /* ✅ Reduced from 6px */
-  padding: 4px 8px;  /* ✅ Reduced from 5px 10px */
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  border-radius: 5px;
+  padding: 4px 8px;
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.15s;
-  max-width: clamp(180px, 40vw, 220px);
+  max-width: 180px;
   text-align: left;
 }
 
-.pdfChip:hover { background-color: #d4c4ff; }
+.pdfChip:hover {
+  background-color: #d4c4ff;
+}
 
-.pdfChipIcon { flex-shrink: 0; color: #6b34b8; }
+.pdfChipIcon {
+  flex-shrink: 0;
+  color: #6b34b8;
+  width: 12px;
+  height: 12px;
+}
 
 .pdfChipLabel {
   overflow: hidden;
@@ -442,8 +423,8 @@
   background-color: #1e1e1e;
   border-radius: 12px;
   width: 100%;
-  max-width: clamp(320px, 90vw, 860px);
-  height: clamp(400px, 88vh, 880px);
+  max-width: 700px;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -452,46 +433,44 @@
 
 .pdfViewerHeader {
   background-color: #2a2a2a;
-  padding: clamp(10px, 1.8vw, 12px) clamp(14px, 2.5vw, 18px);
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;  /* ✅ Reduced from 10px */
+  gap: 8px;
   flex-shrink: 0;
   border-bottom: 1px solid #3a3a3a;
-  flex-wrap: wrap;
 }
 
 .pdfViewerTitle {
   display: flex;
   align-items: center;
-  gap: 5px;  /* ✅ Reduced from 6px */
+  gap: 5px;
   color: #e5e5e5;
-  font-size: 12px;  /* ✅ Reduced from 13px */
+  font-size: 12px;
   font-weight: 600;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
 }
 
 .pdfViewerActions {
   display: flex;
   align-items: center;
-  gap: 5px;  /* ✅ Reduced from 6px */
+  gap: 5px;
   flex-shrink: 0;
 }
 
 .pdfViewerDownload {
   display: flex;
   align-items: center;
-  gap: 3px;  /* ✅ Reduced from 4px */
+  gap: 3px;
   background-color: #4d227c;
   color: #fff;
-  padding: clamp(5px, 0.8vw, 6px) clamp(10px, 1.8vw, 14px);
-  border-radius: 7px;
-  font-size: clamp(11px, 1.5vw, 13px);
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
@@ -504,37 +483,37 @@
   background-color: #3a3a3a;
   border: none;
   border-radius: 50%;
-  width: clamp(28px, 3.5vw, 32px);
-  height: clamp(28px, 3.5vw, 32px);
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #e5e5e5;
   cursor: pointer;
-  transition: background-color 0.15s, transform 0.2s;
+  transition: background-color 0.15s;
   flex-shrink: 0;
   font-size: 14px;
 }
 
-.pdfViewerClose:hover { background-color: #555; transform: rotate(90deg); }
+.pdfViewerClose:hover { background-color: #555; }
 
+/* ── PDF Toolbar (pagination + zoom) ────────────────────────────────────── */
 .pdfToolbar {
   background-color: #3a3a3a;
   border-bottom: 1px solid #4a4a4a;
-  padding: clamp(6px, 1vw, 8px) clamp(12px, 2vw, 16px);
+  padding: 5px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(16px, 3vw, 28px);
+  gap: 16px;
   flex-shrink: 0;
-  flex-wrap: wrap;
 }
 
 .pdfPagination,
 .pdfZoom {
   display: flex;
   align-items: center;
-  gap: 5px;  /* ✅ Reduced from 6px */
+  gap: 5px;
 }
 
 .pdfNavBtn {
@@ -542,9 +521,9 @@
   border: none;
   border-radius: 4px;
   color: #e5e5e5;
-  width: clamp(26px, 3.5vw, 30px);
-  height: clamp(26px, 3.5vw, 30px);
-  font-size: clamp(14px, 2vw, 16px);
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -555,80 +534,99 @@
 }
 
 .pdfNavBtn:hover:not(:disabled) { background-color: #4d227c; }
-.pdfNavBtn:disabled { opacity: 0.35; cursor: default; }
+.pdfNavBtn:disabled              { opacity: 0.35; cursor: default; }
 
 .pdfPageInfo {
   color: #e5e5e5;
-  font-size: clamp(11px, 1.5vw, 13px);
+  font-size: 10px;
   font-weight: 600;
-  min-width: clamp(40px, 6vw, 52px);
+  min-width: 40px;
   text-align: center;
 }
 
-.pdfViewerBody {
+/* ── Scrollable PDF content area ───────────────────────────────────────── */
+.pdfViewerContent {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: clamp(12px, 2vw, 20px);
+  padding: 10px;
+  background-color: #525659;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
 }
 
-.pdfViewerBody :global(.react-pdf__Page) { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); }
-.pdfViewerBody :global(.react-pdf__Page canvas) { max-width: 100%; height: auto !important; }
+/* react-pdf canvas natural sizing */
+.pdfViewerContent :global(.react-pdf__Page) {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.pdfViewerContent :global(.react-pdf__Page canvas) {
+  max-width: 100%;
+  height: auto !important;
+}
 
 .pdfLoading,
 .pdfError {
   color: #ccc;
-  font-size: clamp(12px, 1.6vw, 14px);
-  padding: 40px;
+  font-size: 12px;
+  padding: 20px;
   text-align: center;
 }
 
-/* ── School section file meta ───────────────────────────────────────────── */
+/* ── School section — uploaded file metadata & empty state ─────────────── */
 .uploadedFileMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 12px;  /* ✅ Reduced gaps */
+  gap: 3px 12px;
   background-color: #f7f2ff;
   border: 1px solid #d9c8f0;
   border-radius: 6px;
-  padding: 6px 8px;  /* ✅ Reduced from 8px 10px */
+  padding: 6px 8px;
 }
 
 .uploadedFileMetaItem {
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   color: #374151;
   display: flex;
-  gap: 3px;  /* ✅ Reduced from 4px */
+  gap: 3px;
   align-items: center;
 }
 
-.uploadedFileMetaLabel { font-weight: 700; color: #4d227c; }
+.uploadedFileMetaLabel {
+  font-weight: 700;
+  color: #4d227c;
+}
 
 .noUploadBox {
   display: flex;
   align-items: center;
-  gap: 6px;  /* ✅ Reduced from 8px */
+  gap: 6px;
   background-color: #fafafa;
   border: 1px dashed #d1d5db;
   border-radius: 6px;
-  padding: 8px 10px;  /* ✅ Reduced from 10px 12px */
+  padding: 8px 10px;
 }
 
-.noUploadIcon { font-size: 20px; flex-shrink: 0; opacity: 0.5; }
+.noUploadIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
 
 .noUploadText {
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   color: #9ca3af;
   font-style: italic;
 }
 
 /* ── Assessment Session Section ─────────────────────────────────────────── */
 .sessionTypeBadge {
-  margin-left: 4px;  /* ✅ Reduced from 6px */
-  padding: 2px 6px;  /* ✅ Reduced from 2px 8px */
+  margin-left: 4px;
+  padding: 2px 6px;
   border-radius: 10px;
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -636,28 +634,30 @@
 .sessionBox {
   display: flex;
   flex-direction: column;
-  gap: 4px;  /* ✅ Reduced from 6px */
+  gap: 4px;
 }
 
 .certReminderBox {
   display: flex;
   align-items: flex-start;
-  gap: 6px;  /* ✅ Reduced from 8px */
+  gap: 6px;
   background-color: #fffbeb;
   border: 1px solid #fcd34d;
-  border-radius: 8px;
-  padding: clamp(10px, 1.8vw, 12px) clamp(12px, 2vw, 14px);
-  margin-top: 4px;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-top: 3px;
 }
 
-.certReminderIcon { font-size: clamp(14px, 1.8vw, 16px); flex-shrink: 0; line-height: 1.4; }
+.certReminderIcon {
+  font-size: 12px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
 
 .certReminderText {
-  font-size: 10px;  /* ✅ Reduced from 11px */
+  font-size: 10px;
   color: #92400e;
-  line-height: 1.5;
-  flex: 1;
-  min-width: 0;
+  line-height: 1.3;
 }
 
 /* ── Reschedule Box ─────────────────────────────────────────────────────── */
@@ -665,80 +665,76 @@
   background-color: #f7f2ff;
   border: 1px solid #d9c8f0;
   border-radius: 8px;
-  padding: 6px 8px;  /* ✅ Reduced from 8px 10px */
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;  /* ✅ Reduced from 6px */
+  gap: 4px;
 }
 
 .rescheduledStatusBadge {
-
   background-color: #fff3e0;
   color: #b45309;
-  padding: 2px 6px;  /* ✅ Reduced from 2px 8px */
-  border-radius: 20px;
-  font-weight: 700;
-  font-size: clamp(10px, 1.4vw, 12px);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 10px;
   white-space: nowrap;
 }
 
+/* ── List view card header badges ───────────────────────────────────────── */
 .newScheduleBadge {
-  background-color: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-  padding: 2px clamp(8px, 1.5vw, 12px);
-  border-radius: 20px;
-  font-size: clamp(10px, 1.4vw, 12px);
-  font-weight: 700;
-  white-space: nowrap;
+  background-color: #fff3e0;
+  color: #b45309;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .listPurposeBadge {
-  padding: 2px 6px;  /* ✅ Reduced from 2px 8px */
+  padding: 2px 6px;
   border-radius: 10px;
-  font-size: 9px;  /* ✅ Reduced from 10px */
+  font-size: 9px;
   font-weight: 600;
 }
 
 .badgeGroup {
   display: flex;
-  gap: 3px;  /* ✅ Reduced from 4px */
+  gap: 3px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */
 .btnPurple {
-  padding: 6px 14px;  /* ✅ Reduced from 8px 18px */
+  padding: 6px 14px;
   background-color: #4d227c;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 12px;  /* ✅ Reduced from 13px */
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s, transform 0.1s;
+  transition: background-color 0.15s;
   white-space: nowrap;
 }
 
-.btnPurple:hover  { background-color: #3a1a5c; }
-.btnPurple:active { transform: translateY(1px); }
+.btnPurple:hover { background-color: #3a1a5c; }
 
 .btnGreen {
-  padding: 6px 12px;  /* ✅ Reduced from 7px 14px */
+  padding: 6px 12px;
   background-color: #16a34a;
   color: #fff;
   border: none;
   border-radius: 6px;
-  font-size: 11px;  /* ✅ Reduced from 12px */
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.15s, transform 0.1s;
+  transition: background-color 0.15s;
   white-space: nowrap;
 }
 
-.btnGreen:hover  { background-color: #15803d; }
-.btnGreen:active { transform: translateY(1px); }
+.btnGreen:hover { background-color: #15803d; }
 
 /* ── Media Queries (structural shifts only) ─────────────────────────────── */
 @media (max-width: 640px) {
@@ -747,12 +743,15 @@
   .cardBody       { flex-direction: column; }
   .pdfViewerModal { max-width: 100%; max-height: 94vh; border-radius: 12px 12px 0 0; }
   .btnPurple      { width: 100%; }
-  .btnGreen       { width: 100%; }
-  .cardFooter     { justify-content: stretch; }
+  .scrollBody     { padding: 8px 12px; gap: 6px; }
+  .cardHeader     { padding: 6px 8px; }
+  .cardBody       { padding: 6px 8px; }
+  .infoLabel      { min-width: 80px; }
 }
 
 @media (max-width: 400px) {
   .dateBadge { display: none; }
   .infoRow   { flex-direction: column; gap: 2px; }
-  .infoLabel { min-width: unset; font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: #888; }
+  .modalTitle { font-size: 13px; }
+  .modal { max-width: 95%; }
 }
