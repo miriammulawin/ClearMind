@@ -1,0 +1,174 @@
+[33m3e2d9fb[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mADMIN/DOCTOR---FRONTEND[m[33m, [m[1;31morigin/ADMIN/DOCTOR---FRONTEND[m[33m)[m HEAD@{0}: reset: moving to HEAD~1
+[33m2806b31[m HEAD@{1}: reset: moving to HEAD~1
+[33m6cf7ee2[m HEAD@{2}: reset: moving to HEAD~1
+[33mb0e6906[m HEAD@{3}: reset: moving to HEAD~1
+[33m64ee966[m HEAD@{4}: reset: moving to HEAD~1
+[33m0b6bbe7[m HEAD@{5}: reset: moving to HEAD~1
+[33mb91c417[m HEAD@{6}: reset: moving to HEAD~1
+[33m4b36b65[m HEAD@{7}: commit: fix merging
+[33mb91c417[m HEAD@{8}: commit (merge): Resolve merge conflicts
+[33m0b6bbe7[m HEAD@{9}: reset: moving to HEAD
+[33m0b6bbe7[m HEAD@{10}: commit: commiting the modal
+[33m64ee966[m HEAD@{11}: checkout: moving from ADMIN/DOCTOR---FRONTEND to ADMIN/DOCTOR---FRONTEND
+[33m64ee966[m HEAD@{12}: reset: moving to HEAD
+[33m64ee966[m HEAD@{13}: reset: moving to HEAD
+[33m64ee966[m HEAD@{14}: commit: adding modal
+[33mb0e6906[m HEAD@{15}: reset: moving to HEAD
+[33mb0e6906[m HEAD@{16}: commit (merge): Merge BRI-LARAVEL-BACKEND into ADMIN/DOCTOR---FRONTEND
+[33m6cf7ee2[m HEAD@{17}: checkout: moving from ADMIN/DOCTOR---FRONTEND to ADMIN/DOCTOR---FRONTEND
+[33m6cf7ee2[m HEAD@{18}: checkout: moving from ADMIN/DOCTOR---FRONTEND to ADMIN/DOCTOR---FRONTEND
+[33m7747f28[m[33m ([m[1;31morigin/BRI-LARAVEL-BACKEND[m[33m, [m[1;32mBRI-LARAVEL-BACKEND[m[33m)[m HEAD@{19}: commit: for announcement controller, table and database seeder and api fixing the doctor appointment and doctor dashboard
+[33m1223449[m HEAD@{20}: commit: adding controller for appointment fixing some table in database and also deleting add image array replacing with create doctor images
+[33m6d90aba[m HEAD@{21}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33mcf7f8b6[m HEAD@{22}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m6d90aba[m HEAD@{23}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33mcf7f8b6[m HEAD@{24}: pull --tags origin ADMIN/DOCTOR---FRONTEND: Fast-forward
+[33m007e83b[m HEAD@{25}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m6d90aba[m HEAD@{26}: commit: .
+[33m2f8fb86[m HEAD@{27}: commit: make cert picture visible to the doctor profile
+[33me153dd8[m HEAD@{28}: pull --tags origin BRI-LARAVEL-BACKEND: Merge made by the 'ort' strategy.
+[33m3c13a44[m HEAD@{29}: commit: changes, normalization from doctors certification, board cert and also fixing the front synchronizing to my backend and adding data helpers for getting normalized relation to my database and connect it to front using datahelper
+[33m03326cb[m HEAD@{30}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33m007e83b[m HEAD@{31}: commit: fix the modal
+[33m412e22a[m HEAD@{32}: commit: add modals for appointment (doctor)
+[33ma17f0e0[m HEAD@{33}: commit: fix the set up appointment
+[33md8a4bd1[m HEAD@{34}: commit: add changes
+[33m2c5301c[m HEAD@{35}: commit: add the changes in new appointment
+[33m6dc805c[m HEAD@{36}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m03326cb[m HEAD@{37}: commit: changes and fetching front
+[33m3bc111c[m HEAD@{38}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33m6dc805c[m HEAD@{39}: commit: add and fix the patients info
+[33m20c3d70[m HEAD@{40}: commit: fix the components
+[33m2edfb9a[m HEAD@{41}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m3bc111c[m HEAD@{42}: commit: fixing the profile picture
+[33m2f35260[m HEAD@{43}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33m2edfb9a[m HEAD@{44}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m2f35260[m HEAD@{45}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33m2edfb9a[m HEAD@{46}: commit: commiting backend
+[33ma15904c[m HEAD@{47}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m2f35260[m HEAD@{48}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33ma15904c[m HEAD@{49}: commit: add for the doctor
+[33md1d4f32[m HEAD@{50}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m2f35260[m HEAD@{51}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33md1d4f32[m HEAD@{52}: pull --tags origin ADMIN/DOCTOR---FRONTEND: Fast-forward
+[33md3d2fb9[m HEAD@{53}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m2f35260[m HEAD@{54}: commit: added in backend
+[33m0e056f1[m HEAD@{55}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33md3d2fb9[m HEAD@{56}: checkout: moving from BRI-LARAVEL-BACKEND to ADMIN/DOCTOR---FRONTEND
+[33m0e056f1[m HEAD@{57}: commit: added in backend
+[33m097bfc0[m HEAD@{58}: commit: adding address, creating controller for create doctors account and have update for status that if the doctor is active or inactive
+[33m188aed8[m HEAD@{59}: commit: Admin Patient with total consultations and consultation request
+[33m2e7b7e5[m HEAD@{60}: commit: Fixing the Doctor Sidebar and token expiration if the user close the page it will automatically go to login page
+[33m140fa98[m HEAD@{61}: commit: Admin, pie chart modifications and total patients
+[33mfb5d4da[m HEAD@{62}: commit: fix the prc number and fixing the practice since to reflect it in database
+[33me7e3353[m HEAD@{63}: commit: BACKEND FIX FOR doctor profile, sidebar and the tables make it eloquent 3 tables
+[33m55bcb65[m HEAD@{64}: commit: fixing modal, login and also api and doctor controller and auth controller
+[33mdeb6b32[m HEAD@{65}: commit: Updated backend from doctor profile, modal and the doctor dashboard
+[33m2dcd8c6[m HEAD@{66}: commit: handle Logout remove token
+[33mcc9280f[m HEAD@{67}: commit: faker data, montly patients, 1000 fake seeders and fixing routing, adding status for pie chart
+[33m80e570a[m HEAD@{68}: commit: userfactory and database seeder with 100 sample client
+[33m23888ed[m HEAD@{69}: commit: backend laravel
+[33md3d2fb9[m HEAD@{70}: checkout: moving from ADMIN/DOCTOR---FRONTEND to BRI-LARAVEL-BACKEND
+[33md3d2fb9[m HEAD@{71}: checkout: moving from Backend-Patients to ADMIN/DOCTOR---FRONTEND
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{72}: checkout: moving from ADMIN/DOCTOR---FRONTEND to Backend-Patients
+[33md3d2fb9[m HEAD@{73}: checkout: moving from Backend-Patients to ADMIN/DOCTOR---FRONTEND
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{74}: checkout: moving from ADMIN/DOCTOR---FRONTEND to Backend-Patients
+[33md3d2fb9[m HEAD@{75}: checkout: moving from Backend-Patients to ADMIN/DOCTOR---FRONTEND
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{76}: checkout: moving from ADMIN/DOCTOR---FRONTEND to Backend-Patients
+[33md3d2fb9[m HEAD@{77}: checkout: moving from Backend-Patients to ADMIN/DOCTOR---FRONTEND
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{78}: checkout: moving from ADMIN/DOCTOR---FRONTEND to Backend-Patients
+[33md3d2fb9[m HEAD@{79}: checkout: moving from Backend-Patients to ADMIN/DOCTOR---FRONTEND
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{80}: checkout: moving from ADMIN/DOCTOR---FRONTEND to Backend-Patients
+[33md3d2fb9[m HEAD@{81}: checkout: moving from main to ADMIN/DOCTOR---FRONTEND
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{82}: checkout: moving from Backend-Patients to main
+[33mc9f083c[m[33m ([m[1;31morigin/Backend-Patients[m[33m, [m[1;32mBackend-Patients[m[33m)[m HEAD@{83}: commit: laravel-backend
+[33mc135d58[m[33m ([m[1;32mCREATE-ACCOUNT-BRI[m[33m)[m HEAD@{84}: checkout: moving from CREATE-ACCOUNT-BRI to Backend-Patients
+[33mc135d58[m[33m ([m[1;32mCREATE-ACCOUNT-BRI[m[33m)[m HEAD@{85}: commit: CHANGE THE ACC SETUP
+[33ma5d9584[m HEAD@{86}: commit: BACKEND AND FRONT END SET UP ACCOUNT
+[33mbd73b35[m HEAD@{87}: checkout: moving from FINAL-LAYOUT-ADMIN to CREATE-ACCOUNT-BRI
+[33m0086171[m[33m ([m[1;31morigin/FINAL-LAYOUT-ADMIN[m[33m, [m[1;32mFINAL-LAYOUT-ADMIN[m[33m)[m HEAD@{88}: checkout: moving from CREATE-ACCOUNT-BRI to FINAL-LAYOUT-ADMIN
+[33mbd73b35[m HEAD@{89}: commit: CHANGES
+[33m6662cb8[m HEAD@{90}: commit: ACCOUNT SET UP ACCOUNT
+[33mcf49e04[m HEAD@{91}: commit: add
+[33mee40c03[m HEAD@{92}: commit: ADD
+[33m0086171[m[33m ([m[1;31morigin/FINAL-LAYOUT-ADMIN[m[33m, [m[1;32mFINAL-LAYOUT-ADMIN[m[33m)[m HEAD@{93}: checkout: moving from FINAL-LAYOUT-ADMIN to CREATE-ACCOUNT-BRI
+[33m0086171[m[33m ([m[1;31morigin/FINAL-LAYOUT-ADMIN[m[33m, [m[1;32mFINAL-LAYOUT-ADMIN[m[33m)[m HEAD@{94}: commit: fix the sidebar
+[33m617795d[m HEAD@{95}: commit: fix
+[33mc65b7fe[m HEAD@{96}: pull --tags origin FINAL-LAYOUT-ADMIN: Fast-forward
+[33m59f5735[m HEAD@{97}: checkout: moving from LIZ-BACKEND to FINAL-LAYOUT-ADMIN
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{98}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m59f5735[m HEAD@{99}: pull: Fast-forward
+[33m70fc465[m HEAD@{100}: commit: logout pushing to final layout admin
+[33m8c9c5ed[m HEAD@{101}: pull --tags origin FINAL-LAYOUT-ADMIN: Fast-forward
+[33m1d8464d[m HEAD@{102}: checkout: moving from LIZ-BACKEND to FINAL-LAYOUT-ADMIN
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{103}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m1d8464d[m HEAD@{104}: commit: add lohout
+[33md879f87[m HEAD@{105}: commit: add this logout
+[33m13992b9[m HEAD@{106}: checkout: moving from LIZ-BACKEND to FINAL-LAYOUT-ADMIN
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{107}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m13992b9[m HEAD@{108}: checkout: moving from LIZ-BACKEND to FINAL-LAYOUT-ADMIN
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{109}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m13992b9[m HEAD@{110}: commit: add the routing
+[33mcb415fa[m HEAD@{111}: checkout: moving from DOCTOR-LAYOUT-PAGES to FINAL-LAYOUT-ADMIN
+[33m939c122[m[33m ([m[1;32mDOCTOR-LAYOUT-PAGES[m[33m)[m HEAD@{112}: checkout: moving from FINAL-LAYOUT-ADMIN to DOCTOR-LAYOUT-PAGES
+[33mcb415fa[m HEAD@{113}: commit: add this doctor frontend
+[33m9ced323[m HEAD@{114}: checkout: moving from DOCTOR-LAYOUT-PAGES to FINAL-LAYOUT-ADMIN
+[33m939c122[m[33m ([m[1;32mDOCTOR-LAYOUT-PAGES[m[33m)[m HEAD@{115}: checkout: moving from FINAL-LAYOUT-ADMIN to DOCTOR-LAYOUT-PAGES
+[33m9ced323[m HEAD@{116}: commit: add a modal
+[33m5a13a97[m HEAD@{117}: checkout: moving from LIZ-BACKEND to FINAL-LAYOUT-ADMIN
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{118}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m5a13a97[m HEAD@{119}: pull --tags origin FINAL-LAYOUT-ADMIN: Fast-forward
+[33m5e46e7e[m HEAD@{120}: checkout: moving from DOCTOR-LAYOUT-PAGES to FINAL-LAYOUT-ADMIN
+[33m939c122[m[33m ([m[1;32mDOCTOR-LAYOUT-PAGES[m[33m)[m HEAD@{121}: commit: profile
+[33m00ba6eb[m HEAD@{122}: commit: ADD BILLING
+[33m2c552f4[m HEAD@{123}: checkout: moving from main to DOCTOR-LAYOUT-PAGES
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{124}: checkout: moving from LIZ-BACKEND to main
+[33m0d8242e[m[33m ([m[1;31morigin/LIZ-BACKEND[m[33m, [m[1;32mLIZ-BACKEND[m[33m)[m HEAD@{125}: pull --tags origin LIZ-BACKEND: Merge made by the 'ort' strategy.
+[33m78f7c5b[m HEAD@{126}: commit: pushing axios client
+[33m9d01954[m HEAD@{127}: commit: front end for adminCreate accounts with logout backend
+[33ma6832c6[m[33m ([m[1;32mBRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)[m[33m)[m HEAD@{128}: checkout: moving from BRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE) to LIZ-BACKEND
+[33ma6832c6[m[33m ([m[1;32mBRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)[m[33m)[m HEAD@{129}: checkout: moving from BRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE) to BRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)
+[33ma6832c6[m[33m ([m[1;32mBRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)[m[33m)[m HEAD@{130}: checkout: moving from LIZ-BACKEND to BRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)
+[33ma6832c6[m[33m ([m[1;32mBRI-FRONTEND(CREATE-ACCOUNT-ADMIN-SIDE)[m[33m)[m HEAD@{131}: pull --tags origin LIZ-BACKEND: Merge made by the 'ort' strategy.
+[33m4542e12[m HEAD@{132}: commit: front end for creating accounts admin side (doctor)
+[33m2c279d4[m HEAD@{133}: commit: completed registration/login with backend
+[33m5e46e7e[m HEAD@{134}: checkout: moving from FINAL-LAYOUT-ADMIN to LIZ-BACKEND
+[33m5e46e7e[m HEAD@{135}: checkout: moving from main to FINAL-LAYOUT-ADMIN
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{136}: checkout: moving from BRI-backend-registration to main
+[33m75dfc15[m[33m ([m[1;31morigin/BRI-backend-registration[m[33m, [m[1;32mBRI-backend-registration[m[33m)[m HEAD@{137}: commit: updated registration
+[33maf6ef57[m HEAD@{138}: checkout: moving from BRI-backend-registration to BRI-backend-registration
+[33maf6ef57[m HEAD@{139}: checkout: moving from FINAL-LAYOUT-ADMIN to BRI-backend-registration
+[33m5e46e7e[m HEAD@{140}: commit: delete
+[33mcfef218[m HEAD@{141}: checkout: moving from BRI-backend-registration to FINAL-LAYOUT-ADMIN
+[33maf6ef57[m HEAD@{142}: checkout: moving from FINAL-LAYOUT-ADMIN to BRI-backend-registration
+[33mcfef218[m HEAD@{143}: checkout: moving from BRI-backend-registration to FINAL-LAYOUT-ADMIN
+[33maf6ef57[m HEAD@{144}: commit: fix registration for client
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{145}: checkout: moving from main to BRI-backend-registration
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{146}: checkout: moving from main to main
+[33ma0845b9[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{147}: pull: Fast-forward
+[33m69a5896[m HEAD@{148}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33md9700ce[m HEAD@{149}: commit: cleaning repo
+[33m991b5c0[m HEAD@{150}: commit: create accounts
+[33m5f18c0c[m HEAD@{151}: commit: fix the index.css and routes for client home
+[33m60a6455[m HEAD@{152}: pull: Fast-forward
+[33m5f5b133[m HEAD@{153}: reset: moving to HEAD~1
+[33m60a6455[m HEAD@{154}: pull: Fast-forward
+[33med1d6f2[m HEAD@{155}: commit: push my code registration,login,index.css and create accounts for admin (not fix yet)
+[33m02551d2[m HEAD@{156}: commit: fixing LoginPage front
+[33m83d800b[m HEAD@{157}: pull: Fast-forward
+[33m7020475[m HEAD@{158}: pull: Fast-forward
+[33mbcd040d[m HEAD@{159}: commit: Empty login
+[33mdf93a27[m HEAD@{160}: pull --tags origin main: Fast-forward
+[33mf9dbf0e[m HEAD@{161}: reset: moving to HEAD~1
+[33mdf93a27[m HEAD@{162}: pull --tags origin main: Fast-forward
+[33mf9dbf0e[m HEAD@{163}: reset: moving to HEAD~1
+[33mdf93a27[m HEAD@{164}: pull --tags origin main: Merge made by the 'ort' strategy.
+[33mf9dbf0e[m HEAD@{165}: commit: undo
+[33m5615dd9[m HEAD@{166}: reset: moving to HEAD~1
+[33md012b89[m HEAD@{167}: commit (merge): Merge branch 'main' of https://github.com/miriammulawin/ClearMind
+[33m5615dd9[m HEAD@{168}: pull --tags origin main: updating HEAD
+[33m5615dd9[m HEAD@{169}: pull --tags origin main: updating HEAD
+[33m5615dd9[m HEAD@{170}: pull --tags origin main: updating HEAD
+[33m5615dd9[m HEAD@{171}: commit: registration for client
+[33mbb2dc8e[m HEAD@{172}: commit: database connection
+[33m1d41d43[m HEAD@{173}: clone: from https://github.com/miriammulawin/ClearMind.git

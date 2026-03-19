@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Row, Col, Form, Button, Image } from "react-bootstrap";
+import { Card, Row, Col, Form, Button, Image, Container } from "react-bootstrap";
 import "./Registration.css";
 import logo_registration from "./assets/CMPS_Logo.png";
 import {
@@ -31,7 +31,27 @@ function Registration() {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Gender options array
+  const genderOptions = [
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
+    { value: "transgender", label: "Transgender" },
+    { value: "trans-woman", label: "Trans woman" },
+    { value: "trans-man", label: "Trans man" },
+    { value: "non-binary", label: "Non-binary" },
+    { value: "genderqueer", label: "Genderqueer" },
+    { value: "gender-fluid", label: "Gender fluid" },
+    { value: "agender", label: "Agender" },
+    { value: "bigender", label: "Bigender" },
+    { value: "two-spirit", label: "Two-spirit" },
+    { value: "intersex", label: "Intersex" },
+    { value: "pangender", label: "Pangender" },
+    { value: "prefer-not-to-say", label: "Prefer not to say" },
+  ];
+
+  // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -39,43 +59,159 @@ function Registration() {
       [name]: type === "checkbox" ? checked : value,
     }));
 
+    // Clear error for this field when user starts typing
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
     }
   };
 
+  // Validate form
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim())
+    // First Name validation
+    if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.dob) newErrors.dob = "Date of birth is required";
-    if (!formData.sex) newErrors.sex = "Sex is required";
-    if (!formData.contactNo.trim())
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = "First name must be at least 2 characters";
+    }
+
+    // Last Name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = "Last name must be at least 2 characters";
+    }
+
+    // Date of Birth validation
+    if (!formData.dob) {
+      newErrors.dob = "Date of birth is required";
+    } else {
+      const dobDate = new Date(formData.dob);
+      const today = new Date();
+      const age = today.getFullYear() - dobDate.getFullYear();
+      if (age < 13) {
+        newErrors.dob = "You must be at least 13 years old";
+      }
+    }
+
+    // Sex validation
+    if (!formData.sex) {
+      newErrors.sex = "Sex is required";
+    }
+
+    // Contact Number validation
+    if (!formData.contactNo.trim()) {
       newErrors.contactNo = "Contact number is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
+    } else if (!/^[0-9\s\-\+\(\)]+$/.test(formData.contactNo)) {
+      newErrors.contactNo = "Invalid contact number format";
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
-    if (!formData.password) newErrors.password = "Password is required";
-    else if (formData.password.length < 6)
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword)
+    } else if (!/(?=.*[A-Za-z])/.test(formData.password)) {
+      newErrors.password = "Password must contain letters";
+    }
+
+    // Confirm Password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.agreeTerms)
-      newErrors.agreeTerms = "You must agree to the terms";
+    }
+
+    // Terms validation
+    if (!formData.agreeTerms) {
+      newErrors.agreeTerms = "You must agree to the terms and conditions";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  // Handle form submission
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted:", formData);
-      alert("Registration successful!");
-      navigate("/");
+
+    if (!validateForm()) {
+      console.log("Form validation failed");
+      return;
     }
+
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API call
+      console.log("Form submitted:", formData);
+
+      // Here you would normally send data to your backend
+      // const response = await fetch('/api/register', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(formData)
+      // });
+
+      // if (response.ok) {
+      //   alert('Registration successful!');
+      //   navigate('/');
+      // }
+
+      // For demo purposes:
+      alert("Registration successful! Redirecting to home...");
+      
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        dob: "",
+        sex: "",
+        contactNo: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        agreeTerms: false,
+      });
+      setErrors({});
+
+      // Navigate after a short delay
+      setTimeout(() => {
+        navigate("/");
+      }, 500);
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred during registration. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle password visibility toggle
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  // Handle login link
+  const handleLoginLink = (e) => {
+    e.preventDefault();
+    navigate("/login");
   };
 
   return (
@@ -134,7 +270,7 @@ function Registration() {
                   alt="ClearMind Logo"
                   fluid
                   className="mb-4"
-                  style={{ maxWidth: "200px" }}
+                  style={{ maxWidth: "200px", width: "100%" }}
                 />
                 <h3 className="form-title mb-4" style={{ fontSize: "24px" }}>
                   REGISTRATION
@@ -155,10 +291,14 @@ function Registration() {
                       isInvalid={!!errors.firstName}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="given-name"
+                      disabled={isSubmitting}
                     />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.firstName}
-                    </Form.Control.Feedback>
+                    {errors.firstName && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.firstName}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -175,10 +315,14 @@ function Registration() {
                       isInvalid={!!errors.lastName}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="family-name"
+                      disabled={isSubmitting}
                     />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.lastName}
-                    </Form.Control.Feedback>
+                    {errors.lastName && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.lastName}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -194,14 +338,17 @@ function Registration() {
                       isInvalid={!!errors.dob}
                       className="input-with-icon"
                       size="sm"
+                      disabled={isSubmitting}
                     />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.dob}
-                    </Form.Control.Feedback>
+                    {errors.dob && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.dob}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
-                {/* Sex */}
+                {/* Sex - RESPONSIVE DROPDOWN */}
                 <Form.Group className="mb-3">
                   <div className="input-icon-wrapper">
                     <FaUser className="input-icon-left" />
@@ -212,14 +359,21 @@ function Registration() {
                       isInvalid={!!errors.sex}
                       className="input-with-icon"
                       size="sm"
+                      disabled={isSubmitting}
+                      aria-label="Select your sex/gender"
                     >
                       <option value="">Sex *</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
+                      {genderOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.sex}
-                    </Form.Control.Feedback>
+                    {errors.sex && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.sex}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -236,10 +390,14 @@ function Registration() {
                       isInvalid={!!errors.contactNo}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="tel"
+                      disabled={isSubmitting}
                     />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.contactNo}
-                    </Form.Control.Feedback>
+                    {errors.contactNo && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.contactNo}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -256,10 +414,14 @@ function Registration() {
                       isInvalid={!!errors.email}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="email"
+                      disabled={isSubmitting}
                     />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.email}
-                    </Form.Control.Feedback>
+                    {errors.email && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.email}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -276,16 +438,23 @@ function Registration() {
                       isInvalid={!!errors.password}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="new-password"
+                      disabled={isSubmitting}
                     />
                     <span
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={togglePasswordVisibility}
                       className="input-icon-right"
+                      style={{ cursor: "pointer" }}
+                      role="button"
+                      tabIndex="0"
                     >
                       {showPassword ? <FaEye /> : <FaEyeSlash />}
                     </span>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.password}
-                    </Form.Control.Feedback>
+                    {errors.password && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.password}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -302,18 +471,23 @@ function Registration() {
                       isInvalid={!!errors.confirmPassword}
                       className="input-with-icon"
                       size="sm"
+                      autoComplete="new-password"
+                      disabled={isSubmitting}
                     />
                     <span
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={toggleConfirmPasswordVisibility}
                       className="input-icon-right"
+                      style={{ cursor: "pointer" }}
+                      role="button"
+                      tabIndex="0"
                     >
                       {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
                     </span>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.confirmPassword}
-                    </Form.Control.Feedback>
+                    {errors.confirmPassword && (
+                      <Form.Control.Feedback type="invalid" className="d-block">
+                        {errors.confirmPassword}
+                      </Form.Control.Feedback>
+                    )}
                   </div>
                 </Form.Group>
 
@@ -329,16 +503,19 @@ function Registration() {
                     label={
                       <>
                         I agree to the{" "}
-                        <a href="#" className="terms-link">
+                        <a href="#" onClick={(e) => e.preventDefault()} className="terms-link">
                           Terms and Conditions
                         </a>{" "}
                         <span className="text-danger">*</span>
                       </>
                     }
+                    disabled={isSubmitting}
                   />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.agreeTerms}
-                  </Form.Control.Feedback>
+                  {errors.agreeTerms && (
+                    <Form.Control.Feedback type="invalid" className="d-block">
+                      {errors.agreeTerms}
+                    </Form.Control.Feedback>
+                  )}
                 </Form.Group>
 
                 {/* Submit Button */}
@@ -346,8 +523,20 @@ function Registration() {
                   variant="none"
                   type="submit"
                   className="submit-btn w-100 mb-3 fw-bold"
+                  disabled={isSubmitting}
                 >
-                  REGISTER
+                  {isSubmitting ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
+                      REGISTERING...
+                    </>
+                  ) : (
+                    "REGISTER"
+                  )}
                 </Button>
 
                 {/* Login Link */}
@@ -356,7 +545,8 @@ function Registration() {
                   <button
                     type="button"
                     className="link-button"
-                    onClick={() => navigate("/login")}
+                    onClick={handleLoginLink}
+                    disabled={isSubmitting}
                   >
                     Log In
                   </button>

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { format } from "date-fns";
 import {
   FiX,
@@ -145,10 +145,11 @@ const getDotColor = (appt) => {
   return EVENT_COLORS.online;
 };
 
-// ── Reusable accordion ─────────────────────────────────────────────────────
+// ✅ UPDATED: Reusable accordion with scrollable content area
 function Accordion({ titleLeft, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   const ref = useRef(null);
+  const contentRef = useRef(null);
 
   const handleToggle = () => {
     setOpen((o) => !o);
@@ -169,7 +170,12 @@ function Accordion({ titleLeft, defaultOpen = false, children }) {
           className={`${styles.accordionChevron} ${open ? styles.rotated : ""}`}
         />
       </button>
-      {open && <div className={styles.accordionBody}>{children}</div>}
+      {/* ✅ NEW: Scrollable content area for each accordion */}
+      {open && (
+        <div className={styles.accordionBodyWrapper} ref={contentRef}>
+          <div className={styles.accordionBody}>{children}</div>
+        </div>
+      )}
     </section>
   );
 }
@@ -253,6 +259,28 @@ function PdfViewerModal({ label, filename, onClose }) {
             </button>
           </div>
         </div>
+
+        {/* ✅ Scrollable content area */}
+        <div className={styles.pdfViewerContent}>
+          <Document
+            file={src}
+            onLoadSuccess={({ numPages }) => {
+              setNumPages(numPages);
+              setPageNumber(1);
+            }}
+            loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
+            error={<div className={styles.pdfError}>Failed to load PDF.</div>}
+          >
+            <Page
+              pageNumber={pageNumber}
+              scale={scale}
+              renderTextLayer
+              renderAnnotationLayer
+            />
+          </Document>
+        </div>
+
+        {/* ✅ Fixed toolbar at bottom */}
         <div className={styles.pdfToolbar}>
           <div className={styles.pdfPagination}>
             <button
@@ -294,24 +322,6 @@ function PdfViewerModal({ label, filename, onClose }) {
               +
             </button>
           </div>
-        </div>
-        <div className={styles.pdfViewerBody}>
-          <Document
-            file={src}
-            onLoadSuccess={({ numPages }) => {
-              setNumPages(numPages);
-              setPageNumber(1);
-            }}
-            loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
-            error={<div className={styles.pdfError}>Failed to load PDF.</div>}
-          >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer
-              renderAnnotationLayer
-            />
-          </Document>
         </div>
       </div>
     </div>
@@ -765,7 +775,7 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
   const isRescheduled = appt.status === "Rescheduled" || isGhost;
   const displayDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const displayDateShort = format(new Date(appt.start), "MM/dd/yyyy");
+  const displayDateShort = format(new Date(appt.start), "MMMM dd, yyyy");  /* ✅ Changed from MM/dd/yyyy to text format */
 
   const serviceType = appt.serviceType || appt.visitType || "";
   const isAssessment = isPsychAssessment(serviceType);

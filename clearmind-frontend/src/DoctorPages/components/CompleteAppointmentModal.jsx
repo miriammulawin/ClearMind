@@ -120,7 +120,6 @@ function ClinicalNotesSection() {
   return (
     <div className="clinical-notes-section">
       {/* Tab Bar */}
-      {/* Tab Bar */}
       <div
         style={{
           display: "flex",
@@ -337,8 +336,7 @@ function ClinicalNotesSection() {
 
 /* ─────────────────────────────────────────────────────────────────
    CompleteAppointmentModal
-   — Uses DayAppointmentsModal.module.css for identical design
-   Props: isOpen, onClose, appt, onConfirm
+   ✅ FIXED: Proper flex layout, removed conflicting inline styles
 ───────────────────────────────────────────────────────────────── */
 function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   if (!isOpen || !appt) return null;
@@ -467,6 +465,17 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
         }
         .clinical-save-btn:hover { filter: brightness(1.1); }
 
+        /* ✅ FIXED: Proper footer styling without conflicting inline styles */
+        .cam-footer {
+          padding: 14px 20px;
+          border-top: 1px solid #ede7f6;
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          background: #faf7ff;
+          flex-shrink: 0;  /* ✅ Footer doesn't shrink */
+        }
+
         /* confirm button in footer */
         .cam-confirm-btn {
           display: flex; align-items: center; gap: 6px;
@@ -475,6 +484,12 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
           cursor: pointer; font-family: inherit; transition: background 0.18s;
         }
         .cam-confirm-btn:hover { background: #166534; }
+
+        .cam-cancel-btn {
+          padding: 9px 20px; border-radius: 8px; border: 1.5px solid #ddd;
+          background: #fff; color: #555; font-weight: 600; font-size: 13px;
+          cursor: pointer; font-family: inherit;
+        }
       `}</style>
 
       {/* ── Overlay — same as DayAppointmentsModal ── */}
@@ -491,7 +506,7 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
             </div>
           </div>
 
-          {/* ── Scroll body ── */}
+          {/* ── Scroll body ✅ FIXED: Proper flex layout ── */}
           <div className={styles.scrollBody}>
             {/* Appointment info card — same card style as DayAppointmentsModal */}
             <section className={styles.card}>
@@ -539,32 +554,9 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
             </section>
           </div>
 
-          {/* ── Footer ── */}
-          <div
-            className={styles.cardFooter}
-            style={{
-              padding: "14px 20px",
-              borderTop: "1px solid #ede7f6",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 10,
-              background: "#faf7ff",
-            }}
-          >
-            <button
-              onClick={onClose}
-              style={{
-                padding: "9px 20px",
-                borderRadius: 8,
-                border: "1.5px solid #ddd",
-                background: "#fff",
-                color: "#555",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
+          {/* ── Footer ✅ FIXED: Proper CSS class instead of inline styles ── */}
+          <div className="cam-footer">
+            <button className="cam-cancel-btn" onClick={onClose}>
               Cancel
             </button>
             <button className="cam-confirm-btn" onClick={handleConfirm}>
