@@ -1,74 +1,104 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/* ══════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════ */
 .admin-content .row {
   background-color: white;
+}
+
+.container-fluid {
+  background-color: white;
+  font-family: "Poppins", sans-serif;
+  padding: clamp(10px, 2vw, 24px);
+}
+
+/* ══════════════════════════════════════════════
+   DASHBOARD CARD
+══════════════════════════════════════════════ */
+.dashboard-card {
+  background: rgba(78, 35, 124, 0.06);
+  border-radius: clamp(10px, 1.5vw, 14px);
+  padding: clamp(0.8rem, 2vw, 1.2rem) clamp(0.9rem, 2.5vw, 1.5rem);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e0d4ff;
+  height: 100%;
+  margin-top: clamp(8px, 1.5vw, 12px);
 }
 
 .dashboard-card hr {
   margin-top: -17px;
 }
 
-.dashboard-card {
-  background: rgba(78, 35, 124, 0.06);
-  border-radius: 14px;
-  padding: 1.2rem 1.5rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e0d4ff;
-  height: 100%;
-  margin-top: 12px;
-}
-
 .dashboard-card h5 {
-  font-weight: bolder;
+  font-weight: 700;
   color: #2e104e;
   margin: 0;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
 }
 
+/* ══════════════════════════════════════════════
+   CARD HEADER
+══════════════════════════════════════════════ */
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: clamp(4px, 1vw, 8px);
   border-bottom: 1px solid #eee;
-  padding-bottom: 0.6rem;
-  margin-bottom: 1rem;
+  padding-bottom: clamp(0.4rem, 1vw, 0.6rem);
+  margin-bottom: clamp(0.6rem, 1.5vw, 1rem);
 }
 
 .card-header h5 {
-  font-weight: bolder;
+  font-weight: 700;
   color: #2e104e;
   margin: 0;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
 }
 
 .card-date {
-  font-size: 0.85rem;
+  font-size: clamp(0.72rem, 1.3vw, 0.85rem);
   color: #888;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(4px, 0.8vw, 8px);
+  flex-wrap: wrap;
 }
 
 .card-date span {
   background: #4d227c;
   color: #fff;
-  font-size: 0.75rem;
-  padding: 2px 7px;
+  font-size: clamp(0.65rem, 1.1vw, 0.75rem);
+  padding: 2px clamp(5px, 1vw, 7px);
   border-radius: 6px;
   font-weight: bold;
 }
 
+/* ══════════════════════════════════════════════
+   CARD BODY
+══════════════════════════════════════════════ */
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: clamp(8px, 1.5vw, 14px);
 }
 
+/* ══════════════════════════════════════════════
+   CONSULT ITEM
+══════════════════════════════════════════════ */
 .consult-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .consult-item p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
   color: #555;
 }
 
@@ -76,48 +106,55 @@
   background: #6f2dbd;
   color: #fff;
   border: none;
-  padding: 6px 14px;
+  padding: clamp(4px, 0.8vw, 6px) clamp(10px, 1.5vw, 14px);
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: clamp(0.72rem, 1.2vw, 0.8rem);
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: background 0.2s;
 }
 
 .verify-btn:hover {
   background: #5a23a3;
 }
 
+/* ══════════════════════════════════════════════
+   APPOINTMENT ITEMS
+══════════════════════════════════════════════ */
 .appointment-icon-text {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.2rem;
+  gap: clamp(0.3rem, 0.8vw, 0.5rem);
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
   color: #4d227c;
 }
 
 .appointment-items p {
   color: #555555a8;
+  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
+  margin: 0;
 }
 
 .appointment-icon {
-  font-size: 1.5rem;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
   color: #4d227c;
 }
 
-.container-fluid {
-  background-color: white;
-}
-
+/* ══════════════════════════════════════════════
+   PATIENTS TABLE
+══════════════════════════════════════════════ */
 .patients-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: clamp(0.75rem, 1.3vw, 0.9rem);
 }
 
 .patients-table th,
 .patients-table td {
-  padding: 0.8rem 1rem;
+  padding: clamp(0.45rem, 1vw, 0.8rem) clamp(0.5rem, 1.5vw, 1rem);
   text-align: left;
   border-bottom: 1px solid #e0d4ff;
+  white-space: nowrap;
 }
 
 .patients-table th {
@@ -133,22 +170,37 @@
   overflow-x: auto;
 }
 
+/* ══════════════════════════════════════════════
+   TABLE PAGINATION
+══════════════════════════════════════════════ */
 .table-pagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
-  font-size: 0.85rem;
+  flex-wrap: wrap;
+  gap: clamp(4px, 1vw, 8px);
+  margin-top: clamp(0.6rem, 1.5vw, 1rem);
+  font-size: clamp(0.72rem, 1.2vw, 0.85rem);
   color: #888;
+}
+
+.pagination-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(2px, 0.5vw, 4px);
 }
 
 .pagination-buttons button {
   background: #f0e6ff;
   border: none;
-  margin: 0 2px;
-  padding: 3px 8px;
+  padding: clamp(2px, 0.5vw, 3px) clamp(6px, 1vw, 8px);
   border-radius: 4px;
   cursor: pointer;
+  font-size: clamp(0.7rem, 1.1vw, 0.8rem);
+  font-family: "Poppins", sans-serif;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .pagination-buttons button:hover {
@@ -156,39 +208,39 @@
   color: #fff;
 }
 
+/* ══════════════════════════════════════════════
+   PIE CHART
+══════════════════════════════════════════════ */
 .pie-chart-container {
   position: relative;
-  height: 300px;
+  height: clamp(220px, 30vw, 300px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 /* ══════════════════════════════════════════════
-   ANNOUNCEMENTS — Admin Style
+   ANNOUNCEMENTS
 ══════════════════════════════════════════════ */
-.announcement-card {
-  /* inherits dashboard-card */
-}
-
 .announcement-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(5px, 1vw, 8px);
   font-weight: 700;
   color: #2e104e;
   margin: 0;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
 }
 
 .announce-icon {
   color: #4d227c;
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
 }
 
 .announce-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: clamp(8px, 1.5vw, 12px);
   margin-top: 4px;
 }
 
@@ -196,9 +248,9 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-radius: 10px;
-  padding: 14px 16px;
-  gap: 12px;
+  border-radius: clamp(8px, 1.2vw, 10px);
+  padding: clamp(10px, 1.8vw, 14px) clamp(12px, 2vw, 16px);
+  gap: clamp(8px, 1.5vw, 12px);
   border: 1px solid #e0d4ff;
   background: #faf7ff;
   transition:
@@ -222,49 +274,52 @@
 
 .announce-left {
   flex: 1;
+  min-width: 0;
 }
 
 .announce-item-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: clamp(5px, 1vw, 8px);
   margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
 .priority-badge {
   background: #dc2626;
   color: #fff;
-  font-size: 0.7rem;
-  padding: 2px 8px;
+  font-size: clamp(0.62rem, 1vw, 0.7rem);
+  padding: 2px clamp(5px, 1vw, 8px);
   border-radius: 20px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .announce-item-title {
-  font-size: 0.95rem;
+  font-size: clamp(0.82rem, 1.5vw, 0.95rem);
   color: #2e104e;
   font-weight: 600;
 }
 
 .announce-message {
-  font-size: 0.85rem;
+  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
   color: #555;
   margin: 0 0 6px 0;
   line-height: 1.5;
 }
 
 .announce-date {
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1vw, 0.75rem);
   color: #aaa;
 }
 
 .no-announce {
   text-align: center;
   color: #bbb;
-  padding: 20px 0;
-  font-size: 0.9rem;
+  padding: clamp(12px, 2.5vw, 20px) 0;
+  font-size: clamp(0.8rem, 1.4vw, 0.9rem);
 }
 
 /* ══════════════════════════════════════════════
@@ -273,9 +328,9 @@
 .availability-count {
   background: linear-gradient(135deg, #4e237c 0%, #6b3a9e 100%);
   color: white;
-  padding: 6px 12px;
+  padding: clamp(4px, 0.8vw, 6px) clamp(8px, 1.5vw, 12px);
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.1vw, 0.75rem);
   font-weight: 600;
   text-align: center;
   margin-bottom: 8px;
@@ -283,12 +338,12 @@
 }
 
 .day-schedules {
-  padding: 12px 8px;
+  padding: clamp(8px, 1.5vw, 12px) clamp(4px, 1vw, 8px);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-height: 180px;
-  max-height: 280px;
+  gap: clamp(5px, 1vw, 8px);
+  min-height: clamp(120px, 20vw, 180px);
+  max-height: clamp(180px, 28vw, 280px);
   overflow-y: auto;
 }
 
@@ -313,21 +368,23 @@
 .week-navigation {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: clamp(6px, 1.2vw, 12px);
 }
 
 .week-nav-btn {
   background: #4e237c;
   color: white;
   border: none;
-  width: 32px;
-  height: 32px;
+  width: clamp(26px, 3.5vw, 32px);
+  height: clamp(26px, 3.5vw, 32px);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: clamp(10px, 1.4vw, 13px);
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .week-nav-btn:hover {
@@ -336,53 +393,54 @@
 }
 
 .week-range {
-  font-size: 0.9rem;
+  font-size: clamp(0.72rem, 1.3vw, 0.9rem);
   color: #4e237c;
   font-weight: 600;
-  padding: 0 8px;
+  padding: 0 clamp(4px, 0.8vw, 8px);
+  white-space: nowrap;
 }
 
 /* ══════════════════════════════════════════════
    CALENDAR
 ══════════════════════════════════════════════ */
 .calendar-grid {
-  padding: 4px;
+  padding: clamp(2px, 0.5vw, 4px);
 }
 
 .calendar-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: clamp(2px, 0.5vw, 4px);
+  margin-bottom: clamp(4px, 0.8vw, 6px);
 }
 
 .calendar-day-label {
   text-align: center;
-  font-size: 0.6rem;
+  font-size: clamp(0.5rem, 1vw, 0.6rem);
   font-weight: 600;
   color: #888;
-  padding: 4px 0;
+  padding: clamp(2px, 0.5vw, 4px) 0;
 }
 
 .calendar-dates {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-  grid-auto-rows: minmax(28px, auto);
+  gap: clamp(3px, 0.6vw, 6px);
+  grid-auto-rows: minmax(clamp(22px, 3.5vw, 28px), auto);
 }
 
 .calendar-date {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: clamp(0.58rem, 1.1vw, 0.7rem);
   color: #333;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  padding: 6px;
-  min-height: 28px;
-  height: 28px;
+  padding: clamp(3px, 0.6vw, 6px);
+  min-height: clamp(22px, 3.5vw, 28px);
+  height: clamp(22px, 3.5vw, 28px);
 }
 
 .calendar-date:hover {
@@ -398,88 +456,25 @@
 }
 
 /* ══════════════════════════════════════════════
-   RESPONSIVE
+   ONE NARROW BREAKPOINT — stacking only
 ══════════════════════════════════════════════ */
-@media (max-width: 992px) {
-  .dashboard-card {
-    margin-top: 8px;
-  }
-  .card-header h5 {
-    font-size: 1.05rem;
-  }
-  .pie-chart-container {
-    height: 260px;
-  }
-  .appointment-items {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-}
-
-@media (max-width: 768px) {
-  .calendar-day-label {
-    font-size: 0.55rem;
-  }
-  .calendar-date {
-    font-size: 0.65rem;
-    min-height: 24px;
-    height: 24px;
-    padding: 4px;
-  }
-  .announce-item {
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 576px) {
-  .admin-content {
-    padding: 0.8rem;
-  }
-  .dashboard-card {
-    padding: 1rem;
-  }
+@media (max-width: 480px) {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
   }
-  .card-header h5 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2e104e;
+
+  .announce-item {
+    flex-direction: column;
   }
-  .appointment-icon-text {
-    font-size: 1rem;
-  }
-  .appointment-icon {
-    font-size: 1.2rem;
-  }
-  .patients-table {
-    font-size: 0.8rem;
-  }
-  .patients-table th,
-  .patients-table td {
-    padding: 0.5rem;
-    white-space: nowrap;
-  }
+
   .table-pagination {
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
   }
-  .pie-chart-container {
-    height: 240px;
-  }
-}
 
-@media (max-width: 400px) {
   .verify-btn {
     width: 100%;
     text-align: center;
-  }
-  .pagination-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
   }
 }

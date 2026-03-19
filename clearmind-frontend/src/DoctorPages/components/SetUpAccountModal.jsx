@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { FiX, FiPlus, FiChevronDown } from "react-icons/fi";
+import styles from "../DoctorStyle/AccountSetupModal.module.css";
 
 // ─── Default saved options per field ───────────────────────────────────────
 const DEFAULT_OPTIONS = {
@@ -70,7 +71,6 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
   }, []);
 
   const trimmed = search.trim();
-  // Show all options filtered by search (including already-selected, shown with checkmark)
   const filtered = options.filter((o) =>
     o.toLowerCase().includes(search.toLowerCase())
   );
@@ -125,10 +125,10 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
             className="form-control"
-            style={{ borderRadius: "12px", height: "40px", paddingRight: "36px" }}
+            style={{ borderRadius: "9px", height: "40px", paddingRight: "36px", fontSize: "13px", fontFamily: "Poppins, sans-serif", border: "1.5px solid #e2d5f5" }}
           />
           <FiChevronDown
-            size={16}
+            size={15}
             style={{
               position: "absolute",
               right: "12px",
@@ -143,14 +143,13 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
         <button
           type="button"
           className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
+          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "9px" }}
           onClick={() => { setOpen((v) => !v); inputRef.current?.focus(); }}
         >
-          <FiPlus size={18} />
+          <FiPlus size={17} />
         </button>
       </div>
 
-      {/* Dropdown panel */}
       {open && (
         <div
           style={{
@@ -160,21 +159,21 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
             right: "50px",
             background: "#fff",
             border: "1.5px solid #e0d6f0",
-            borderRadius: "14px",
+            borderRadius: "10px",
             boxShadow: "0 8px 24px rgba(77,34,124,0.13)",
             zIndex: 2000,
             overflow: "hidden",
           }}
         >
           <ul style={{ listStyle: "none", margin: 0, padding: "6px 0", maxHeight: "200px", overflowY: "auto" }}>
-            {/* "Add new" prompt at the top when typed text isn't in list */}
             {showAddPrompt && (
               <li
                 onClick={handleAddNew}
                 style={{
                   padding: "9px 16px",
                   cursor: "pointer",
-                  fontSize: "0.88rem",
+                  fontSize: "13px",
+                  fontFamily: "Poppins, sans-serif",
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
@@ -186,11 +185,10 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#ede6f8")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "#f7f2ff")}
               >
-                <FiPlus size={14} />
+                <FiPlus size={13} />
                 Add <strong style={{ marginLeft: 2 }}>"{trimmed}"</strong>
               </li>
             )}
-
             {filtered.length > 0 ? (
               filtered.map((item) => {
                 const isSelected = selected.includes(item);
@@ -201,13 +199,14 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
                     style={{
                       padding: "8px 16px",
                       cursor: "pointer",
-                      fontSize: "0.9rem",
+                      fontSize: "13px",
+                      fontFamily: "Poppins, sans-serif",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       background: isSelected ? "#f0eaff" : "transparent",
                       transition: "background 0.12s",
-                      color: "#212529",
+                      color: "#333",
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = isSelected ? "#e8e0fa" : "#f3eeff")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = isSelected ? "#f0eaff" : "transparent")}
@@ -217,7 +216,7 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
                 );
               })
             ) : !showAddPrompt ? (
-              <li style={{ padding: "10px 16px", fontSize: "0.85rem", color: "#999" }}>
+              <li style={{ padding: "10px 16px", fontSize: "13px", color: "#999", fontFamily: "Poppins, sans-serif" }}>
                 No results — type to add a new entry
               </li>
             ) : null}
@@ -225,14 +224,13 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
         </div>
       )}
 
-      {/* Selected pills */}
       {selected.length > 0 && (
         <div className="mt-2 d-flex flex-wrap gap-2">
           {selected.map((item, i) => (
             <span
               key={i}
               className="badge d-inline-flex align-items-center gap-2"
-              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.88rem", fontWeight: "400", borderRadius: "20px" }}
+              style={{ backgroundColor: "#4D227C", padding: "5px 11px", fontSize: "12px", fontWeight: "400", borderRadius: "20px", fontFamily: "Poppins, sans-serif" }}
             >
               {item}
               <button
@@ -241,7 +239,7 @@ const DropdownListInput = ({ label, fieldKey, selected, onAdd, onRemove }) => {
                 style={{ background: "none", border: "none", color: "white", cursor: "pointer", padding: "0", lineHeight: "1", display: "flex", alignItems: "center" }}
                 aria-label="Remove"
               >
-                <FiX size={13} strokeWidth={2.5} />
+                <FiX size={12} strokeWidth={2.5} />
               </button>
             </span>
           ))}
@@ -263,7 +261,7 @@ const FileInput = ({ label, file, onFileChange }) => {
           readOnly
           value={file ? file.name : ""}
           className="form-control"
-          style={{ borderRadius: "12px", paddingRight: "90px", height: "40px" }}
+          style={{ borderRadius: "9px", paddingRight: "90px", height: "40px", fontSize: "13px", fontFamily: "Poppins, sans-serif", border: "1.5px solid #e2d5f5" }}
         />
         <input
           type="file"
@@ -277,12 +275,13 @@ const FileInput = ({ label, file, onFileChange }) => {
           className="btn position-absolute"
           style={{
             backgroundColor: "#C4B5D6",
-            top: "0",
-            right: "0",
+            top: "0", right: "0",
             height: "40px",
-            borderRadius: "0 12px 12px 0",
+            borderRadius: "0 9px 9px 0",
             border: "none",
             padding: "0 15px",
+            fontSize: "13px",
+            fontFamily: "Poppins, sans-serif",
           }}
           onClick={() => document.getElementById(inputId).click()}
         >
@@ -306,7 +305,7 @@ const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => 
             readOnly
             value={files.length > 0 ? `${files.length} file(s) selected` : ""}
             className="form-control"
-            style={{ borderRadius: "12px", paddingRight: "90px", height: "40px", cursor: "default" }}
+            style={{ borderRadius: "9px", paddingRight: "90px", height: "40px", cursor: "default", fontSize: "13px", fontFamily: "Poppins, sans-serif", border: "1.5px solid #e2d5f5" }}
           />
           <input
             type="file"
@@ -325,9 +324,11 @@ const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => 
               backgroundColor: "#C4B5D6",
               top: "0", right: "0",
               height: "40px",
-              borderRadius: "0 12px 12px 0",
+              borderRadius: "0 9px 9px 0",
               border: "none",
               padding: "0 15px",
+              fontSize: "13px",
+              fontFamily: "Poppins, sans-serif",
             }}
             onClick={() => document.getElementById(inputId).click()}
           >
@@ -337,24 +338,24 @@ const MultiFileInput = ({ label, files, fieldKey, onFileAdd, onFileRemove }) => 
         <button
           type="button"
           className="btn text-white flex-shrink-0 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "12px" }}
+          style={{ backgroundColor: "#4D227C", width: "40px", height: "40px", borderRadius: "9px" }}
           onClick={() => document.getElementById(inputId).click()}
         >
-          <FiPlus size={18} />
+          <FiPlus size={17} />
         </button>
       </div>
       {files.length > 0 && (
         <div className="mt-2 d-flex flex-wrap gap-2">
           {files.map((file, i) => (
             <span key={i} className="badge d-inline-flex align-items-center gap-2"
-              style={{ backgroundColor: "#4D227C", padding: "6px 12px", fontSize: "0.85rem", fontWeight: "400", maxWidth: "220px" }}>
+              style={{ backgroundColor: "#4D227C", padding: "5px 11px", fontSize: "12px", fontWeight: "400", maxWidth: "220px", fontFamily: "Poppins, sans-serif" }}>
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }} title={file.name}>
                 {file.name}
               </span>
               <button type="button" onClick={() => onFileRemove(i)}
                 style={{ background: "none", border: "none", color: "white", cursor: "pointer", padding: "0", lineHeight: "1", display: "flex", alignItems: "center" }}
                 aria-label="Remove">
-                <FiX size={14} strokeWidth={2} />
+                <FiX size={12} strokeWidth={2} />
               </button>
             </span>
           ))}
@@ -409,140 +410,180 @@ function AccountSetupModal({ showModal, onClose }) {
 
   if (!showModal) return null;
 
+  /* shared input style to match CreateAppointment inputs */
+  const inputStyle = {
+    borderRadius: "9px",
+    height: "40px",
+    fontSize: "13px",
+    fontFamily: "Poppins, sans-serif",
+    border: "1.5px solid #e2d5f5",
+  };
+
   return (
-    <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-2"
-      style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
-    >
-      <div
-        className="bg-white d-flex flex-column"
-        style={{
-          width: "95%",
-          maxWidth: "800px",
-          height: "90vh",
-          maxHeight: "900px",
-          borderRadius: "24px",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
-        }}
-      >
-        {/* Header */}
-        <div className="position-relative px-4 py-3 border-bottom flex-shrink-0"
-          style={{ borderTopLeftRadius: "24px", borderTopRightRadius: "24px", backgroundColor: "#fff" }}>
-          <h3 className="m-0 fw-bold text-center" style={{ color: "#4D227C" }}>Account Setup</h3>
-          <button type="button" className="btn btn-link text-secondary p-1 position-absolute"
-            style={{ top: "12px", right: "12px", fontSize: "24px" }} onClick={onClose}>
-            <FiX />
+    <div className={styles.backdrop}>
+      <div className={styles.modal}>
+
+        {/* ── Header ── */}
+        <div className={styles.header}>
+          <h2 className={styles.headerTitle}>Account Setup</h2>
+          <button type="button" className={styles.closeBtn} onClick={onClose}>
+            <FiX size={16} />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-4 py-3 flex-grow-1" style={{ overflowY: "auto" }}>
-          <div className="row g-3">
-            <FileInput label="Profile Picture" file={formData.profilePicture}
-              onFileChange={(file) => handleFileChange("profilePicture", file)} />
+        {/* ── Scrollable Body ── */}
+        <div className={styles.body}>
 
-            <div className="col-12">
-              <textarea placeholder="Description" value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                className="form-control"
-                style={{ borderRadius: "12px", minHeight: "60px", resize: "none" }} />
+          {/* ── White card: all form fields ── */}
+          <div className={styles.section}>
+            <div className="row g-3">
+
+              <FileInput
+                label="Profile Picture"
+                file={formData.profilePicture}
+                onFileChange={(file) => handleFileChange("profilePicture", file)}
+              />
+
+              <div className="col-12">
+                <textarea
+                  placeholder="Description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  className="form-control"
+                  style={{ borderRadius: "9px", minHeight: "60px", resize: "none", fontSize: "13px", fontFamily: "Poppins, sans-serif", border: "1.5px solid #e2d5f5" }}
+                />
+              </div>
+
+              <div className="col-12">
+                <input
+                  type="text"
+                  placeholder="Professional Title *"
+                  value={formData.professionalTitle}
+                  onChange={(e) => handleInputChange("professionalTitle", e.target.value)}
+                  className="form-control"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div className="col-12 col-sm-6">
+                <input
+                  type="number"
+                  placeholder="Years of Experience *"
+                  value={formData.yearsOfExperience}
+                  onChange={(e) => handleInputChange("yearsOfExperience", e.target.value)}
+                  className="form-control"
+                  style={inputStyle}
+                  min="0" max="70"
+                />
+              </div>
+              <div className="col-12 col-sm-6">
+                <input
+                  type="text"
+                  placeholder="License Number *"
+                  value={formData.licenseNumber}
+                  onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
+                  className="form-control"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div className="col-12 col-sm-6">
+                <input
+                  type="number"
+                  placeholder="Practicing Since (Year)"
+                  value={formData.practicingSince}
+                  onChange={(e) => handleInputChange("practicingSince", e.target.value)}
+                  className="form-control"
+                  style={inputStyle}
+                  min="1900" max={new Date().getFullYear()}
+                />
+              </div>
+              <div className="col-12 col-sm-6">
+                <input
+                  type="text"
+                  placeholder="Main Specialty"
+                  value={formData.mainSpecialty}
+                  onChange={(e) => handleInputChange("mainSpecialty", e.target.value)}
+                  className="form-control"
+                  style={inputStyle}
+                />
+              </div>
+
+              <DropdownListInput
+                label="Specialization *"
+                fieldKey="specialization"
+                selected={specializationList}
+                onAdd={(item) => {
+                  if (!specializationList.includes(item))
+                    setSpecializationList((p) => [...p, item]);
+                }}
+                onRemove={(i) => setSpecializationList((p) => p.filter((_, idx) => idx !== i))}
+              />
+
+              <DropdownListInput
+                label="Sub-specialization"
+                fieldKey="subSpecialization"
+                selected={subSpecializationList}
+                onAdd={(item) => {
+                  if (!subSpecializationList.includes(item))
+                    setSubSpecializationList((p) => [...p, item]);
+                }}
+                onRemove={(i) => setSubSpecializationList((p) => p.filter((_, idx) => idx !== i))}
+              />
+
+              <DropdownListInput
+                label="Board Certificate"
+                fieldKey="boardCertificate"
+                selected={boardCertificateList}
+                onAdd={(item) => {
+                  if (!boardCertificateList.includes(item))
+                    setBoardCertificateList((p) => [...p, item]);
+                }}
+                onRemove={(i) => setBoardCertificateList((p) => p.filter((_, idx) => idx !== i))}
+              />
+
+              <DropdownListInput
+                label="My Services"
+                fieldKey="myServices"
+                selected={servicesList}
+                onAdd={(item) => {
+                  if (!servicesList.includes(item))
+                    setServicesList((p) => [...p, item]);
+                }}
+                onRemove={(i) => setServicesList((p) => p.filter((_, idx) => idx !== i))}
+              />
+
+              <MultiFileInput
+                label="Certificate Image"
+                files={formData.certificateImages}
+                fieldKey="certImg"
+                onFileAdd={(file) => handleMultiFileAdd("certificateImages", file)}
+                onFileRemove={(i) => handleMultiFileRemove("certificateImages", i)}
+              />
+
+              <MultiFileInput
+                label="Upload ID Card Picture"
+                files={formData.idPictures}
+                fieldKey="idPic"
+                onFileAdd={(file) => handleMultiFileAdd("idPictures", file)}
+                onFileRemove={(i) => handleMultiFileRemove("idPictures", i)}
+              />
+
             </div>
-
-            <div className="col-12">
-              <input type="text" placeholder="Professional Title *" value={formData.professionalTitle}
-                onChange={(e) => handleInputChange("professionalTitle", e.target.value)}
-                className="form-control" style={{ borderRadius: "12px", height: "40px" }} />
-            </div>
-
-            <div className="col-12 col-sm-6">
-              <input type="number" placeholder="Years of Experience *" value={formData.yearsOfExperience}
-                onChange={(e) => handleInputChange("yearsOfExperience", e.target.value)}
-                className="form-control" style={{ borderRadius: "12px", height: "40px" }} min="0" max="70" />
-            </div>
-            <div className="col-12 col-sm-6">
-              <input type="text" placeholder="License Number *" value={formData.licenseNumber}
-                onChange={(e) => handleInputChange("licenseNumber", e.target.value)}
-                className="form-control" style={{ borderRadius: "12px", height: "40px" }} />
-            </div>
-
-            <div className="col-12 col-sm-6">
-              <input type="number" placeholder="Practicing Since (Year)" value={formData.practicingSince}
-                onChange={(e) => handleInputChange("practicingSince", e.target.value)}
-                className="form-control" style={{ borderRadius: "12px", height: "40px" }}
-                min="1900" max={new Date().getFullYear()} />
-            </div>
-            <div className="col-12 col-sm-6">
-              <input type="text" placeholder="Main Specialty" value={formData.mainSpecialty}
-                onChange={(e) => handleInputChange("mainSpecialty", e.target.value)}
-                className="form-control" style={{ borderRadius: "12px", height: "40px" }} />
-            </div>
-
-            {/* ── Dropdown list fields ── */}
-            <DropdownListInput
-              label="Specialization *"
-              fieldKey="specialization"
-              selected={specializationList}
-              onAdd={(item) => {
-                if (!specializationList.includes(item))
-                  setSpecializationList((p) => [...p, item]);
-              }}
-              onRemove={(i) => setSpecializationList((p) => p.filter((_, idx) => idx !== i))}
-            />
-
-            <DropdownListInput
-              label="Sub-specialization"
-              fieldKey="subSpecialization"
-              selected={subSpecializationList}
-              onAdd={(item) => {
-                if (!subSpecializationList.includes(item))
-                  setSubSpecializationList((p) => [...p, item]);
-              }}
-              onRemove={(i) => setSubSpecializationList((p) => p.filter((_, idx) => idx !== i))}
-            />
-
-            <DropdownListInput
-              label="Board Certificate"
-              fieldKey="boardCertificate"
-              selected={boardCertificateList}
-              onAdd={(item) => {
-                if (!boardCertificateList.includes(item))
-                  setBoardCertificateList((p) => [...p, item]);
-              }}
-              onRemove={(i) => setBoardCertificateList((p) => p.filter((_, idx) => idx !== i))}
-            />
-
-            <DropdownListInput
-              label="My Services"
-              fieldKey="myServices"
-              selected={servicesList}
-              onAdd={(item) => {
-                if (!servicesList.includes(item))
-                  setServicesList((p) => [...p, item]);
-              }}
-              onRemove={(i) => setServicesList((p) => p.filter((_, idx) => idx !== i))}
-            />
-
-            <MultiFileInput label="Certificate Image" files={formData.certificateImages} fieldKey="certImg"
-              onFileAdd={(file) => handleMultiFileAdd("certificateImages", file)}
-              onFileRemove={(i) => handleMultiFileRemove("certificateImages", i)} />
-
-            <MultiFileInput label="Upload ID Card Picture" files={formData.idPictures} fieldKey="idPic"
-              onFileAdd={(file) => handleMultiFileAdd("idPictures", file)}
-              onFileRemove={(i) => handleMultiFileRemove("idPictures", i)} />
           </div>
+
         </div>
 
-        {/* Footer */}
-        <div className="d-flex align-items-center justify-content-center px-4 py-3 border-top flex-shrink-0 position-relative">
-          <button type="button" className="btn text-white fw-semibold px-4 py-2"
-            style={{ backgroundColor: "#4D227C", borderRadius: "12px" }} onClick={handleUpload}>
-            Upload
-          </button>
-          <button type="button" className="btn btn-link text-decoration-none position-absolute"
-            style={{ right: "20px", color: "#4D227C" }} onClick={onClose}>
+        {/* ── Footer ── */}
+        <div className={styles.footer}>
+          <button type="button" className={styles.btnSkip} onClick={onClose}>
             Skip for Now
           </button>
+          <button type="button" className={styles.btnUpload} onClick={handleUpload}>
+            Upload
+          </button>
         </div>
+
       </div>
     </div>
   );
