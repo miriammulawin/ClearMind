@@ -21,7 +21,7 @@ const PATIENT_LIST = [
   { id: 8, firstName: "Jose", lastName: "Villanueva", mi: "P" },
 ];
 
-/* ── Patient Searchable Dropdown ───────────────────────────────────────────── */
+/* ── Patient Searchable Dropdown ── */
 function PatientDropdown({ onSelect }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -220,8 +220,14 @@ function PatientDropdown({ onSelect }) {
   );
 }
 
-/* ── Main CreateAppointmentModal ────────────────────────────────────────────── */
-function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
+/* ── Main CreateAppointmentModal ── */
+/* showReceipt — pass true from Admin, omit/false from Doctor */
+function CreateAppointmentModal({
+  isOpen,
+  onClose,
+  onAdd,
+  showReceipt = false,
+}) {
   const [newEvent, setNewEvent] = useState({
     title: "",
     date: "",
@@ -277,7 +283,6 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
     setReceiptFile(null);
   };
 
-  /* Labeled input wrapper */
   const LabeledInput = ({ label, disabled, children }) => (
     <div className={styles.labeledField}>
       <span
@@ -293,9 +298,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
 
   return (
     <>
-      {/* ══ BACKDROP ══ */}
       <div className={styles.backdrop}>
-        {/* ══ MODAL ══ */}
         <div className={styles.modal}>
           {/* ── Header ── */}
           <div className={styles.header}>
@@ -344,7 +347,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                   disabled
                   readOnly
                   value={computedAge !== "" ? `${computedAge} years old` : ""}
-                  placeholder="Age (auto-computed)"
+                  placeholder="Age"
                 />
               </div>
 
@@ -579,7 +582,6 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Payment Status</h4>
 
-              {/* Payment Status Select */}
               <div className={styles.fieldRow}>
                 <select className={styles.select}>
                   <option value="">Select Payment Status</option>
@@ -589,61 +591,64 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
                 </select>
               </div>
 
-              {/* Upload Receipt */}
-              <div className={styles.uploadLabel}>Upload Receipt</div>
-              <div
-                className={styles.uploadZone}
-                onClick={() => receiptInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  if (file) setReceiptFile(file);
-                }}
-              >
-                <input
-                  ref={receiptInputRef}
-                  type="file"
-                  accept="image/*,application/pdf"
-                  style={{ display: "none" }}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) setReceiptFile(file);
-                  }}
-                />
-                {receiptFile ? (
-                  <div className={styles.uploadedFile}>
-                    <FiFile className={styles.uploadedFileIcon} />
-                    <span className={styles.uploadedFileName}>
-                      {receiptFile.name}
-                    </span>
-                    <button
-                      className={styles.uploadedFileRemove}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setReceiptFile(null);
-                        if (receiptInputRef.current)
-                          receiptInputRef.current.value = "";
+              {/* ── Upload Receipt — only shown when showReceipt=true (Admin) ── */}
+              {showReceipt && (
+                <>
+                  <div className={styles.uploadLabel}>Upload Receipt</div>
+                  <div
+                    className={styles.uploadZone}
+                    onClick={() => receiptInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file) setReceiptFile(file);
+                    }}
+                  >
+                    <input
+                      ref={receiptInputRef}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setReceiptFile(file);
                       }}
-                    >
-                      <FiTrash2 />
-                    </button>
+                    />
+                    {receiptFile ? (
+                      <div className={styles.uploadedFile}>
+                        <FiFile className={styles.uploadedFileIcon} />
+                        <span className={styles.uploadedFileName}>
+                          {receiptFile.name}
+                        </span>
+                        <button
+                          className={styles.uploadedFileRemove}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReceiptFile(null);
+                            if (receiptInputRef.current)
+                              receiptInputRef.current.value = "";
+                          }}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.uploadPlaceholder}>
+                        <FiUpload className={styles.uploadIcon} />
+                        <span className={styles.uploadText}>
+                          Click or drag &amp; drop to upload receipt
+                        </span>
+                        <span className={styles.uploadHint}>
+                          Supports JPG, PNG, PDF
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className={styles.uploadPlaceholder}>
-                    <FiUpload className={styles.uploadIcon} />
-                    <span className={styles.uploadText}>
-                      Click or drag &amp; drop to upload receipt
-                    </span>
-                    <span className={styles.uploadHint}>
-                      Supports JPG, PNG, PDF
-                    </span>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
-          {/* /body */}
 
           {/* ── Footer ── */}
           <div className={styles.footer}>
@@ -655,9 +660,7 @@ function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
             </button>
           </div>
         </div>
-        {/* /modal */}
       </div>
-      {/* /backdrop */}
     </>
   );
 }

@@ -19,6 +19,7 @@ import {
   FiFileText,
   FiActivity,
   FiEdit3,
+  FiFilter,
 } from "react-icons/fi";
 import { FaCalendarAlt } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
@@ -70,6 +71,7 @@ function DoctorPatient() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [patientTypeFilter, setPatientTypeFilter] = useState("all");
   const navigate = useNavigate();
 
   const [patientList, setPatientList] = useState([
@@ -150,11 +152,19 @@ function DoctorPatient() {
       },
     },
   ]);
+
   const [progressionDraft, setProgressionDraft] = useState("");
 
   const rowsPerPage = 4;
-  const totalPages = Math.ceil(patientList.length / rowsPerPage);
-  const displayedData = patientList.slice(
+
+  // ── Filter by patient type ──
+  const filteredList =
+    patientTypeFilter === "all"
+      ? patientList
+      : patientList.filter((p) => p.patientType === patientTypeFilter);
+
+  const totalPages = Math.ceil(filteredList.length / rowsPerPage);
+  const displayedData = filteredList.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
@@ -164,6 +174,11 @@ function DoctorPatient() {
     setProgressionDraft("");
     setShowModal(true);
     setPaymentOpen(false);
+  };
+
+  const handleFilterChange = (e) => {
+    setPatientTypeFilter(e.target.value);
+    setCurrentPage(1);
   };
 
   const handleMarkComplete = () => {
@@ -186,6 +201,7 @@ function DoctorPatient() {
     setProgressionDraft("");
   };
 
+  // ── Badge helpers (from AdminPatient) ──
   const getStatusBadgeStyle = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -215,6 +231,19 @@ function DoctorPatient() {
     }
   };
 
+  const getConsultationModeBadge = (mode) => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "5px",
+    fontSize: "12px",
+    fontWeight: 600,
+    padding: "4px 10px",
+    borderRadius: "20px",
+    background: mode === "Virtual" ? "#dbeafe" : "#ede9f6",
+    color: mode === "Virtual" ? "#1d4ed8" : "#4D227C",
+    border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
+  });
+
   return (
     <div className="doctor-layout">
       <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -222,50 +251,96 @@ function DoctorPatient() {
         <DoctorTopNavbar activeMenu={activeMenu} />
         <div className="doctor-content" style={{ padding: "20px" }}>
           <div className="patient-card">
-            <div className="patient-tabs">
-              <button className="tab-active">
-                Total's Patients <span>{patientList.length}</span>
-              </button>
+            {/* ── Tab + Filter Row (admin style) ── */}
+            <div className="patient-tabs-row">
+              <div className="patient-tabs">
+                <button className="tab-active">
+                  Total's Patients <span>{patientList.length}</span>
+                </button>
+              </div>
+
+              <div className="patient-filter-dropdown">
+                <FiFilter size={13} />
+                <select value={patientTypeFilter} onChange={handleFilterChange}>
+                  <option value="all">All Patients</option>
+                  <option value="Existing Patient">Existing Patient</option>
+                  <option value="New Patient">New Patient</option>
+                </select>
+              </div>
             </div>
 
+            {/* ── Table ── */}
             <div className="patient-table-wrapper">
               <table className="patient-table">
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Date of Appointment</th>
-                    <th>Time</th>
-                    <th>Visit Type</th>
+                    <th>Patient Type</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Address</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedData.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.name}</td>
-                      <td>{row.date}</td>
-                      <td>{row.time}</td>
-                      <td>{row.type}</td>
-                      <td>
-                        <span className={`status ${row.status.toLowerCase()}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn-view"
-                          onClick={() => handleView(row)}
-                        >
-                          View
-                        </button>
+                  {displayedData.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#aaa",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        No{" "}
+                        {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
+                        records found.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`patient-type-badge ${
+                              row.patientType === "New Patient"
+                                ? "badge-new"
+                                : "badge-existing"
+                            }`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>{row.age}</td>
+                        <td>{row.gender}</td>
+                        <td>{row.address}</td>
+                        <td>
+                          <span
+                            className={`status ${row.status.toLowerCase()}`}
+                          >
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="btn-view"
+                            onClick={() => handleView(row)}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
+            {/* ── Pagination ── */}
             <div className="pagination">
               <button
                 disabled={currentPage === 1}
@@ -283,19 +358,22 @@ function DoctorPatient() {
                 </button>
               ))}
               <button
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage(currentPage + 1)}
               >
                 Next ›
               </button>
             </div>
             <div className="page-info">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {totalPages || 1}
             </div>
           </div>
         </div>
       </div>
 
+      {/* ══════════════════════════════════════
+          VIEW MODAL
+      ══════════════════════════════════════ */}
       {showModal && selectedPatient && (
         <div
           className="patient-modal-overlay"
@@ -305,6 +383,7 @@ function DoctorPatient() {
             className="patient-modal-lg"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="modal-profile-header">
               <button
                 className="close-btn profile-close-btn"
@@ -338,6 +417,17 @@ function DoctorPatient() {
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
+                    {/* Patient type chip (from admin) */}
+                    <span
+                      className={`patient-type-badge ${
+                        selectedPatient.patientType === "New Patient"
+                          ? "badge-new"
+                          : "badge-existing"
+                      }`}
+                      style={{ fontSize: "11px" }}
+                    >
+                      {selectedPatient.patientType}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -354,7 +444,9 @@ function DoctorPatient() {
               </div>
             </div>
 
+            {/* Body */}
             <div className="modal-body">
+              {/* Appointment Details card */}
               <div
                 className="modal-content-card"
                 style={{ marginBottom: "12px" }}
@@ -394,6 +486,7 @@ function DoctorPatient() {
                     Appointment Details
                   </h4>
                 </div>
+
                 <div className="modal-two-col">
                   <div className="modal-info-item">
                     <div className="modal-info-icon">
@@ -467,7 +560,17 @@ function DoctorPatient() {
                     </div>
                     <div>
                       <span className="modal-info-label">Mode</span>
-                      <span className="modal-info-value">
+                      {/* consultation mode badge (from admin) */}
+                      <span
+                        style={getConsultationModeBadge(
+                          selectedPatient.consultationMode,
+                        )}
+                      >
+                        {selectedPatient.consultationMode === "Virtual" ? (
+                          <FiMonitor size={11} />
+                        ) : (
+                          <FiHome size={11} />
+                        )}
                         {selectedPatient.consultationMode}
                       </span>
                     </div>
@@ -475,6 +578,7 @@ function DoctorPatient() {
                 </div>
               </div>
 
+              {/* Progression Note */}
               {selectedPatient.status === "Completed" &&
               selectedPatient.progressionNote ? (
                 <div
@@ -537,8 +641,7 @@ function DoctorPatient() {
                         gap: "6px",
                       }}
                     >
-                      <FiFileText size={12} />
-                      Assessment
+                      <FiFileText size={12} /> Assessment
                     </p>
                     <p
                       style={{
@@ -627,8 +730,7 @@ function DoctorPatient() {
                         gap: "6px",
                       }}
                     >
-                      <FiFileText size={12} />
-                      Assessment
+                      <FiFileText size={12} /> Assessment
                     </p>
                     <textarea
                       value={progressionDraft}
@@ -657,6 +759,7 @@ function DoctorPatient() {
                 </div>
               ) : null}
 
+              {/* Payment Details */}
               <div className="modal-content-card">
                 <button
                   className="payment-collapse-toggle"
@@ -747,6 +850,7 @@ function DoctorPatient() {
               </div>
             </div>
 
+            {/* Footer */}
             <div className="modal-footer">
               <button
                 className="btn-view-history"
@@ -787,6 +891,7 @@ function DoctorPatient() {
         </div>
       )}
 
+      {/* Zoom image */}
       {zoomImage && (
         <div
           className="patient-modal-overlay"

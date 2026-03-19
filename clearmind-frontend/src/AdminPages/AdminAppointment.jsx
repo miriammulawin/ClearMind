@@ -203,6 +203,7 @@ function AdminAppointment() {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onAdd={handleAddEvent}
+        showReceipt={true}
       />
     </div>
   );

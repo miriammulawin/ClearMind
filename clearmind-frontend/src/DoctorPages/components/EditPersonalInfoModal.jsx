@@ -7,12 +7,7 @@ import {
   FiChevronRight,
   FiEdit,
 } from "react-icons/fi";
-import "../DoctorStyle/Modal.module.css";
-
-const iconClose = { color: "#fff", fontSize: "18px", fontWeight: "bold" };
-const iconCarouselAction = { color: "#fff", fontSize: "16px" };
-const iconEdit = { color: "#fff", fontSize: "16px" };
-const iconNav = { color: "#fff", fontSize: "18px" };
+import styles from "../DoctorStyle/Modal.module.css";
 
 function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
@@ -73,14 +68,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   };
 
   const prevImage = (field, setIndex, currentIndex) =>
-    setIndex(
-      currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1,
-    );
+    setIndex(currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1);
 
   const nextImage = (field, setIndex, currentIndex) =>
-    setIndex(
-      currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1,
-    );
+    setIndex(currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1);
 
   const handleSave = () => {
     onSave && onSave(formData);
@@ -90,15 +81,15 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   if (!show) return null;
 
   const renderDynamicField = (field, label) => (
-    <div className="modal-section">
+    <div className={styles["modal-section"]}>
       <h4>{label}</h4>
-      <div className="dynamic-box">
+      <div className={styles["dynamic-box"]}>
         {formData[field].map((item, i) => (
-          <div key={i} className="dynamic-item">
-            <span className="dot" />
+          <div key={i} className={styles["dynamic-item"]}>
+            <span className={styles["dot"]} />
             <input
               type="text"
-              className="modal-input"
+              className={styles["modal-input"]}
               value={item}
               onChange={(e) => {
                 const updated = [...formData[field]];
@@ -108,13 +99,13 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             />
             <button
               onClick={() => handleRemoveItem(field, i)}
-              className="icon-btn delete"
+              className={`${styles["icon-btn"]} ${styles["delete"]}`}
             >
               <FiTrash2 />
             </button>
           </div>
         ))}
-        <button onClick={() => handleAddItem(field)} className="add-btn">
+        <button onClick={() => handleAddItem(field)} className={styles["add-btn"]}>
           <FiPlus /> Add
         </button>
       </div>
@@ -122,9 +113,9 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   );
 
   const renderCarousel = (field, index, setIndex, label) => (
-    <div className="modal-section">
+    <div className={styles["modal-section"]}>
       <h4>{label}</h4>
-      <div className="carousel-box">
+      <div className={styles["carousel-box"]}>
         {formData[field].length > 0 && formData[field][index] ? (
           <img src={formData[field][index]} alt="" />
         ) : (
@@ -133,39 +124,42 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         {formData[field].length > 0 && (
           <>
             <button
-              className="carousel-btn left"
+              className={`${styles["carousel-btn"]} ${styles["left"]}`}
               onClick={() => prevImage(field, setIndex, index)}
             >
-              <FiChevronLeft style={iconNav} />
+              <FiChevronLeft />
             </button>
             <button
-              className="carousel-btn right"
+              className={`${styles["carousel-btn"]} ${styles["right"]}`}
               onClick={() => nextImage(field, setIndex, index)}
             >
-              <FiChevronRight style={iconNav} />
+              <FiChevronRight />
             </button>
-            <label className="carousel-btn edit" style={{ cursor: "pointer" }}>
-              <FiEdit style={iconEdit} />
+            <label
+              className={`${styles["carousel-btn"]} ${styles["edit"]}`}
+              style={{ cursor: "pointer" }}
+            >
+              <FiEdit />
               <input
                 type="file"
                 hidden
-                onChange={(e) =>
-                  handleImageChange(field, index, e.target.files[0])
-                }
+                onChange={(e) => handleImageChange(field, index, e.target.files[0])}
               />
             </label>
             <button
-              className="carousel-btn delete"
+              className={`${styles["carousel-btn"]} ${styles["delete"]}`}
+              style={{ bottom: "10px", right: "10px", top: "auto", transform: "none" }}
               onClick={() => handleRemoveImage(field, index, setIndex)}
             >
-              <FiTrash2 style={iconCarouselAction} />
+              <FiTrash2 />
             </button>
           </>
         )}
       </div>
       <button
         onClick={() => handleAddImage(field, setIndex)}
-        className="add-btn"
+        className={styles["add-btn"]}
+        style={{ marginTop: "12px" }}
       >
         <FiPlus /> Add Image
       </button>
@@ -173,30 +167,32 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   );
 
   return (
-    <div className="profile-modal-overlay" onClick={onClose}>
-      <div className="profile-modal-lg" onClick={(e) => e.stopPropagation()}>
+    <div className={styles["profile-modal-overlay"]} onClick={onClose}>
+      <div className={styles["profile-modal-lg"]} onClick={(e) => e.stopPropagation()}>
+
         {/* HEADER */}
-        <div className="modal-header">
+        <div className={styles["modal-header"]}>
           <h2>Edit Personal Information</h2>
-          <button className="close-btn" onClick={onClose}>
-            <FiX style={iconClose} />
+          <button className={styles["close-btn"]} onClick={onClose}>
+            <FiX />
           </button>
         </div>
 
         {/* BODY */}
-        <div className="modal-body">
-          <div className="modal-section">
+        <div className={styles["modal-body"]}>
+
+          {/* Personal Information section */}
+          <div className={styles["modal-section"]}>
             <h4>Personal Information</h4>
 
-            {/* Name row */}
-            <div className="grid-3">
+            <div className={styles["grid-3"]}>
               {["First Name", "Last Name", "Middle Initial"].map((label, i) => {
                 const keys = ["firstName", "lastName", "middleInitial"];
                 return (
-                  <div key={i} className="input-group">
-                    <p className="modal-label">{label}</p>
+                  <div key={i} className={styles["input-group"]}>
+                    <p className={styles["modal-label"]}>{label}</p>
                     <input
-                      className="modal-input"
+                      className={styles["modal-input"]}
                       value={formData[keys[i]]}
                       onChange={(e) => handleChange(keys[i], e.target.value)}
                     />
@@ -205,50 +201,46 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               })}
             </div>
 
-            {/* Credentials & License */}
-            <div className="grid-2">
-              <div className="input-group">
-                <p className="modal-label">Credentials</p>
+            <div className={styles["grid-2"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Credentials</p>
                 <input
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.credentials}
                   onChange={(e) => handleChange("credentials", e.target.value)}
                 />
               </div>
-              <div className="input-group">
-                <p className="modal-label">License Number</p>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>License Number</p>
                 <input
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.licenseNo}
                   onChange={(e) => handleChange("licenseNo", e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Contact / Age / Gender / DOB */}
-            <div className="grid-4">
-              <div className="input-group">
-                <p className="modal-label">Contact Number</p>
+            <div className={styles["grid-4"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Contact Number</p>
                 <input
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.contactNumber}
-                  onChange={(e) =>
-                    handleChange("contactNumber", e.target.value)
-                  }
+                  onChange={(e) => handleChange("contactNumber", e.target.value)}
                 />
               </div>
-              <div className="input-group">
-                <p className="modal-label">Age</p>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Age</p>
                 <input
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.age}
                   onChange={(e) => handleChange("age", e.target.value)}
                 />
               </div>
-              <div className="input-group">
-                <p className="modal-label">Gender</p>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Gender</p>
                 <select
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.gender}
                   onChange={(e) => handleChange("gender", e.target.value)}
                 >
@@ -258,23 +250,22 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                   <option>Other</option>
                 </select>
               </div>
-              <div className="input-group">
-                <p className="modal-label">Date of Birth</p>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Date of Birth</p>
                 <input
                   type="date"
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   value={formData.dateOfBirth}
                   onChange={(e) => handleChange("dateOfBirth", e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Address — full-width row */}
-            <div className="grid-1">
-              <div className="input-group">
-                <p className="modal-label">Address</p>
+            <div className={styles["grid-1"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Address</p>
                 <input
-                  className="modal-input"
+                  className={styles["modal-input"]}
                   placeholder="Street, Barangay, City, Province"
                   value={formData.address}
                   onChange={(e) => handleChange("address", e.target.value)}
@@ -283,12 +274,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </div>
           </div>
 
-          {renderCarousel(
-            "boardCertImages",
-            boardIndex,
-            setBoardIndex,
-            "Board Certifications",
-          )}
+          {renderCarousel("boardCertImages", boardIndex, setBoardIndex, "Board Certifications")}
           {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
           {renderDynamicField("subspecialty", "Subspecialty")}
           {renderDynamicField("services", "Services")}
@@ -296,9 +282,9 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         </div>
 
         {/* FOOTER */}
-        <div className="modal-footer">
-          <button className="btn-completed" onClick={handleSave}>
-            Save
+        <div className={styles["modal-footer"]}>
+          <button className={styles["btn-completed"]} onClick={handleSave}>
+            Save Changes
           </button>
         </div>
       </div>

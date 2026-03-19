@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import styles from "./DoctorStyle/DoctorDashboard.module.css";
-import { FaClinicMedical, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaClinicMedical, FaChevronLeft, FaChevronRight, FaBullhorn } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
-import { BsMegaphone } from "react-icons/bs";
 import AccountSetupModal from "./components/SetUpAccountModal";
 
 // Chart.js
@@ -43,7 +42,7 @@ function DoctorDashboard() {
       id: 1,
       title: "TIME OUT",
       message: "MAG TIME OUT NA TAYO",
-      priority: "urgent",
+      priority: "high",
       postedDate: "Feb 24, 2026",
     },
     {
@@ -51,7 +50,7 @@ function DoctorDashboard() {
       title: "Clinic Holiday Schedule",
       message:
         "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule your appointments accordingly.",
-      priority: "urgent",
+      priority: "high",
       postedDate: "Feb 20, 2026",
     },
     {
@@ -65,9 +64,7 @@ function DoctorDashboard() {
   ]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setToday(new Date());
-    }, 60000);
+    const timer = setInterval(() => setToday(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -104,13 +101,10 @@ function DoctorDashboard() {
     setCurrentWeekStart(newDate);
   };
 
-  const isToday = (date) => {
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
+  const isToday = (date) =>
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -209,41 +203,48 @@ function DoctorDashboard() {
         <div className="doctor-content">
           <div className={styles["container-fluid"]}>
 
-            {/* Announcements */}
+            {/* ── Announcements (admin style) ── */}
             <div className="row mb-4">
               <div className="col-12">
-                <div className={styles["announcements-card"]}>
-                  <div className={styles["announcements-header"]}>
-                    <div className={styles["announcements-title"]}>
-                      <BsMegaphone className="me-2" />
-                      <h5>Announcements</h5>
-                    </div>
+                <div className={`${styles["dashboard-card"]} ${styles["announcement-card"]}`}>
+                  <div className={styles["card-header"]}>
+                    <h5 className={styles["announcement-title"]}>
+                      <FaBullhorn className={styles["announce-icon"]} />
+                      Announcements
+                    </h5>
                   </div>
-                  <div className={styles["announcements-list"]}>
-                    {adminAnnouncements.length === 0 ? (
-                      <div className={styles["no-announcements"]}>
-                        <p>No announcements yet.</p>
-                      </div>
-                    ) : (
-                      adminAnnouncements.map((announcement) => (
+                  <hr />
+                  {adminAnnouncements.length === 0 ? (
+                    <div className={styles["no-announce"]}>No announcements yet.</div>
+                  ) : (
+                    <div className={styles["announce-list"]}>
+                      {adminAnnouncements.map((ann) => (
                         <div
-                          key={announcement.id}
-                          className={`${styles["announcement-item"]} ${announcement.priority === "urgent" ? styles["urgent"] : ""}`}
+                          key={ann.id}
+                          className={`${styles["announce-item"]} ${
+                            ann.priority === "high"
+                              ? styles["announce-high"]
+                              : styles["announce-normal"]
+                          }`}
                         >
-                          <div className={styles["announcement-content"]}>
-                            <div className={styles["announcement-header-line"]}>
-                              {announcement.priority === "urgent" && (
-                                <span className={styles["priority-badge"]}>URGENT</span>
+                          <div className={styles["announce-left"]}>
+                            <div className={styles["announce-item-header"]}>
+                              {ann.priority === "high" && (
+                                <span className={styles["priority-badge"]}>Urgent</span>
                               )}
-                              <h6 className={styles["announcement-title"]}>{announcement.title}</h6>
+                              <strong className={styles["announce-item-title"]}>
+                                {ann.title}
+                              </strong>
                             </div>
-                            <p className={styles["announcement-message"]}>{announcement.message}</p>
-                            <small className={styles["announcement-date"]}>Posted: {announcement.postedDate}</small>
+                            <p className={styles["announce-message"]}>{ann.message}</p>
+                            <small className={styles["announce-date"]}>
+                              Posted: {ann.postedDate}
+                            </small>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

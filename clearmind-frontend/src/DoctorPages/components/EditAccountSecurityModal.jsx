@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
-import "../DoctorStyle/Modal.module.css";
+import styles from "../DoctorStyle/Modal.module.css";
 
 function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
@@ -33,10 +33,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
       newErrors.email = "Enter a valid email.";
     if (formData.newPassword && formData.newPassword.length < 8)
       newErrors.newPassword = "New password must be at least 8 characters.";
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    )
+    if (formData.newPassword && formData.newPassword !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
     if (formData.newPassword && !formData.currentPassword)
       newErrors.currentPassword = "Please enter your current password.";
@@ -55,7 +52,6 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
 
   if (!show) return null;
 
-  /* ── password strength ── */
   const strength =
     formData.newPassword.length >= 12
       ? { label: "✓ Strong password", color: "#16a34a" }
@@ -63,19 +59,16 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         ? { label: "⚠ Medium strength — try adding symbols", color: "#ca8a04" }
         : { label: "✗ Too short — minimum 8 characters", color: "#ef4444" };
 
-  /* ── reusable password field ── */
   const renderPasswordField = (label, field, visKey) => (
-    <div className="input-group">
-      <p className="modal-label">{label}</p>
+    <div className={styles["input-group"]}>
+      <p className={styles["modal-label"]}>{label}</p>
       <div style={{ position: "relative" }}>
         <input
           type={showPasswords[visKey] ? "text" : "password"}
-          className="modal-input"
+          className={styles["modal-input"]}
           style={{
             paddingRight: "44px",
             borderColor: errors[field] ? "#ef4444" : undefined,
-            width: "100%",
-            boxSizing: "border-box",
           }}
           value={formData[field]}
           onChange={(e) => handleChange(field, e.target.value)}
@@ -92,7 +85,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "#7B4A50",
+            color: "#4d227c",
             fontSize: "16px",
             padding: 0,
             display: "flex",
@@ -111,115 +104,63 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   );
 
   return (
-    <div className="profile-modal-overlay" onClick={onClose}>
+    <div className={styles["profile-modal-overlay"]} onClick={onClose}>
       <div
-        className="profile-modal-lg"
-        style={{ maxWidth: "600px" }}
+        className={styles["profile-modal-lg"]}
+        style={{ maxWidth: "520px" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
-        <div className="modal-header">
+        <div className={styles["modal-header"]}>
           <h2>Account Security</h2>
-          <button className="close-btn" onClick={onClose}>
-            <FiX style={{ color: "#fff", fontSize: "20px" }} />
+          <button className={styles["close-btn"]} onClick={onClose}>
+            <FiX />
           </button>
         </div>
 
         {/* BODY */}
-        <div className="modal-body">
-          {/* Email */}
-          <div className="modal-section">
+        <div className={styles["modal-body"]}>
+
+          {/* Email section */}
+          <div className={styles["modal-section"]}>
             <h4>Account Details</h4>
-            <div className="input-group">
-              <p className="modal-label">Email Address</p>
+            <div className={styles["input-group"]}>
+              <p className={styles["modal-label"]}>Email Address</p>
               <input
                 type="email"
-                className="modal-input"
+                className={styles["modal-input"]}
                 style={{ borderColor: errors.email ? "#ef4444" : undefined }}
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 placeholder="Enter email address"
               />
               {errors.email && (
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#ef4444",
-                    marginTop: "4px",
-                  }}
-                >
+                <span style={{ fontSize: "12px", color: "#ef4444", marginTop: "4px" }}>
                   {errors.email}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Divider */}
-          <div style={{ position: "relative", margin: "4px 0 24px" }}>
-            <div style={{ borderTop: "1px dashed #dcdfe3" }} />
-            <span
-              style={{
-                position: "absolute",
-                top: "-10px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "#fff",
-                padding: "0 12px",
-                fontSize: "11px",
-                color: "#9ca3af",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Change Password
-            </span>
-          </div>
-
-          {/* Password fields */}
-          <div className="modal-section">
-            <h4>Password</h4>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              {renderPasswordField(
-                "Current Password",
-                "currentPassword",
-                "current",
-              )}
+          {/* Password section */}
+          <div className={styles["modal-section"]}>
+            <h4>Change Password</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {renderPasswordField("Current Password", "currentPassword", "current")}
               {renderPasswordField("New Password", "newPassword", "newPass")}
 
-              {/* Strength indicator */}
               {formData.newPassword && (
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: strength.color,
-                    marginTop: "-8px",
-                  }}
-                >
+                <span style={{ fontSize: "11px", color: strength.color, marginTop: "-6px" }}>
                   {strength.label}
                 </span>
               )}
 
-              {renderPasswordField(
-                "Confirm New Password",
-                "confirmPassword",
-                "confirm",
-              )}
+              {renderPasswordField("Confirm New Password", "confirmPassword", "confirm")}
 
-              {/* Match indicator */}
               {formData.confirmPassword &&
                 !errors.confirmPassword &&
                 formData.newPassword === formData.confirmPassword && (
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#16a34a",
-                      marginTop: "-8px",
-                    }}
-                  >
+                  <span style={{ fontSize: "11px", color: "#16a34a", marginTop: "-6px" }}>
                     ✓ Passwords match
                   </span>
                 )}
@@ -228,9 +169,9 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         </div>
 
         {/* FOOTER */}
-        <div className="modal-footer">
-          <button className="btn-completed" onClick={handleSave}>
-            Save
+        <div className={styles["modal-footer"]}>
+          <button className={styles["btn-completed"]} onClick={handleSave}>
+            Save Changes
           </button>
         </div>
       </div>
