@@ -3,7 +3,7 @@
 // Shows: mandatory + optional doc upload zones per service config
 
 import React from 'react';
-import styles from '../../../ClientStyle/PAaEAppointmentForm.module.css';
+import styles from '../style/PAaEAppointmentForm.module.css';
 
 /* -----------------------------------------------------------------
    PAeEDocuments

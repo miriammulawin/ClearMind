@@ -5,7 +5,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiCheck } from 'react-icons/fi';
-import styles from '../../../ClientStyle/PAaEAppointmentForm.module.css';
+import styles from '../style/PAaEAppointmentForm.module.css';
 
 /* -----------------------------------------------------------------
    Stepper

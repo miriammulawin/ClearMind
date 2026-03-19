@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FaArrowLeft } from 'react-icons/fa';
 import { FiCheckCircle } from 'react-icons/fi';
-import styles from '../../../ClientStyle/PAaEAppointmentForm.module.css';
+import styles from '../style/PAaEAppointmentForm.module.css';
 import { useCurrentUser } from '../../../../hooks/userCurrentUser';
 import PAaEFormHeader  from './PAaEFormHeader';
 import PAaEReason      from './PAaEReason';

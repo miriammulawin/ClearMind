@@ -4,7 +4,7 @@
 // Shows: payment method cards, account details, proof of payment upload
 
 import React from 'react';
-import styles from '../../../ClientStyle/PAaEAppointmentForm.module.css';
+import styles from '../style/PAaEAppointmentForm.module.css';
 
 const PAY_OPTIONS = [
   {

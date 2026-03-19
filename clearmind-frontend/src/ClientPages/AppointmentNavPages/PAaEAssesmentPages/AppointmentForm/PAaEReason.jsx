@@ -3,15 +3,29 @@
 // Shows: client card, reason textarea, optional extra field, hint banner
 
 import React from 'react';
-import styles from '../../../ClientStyle/PAaEAppointmentForm.module.css';
+import {
+  BsInfoCircleFill,
+  BsCheckCircleFill,
+  BsCalendar2CheckFill,
+  BsGenderMale,
+  BsGenderFemale,
+  BsGeoAltFill,
+  BsEnvelopeFill,
+  BsTelephoneFill,
+  BsClockFill,
+} from 'react-icons/bs';
+import styles from '../style/PAaEAppointmentForm.module.css';
 
 /* -----------------------------------------------------------------
    ClientCard — pre-filled from useCurrentUser hook
 ------------------------------------------------------------------ */
 function ClientCard({ user }) {
-  const genderIcon = user.sex === 'Male' ? '♂' : '♀';
+  const GenderIcon = user.sex === 'Male' ? BsGenderMale : BsGenderFemale;
+
   return (
     <div className={styles.clientCard}>
+
+      {/* ── Avatar ── */}
       {user.profilePic ? (
         <img
           src={user.profilePic}
@@ -22,15 +36,45 @@ function ClientCard({ user }) {
       ) : (
         <div className={styles.clientAvatar}>{user.initials}</div>
       )}
-      <div>
+
+      {/* ── Info ── */}
+      <div className={styles.clientInfo}>
+
+        {/* Full name */}
         <div className={styles.clientName}>{user.fullName}</div>
-        <div className={styles.clientMeta}>
-          📅 {user.age} yrs old &nbsp;|&nbsp; {genderIcon} {user.sex} &nbsp;|&nbsp; 📍 {user.homeAddress}
-        </div>
-        <div className={styles.clientMeta} style={{ marginTop: 2 }}>
-          ✉️ {user.email} &nbsp;|&nbsp; 📞 {user.contactNo}
+
+        {/* 2-column grid for short fields */}
+        <div className={styles.clientMetaGrid}>
+
+          <div className={styles.clientMetaRow}>
+            <BsCalendar2CheckFill className={styles.metaIcon} />
+            <span>{user.age} yrs old</span>
+          </div>
+
+          <div className={styles.clientMetaRow}>
+            <GenderIcon className={styles.metaIcon} />
+            <span>{user.sex}</span>
+          </div>
+
+          <div className={styles.clientMetaRow}>
+            <BsTelephoneFill className={styles.metaIcon} />
+            <span>{user.contactNo}</span>
+          </div>
+
+          <div className={styles.clientMetaRow}>
+            <BsEnvelopeFill className={styles.metaIcon} />
+            <span className={styles.metaEllipsis}>{user.email}</span>
+          </div>
+
+          {/* Address spans full width */}
+          <div className={`${styles.clientMetaRow} ${styles.clientMetaFull}`}>
+            <BsGeoAltFill className={styles.metaIcon} />
+            <span>{user.homeAddress}</span>
+          </div>
+
         </div>
       </div>
+
     </div>
   );
 }
@@ -47,7 +91,6 @@ const PAaEReason = ({ config, form, setForm, user }) => {
   const len        = (form.reason || '').length;
   const hasRpmStep = config.steps.includes('Choose RPm');
 
-  /* Extra fields rendered per service */
   const extraFields = {
     legalType: (
       <div className={styles.field}>
@@ -116,12 +159,12 @@ const PAaEReason = ({ config, form, setForm, user }) => {
       {/* ── Free / paid banner ── */}
       {!config.hasPayment ? (
         <div className={styles.freeBanner}>
-          <span>✅</span>
+          <BsCheckCircleFill className={styles.bannerIcon} />
           <span>This service is <strong>free of charge</strong>. No payment required.</span>
         </div>
       ) : (
         <div className={styles.infoBanner}>
-          <span>ℹ️</span>
+          <BsInfoCircleFill className={styles.bannerIcon} />
           <span>Your basic profile information is pre-loaded from your account. Only your reason for consultation is needed below.</span>
         </div>
       )}
@@ -152,7 +195,7 @@ const PAaEReason = ({ config, form, setForm, user }) => {
       {/* ── Hint: date/time picked on next step ── */}
       {hasRpmStep && (
         <div className={styles.infoBanner} style={{ marginTop: 4 }}>
-          <span>📅</span>
+          <BsClockFill className={styles.bannerIcon} />
           <span>You'll choose your preferred date &amp; time on the next step after selecting an RPm.</span>
         </div>
       )}

@@ -1,27 +1,22 @@
-// ScheduleForm/SelectDateAndTime.jsx
+// AppointmentComponents/SelectDateandTime.jsx
 //
-// Self-contained Date + Time picker component.
-// Matches the screenshot calendar design:
-//   · Solid purple header bar with bold month/year
-//   · Circular nav arrow buttons
-//   · Past/unavailable = light grey
-//   · Available = bold purple text
-//   · Today = purple ring outline (fires same-day toast on click)
-//   · Selected = solid purple filled circle, white text
-//   · Time = custom dropdown with list of slots
+// Self-contained Date + Time picker.
+// Used in both ScheduleForm (PAC) and PAaEChooseRPm.
 //
 // Props:
-//   doctorData      — doctor object from MOCK_DOCTORS
-//   selectedDate    — dateSlot object or null
-//   setSelectedDate — setter
-//   selectedTime    — string or null  e.g. "4:00 PM"
-//   setSelectedTime — setter
+//   doctorData       — doctor object from MOCK_DOCTORS (needs .availability)
+//   selectedDate     — full dateSlot { date, day, slots } or null
+//   setSelectedDate  — setter — receives full dateSlot object
+//   selectedTime     — string or null  e.g. "4:00 PM"
+//   setSelectedTime  — setter
+//   hideSectionTitle — bool (default false) — hides "Select Date" / "Select Time"
+//                      labels when the parent already provides its own header
 
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { TiWarningOutline } from 'react-icons/ti';
-import styles from '../../../ClientStyle/ScheduleForm.module.css';
+import styles from './styles/SelectDateAndTime.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeToMinutes = (timeStr) => {
@@ -43,11 +38,12 @@ export const getEndTime = (startTime) => {
   return `${displayHours}:${displayMins} ${period}`;
 };
 
-const getBookableSlots = (slots) =>
+// Returns slots that can start a 1-hour booking (current + next both available)
+const getBookableSlots = (slots = []) =>
   slots.map((slot, index) => {
     if (index === slots.length - 1) return { ...slot, bookable: false };
-    const nextSlot = slots[index + 1];
-    return { ...slot, bookable: slot.available && !!nextSlot && nextSlot.available };
+    const next = slots[index + 1];
+    return { ...slot, bookable: slot.available && !!next && next.available };
   });
 
 const MONTH_NAMES = [
@@ -78,13 +74,13 @@ const SameDayToast = ({ show, onClose }) => {
         </p>
       </div>
       <button className={styles.toastClose} onClick={onClose} aria-label="Dismiss">✕</button>
-      {/* animated progress bar — key resets animation on each new show */}
       <div className={styles.toastProgress} key={String(show)} />
     </div>
   );
 };
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
+// Passes full dateSlot object { date, day, slots } up via onSelectDate
 const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -92,14 +88,17 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-  // Build a lookup map: dateString → dateSlot object
+  // Map of "March 19, 2026" → full dateSlot object
   const availableMap = useMemo(() => {
     const map = {};
-    availability.forEach(d => { map[d.date] = d; });
+    (availability || []).forEach(d => { map[d.date] = d; });
     return map;
   }, [availability]);
 
-  const availableDateSet = useMemo(() => new Set(Object.keys(availableMap)), [availableMap]);
+  const availableDateSet = useMemo(
+    () => new Set(Object.keys(availableMap)),
+    [availableMap]
+  );
 
   const canGoPrev =
     viewYear > today.getFullYear() ||
@@ -124,11 +123,12 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
     return cells;
   }, [viewYear, viewMonth]);
 
+  // Returns "March 19, 2026" format — must match availability[].date exactly
   const getDateString = (day) =>
     new Date(viewYear, viewMonth, day)
       .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  const isToday      = (day) =>
+  const isToday = (day) =>
     day === today.getDate() &&
     viewMonth === today.getMonth() &&
     viewYear  === today.getFullYear();
@@ -139,19 +139,20 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
     return d < today;
   };
 
-  const isAvailable  = (day) => availableDateSet.has(getDateString(day));
-  const isSelected   = (day) => selectedDate?.date === getDateString(day);
+  const isAvailable = (day) => availableDateSet.has(getDateString(day));
+
+  // Compare against selectedDate.date string (not raw Date)
+  const isSelected = (day) => selectedDate?.date === getDateString(day);
 
   const handleDayClick = (day) => {
     if (isToday(day))                           { onTodayClick(); return; }
     if (isStrictPast(day) || !isAvailable(day)) return;
+    // Pass full dateSlot object up — TimeDropdown needs .slots
     onSelectDate(availableMap[getDateString(day)]);
   };
 
   return (
     <div className={styles.calCard}>
-
-      {/* ── Purple header ── */}
       <div className={styles.calHeader}>
         <button
           className={styles.calArrowBtn}
@@ -173,15 +174,11 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
         </button>
       </div>
 
-      {/* ── Day grid ── */}
       <div className={styles.calBody}>
-
-        {/* Day name headers */}
         {DAY_LABELS.map(d => (
           <div key={d} className={styles.calDayName}>{d}</div>
         ))}
 
-        {/* Day cells */}
         {calendarDays.map((day, i) => {
           if (!day) return <div key={`e-${i}`} className={styles.calEmpty} />;
 
@@ -192,10 +189,10 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
           const disabled   = strictPast || (!todayCell && !available);
 
           let cellCls = styles.calCell;
-          if (selected)                              cellCls += ` ${styles.calCellSelected}`;
-          else if (todayCell)                        cellCls += ` ${styles.calCellToday}`;
-          else if (available && !strictPast)         cellCls += ` ${styles.calCellAvail}`;
-          else                                       cellCls += ` ${styles.calCellDisabled}`;
+          if (selected)                      cellCls += ` ${styles.calCellSelected}`;
+          else if (todayCell)                cellCls += ` ${styles.calCellToday}`;
+          else if (available && !strictPast) cellCls += ` ${styles.calCellAvail}`;
+          else                               cellCls += ` ${styles.calCellDisabled}`;
 
           return (
             <button
@@ -209,7 +206,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
             </button>
           );
         })}
-
       </div>
     </div>
   );
@@ -220,7 +216,6 @@ const TimeDropdown = ({ bookableSlots, selectedTime, onSelectTime }) => {
   const [open, setOpen] = useState(false);
   const ref             = useRef(null);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -235,14 +230,12 @@ const TimeDropdown = ({ bookableSlots, selectedTime, onSelectTime }) => {
 
   return (
     <div className={styles.timeDropdownWrapper} ref={ref}>
-
-      {/* Trigger */}
       <button
         type="button"
         className={[
           styles.timeDropdownTrigger,
-          selectedTime    ? styles.timeDropdownTriggerSelected : '',
-          open            ? styles.timeDropdownTriggerOpen     : '',
+          selectedTime ? styles.timeDropdownTriggerSelected : '',
+          open         ? styles.timeDropdownTriggerOpen     : '',
         ].filter(Boolean).join(' ')}
         onClick={() => setOpen(o => !o)}
       >
@@ -257,7 +250,6 @@ const TimeDropdown = ({ bookableSlots, selectedTime, onSelectTime }) => {
         />
       </button>
 
-      {/* Dropdown list */}
       {open && (
         <ul className={styles.timeDropdownList}>
           {bookableSlots.length === 0 ? (
@@ -278,66 +270,45 @@ const TimeDropdown = ({ bookableSlots, selectedTime, onSelectTime }) => {
           )}
         </ul>
       )}
-
     </div>
   );
 };
 
-// ─── SelectDateAndTime (main export) ──────────────────────────────────────────
-const SelectDateAndTime = ({
+// ─── SelectDateandTime (main export) ──────────────────────────────────────────
+const SelectDateandTime = ({
   doctorData,
   selectedDate,
   setSelectedDate,
   selectedTime,
   setSelectedTime,
+  hideSectionTitle = false,  // ← set true when parent already has its own header
 }) => {
   const [sameDayToast, setSameDayToast] = useState(false);
 
-  // ── Error states ────────────────────────────────────────────
-  const [dateError, setDateError] = useState('');
-  const [timeError, setTimeError] = useState('');
-
-  // Clear date error once a date is picked
-  useEffect(() => {
-    if (selectedDate) setDateError('');
-  }, [selectedDate]);
-
-  // Clear time error once a time is picked
-  useEffect(() => {
-    if (selectedTime) setTimeError('');
-  }, [selectedTime]);
-
   const handleSelectDate = (dateSlot) => {
-    setSelectedDate(dateSlot);
-    setSelectedTime(null);   // reset time when date changes
-    setDateError('');
-    setTimeError('');
+    setSelectedDate(dateSlot);  // dateSlot = { date, day, slots }
+    setSelectedTime(null);      // reset time when date changes
   };
 
   const handleTodayClick = () => {
     setSameDayToast(true);
     setSelectedDate(null);
     setSelectedTime(null);
-    setDateError('Same-day booking is not allowed. Please select a future date.');
   };
 
-  const handleSelectTime = (time) => {
-    if (!selectedDate) {
-      setDateError('Please select a date first before choosing a time.');
-      return;
-    }
-    setSelectedTime(time);
-    setTimeError('');
-  };
-
-  // Bookable slots for the selected date
+  // Build bookable slots from the selected dateSlot's slots array
   const bookableSlots = useMemo(() => {
-    if (!selectedDate) return [];
-    return getBookableSlots(selectedDate.slots).filter(s => s.bookable);
+    const slots = selectedDate?.slots;
+    if (!slots || !Array.isArray(slots) || slots.length === 0) return [];
+    return getBookableSlots(slots).filter(s => s.bookable);
   }, [selectedDate]);
 
-  // Warn if a date was selected but has no bookable slots
-  const noSlotsWarning = selectedDate && bookableSlots.length === 0;
+  // Only warn if we have a date + confirmed slots array exists but all are taken
+  const noSlotsWarning =
+    selectedDate &&
+    Array.isArray(selectedDate?.slots) &&
+    selectedDate.slots.length > 0 &&
+    bookableSlots.length === 0;
 
   if (!doctorData) return null;
 
@@ -348,9 +319,11 @@ const SelectDateAndTime = ({
 
       {/* ── Select Date ── */}
       <div className={styles.section}>
-        <p className={styles.sectionTitle}>
-          <span className={styles.required}>*</span> Select Date
-        </p>
+        {!hideSectionTitle && (
+          <p className={styles.sectionTitle}>
+            <span className={styles.required}>*</span> Select Date
+          </p>
+        )}
 
         <Calendar
           availability={doctorData.availability}
@@ -359,12 +332,6 @@ const SelectDateAndTime = ({
           onTodayClick={handleTodayClick}
         />
 
-        {/* Date error (e.g. same-day, no date selected on submit) */}
-        {dateError && (
-          <p className={styles.fieldError}>{dateError}</p>
-        )}
-
-        {/* No available slots warning */}
         {noSlotsWarning && (
           <p className={styles.fieldWarning}>
             ⚠️ No available 1-hour slots on this date. Please choose a different day.
@@ -372,9 +339,10 @@ const SelectDateAndTime = ({
         )}
       </div>
 
-      {/* ── Select Time (only after a date is picked and has slots) ── */}
+      {/* ── Select Time — only after a valid date with slots ── */}
       {selectedDate && !noSlotsWarning && (
         <div className={styles.section}>
+          {/* Time label always shows — even when hideSectionTitle is true */}
           <p className={styles.sectionTitle}>
             <span className={styles.required}>*</span> Select Time
             <span className={styles.sessionNote}> · 1 hour session</span>
@@ -383,15 +351,9 @@ const SelectDateAndTime = ({
           <TimeDropdown
             bookableSlots={bookableSlots}
             selectedTime={selectedTime}
-            onSelectTime={handleSelectTime}
+            onSelectTime={setSelectedTime}
           />
 
-          {/* Time error */}
-          {timeError && (
-            <p className={styles.fieldError}>{timeError}</p>
-          )}
-
-          {/* Confirm selected range */}
           {selectedTime && (
             <p className={styles.selectedTimeRange}>
               Session: <strong>{selectedTime} – {getEndTime(selectedTime)}</strong>
@@ -403,4 +365,4 @@ const SelectDateAndTime = ({
   );
 };
 
-export default SelectDateAndTime;
+export default SelectDateandTime;
