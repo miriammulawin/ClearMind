@@ -632,7 +632,6 @@
   font-weight: 600;
   font-family: 'Poppins', sans-serif;
   cursor: pointer;
-  text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow: 0 4px 14px rgba(31, 106, 165, 0.3);
   transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;

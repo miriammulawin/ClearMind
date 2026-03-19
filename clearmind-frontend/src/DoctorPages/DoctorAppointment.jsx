@@ -123,7 +123,6 @@ function DoctorAppointment() {
           <div className={styles.pageHeader}>
             <h3 className={styles.pageTitle}>Appointment Calendar</h3>
             <div className={styles.headerActions}>
-            
               <button
                 className={styles.btnCreate}
                 onClick={() => setShowCreateModal(true)}

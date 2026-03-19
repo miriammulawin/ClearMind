@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
-import "./AdminStyle/AdminBilling.css";
+import styles from "./AdminStyle/AdminBilling.module.css";
 import {
   FiX,
   FiDollarSign,
@@ -62,6 +62,9 @@ function AdminBilling() {
   const [showModal, setShowModal] = useState(false);
   const [selectedBill, setSelectedBill] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [dateFrom, setDateFrom] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   useEffect(() => {
     setActiveMenu("Billing");
@@ -200,17 +203,37 @@ function AdminBilling() {
     },
   ];
 
-  const filteredData =
-    filterStatus === "ALL"
-      ? billingData
-      : billingData.filter((item) => item.status === filterStatus);
+  const filteredData = billingData.filter((i) => {
+    const matchStatus = filterStatus === "ALL" || i.status === filterStatus;
+    if (!matchStatus) return false;
+    if (dateFrom) {
+      const itemDate = new Date(i.date).toDateString();
+      const filterDate = new Date(dateFrom).toDateString();
+      if (itemDate !== filterDate) return false;
+    }
+    return true;
+  });
 
-  const totalBalance = filteredData.reduce(
-    (sum, item) => sum + item.balance,
-    0,
+  const totalBalance = filteredData.reduce((sum, i) => sum + i.balance, 0);
+  const countByStatus = (s) => billingData.filter((i) => i.status === s).length;
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+  const displayedData = filteredData.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage,
   );
-  const countByStatus = (status) =>
-    billingData.filter((item) => item.status === status).length;
+
+  const handleTabChange = (key) => {
+    setFilterStatus(key);
+    setCurrentPage(1);
+  };
+  const handleDateFrom = (e) => {
+    setDateFrom(e.target.value);
+    setCurrentPage(1);
+  };
+  const clearDates = () => {
+    setDateFrom("");
+    setCurrentPage(1);
+  };
 
   const tabs = [
     {
@@ -240,43 +263,38 @@ function AdminBilling() {
     setReceiptOpen(false);
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "CLEARED":
-        return <FiCheckCircle size={15} />;
-      case "UNSETTLED":
-        return <FiAlertCircle size={15} />;
-      case "VOID":
-        return <FiXCircle size={15} />;
-      default:
-        return null;
-    }
-  };
+  const getStatusIcon = (s) =>
+    ({
+      CLEARED: <FiCheckCircle size={15} />,
+      UNSETTLED: <FiAlertCircle size={15} />,
+      VOID: <FiXCircle size={15} />,
+    })[s] || null;
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "CLEARED":
-        return {
-          background: "#dcfce7",
-          color: "#16a34a",
-          border: "1px solid #bbf7d0",
-        };
-      case "UNSETTLED":
-        return {
-          background: "#fef9c3",
-          color: "#b45309",
-          border: "1px solid #fde68a",
-        };
-      case "VOID":
-        return {
-          background: "#fee2e2",
-          color: "#dc2626",
-          border: "1px solid #fecaca",
-        };
-      default:
-        return {};
-    }
-  };
+  const getStatusStyle = (s) =>
+    ({
+      CLEARED: {
+        background: "#dcfce7",
+        color: "#16a34a",
+        border: "1px solid #bbf7d0",
+      },
+      UNSETTLED: {
+        background: "#fef9c3",
+        color: "#b45309",
+        border: "1px solid #fde68a",
+      },
+      VOID: {
+        background: "#fee2e2",
+        color: "#dc2626",
+        border: "1px solid #fecaca",
+      },
+    })[s] || {};
+
+  const statusClass = (s) =>
+    ({
+      CLEARED: styles.statusCleared,
+      UNSETTLED: styles.statusUnsettled,
+      VOID: styles.statusVoid,
+    })[s] || "";
 
   return (
     <div className="admin-layout">
@@ -284,27 +302,43 @@ function AdminBilling() {
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
 
-        <div className="admin-content p-3 p-md-4">
-          <div className="billing-container">
-            {/* ── Tabs ── */}
-            <div className="patient-tabs mb-3">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  className={filterStatus === tab.key ? "tab-active" : ""}
-                  onClick={() => setFilterStatus(tab.key)}
-                >
-                  {tab.label}
-                  <span className={tab.red ? "tab-badge-pending" : ""}>
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+        <div className={`admin-content ${styles.billingPage}`}>
+          <div className={styles.billingCard}>
+            {/* ── Tabs + Date Filter ── */}
+            <div className={styles.tabsRow}>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    className={`${styles.tabBtn} ${filterStatus === tab.key ? styles.tabActive : ""}`}
+                    onClick={() => handleTabChange(tab.key)}
+                  >
+                    {tab.label}
+                    <span className={tab.red ? styles.tabBadgeRed : ""}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className={styles.dateFilterGroup}>
+                <span className={styles.dateLabel}>Date:</span>
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={dateFrom}
+                  onChange={handleDateFrom}
+                />
+                {dateFrom && (
+                  <button className={styles.btnClearDate} onClick={clearDates}>
+                    <FiX size={12} /> Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* ── Table ── */}
-            <div className="patient-table-wrapper">
-              <table className="patient-table">
+            <div className={styles.tableWrapper}>
+              <table className={styles.billingTable}>
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -318,23 +352,21 @@ function AdminBilling() {
                 </thead>
                 <tbody>
                   {filteredData.length > 0 ? (
-                    filteredData.map((item) => (
+                    displayedData.map((item) => (
                       <tr key={item.id}>
                         <td>{item.date}</td>
                         <td>{item.patientName}</td>
                         <td>₱ {item.amount.toLocaleString()}</td>
                         <td>₱ {item.balance.toLocaleString()}</td>
                         <td>
-                          <span
-                            className={`status ${item.status.toLowerCase()}`}
-                          >
+                          <span className={statusClass(item.status)}>
                             {item.status}
                           </span>
                         </td>
                         <td>{item.datePaid}</td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleView(item)}
                           >
                             View
@@ -344,14 +376,7 @@ function AdminBilling() {
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan={7}
-                        style={{
-                          color: "#777",
-                          padding: "24px",
-                          textAlign: "center",
-                        }}
-                      >
+                      <td colSpan={7} className={styles.emptyRow}>
                         No records found.
                       </td>
                     </tr>
@@ -361,64 +386,80 @@ function AdminBilling() {
             </div>
 
             {/* ── Total Balance ── */}
-            <div className="d-flex justify-content-end mt-4">
-              <div className="text-end">
-                <span
-                  className="fw-bold me-3"
-                  style={{ fontSize: "14px", color: "#4D227C" }}
+            <div className={styles.totalRow}>
+              <span className={styles.totalLabel}>TOTAL BALANCE:</span>
+              <span className={styles.totalValue}>
+                ₱ {totalBalance.toLocaleString()}
+              </span>
+            </div>
+
+            {/* ── Pagination ── */}
+            <div className={styles.pagination}>
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                ‹ Previous
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  className={currentPage === i + 1 ? styles.pageActive : ""}
+                  onClick={() => setCurrentPage(i + 1)}
                 >
-                  TOTAL BALANCE:
-                </span>
-                <span style={{ fontSize: "16px", color: "#333" }}>
-                  ₱ {totalBalance.toLocaleString()}
-                </span>
-              </div>
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next ›
+              </button>
+            </div>
+            <div className={styles.pageInfo}>
+              Page {currentPage} of {totalPages || 1}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Payment Details Modal ── */}
+      {/* ════════════════════════════
+          PAYMENT DETAILS MODAL
+      ════════════════════════════ */}
       {showModal && selectedBill && (
         <div
-          className="patient-modal-overlay"
+          className={styles.modalOverlay}
           onClick={() => setShowModal(false)}
         >
-          <div
-            className="patient-modal-lg"
-            style={{ maxWidth: "680px" }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
             {/* Header */}
-            <div className="modal-profile-header">
+            <div className={styles.modalHeader}>
               <button
-                className="close-btn profile-close-btn"
+                className={styles.closeBtn}
                 onClick={() => setShowModal(false)}
               >
                 <FiX />
               </button>
-              <div className="modal-profile-row">
+              <div className={styles.modalHeaderRow}>
                 <AvatarPlaceholder name={selectedBill.patientName} size={64} />
-                <div className="patient-profile-info">
-                  <h3 className="patient-profile-name">
+                <div className={styles.headerInfo}>
+                  <h3 className={styles.headerName}>
                     {selectedBill.patientName}
                   </h3>
-                  <p
-                    className="patient-profile-contact"
-                    style={{ marginBottom: "8px" }}
-                  >
+                  <p className={styles.headerSub}>
                     <FiCalendar size={12} style={{ marginRight: 5 }} />
                     Billing Date: {selectedBill.date}
                   </p>
-                  <div className="patient-profile-meta">
-                    <span className="profile-meta-chip">
+                  <div className={styles.headerMeta}>
+                    <span className={styles.metaChip}>
                       {selectedBill.visitType}
                     </span>
-                    <span className="profile-meta-chip">
+                    <span className={styles.metaChip}>
                       {selectedBill.consultationMode}
                     </span>
                     <span
-                      className="profile-meta-chip"
+                      className={styles.metaChip}
                       style={{
                         background:
                           selectedBill.status === "CLEARED"
@@ -442,151 +483,47 @@ function AdminBilling() {
             </div>
 
             {/* Body */}
-            <div className="modal-body">
-              {/* Billing Summary */}
+            <div className={styles.modalBody}>
+              {/* ── Billing Summary ── */}
               <div
-                className="modal-content-card"
+                className={styles.modalCard}
                 style={{ marginBottom: "12px" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "16px",
-                    paddingBottom: "12px",
-                    borderBottom: "1px solid #ede9f6",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardIcon}>
                     <FiDollarSign size={14} color="#fff" />
                   </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      color: "#3b1f6e",
-                    }}
-                  >
-                    Billing Summary
-                  </h4>
+                  <h4 className={styles.cardTitle}>Billing Summary</h4>
                 </div>
 
                 {/* Amount breakdown */}
-                <div
-                  style={{
-                    background: "linear-gradient(135deg, #f3eeff, #ede9f6)",
-                    border: "1px solid #d8ccf0",
-                    borderRadius: "12px",
-                    padding: "16px 20px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#7341A8",
-                        fontWeight: 600,
-                      }}
-                    >
+                <div className={styles.summaryBox}>
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabel}>
                       Consultation Fee
                     </span>
-                    <span
-                      style={{
-                        fontSize: "15px",
-                        fontWeight: 700,
-                        color: "#3b1f6e",
-                      }}
-                    >
+                    <span className={styles.summaryValueFee}>
                       ₱ {selectedBill.amount.toLocaleString()}
                     </span>
                   </div>
-                  <div
-                    style={{
-                      height: "1px",
-                      background: "#d8ccf0",
-                      margin: "10px 0",
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#7341A8",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Amount Paid
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "15px",
-                        fontWeight: 700,
-                        color: "#16a34a",
-                      }}
-                    >
+                  <div className={styles.summaryDivider} />
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabel}>Amount Paid</span>
+                    <span className={styles.summaryValuePaid}>
                       ₱{" "}
                       {(
                         selectedBill.amount - selectedBill.balance
                       ).toLocaleString()}
                     </span>
                   </div>
-                  <div
-                    style={{
-                      height: "1px",
-                      background: "#d8ccf0",
-                      margin: "10px 0",
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        color: "#4D227C",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
+                  <div className={styles.summaryDivider} />
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabelBold}>
                       Remaining Balance
                     </span>
                     <span
+                      className={styles.summaryValueOwed}
                       style={{
-                        fontSize: "17px",
-                        fontWeight: 800,
                         color: selectedBill.balance > 0 ? "#dc2626" : "#16a34a",
                       }}
                     >
@@ -596,64 +533,51 @@ function AdminBilling() {
                 </div>
 
                 {/* Info grid */}
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div className={styles.twoCol}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Patient</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Patient</span>
+                      <span className={styles.infoValue}>
                         {selectedBill.patientName}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Billing Date</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Billing Date</span>
+                      <span className={styles.infoValue}>
                         {selectedBill.date}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Date Paid</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Date Paid</span>
+                      <span className={styles.infoValue}>
                         {selectedBill.datePaid}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div
-                      className="modal-info-icon"
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "#7341A8",
-                      }}
-                    >
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       {getStatusIcon(selectedBill.status)}
                     </div>
                     <div>
-                      <span className="modal-info-label">Status</span>
+                      <span className={styles.infoLabel}>Status</span>
                       <span
-                        className="status-badge"
-                        style={{
-                          ...getStatusStyle(selectedBill.status),
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          marginTop: "2px",
-                        }}
+                        className={styles.statusBadge}
+                        style={getStatusStyle(selectedBill.status)}
                       >
-                        {getStatusIcon(selectedBill.status)}
+                        {getStatusIcon(selectedBill.status)}{" "}
                         {selectedBill.status}
                       </span>
                     </div>
@@ -661,65 +585,35 @@ function AdminBilling() {
                 </div>
               </div>
 
-              {/* Payment Details + Collapsible Receipt */}
-              <div className="modal-content-card">
-                {/* Payment method & reference */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "16px",
-                    paddingBottom: "12px",
-                    borderBottom: "1px solid #ede9f6",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
+              {/* ── Payment Details ── */}
+              <div className={styles.modalCard}>
+                <div className={styles.cardHeader}>
+                  <div className={styles.cardIcon}>
                     <FiCreditCard size={14} color="#fff" />
                   </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      color: "#3b1f6e",
-                    }}
-                  >
-                    Payment Details
-                  </h4>
+                  <h4 className={styles.cardTitle}>Payment Details</h4>
                 </div>
 
-                <div className="modal-two-col" style={{ marginBottom: "16px" }}>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div className={styles.twoCol} style={{ marginBottom: "16px" }}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiCreditCard />
                     </div>
                     <div>
-                      <span className="modal-info-label">Payment Method</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Payment Method</span>
+                      <span className={styles.infoValue}>
                         {selectedBill.paymentMethod}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiHash />
                     </div>
                     <div>
-                      <span className="modal-info-label">Reference No.</span>
+                      <span className={styles.infoLabel}>Reference No.</span>
                       <span
-                        className="modal-info-value"
+                        className={styles.infoValue}
                         style={{
                           fontFamily: "monospace",
                           letterSpacing: "0.5px",
@@ -731,36 +625,13 @@ function AdminBilling() {
                   </div>
                 </div>
 
-                {/* ── Collapsible View Payment Receipt ── */}
-                <div
-                  style={{
-                    border: "1.5px solid #e5d6f5",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Toggle header */}
+                {/* Receipt collapsible */}
+                <div className={styles.receiptToggleWrapper}>
                   <button
+                    className={`${styles.receiptToggle} ${receiptOpen ? styles.receiptToggleOpen : ""}`}
                     onClick={() => setReceiptOpen(!receiptOpen)}
-                    style={{
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 18px",
-                      background: receiptOpen ? "#f3eeff" : "#fff",
-                      border: "none",
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
                   >
-                    <span
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#4D227C",
-                      }}
-                    >
+                    <span className={styles.receiptToggleLabel}>
                       View Payment Receipt
                     </span>
                     {receiptOpen ? (
@@ -770,43 +641,19 @@ function AdminBilling() {
                     )}
                   </button>
 
-                  {/* Collapsible body */}
                   {receiptOpen && (
-                    <div
-                      style={{
-                        borderTop: "1.5px solid #e5d6f5",
-                        animation: "fadeSlideIn 0.2s ease",
-                      }}
-                    >
+                    <div className={styles.receiptBody}>
                       {selectedBill.status === "UNSETTLED" ||
                       selectedBill.status === "VOID" ? (
-                        <div
-                          style={{
-                            padding: "32px",
-                            background: "#f9fafb",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#9ca3af",
-                            fontSize: "13px",
-                            fontStyle: "italic",
-                          }}
-                        >
+                        <div className={styles.receiptEmpty}>
                           No payment proof available
                         </div>
                       ) : (
-                        /* Full receipt image — shown directly on expand */
-                        <div style={{ padding: "16px", background: "#faf7fd" }}>
+                        <div className={styles.receiptImageWrapper}>
                           <img
                             src={samplePayment}
                             alt="Payment Receipt"
-                            style={{
-                              width: "100%",
-                              display: "block",
-                              borderRadius: "10px",
-                              boxShadow: "0 4px 20px rgba(77,34,124,0.15)",
-                              border: "1px solid #e5d6f5",
-                            }}
+                            className={styles.receiptImage}
                           />
                         </div>
                       )}
@@ -817,19 +664,10 @@ function AdminBilling() {
             </div>
 
             {/* Footer */}
-            <div className="modal-footer">
+            <div className={styles.modalFooter}>
               <button
+                className={styles.btnClose}
                 onClick={() => setShowModal(false)}
-                style={{
-                  padding: "10px 24px",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  borderRadius: "10px",
-                  border: "1px solid #e5d6f5",
-                  background: "#f0ebf7",
-                  color: "#4D227C",
-                  cursor: "pointer",
-                }}
               >
                 Close
               </button>

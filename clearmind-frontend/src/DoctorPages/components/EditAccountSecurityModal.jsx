@@ -1,236 +1,312 @@
 import { useState } from "react";
-import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
-import "../DoctorStyle/Modal.module.css";
+import {
+  FiX,
+  FiPlus,
+  FiTrash2,
+  FiChevronLeft,
+  FiChevronRight,
+  FiEdit,
+} from "react-icons/fi";
+import styles from "../DoctorStyle/Modal.module.css";
 
-function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
+function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
-    email: doctorData?.email || "",
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    firstName: doctorData?.firstName || "",
+    lastName: doctorData?.lastName || "",
+    middleInitial: doctorData?.middleInitial || "",
+    contactNumber: doctorData?.contactNumber || "",
+    address: doctorData?.address || "",
+    dateOfBirth: doctorData?.dateOfBirth || "",
+    age: doctorData?.age || "",
+    gender: doctorData?.gender || "",
+    specialty: doctorData?.specialty || "",
+    practicingSince: doctorData?.practicingSince || "",
+    credentials: doctorData?.credentials || "",
+    licenseNo: doctorData?.licenseNo || "",
+    subspecialty: doctorData?.subspecialty || [],
+    services: doctorData?.services || [],
+    certifications: doctorData?.certifications || [],
+    boardCertImages: doctorData?.certificateImages || [],
+    idPictures: doctorData?.idImages || [],
   });
 
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    newPass: false,
-    confirm: false,
-  });
+  const [boardIndex, setBoardIndex] = useState(0);
+  const [idIndex, setIdIndex] = useState(0);
 
-  const [errors, setErrors] = useState({});
-
-  const toggleVisibility = (field) =>
-    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
-
-  const handleChange = (field, value) => {
+  const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+
+  const handleAddItem = (field) =>
+    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ""] }));
+
+  const handleRemoveItem = (field, index) =>
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index),
+    }));
+
+  const handleImageChange = (field, index, file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const updated = [...formData[field]];
+      updated[index] = reader.result;
+      setFormData((prev) => ({ ...prev, [field]: updated }));
+    };
+    if (file) reader.readAsDataURL(file);
   };
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.email) newErrors.email = "Email is required.";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Enter a valid email.";
-    if (formData.newPassword && formData.newPassword.length < 8)
-      newErrors.newPassword = "New password must be at least 8 characters.";
-    if (
-      formData.newPassword &&
-      formData.newPassword !== formData.confirmPassword
-    )
-      newErrors.confirmPassword = "Passwords do not match.";
-    if (formData.newPassword && !formData.currentPassword)
-      newErrors.currentPassword = "Please enter your current password.";
-    return newErrors;
+  const handleAddImage = (field, setIndex) => {
+    setFormData((prev) => ({ ...prev, [field]: [...prev[field], null] }));
+    setIndex(formData[field].length);
   };
+
+  const handleRemoveImage = (field, index, setIndex) => {
+    const updated = [...formData[field]];
+    updated.splice(index, 1);
+    setFormData((prev) => ({ ...prev, [field]: updated }));
+    setIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const prevImage = (field, setIndex, currentIndex) =>
+    setIndex(
+      currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1,
+    );
+
+  const nextImage = (field, setIndex, currentIndex) =>
+    setIndex(
+      currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1,
+    );
 
   const handleSave = () => {
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    if (onSave) onSave({ email: formData.email });
+    onSave && onSave(formData);
     onClose();
   };
 
   if (!show) return null;
 
-  /* ── password strength ── */
-  const strength =
-    formData.newPassword.length >= 12
-      ? { label: "✓ Strong password", color: "#16a34a" }
-      : formData.newPassword.length >= 8
-        ? { label: "⚠ Medium strength — try adding symbols", color: "#ca8a04" }
-        : { label: "✗ Too short — minimum 8 characters", color: "#ef4444" };
-
-  /* ── reusable password field ── */
-  const renderPasswordField = (label, field, visKey) => (
-    <div className="input-group">
-      <p className="modal-label">{label}</p>
-      <div style={{ position: "relative" }}>
-        <input
-          type={showPasswords[visKey] ? "text" : "password"}
-          className="modal-input"
-          style={{
-            paddingRight: "44px",
-            borderColor: errors[field] ? "#ef4444" : undefined,
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-          value={formData[field]}
-          onChange={(e) => handleChange(field, e.target.value)}
-          placeholder={`Enter ${label.toLowerCase()}`}
-        />
+  const renderDynamicField = (field, label) => (
+    <div className={styles["modal-section"]}>
+      <h4>{label}</h4>
+      <div className={styles["dynamic-box"]}>
+        {formData[field].map((item, i) => (
+          <div key={i} className={styles["dynamic-item"]}>
+            <span className={styles["dot"]} />
+            <input
+              type="text"
+              className={styles["modal-input"]}
+              value={item}
+              onChange={(e) => {
+                const updated = [...formData[field]];
+                updated[i] = e.target.value;
+                handleChange(field, updated);
+              }}
+            />
+            <button
+              onClick={() => handleRemoveItem(field, i)}
+              className={`${styles["icon-btn"]} ${styles["delete"]}`}
+            >
+              <FiTrash2 />
+            </button>
+          </div>
+        ))}
         <button
-          type="button"
-          onClick={() => toggleVisibility(visKey)}
-          style={{
-            position: "absolute",
-            right: "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#7B4A50",
-            fontSize: "16px",
-            padding: 0,
-            display: "flex",
-            alignItems: "center",
-          }}
+          onClick={() => handleAddItem(field)}
+          className={styles["add-btn"]}
         >
-          {showPasswords[visKey] ? <FiEye /> : <FiEyeOff />}
+          <FiPlus /> Add
         </button>
       </div>
-      {errors[field] && (
-        <span style={{ fontSize: "12px", color: "#ef4444", marginTop: "4px" }}>
-          {errors[field]}
-        </span>
-      )}
+    </div>
+  );
+
+  const renderCarousel = (field, index, setIndex, label) => (
+    <div className={styles["modal-section"]}>
+      <h4>{label}</h4>
+      <div className={styles["carousel-box"]}>
+        {formData[field].length > 0 && formData[field][index] ? (
+          <img src={formData[field][index]} alt="" />
+        ) : (
+          <span>No Images</span>
+        )}
+        {formData[field].length > 0 && (
+          <>
+            <button
+              className={`${styles["carousel-btn"]} ${styles["left"]}`}
+              onClick={() => prevImage(field, setIndex, index)}
+            >
+              <FiChevronLeft />
+            </button>
+            <button
+              className={`${styles["carousel-btn"]} ${styles["right"]}`}
+              onClick={() => nextImage(field, setIndex, index)}
+            >
+              <FiChevronRight />
+            </button>
+            <label
+              className={`${styles["carousel-btn"]} ${styles["edit"]}`}
+              style={{ cursor: "pointer" }}
+            >
+              <FiEdit />
+              <input
+                type="file"
+                hidden
+                onChange={(e) =>
+                  handleImageChange(field, index, e.target.files[0])
+                }
+              />
+            </label>
+            <button
+              className={`${styles["carousel-btn"]} ${styles["delete"]}`}
+              style={{
+                bottom: "10px",
+                right: "10px",
+                top: "auto",
+                transform: "none",
+              }}
+              onClick={() => handleRemoveImage(field, index, setIndex)}
+            >
+              <FiTrash2 />
+            </button>
+          </>
+        )}
+      </div>
+      <button
+        onClick={() => handleAddImage(field, setIndex)}
+        className={styles["add-btn"]}
+        style={{ marginTop: "12px" }}
+      >
+        <FiPlus /> Add Image
+      </button>
     </div>
   );
 
   return (
-    <div className="profile-modal-overlay" onClick={onClose}>
+    <div className={styles["profile-modal-overlay"]} onClick={onClose}>
       <div
-        className="profile-modal-lg"
-        style={{ maxWidth: "600px" }}
+        className={styles["profile-modal-lg"]}
         onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
-        <div className="modal-header">
-          <h2>Account Security</h2>
-          <button className="close-btn" onClick={onClose}>
-            <FiX style={{ color: "#fff", fontSize: "20px" }} />
+        <div className={styles["modal-header"]}>
+          <h2>Edit Personal Information</h2>
+          <button className={styles["close-btn"]} onClick={onClose}>
+            <FiX />
           </button>
         </div>
 
         {/* BODY */}
-        <div className="modal-body">
-          {/* Email */}
-          <div className="modal-section">
-            <h4>Account Details</h4>
-            <div className="input-group">
-              <p className="modal-label">Email Address</p>
-              <input
-                type="email"
-                className="modal-input"
-                style={{ borderColor: errors.email ? "#ef4444" : undefined }}
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="Enter email address"
-              />
-              {errors.email && (
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "#ef4444",
-                    marginTop: "4px",
-                  }}
+        <div className={styles["modal-body"]}>
+          {/* Personal Information section */}
+          <div className={styles["modal-section"]}>
+            <h4>Personal Information</h4>
+
+            <div className={styles["grid-3"]}>
+              {["First Name", "Last Name", "Middle Initial"].map((label, i) => {
+                const keys = ["firstName", "lastName", "middleInitial"];
+                return (
+                  <div key={i} className={styles["input-group"]}>
+                    <p className={styles["modal-label"]}>{label}</p>
+                    <input
+                      className={styles["modal-input"]}
+                      value={formData[keys[i]]}
+                      onChange={(e) => handleChange(keys[i], e.target.value)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className={styles["grid-2"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Credentials</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.credentials}
+                  onChange={(e) => handleChange("credentials", e.target.value)}
+                />
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>License Number</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.licenseNo}
+                  onChange={(e) => handleChange("licenseNo", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={styles["grid-4"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Contact Number</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.contactNumber}
+                  onChange={(e) =>
+                    handleChange("contactNumber", e.target.value)
+                  }
+                />
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Age</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.age}
+                  onChange={(e) => handleChange("age", e.target.value)}
+                />
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Gender</p>
+                <select
+                  className={styles["modal-input"]}
+                  value={formData.gender}
+                  onChange={(e) => handleChange("gender", e.target.value)}
                 >
-                  {errors.email}
-                </span>
-              )}
+                  <option value="">Select</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Date of Birth</p>
+                <input
+                  type="date"
+                  className={styles["modal-input"]}
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={styles["grid-1"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Address</p>
+                <input
+                  className={styles["modal-input"]}
+                  placeholder="Street, Barangay, City, Province"
+                  value={formData.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Divider */}
-          <div style={{ position: "relative", margin: "4px 0 24px" }}>
-            <div style={{ borderTop: "1px dashed #dcdfe3" }} />
-            <span
-              style={{
-                position: "absolute",
-                top: "-10px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                background: "#fff",
-                padding: "0 12px",
-                fontSize: "11px",
-                color: "#9ca3af",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Change Password
-            </span>
-          </div>
-
-          {/* Password fields */}
-          <div className="modal-section">
-            <h4>Password</h4>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-            >
-              {renderPasswordField(
-                "Current Password",
-                "currentPassword",
-                "current",
-              )}
-              {renderPasswordField("New Password", "newPassword", "newPass")}
-
-              {/* Strength indicator */}
-              {formData.newPassword && (
-                <span
-                  style={{
-                    fontSize: "11px",
-                    color: strength.color,
-                    marginTop: "-8px",
-                  }}
-                >
-                  {strength.label}
-                </span>
-              )}
-
-              {renderPasswordField(
-                "Confirm New Password",
-                "confirmPassword",
-                "confirm",
-              )}
-
-              {/* Match indicator */}
-              {formData.confirmPassword &&
-                !errors.confirmPassword &&
-                formData.newPassword === formData.confirmPassword && (
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      color: "#16a34a",
-                      marginTop: "-8px",
-                    }}
-                  >
-                    ✓ Passwords match
-                  </span>
-                )}
-            </div>
-          </div>
+          {renderCarousel(
+            "boardCertImages",
+            boardIndex,
+            setBoardIndex,
+            "Board Certifications",
+          )}
+          {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
+          {renderDynamicField("subspecialty", "Subspecialty")}
+          {renderDynamicField("services", "Services")}
+          {renderDynamicField("certifications", "Certifications")}
         </div>
 
         {/* FOOTER */}
-        <div className="modal-footer">
-          <button className="btn-completed" onClick={handleSave}>
-            Save
+        <div className={styles["modal-footer"]}>
+          <button className={styles["btn-completed"]} onClick={handleSave}>
+            Save Changes
           </button>
         </div>
       </div>
@@ -238,4 +314,4 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   );
 }
 
-export default EditAccountSecurityModal;
+export default EditPersonalInfoModal;

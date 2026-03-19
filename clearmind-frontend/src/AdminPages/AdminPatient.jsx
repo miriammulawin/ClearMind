@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
-import "./AdminStyle/AdminPatient.css";
+import styles from "./AdminStyle/AdminPatient.module.css";
 import {
   FiX,
   FiCheck,
@@ -76,12 +76,9 @@ function AdminPatient() {
   const [zoomImage, setZoomImage] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [patientTypeFilter, setPatientTypeFilter] = useState("all");
-
-  // ── Refund modal state ──
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedRefund, setSelectedRefund] = useState(null);
   const [refundProcessed, setRefundProcessed] = useState({});
-
   const navigate = useNavigate();
 
   const [rescheduleRequests, setRescheduleRequests] = useState([
@@ -314,6 +311,8 @@ function AdminPatient() {
       gender: "Male",
       totalVisits: 8,
       assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
+      cancellationReason:
+        "Patient called to cancel due to a sudden work obligation that could not be rescheduled.",
     },
     {
       id: 302,
@@ -334,6 +333,8 @@ function AdminPatient() {
         name: "Dr. Maria Reyes",
         specialization: "General Physician",
       },
+      cancellationReason:
+        "Patient requested cancellation via email citing personal reasons and did not wish to reschedule at this time.",
     },
   ];
 
@@ -350,7 +351,6 @@ function AdminPatient() {
     patientTypeFilter === "all"
       ? rawData
       : rawData.filter((r) => r.patientType === patientTypeFilter);
-
   const totalPages = Math.ceil(activeData.length / rowsPerPage);
   const displayedData = activeData.slice(
     (currentPage - 1) * rowsPerPage,
@@ -386,7 +386,6 @@ function AdminPatient() {
     setPatientTypeFilter(e.target.value);
     setCurrentPage(1);
   };
-
   const handleRefundOpen = (row) => {
     setSelectedRefund(row);
     setShowRefundModal(true);
@@ -396,57 +395,48 @@ function AdminPatient() {
     setShowRefundModal(false);
   };
 
-  const getRescheduleStatusBadge = (status) => {
-    switch (status) {
-      case "Approved":
-        return {
-          background: "#dcfce7",
-          color: "#16a34a",
-          border: "1px solid #bbf7d0",
-        };
-      case "Declined":
-        return {
-          background: "#fee2e2",
-          color: "#dc2626",
-          border: "1px solid #fecaca",
-        };
-      default:
-        return {
-          background: "#fef9c3",
-          color: "#b45309",
-          border: "1px solid #fde68a",
-        };
-    }
-  };
-  const getStatusBadgeStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return {
-          background: "#dcfce7",
-          color: "#16a34a",
-          border: "1px solid #bbf7d0",
-        };
-      case "scheduled":
-        return {
-          background: "#dbeafe",
-          color: "#1d4ed8",
-          border: "1px solid #bfdbfe",
-        };
-      case "cancelled":
-        return {
-          background: "#fee2e2",
-          color: "#dc2626",
-          border: "1px solid #fecaca",
-        };
-      default:
-        return {
-          background: "#f3f4f6",
-          color: "#6b7280",
-          border: "1px solid #e5e7eb",
-        };
-    }
-  };
-  const getConsultationModeBadge = (mode) => ({
+  const getRescheduleStatusBadge = (s) =>
+    ({
+      Approved: {
+        background: "#dcfce7",
+        color: "#16a34a",
+        border: "1px solid #bbf7d0",
+      },
+      Declined: {
+        background: "#fee2e2",
+        color: "#dc2626",
+        border: "1px solid #fecaca",
+      },
+    })[s] || {
+      background: "#fef9c3",
+      color: "#b45309",
+      border: "1px solid #fde68a",
+    };
+
+  const getStatusBadgeStyle = (s) =>
+    ({
+      completed: {
+        background: "#dcfce7",
+        color: "#16a34a",
+        border: "1px solid #bbf7d0",
+      },
+      scheduled: {
+        background: "#dbeafe",
+        color: "#1d4ed8",
+        border: "1px solid #bfdbfe",
+      },
+      cancelled: {
+        background: "#fee2e2",
+        color: "#dc2626",
+        border: "1px solid #fecaca",
+      },
+    })[s?.toLowerCase()] || {
+      background: "#f3f4f6",
+      color: "#6b7280",
+      border: "1px solid #e5e7eb",
+    };
+
+  const getModeBadgeStyle = (mode) => ({
     display: "inline-flex",
     alignItems: "center",
     gap: "5px",
@@ -459,31 +449,39 @@ function AdminPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
+  /* ── Reusable section header ── */
+  const SectionHeader = ({ icon, title }) => (
+    <div className={styles.cardSectionHeader}>
+      <div className={styles.cardSectionIcon}>{icon}</div>
+      <h4 className={styles.cardSectionTitle}>{title}</h4>
+    </div>
+  );
+
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
-        <div className="admin-content" style={{ padding: "20px" }}>
-          <div className="patient-card">
-            {/* ── Tabs + Dropdown Filter Row ── */}
-            <div className="patient-tabs-row">
-              <div className="patient-tabs">
+        <div className={`admin-content ${styles.patientPage}`}>
+          <div className={styles.patientCard}>
+            {/* ── Tabs + Filter ── */}
+            <div className={styles.patientTabsRow}>
+              <div className={styles.patientTabs}>
                 <button
-                  className={activeTab === "patients" ? "tab-active" : ""}
+                  className={`${styles.tabBtn} ${activeTab === "patients" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("patients")}
                 >
                   Total's Patients <span>{patients.length}</span>
                 </button>
                 <button
-                  className={activeTab === "consultation" ? "tab-active" : ""}
+                  className={`${styles.tabBtn} ${activeTab === "consultation" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("consultation")}
                 >
                   Consultation Request{" "}
                   <span>{consultationRequests.length}</span>
                 </button>
                 <button
-                  className={activeTab === "reschedule" ? "tab-active" : ""}
+                  className={`${styles.tabBtn} ${activeTab === "reschedule" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("reschedule")}
                 >
                   Reschedule Request{" "}
@@ -491,7 +489,7 @@ function AdminPatient() {
                     className={
                       rescheduleRequests.filter((r) => r.status === "Pending")
                         .length > 0
-                        ? "tab-badge-pending"
+                        ? styles.tabBadgePending
                         : ""
                     }
                   >
@@ -502,17 +500,17 @@ function AdminPatient() {
                   </span>
                 </button>
                 <button
-                  className={`tab-cancelled-btn ${activeTab === "cancelled" ? "tab-cancelled-active" : ""}`}
+                  className={`${styles.tabCancelledBtn} ${activeTab === "cancelled" ? styles.tabCancelledActive : ""}`}
                   onClick={() => handleTabChange("cancelled")}
                 >
                   Cancelled{" "}
-                  <span className="tab-cancelled-count">
+                  <span className={styles.tabCancelledCount}>
                     {cancelledAppointments.length}
                   </span>
                 </button>
               </div>
 
-              <div className="patient-filter-dropdown">
+              <div className={styles.filterDropdown}>
                 <FiFilter size={13} />
                 <select value={patientTypeFilter} onChange={handleFilterChange}>
                   <option value="all">All Patients</option>
@@ -522,8 +520,10 @@ function AdminPatient() {
               </div>
             </div>
 
-            <div className="patient-table-wrapper">
-              <table className="patient-table">
+            {/* ── Table ── */}
+            <div className={styles.tableWrapper}>
+              {" "}
+              <table className={styles.patientTable}>
                 <thead>
                   {activeTab === "reschedule" ? (
                     <tr>
@@ -570,15 +570,7 @@ function AdminPatient() {
                 <tbody>
                   {displayedData.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={7}
-                        style={{
-                          textAlign: "center",
-                          padding: "32px",
-                          color: "#aaa",
-                          fontStyle: "italic",
-                        }}
-                      >
+                      <td colSpan={7} className={styles.emptyRow}>
                         No{" "}
                         {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
                         records found.
@@ -590,13 +582,13 @@ function AdminPatient() {
                         <td>{row.name}</td>
                         <td>
                           <span
-                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                           >
                             {row.patientType}
                           </span>
                         </td>
                         <td>
-                          <span className="date-original">
+                          <span className={styles.dateOriginal}>
                             {row.originalDate}
                           </span>
                           <br />
@@ -605,7 +597,7 @@ function AdminPatient() {
                           </small>
                         </td>
                         <td>
-                          <span className="date-requested">
+                          <span className={styles.dateRequested}>
                             {row.requestedDate}
                           </span>
                           <br />
@@ -615,11 +607,7 @@ function AdminPatient() {
                         </td>
                         <td>{row.type}</td>
                         <td>
-                          <span
-                            style={getConsultationModeBadge(
-                              row.consultationMode,
-                            )}
-                          >
+                          <span style={getModeBadgeStyle(row.consultationMode)}>
                             {row.consultationMode === "Virtual" ? (
                               <FiMonitor size={11} />
                             ) : (
@@ -630,13 +618,13 @@ function AdminPatient() {
                         </td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleViewReschedule(row)}
                           >
                             View
                           </button>
                           <button
-                            className="btn-confirm"
+                            className={styles.btnConfirm}
                             disabled={row.status !== "Pending"}
                             onClick={() =>
                               handleRescheduleAction(row.id, "approve")
@@ -653,7 +641,7 @@ function AdminPatient() {
                         <td>{row.name}</td>
                         <td>
                           <span
-                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                           >
                             {row.patientType}
                           </span>
@@ -662,11 +650,7 @@ function AdminPatient() {
                         <td>{row.time}</td>
                         <td>{row.type}</td>
                         <td>
-                          <span
-                            style={getConsultationModeBadge(
-                              row.consultationMode,
-                            )}
-                          >
+                          <span style={getModeBadgeStyle(row.consultationMode)}>
                             {row.consultationMode === "Virtual" ? (
                               <FiMonitor size={11} />
                             ) : (
@@ -677,13 +661,13 @@ function AdminPatient() {
                         </td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleView(row, activeTab)}
                           >
                             View
                           </button>
                           <button
-                            className="btn-confirm"
+                            className={styles.btnConfirm}
                             disabled={row.status === "Cancelled"}
                           >
                             Confirm
@@ -697,7 +681,7 @@ function AdminPatient() {
                         <td>{row.name}</td>
                         <td>
                           <span
-                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                           >
                             {row.patientType}
                           </span>
@@ -706,11 +690,7 @@ function AdminPatient() {
                         <td>{row.time}</td>
                         <td>{row.type}</td>
                         <td>
-                          <span
-                            style={getConsultationModeBadge(
-                              row.consultationMode,
-                            )}
-                          >
+                          <span style={getModeBadgeStyle(row.consultationMode)}>
                             {row.consultationMode === "Virtual" ? (
                               <FiMonitor size={11} />
                             ) : (
@@ -721,13 +701,13 @@ function AdminPatient() {
                         </td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleView(row, "cancelled")}
                           >
                             View
                           </button>
                           <button
-                            className={`btn-refund ${refundProcessed[row.id] ? "btn-refund-done" : ""}`}
+                            className={`${styles.btnRefund} ${refundProcessed[row.id] ? styles.btnRefundDone : ""}`}
                             disabled={refundProcessed[row.id]}
                             onClick={() => handleRefundOpen(row)}
                           >
@@ -742,7 +722,7 @@ function AdminPatient() {
                         <td>{row.name}</td>
                         <td>
                           <span
-                            className={`patient-type-badge ${row.patientType === "New Patient" ? "badge-new" : "badge-existing"}`}
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                           >
                             {row.patientType}
                           </span>
@@ -752,14 +732,14 @@ function AdminPatient() {
                         <td>{row.address}</td>
                         <td>
                           <span
-                            className={`status ${row.status.toLowerCase()}`}
+                            className={`${styles.statusText} ${styles[`status${row.status}`]}`}
                           >
                             {row.status}
                           </span>
                         </td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleView(row, activeTab)}
                           >
                             View
@@ -772,7 +752,8 @@ function AdminPatient() {
               </table>
             </div>
 
-            <div className="pagination">
+            {/* ── Pagination ── */}
+            <div className={styles.pagination}>
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
@@ -782,7 +763,7 @@ function AdminPatient() {
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
-                  className={currentPage === i + 1 ? "page-active" : ""}
+                  className={currentPage === i + 1 ? styles.pageActive : ""}
                   onClick={() => setCurrentPage(i + 1)}
                 >
                   {i + 1}
@@ -795,60 +776,60 @@ function AdminPatient() {
                 Next ›
               </button>
             </div>
-            <div className="page-info">
+            <div className={styles.pageInfo}>
               Page {currentPage} of {totalPages || 1}
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── View Modal ── */}
+      {/* ════════════════════════════
+          VIEW MODAL
+      ════════════════════════════ */}
       {showModal && selectedPatient && (
         <div
-          className="patient-modal-overlay"
+          className={styles.modalOverlay}
           onClick={() => setShowModal(false)}
         >
-          <div
-            className="patient-modal-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-profile-header">
+          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className={styles.modalProfileHeader}>
               <button
-                className="close-btn profile-close-btn"
+                className={styles.closeBtn}
                 onClick={() => setShowModal(false)}
               >
                 <FiX />
               </button>
-              <div className="modal-profile-row">
+              <div className={styles.modalProfileRow}>
                 <AvatarPlaceholder name={selectedPatient.name} size={68} />
-                <div className="patient-profile-info">
-                  <h3 className="patient-profile-name">
+                <div className={styles.patientProfileInfo}>
+                  <h3 className={styles.patientProfileName}>
                     {selectedPatient.name}
                   </h3>
-                  <p className="patient-profile-contact">
+                  <p className={styles.patientProfileContact}>
                     <FiPhone size={12} style={{ marginRight: 5 }} />
                     {selectedPatient.contact}
                   </p>
-                  <div className="patient-profile-meta">
+                  <div className={styles.patientProfileMeta}>
                     {selectedPatient.age && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.metaChip}>
                         {selectedPatient.age} yrs
                       </span>
                     )}
                     {selectedPatient.gender && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.metaChip}>
                         {selectedPatient.gender}
                       </span>
                     )}
                     {selectedPatient.totalVisits && (
-                      <span className="profile-meta-chip visits">
+                      <span className={styles.metaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
                   </div>
                 </div>
                 <button
-                  className="btn-view-profile"
+                  className={styles.btnViewProfile}
                   onClick={() =>
                     navigate(`/admin/patient-profile/${selectedPatient.id}`, {
                       state: { patient: selectedPatient },
@@ -860,96 +841,68 @@ function AdminPatient() {
                 </button>
               </div>
             </div>
-            <div className="modal-body">
+
+            {/* Body */}
+            <div className={styles.modalBody}>
+              {/* Appointment Details */}
               <div
-                className="modal-content-card"
+                className={styles.modalCard}
                 style={{ marginBottom: "12px" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "16px",
-                    paddingBottom: "12px",
-                    borderBottom: "1px solid #ede9f6",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FaCalendarAlt size={13} color="#fff" />
-                  </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      color: "#3b1f6e",
-                    }}
-                  >
-                    Appointment Details
-                  </h4>
-                </div>
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <SectionHeader
+                  icon={<FaCalendarAlt size={13} color="#fff" />}
+                  title="Appointment Details"
+                />
+                <div className={styles.twoCol}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Date</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Date</span>
+                      <span className={styles.infoValue}>
                         {selectedPatient.date}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiClock />
                     </div>
                     <div>
-                      <span className="modal-info-label">Time</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Time</span>
+                      <span className={styles.infoValue}>
                         {selectedPatient.time}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Visit Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Visit Type</span>
+                      <span className={styles.infoValue}>
                         {selectedPatient.type}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Status</span>
+                      <span className={styles.infoLabel}>Status</span>
                       <span
-                        className="status-badge"
+                        className={styles.statusBadge}
                         style={getStatusBadgeStyle(selectedPatient.status)}
                       >
                         {selectedPatient.status}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       {selectedPatient.patientType === "Existing Patient" ? (
                         <FiUserCheck />
                       ) : (
@@ -957,14 +910,14 @@ function AdminPatient() {
                       )}
                     </div>
                     <div>
-                      <span className="modal-info-label">Patient Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Patient Type</span>
+                      <span className={styles.infoValue}>
                         {selectedPatient.patientType}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       {selectedPatient.consultationMode === "Virtual" ? (
                         <FiMonitor />
                       ) : (
@@ -972,13 +925,14 @@ function AdminPatient() {
                       )}
                     </div>
                     <div>
-                      <span className="modal-info-label">Mode</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Mode</span>
+                      <span className={styles.infoValue}>
                         {selectedPatient.consultationMode}
                       </span>
                     </div>
                   </div>
                 </div>
+
                 {selectedPatient.assignedDoctor && (
                   <div
                     style={{
@@ -1053,48 +1007,41 @@ function AdminPatient() {
                   </div>
                 )}
               </div>
+
+              {/* Cancellation Reason (cancelled tab only) */}
+              {modalSource === "cancelled" &&
+                selectedPatient.cancellationReason && (
+                  <div
+                    className={styles.modalCard}
+                    style={{ marginBottom: "12px" }}
+                  >
+                    <div className={styles.cancellationHeader}>
+                      <div className={styles.cancellationIcon}>
+                        <FiAlertCircle size={14} color="#fff" />
+                      </div>
+                      <h4 className={styles.cancellationTitle}>
+                        Cancellation Reason
+                      </h4>
+                    </div>
+                    <div className={styles.cancellationBox}>
+                      <p className={styles.cancellationText}>
+                        {selectedPatient.cancellationReason}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+              {/* Progression Note */}
               {selectedPatient.status === "Completed" &&
                 selectedPatient.progressionNote && (
                   <div
-                    className="modal-content-card"
+                    className={styles.modalCard}
                     style={{ marginBottom: "12px" }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "14px",
-                        paddingBottom: "12px",
-                        borderBottom: "1px solid #ede9f6",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "8px",
-                          background:
-                            "linear-gradient(135deg, #7341A8, #4D227C)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <FiActivity size={14} color="#fff" />
-                      </div>
-                      <h4
-                        style={{
-                          margin: 0,
-                          fontSize: "17px",
-                          fontWeight: 800,
-                          color: "#3b1f6e",
-                        }}
-                      >
-                        Progression Note
-                      </h4>
-                    </div>
+                    <SectionHeader
+                      icon={<FiActivity size={14} color="#fff" />}
+                      title="Progression Note"
+                    />
                     <div
                       style={{
                         background: "#faf7ff",
@@ -1132,9 +1079,11 @@ function AdminPatient() {
                     </div>
                   </div>
                 )}
-              <div className="modal-content-card">
+
+              {/* Payment Details */}
+              <div className={styles.modalCard}>
                 <button
-                  className="payment-collapse-toggle"
+                  className={styles.paymentToggle}
                   onClick={() => setPaymentOpen(!paymentOpen)}
                 >
                   <span
@@ -1144,28 +1093,14 @@ function AdminPatient() {
                       gap: "8px",
                     }}
                   >
-                    <div
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "8px",
-                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
+                    <div className={styles.cardSectionIcon}>
                       <FiFileText size={13} color="#fff" />
                     </div>
-                    <span
-                      className="modal-section-title"
-                      style={{ margin: 0, padding: 0, border: "none" }}
-                    >
+                    <span className={styles.paymentToggleTitle}>
                       Payment Details
                     </span>
                   </span>
-                  <span className="payment-toggle-icon">
+                  <span className={styles.paymentToggleIcon}>
                     {paymentOpen ? (
                       <FiChevronUp size={18} />
                     ) : (
@@ -1177,12 +1112,12 @@ function AdminPatient() {
                   </span>
                 </button>
                 {paymentOpen && (
-                  <div className="payment-collapse-body">
-                    <div className="payment-layout">
-                      <div className="payment-fields">
-                        <div className="modal-info-item">
+                  <div className={styles.paymentCollapseBody}>
+                    <div className={styles.paymentLayout}>
+                      <div className={styles.paymentFields}>
+                        <div className={styles.infoItem}>
                           <div
-                            className="modal-info-icon"
+                            className={styles.infoIcon}
                             style={{
                               fontSize: 13,
                               fontWeight: 700,
@@ -1192,15 +1127,15 @@ function AdminPatient() {
                             ₱
                           </div>
                           <div>
-                            <span className="modal-info-label">
+                            <span className={styles.infoLabel}>
                               Paid Amount
                             </span>
-                            <span className="modal-info-value">—</span>
+                            <span className={styles.infoValue}>—</span>
                           </div>
                         </div>
-                        <div className="modal-info-item">
+                        <div className={styles.infoItem}>
                           <div
-                            className="modal-info-icon"
+                            className={styles.infoIcon}
                             style={{
                               fontSize: 13,
                               fontWeight: 700,
@@ -1210,15 +1145,15 @@ function AdminPatient() {
                             #
                           </div>
                           <div>
-                            <span className="modal-info-label">
+                            <span className={styles.infoLabel}>
                               Reference No.
                             </span>
-                            <span className="modal-info-value">—</span>
+                            <span className={styles.infoValue}>—</span>
                           </div>
                         </div>
-                        <div className="modal-info-item">
+                        <div className={styles.infoItem}>
                           <div
-                            className="modal-info-icon"
+                            className={styles.infoIcon}
                             style={{
                               fontSize: 10,
                               fontWeight: 700,
@@ -1228,21 +1163,21 @@ function AdminPatient() {
                             PAY
                           </div>
                           <div>
-                            <span className="modal-info-label">
+                            <span className={styles.infoLabel}>
                               Payment Option
                             </span>
-                            <span className="modal-info-value">—</span>
+                            <span className={styles.infoValue}>—</span>
                           </div>
                         </div>
                       </div>
-                      <div className="payment-proof">
-                        <span className="payment-proof-label">
+                      <div className={styles.paymentProof}>
+                        <span className={styles.paymentProofLabel}>
                           Payment Proof
                         </span>
                         <img
                           src={samplePayment}
                           alt="Payment Proof"
-                          className="payment-proof-img"
+                          className={styles.paymentProofImg}
                           onClick={() => setZoomImage(samplePayment)}
                         />
                       </div>
@@ -1251,9 +1186,11 @@ function AdminPatient() {
                 )}
               </div>
             </div>
-            <div className="modal-footer">
+
+            {/* Footer */}
+            <div className={styles.modalFooter}>
               <button
-                className="btn-view-history"
+                className={styles.btnViewHistory}
                 onClick={() =>
                   navigate(`/admin/patient-history/${selectedPatient.id}`, {
                     state: { patient: selectedPatient },
@@ -1265,18 +1202,7 @@ function AdminPatient() {
               </button>
               {modalSource === "consultation" && (
                 <button
-                  className="btn-confirm"
-                  style={{
-                    padding: "10px 28px",
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    borderRadius: "10px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "7px",
-                    height: "auto",
-                    width: "auto",
-                  }}
+                  className={styles.btnFooterConfirm}
                   disabled={selectedPatient.status === "Cancelled"}
                 >
                   <FiCheck size={15} />
@@ -1288,56 +1214,55 @@ function AdminPatient() {
         </div>
       )}
 
-      {/* ── Reschedule Modal ── */}
+      {/* ════════════════════════════
+          RESCHEDULE MODAL
+      ════════════════════════════ */}
       {showRescheduleModal && selectedReschedule && (
         <div
-          className="patient-modal-overlay"
+          className={styles.modalOverlay}
           onClick={() => setShowRescheduleModal(false)}
         >
-          <div
-            className="patient-modal-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-profile-header">
+          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalProfileHeader}>
               <button
-                className="close-btn profile-close-btn"
+                className={styles.closeBtn}
                 onClick={() => setShowRescheduleModal(false)}
               >
                 <FiX />
               </button>
-              <div className="modal-profile-row">
+              <div className={styles.modalProfileRow}>
                 <AvatarPlaceholder name={selectedReschedule.name} size={68} />
-                <div className="patient-profile-info">
-                  <h3 className="patient-profile-name">
+                <div className={styles.patientProfileInfo}>
+                  <h3 className={styles.patientProfileName}>
                     {selectedReschedule.name}
                   </h3>
-                  <p className="patient-profile-contact">
+                  <p className={styles.patientProfileContact}>
                     <FiPhone size={12} style={{ marginRight: 5 }} />
                     {selectedReschedule.contact}
                   </p>
-                  <div className="patient-profile-meta">
+                  <div className={styles.patientProfileMeta}>
                     {selectedReschedule.age && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.metaChip}>
                         {selectedReschedule.age} yrs
                       </span>
                     )}
                     {selectedReschedule.gender && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.metaChip}>
                         {selectedReschedule.gender}
                       </span>
                     )}
                     {selectedReschedule.totalVisits && (
-                      <span className="profile-meta-chip visits">
+                      <span className={styles.metaChip}>
                         {selectedReschedule.totalVisits} Visits
                       </span>
                     )}
-                    <span className="profile-meta-chip">
+                    <span className={styles.metaChip}>
                       {selectedReschedule.patientType}
                     </span>
                   </div>
                 </div>
                 <button
-                  className="btn-view-profile"
+                  className={styles.btnViewProfile}
                   onClick={() =>
                     navigate(
                       `/admin/patient-profile/${selectedReschedule.id}`,
@@ -1350,116 +1275,86 @@ function AdminPatient() {
                 </button>
               </div>
             </div>
-            <div className="modal-body">
+
+            <div className={styles.modalBody}>
               <div
-                className="modal-content-card"
+                className={styles.modalCard}
                 style={{ marginBottom: "12px" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "16px",
-                    paddingBottom: "12px",
-                    borderBottom: "1px solid #ede9f6",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FaCalendarAlt size={13} color="#fff" />
-                  </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      color: "#3b1f6e",
-                    }}
-                  >
-                    Appointment Details
-                  </h4>
-                </div>
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <SectionHeader
+                  icon={<FaCalendarAlt size={13} color="#fff" />}
+                  title="Appointment Details"
+                />
+                <div className={styles.twoCol}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Original Date</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Original Date</span>
+                      <span className={styles.infoValue}>
                         {selectedReschedule.originalDate}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiClock />
                     </div>
                     <div>
-                      <span className="modal-info-label">Original Time</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Original Time</span>
+                      <span className={styles.infoValue}>
                         {selectedReschedule.originalTime}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
+                  <div className={styles.infoItem}>
                     <div
-                      className="modal-info-icon"
+                      className={styles.infoIcon}
                       style={{ color: "#4D227C" }}
                     >
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Requested Date</span>
+                      <span className={styles.infoLabel}>Requested Date</span>
                       <span
-                        className="modal-info-value"
+                        className={styles.infoValue}
                         style={{ color: "#4D227C", fontWeight: 700 }}
                       >
                         {selectedReschedule.requestedDate}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
+                  <div className={styles.infoItem}>
                     <div
-                      className="modal-info-icon"
+                      className={styles.infoIcon}
                       style={{ color: "#4D227C" }}
                     >
                       <FiClock />
                     </div>
                     <div>
-                      <span className="modal-info-label">Requested Time</span>
+                      <span className={styles.infoLabel}>Requested Time</span>
                       <span
-                        className="modal-info-value"
+                        className={styles.infoValue}
                         style={{ color: "#4D227C", fontWeight: 700 }}
                       >
                         {selectedReschedule.requestedTime}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Visit Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Visit Type</span>
+                      <span className={styles.infoValue}>
                         {selectedReschedule.type}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIcon}>
                       {selectedReschedule.consultationMode === "Virtual" ? (
                         <FiMonitor />
                       ) : (
@@ -1467,8 +1362,8 @@ function AdminPatient() {
                       )}
                     </div>
                     <div>
-                      <span className="modal-info-label">Mode</span>
-                      <span className="modal-info-value">
+                      <span className={styles.infoLabel}>Mode</span>
+                      <span className={styles.infoValue}>
                         {selectedReschedule.consultationMode}
                       </span>
                     </div>
@@ -1494,7 +1389,7 @@ function AdminPatient() {
                     Request Status:
                   </span>
                   <span
-                    className="status-badge"
+                    className={styles.statusBadge}
                     style={{
                       ...getRescheduleStatusBadge(selectedReschedule.status),
                       padding: "4px 12px",
@@ -1507,42 +1402,12 @@ function AdminPatient() {
                   </span>
                 </div>
               </div>
-              <div className="modal-content-card">
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "14px",
-                    paddingBottom: "12px",
-                    borderBottom: "1px solid #ede9f6",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FiAlertCircle size={14} color="#fff" />
-                  </div>
-                  <h4
-                    style={{
-                      margin: 0,
-                      fontSize: "17px",
-                      fontWeight: 800,
-                      color: "#3b1f6e",
-                    }}
-                  >
-                    Reason for Reschedule
-                  </h4>
-                </div>
+
+              <div className={styles.modalCard}>
+                <SectionHeader
+                  icon={<FiAlertCircle size={14} color="#fff" />}
+                  title="Reason for Reschedule"
+                />
                 <div
                   style={{
                     background: "#faf7ff",
@@ -1564,9 +1429,10 @@ function AdminPatient() {
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
+
+            <div className={styles.modalFooter}>
               <button
-                className="btn-decline"
+                className={styles.btnDecline}
                 disabled={selectedReschedule.status !== "Pending"}
                 onClick={() =>
                   handleRescheduleAction(selectedReschedule.id, "decline")
@@ -1576,18 +1442,7 @@ function AdminPatient() {
                 Decline
               </button>
               <button
-                className="btn-confirm"
-                style={{
-                  padding: "10px 28px",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  borderRadius: "10px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  height: "auto",
-                  width: "auto",
-                }}
+                className={styles.btnFooterConfirm}
                 disabled={selectedReschedule.status !== "Pending"}
                 onClick={() =>
                   handleRescheduleAction(selectedReschedule.id, "approve")
@@ -1601,187 +1456,69 @@ function AdminPatient() {
         </div>
       )}
 
-      {/* ── Refund Confirmation Modal ── */}
+      {/* ════════════════════════════
+          REFUND MODAL
+      ════════════════════════════ */}
       {showRefundModal && selectedRefund && (
         <div
-          className="patient-modal-overlay"
+          className={styles.modalOverlay}
           onClick={() => setShowRefundModal(false)}
         >
-          <div className="refund-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="refund-modal-header">
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "10px",
-                    background: "rgba(255,255,255,0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
+          <div
+            className={styles.refundModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.refundHeader}>
+              <div className={styles.refundHeaderLeft}>
+                <div className={styles.refundHeaderIcon}>
                   <FiDollarSign size={18} color="#fff" />
                 </div>
-                <h3
-                  style={{
-                    margin: 0,
-                    color: "#fff",
-                    fontSize: "17px",
-                    fontWeight: 700,
-                  }}
-                >
-                  Process Refund
-                </h3>
+                <h3 className={styles.refundHeaderTitle}>Process Refund</h3>
               </div>
               <button
-                className="close-btn"
+                className={styles.refundCloseBtn}
                 onClick={() => setShowRefundModal(false)}
               >
                 <FiX />
               </button>
             </div>
-            <div className="refund-modal-body">
-              <div
-                style={{
-                  background: "#fff8f8",
-                  border: "1px solid #fecaca",
-                  borderRadius: "12px",
-                  padding: "16px 18px",
-                  marginBottom: "16px",
-                }}
-              >
-                <p
-                  style={{
-                    margin: "0 0 4px 0",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    color: "#dc2626",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.4px",
-                  }}
-                >
-                  Cancelled Appointment
-                </p>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "15px",
-                    fontWeight: 700,
-                    color: "#1f2937",
-                  }}
-                >
-                  {selectedRefund.name}
-                </p>
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    fontSize: "13px",
-                    color: "#6b7280",
-                  }}
-                >
+            <div className={styles.refundBody}>
+              <div className={styles.refundInfoBox}>
+                <p className={styles.refundInfoLabel}>Cancelled Appointment</p>
+                <p className={styles.refundInfoName}>{selectedRefund.name}</p>
+                <p className={styles.refundInfoMeta}>
                   {selectedRefund.date} · {selectedRefund.time} ·{" "}
                   {selectedRefund.type}
                 </p>
               </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
-                  marginBottom: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    background: "#faf7fd",
-                    border: "1px solid #e5d6f5",
-                    borderRadius: "10px",
-                    padding: "12px 14px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      color: "#9ca3af",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.4px",
-                      display: "block",
-                      marginBottom: "4px",
-                    }}
-                  >
+              <div className={styles.refundGrid}>
+                <div className={styles.refundGridItem}>
+                  <span className={styles.refundGridItemLabel}>
                     Paid Amount
                   </span>
-                  <span
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#4D227C",
-                    }}
-                  >
-                    —
-                  </span>
+                  <span className={styles.refundGridItemValue}>—</span>
                 </div>
-                <div
-                  style={{
-                    background: "#faf7fd",
-                    border: "1px solid #e5d6f5",
-                    borderRadius: "10px",
-                    padding: "12px 14px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      color: "#9ca3af",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.4px",
-                      display: "block",
-                      marginBottom: "4px",
-                    }}
-                  >
+                <div className={styles.refundGridItem}>
+                  <span className={styles.refundGridItemLabel}>
                     Reference No.
                   </span>
-                  <span
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#4D227C",
-                    }}
-                  >
-                    —
-                  </span>
+                  <span className={styles.refundGridItemValue}>—</span>
                 </div>
               </div>
-              <p
-                style={{
-                  fontSize: "13px",
-                  color: "#6b7280",
-                  margin: 0,
-                  lineHeight: "1.6",
-                  background: "#fffbeb",
-                  border: "1px solid #fde68a",
-                  borderRadius: "8px",
-                  padding: "10px 14px",
-                }}
-              >
+              <p className={styles.refundWarning}>
                 ⚠️ Confirming this will mark the payment as refunded. This
                 action cannot be undone.
               </p>
             </div>
-            <div className="refund-modal-footer">
+            <div className={styles.refundFooter}>
               <button
-                className="refund-cancel-btn"
+                className={styles.refundCancelBtn}
                 onClick={() => setShowRefundModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="refund-confirm-btn"
+                className={styles.refundConfirmBtn}
                 onClick={() => handleRefundConfirm(selectedRefund.id)}
               >
                 <FiDollarSign size={14} /> Confirm Refund
@@ -1791,33 +1528,11 @@ function AdminPatient() {
         </div>
       )}
 
+      {/* ── Zoom Image ── */}
       {zoomImage && (
-        <div
-          className="patient-modal-overlay"
-          onClick={() => setZoomImage(null)}
-          style={{ cursor: "zoom-out" }}
-        >
-          <div
-            style={{
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={zoomImage}
-              alt="Zoomed"
-              style={{
-                maxWidth: "100%",
-                maxHeight: "90vh",
-                objectFit: "contain",
-                borderRadius: "12px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-              }}
-            />
+        <div className={styles.zoomOverlay} onClick={() => setZoomImage(null)}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <img src={zoomImage} alt="Zoomed" className={styles.zoomImg} />
           </div>
         </div>
       )}
