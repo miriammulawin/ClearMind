@@ -1,19 +1,28 @@
 // PAaESetAppointmentForm.jsx
 // Route: /client/appointment/psychological-assessment/set-appointment-form
 // Receives: location.state.selectedService (string title from PAaEAppointment)
+//
+// Folder structure expected:
+//   AppointmentForm/
+//     PAaEFormHeader.jsx
+//     PAaEReason.jsx
+//     PAaEChooseRPm.jsx
+//     PAeEDocuments.jsx
+//     PAeEPayment.jsx
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
-import { FaArrowLeft } from 'react-icons/fa';
 import { FiCheckCircle } from 'react-icons/fi';
-import styles from '../style/PAaEAppointmentForm.module.css';
+
+import styles from '../../PAaEAssesmentPages/style/PAaEAppointmentForm.module.css';
 import { useCurrentUser } from '../../../../hooks/userCurrentUser';
-import PAaEFormHeader  from './PAaEFormHeader';
-import PAaEReason      from './PAaEReason';
-import PAaEChooseRPm   from './PAaEChooseRPm';
-import PAeEDocuments   from './PAaEDocuments';
-import PAeEPayment     from './PAaEPayment';
+
+import PAaEFormHeader  from '../AppointmentForm/PAaEFormHeader';
+import PAaEReason      from '../AppointmentForm/PAaEReason';
+import PAaEChooseRPm   from '../AppointmentForm/PAaEChooseRPm';
+import PAeEDocuments   from '../AppointmentForm/PAaEDocuments';
+import PAeEPayment     from '../../PaCAssesmentPages/AppointmentForm/PaymentForm';
 
 /* -----------------------------------------------------------------
    Services Config
@@ -35,6 +44,14 @@ const SERVICE_CONFIG = {
     hasPayment: true,
     refPrefix: 'LEGAL',
     extraField: 'legalType',
+  },
+  'Psychological Assessment and Evaluation': {
+    steps: ['Reason', 'Choose RPm', 'Payment'],
+    femaleOnly: false,
+    mandatoryDocs: [],
+    optionalDocs: [],
+    hasPayment: true,
+    refPrefix: 'PAE',
   },
   'School / Academic Support': {
     steps: ['Reason', 'Choose RPm', 'Documents', 'Payment'],
@@ -135,26 +152,50 @@ const PAaESetAppointmentForm = () => {
 
   // ── Validation ────────────────────────────────────────────────
   const getStepError = () => {
+
     if (currentLabel === 'Reason' || currentLabel === 'Submit') {
+      // ── Reason is always required ──
       if (!form.reason) return 'Please enter your reason for consultation.';
+
+      // ── Complainant mode: validate all manual patient fields ──
+      if (form.isInformant) {
+        if (!form.complainantName)     return 'Please enter your full name.';
+        if (!form.complainantRelation) return 'Please enter your relation to the patient.';
+        if (!form.firstName)           return "Please enter the patient's first name.";
+        if (!form.lastName)            return "Please enter the patient's last name.";
+        if (!form.sex)                 return "Please select the patient's sex.";
+        if (!form.dateOfBirth)         return "Please enter the patient's date of birth.";
+        if (form.age === '0' || form.age === '') return 'Patient must be at least 1 year old.';
+        if (!form.contactNo)           return "Please enter the patient's contact number.";
+        if (!form.email)               return "Please enter the patient's email address.";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(form.email)) return 'Please enter a valid email address (e.g. juan@email.com).';
+        if (!form.address)             return "Please enter the patient's home address.";
+      }
+
+      // ── Free services without RPm step: also need date/time ──
       if (!config.steps.includes('Choose RPm')) {
         if (!form.date) return 'Please select a preferred date.';
         if (!form.time) return 'Please select a time slot.';
       }
     }
+
     if (currentLabel === 'Choose RPm') {
       if (!form.rpm)  return 'Please select an RPm / Psychometrician.';
       if (!form.date) return 'Please select a preferred date.';
       if (!form.time) return 'Please select a time slot.';
     }
+
     if (currentLabel === 'Documents') {
       const missing = config.mandatoryDocs.filter(d => !(form.docFiles || {})[d]);
       if (missing.length > 0) return `Please upload: ${missing.join(', ')}.`;
     }
+
     if (currentLabel === 'Payment') {
       if (!form.payMethod) return 'Please select a payment method.';
       if (!form.proofFile) return 'Please upload your proof of payment.';
     }
+
     return '';
   };
 
@@ -233,9 +274,9 @@ const PAaESetAppointmentForm = () => {
       {/* ── Sticky footer ── */}
       {!submitted && (
         <div className={styles.stickyFooter}>
-          {step > 1 && (
+          {isLastStep && (
             <button className={styles.cancelButton} onClick={handleBack}>
-              <FaArrowLeft size={12} /> Back
+              Cancel
             </button>
           )}
           <button

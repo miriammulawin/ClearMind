@@ -63,31 +63,52 @@ const SetAppointmentForm = () => {
 
   // ─── Per-step error message ───────────────────────────────────────────────
   const getStepError = () => {
+
+    // ── Step 1: Schedule ──────────────────────────────────────────
     if (currentStep === 1) {
       if (!consultationMode) return 'Please select a consultation mode before continuing.';
       if (!selectedDate)     return 'Please select a date before continuing.';
       if (!selectedTime)     return 'Please select a time slot before continuing.';
     }
 
+    // ── Step 2: Verify Profile ────────────────────────────────────
     if (currentStep === 2) {
-      if (profileData.isInformant && !profileData.informantName)
-                                      return 'Please enter the full name of the informant.';
-      if (profileData.isInformant && !profileData.informantRelation)
-                                      return "Please enter the informant's relation to the patient.";
-      if (!profileData.reason)        return 'Please enter a reason for consultation.';
-      if (!profileData.firstName)     return "Please enter the patient's first name.";
-      if (!profileData.lastName)      return "Please enter the patient's last name.";
-      if (!profileData.sex)           return "Please select the patient's sex.";
-      if (!profileData.dateOfBirth)   return "Please enter the patient's date of birth.";
-      if (profileData.age === '0' || profileData.age === '' && profileData.dateOfBirth)
-                                      return 'Patient must be at least 1 year old.';
-      if (!profileData.contactNo)     return 'Please enter a contact number.';
-      if (!profileData.email)         return 'Please enter an email address.';
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(profileData.email)) return 'Please enter a valid email address (e.g. juan@email.com).';
-      if (!profileData.address)       return 'Please enter a home address.';
+
+      // Reason is always required in both modes
+      if (!profileData.reason) return 'Please enter a reason for consultation.';
+
+      if (profileData.isInformant === true) {
+        // ── Complainant mode: all manual fields required ──
+        if (!profileData.complainantName)
+          return 'Please enter your full name.';
+        if (!profileData.complainantRelation)
+          return 'Please enter your relation to the patient.';
+        if (!profileData.firstName)
+          return "Please enter the patient's first name.";
+        if (!profileData.lastName)
+          return "Please enter the patient's last name.";
+        if (!profileData.sex)
+          return "Please select the patient's sex.";
+        if (!profileData.dateOfBirth)
+          return "Please enter the patient's date of birth.";
+        if (profileData.age === '0' || profileData.age === '')
+          return 'Patient must be at least 1 year old.';
+        if (!profileData.contactNo)
+          return "Please enter the patient's contact number.";
+        if (!profileData.email)
+          return "Please enter the patient's email address.";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(profileData.email))
+          return 'Please enter a valid email address (e.g. juan@email.com).';
+        if (!profileData.address)
+          return "Please enter the patient's home address.";
+      }
+
+      // ── Patient mode: only reason needed — profile is pre-loaded ──
+      // No extra validation required
     }
 
+    // ── Step 3: Payment ───────────────────────────────────────────
     if (currentStep === 3) {
       if (!paymentData.paymentMode)  return 'Please select a payment mode.';
       if (!paymentData.referenceNo)  return 'Please enter the reference number.';
@@ -193,21 +214,13 @@ const SetAppointmentForm = () => {
         contentClassName={styles.confirmModalContent}
       >
         <Modal.Body className={styles.confirmModalBody}>
-
-          {/* Checkmark Icon */}
           <div className={styles.confirmModalIconWrapper}>
             <FiCheckCircle className={styles.confirmModalIcon} />
           </div>
-
-          {/* Title */}
           <p className={styles.confirmModalTitle}>Almost Done!</p>
-
-          {/* Message */}
           <p className={styles.confirmModalMessage}>
             You're about to book your appointment. Would you like to continue?
           </p>
-
-          {/* Actions */}
           <div className={styles.confirmModalActions}>
             <button
               className={styles.confirmModalBtnBack}
@@ -222,7 +235,6 @@ const SetAppointmentForm = () => {
               YES, CONFIRM
             </button>
           </div>
-
         </Modal.Body>
       </Modal>
 
@@ -235,8 +247,6 @@ const SetAppointmentForm = () => {
         contentClassName={styles.errorModalContent}
       >
         <Modal.Body className={styles.errorModalBody}>
-
-          {/* Icon */}
           <div className={styles.errorModalIconWrapper}>
             <svg
               className={styles.errorModalIcon}
@@ -246,21 +256,14 @@ const SetAppointmentForm = () => {
               <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
             </svg>
           </div>
-
-          {/* Title */}
           <p className={styles.errorModalTitle}>Incomplete Form</p>
-
-          {/* Message */}
           <p className={styles.errorModalMessage}>{errorModal.message}</p>
-
-          {/* Dismiss */}
           <button
             className={styles.errorModalBtn}
             onClick={closeErrorModal}
           >
             Got it
           </button>
-
         </Modal.Body>
       </Modal>
 

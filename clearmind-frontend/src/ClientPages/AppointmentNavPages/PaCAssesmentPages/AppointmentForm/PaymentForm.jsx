@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import styles from '../../../ClientStyle/PaymentForm.module.css';
 import sampleQr from '../../../../assets/sample_qr_ara.jpg';
+import { useCurrentUser } from '../../../../hooks/userCurrentUser';
 
 /**
  * PaymentForm  –  Step 3 body
@@ -17,6 +18,7 @@ import sampleQr from '../../../../assets/sample_qr_ara.jpg';
  *   profileData      – object from VerifyProfileForm
  *   paymentData      – object containing payment field values
  *   setPaymentData   – setter
+ *   qrImages         – { gcash, bankTransfer } image sources
  */
 const PaymentForm = ({
   doctorData       = {},
@@ -30,53 +32,49 @@ const PaymentForm = ({
   qrImages         = { gcash: sampleQr, bankTransfer: sampleQr },
 }) => {
 
+  // ── Get logged-in user for Patient mode ───────────────────────
+  const user = useCurrentUser();
+
   const [fileError, setFileError] = useState('');
   const [showError, setShowError] = useState(false);
 
   const {
-    paymentMode   = 'G-Cash',
-    referenceNo   = '',
-    receiptFile   = null,
+    paymentMode = 'G-Cash',
+    referenceNo = '',
+    receiptFile = null,
   } = paymentData;
 
   const handleChange = (field, value) => {
     setPaymentData(prev => ({ ...prev, [field]: value }));
   };
 
-  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
+  const ALLOWED_IMAGE_TYPES = [
+    'image/jpeg','image/jpg','image/png',
+    'image/gif','image/webp','image/bmp',
+  ];
 
   const handleFileChange = (e) => {
     const file = e.target.files[0] || null;
+    if (!file) { handleChange('receiptFile', null); return; }
 
-    if (!file) {
-      handleChange('receiptFile', null);
-      return;
-    }
-
-    // Validate by MIME type
-    const isValidMime = ALLOWED_IMAGE_TYPES.includes(file.type);
-
-    // Validate by file extension as a second layer
+    const isValidMime      = ALLOWED_IMAGE_TYPES.includes(file.type);
     const allowedExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/i;
-    const isValidExtension = allowedExtensions.test(file.name);
+    const isValidExtension  = allowedExtensions.test(file.name);
 
     if (!isValidMime || !isValidExtension) {
-      // Show error and keep it visible until a valid file is chosen
       setFileError('Invalid file type. Only image files (JPG, PNG, GIF, WEBP, BMP) are allowed.');
       setShowError(true);
-      // Reset the input so the bad file is fully rejected
       e.target.value = '';
       handleChange('receiptFile', null);
       return;
     }
 
-    // Valid file — clear error and accept
     setFileError('');
     setShowError(false);
     handleChange('receiptFile', file);
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────
   const timeToMinutes = (timeStr) => {
     const [time, period] = timeStr.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
@@ -87,20 +85,49 @@ const PaymentForm = ({
 
   const getEndTime = (startTime) => {
     if (!startTime) return '';
-    const mins = timeToMinutes(startTime) + 60;
-    const hours = Math.floor(mins / 60);
-    const minutes = mins % 60;
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const mins         = timeToMinutes(startTime) + 60;
+    const hours        = Math.floor(mins / 60);
+    const minutes      = mins % 60;
+    const period       = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    const displayMins = minutes === 0 ? '00' : String(minutes).padStart(2, '0');
+    const displayMins  = minutes === 0 ? '00' : String(minutes).padStart(2, '0');
     return `${displayHours}:${displayMins} ${period}`;
   };
 
-  // ── Derive display values ──────────────────────────────────────────────────
-  const visitType = consultationMode === 'ONLINE' ? 'Online' : 'On-site/Clinic';
-  const toTitleCase = (str) => str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-  const patientName = toTitleCase([profileData.firstName, profileData.middleName, profileData.lastName].filter(Boolean).join(' ')) || '—';
-  const dateTimeDisplay = selectedDate?.date && selectedTime
+  const toTitleCase = (str) =>
+    str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+
+  // ── Resolve patient info based on mode ────────────────────────
+  // Patient mode  → use pre-loaded user object from useCurrentUser
+  // Complainant mode → use manually entered profileData fields
+  const isComplainant = profileData.isInformant === true;
+
+  const patient = isComplainant
+    ? {
+        fullName:    toTitleCase(
+          [profileData.firstName, profileData.middleName, profileData.lastName]
+            .filter(Boolean).join(' ')
+        ) || '—',
+        dateOfBirth: profileData.dateOfBirth || '—',
+        age:         profileData.age         || '—',
+        sex:         profileData.sex         || '—',
+        contactNo:   profileData.contactNo   || '—',
+        email:       profileData.email       || '—',
+        address:     profileData.address     || '—',
+      }
+    : {
+        // Patient mode — from useCurrentUser
+        fullName:    user?.fullName    || '—',
+        dateOfBirth: user?.dateOfBirth || '—',
+        age:         user?.age         ? String(user.age) : '—',
+        sex:         user?.sex         || '—',
+        contactNo:   user?.contactNo   || '—',
+        email:       user?.email       || '—',
+        address:     user?.homeAddress || '—',
+      };
+
+  const visitType        = consultationMode === 'ONLINE' ? 'Online' : 'On-site / Clinic';
+  const dateTimeDisplay  = selectedDate?.date && selectedTime
     ? `${selectedDate.date}, ${selectedTime} – ${getEndTime(selectedTime)}`
     : '—';
 
@@ -109,8 +136,6 @@ const PaymentForm = ({
     'Bank Transfer': qrImages?.bankTransfer || null,
   };
 
- 
-
   return (
     <div className={styles.formWrapper}>
 
@@ -118,7 +143,7 @@ const PaymentForm = ({
       <div className={styles.sectionLabel}>Appointment Summary:</div>
       <div className={styles.summaryCard}>
 
-        {/* ── Schedule Info ── */}
+        {/* ── Schedule ── */}
         <div className={styles.summaryGroup}>
           <div className={styles.summaryGroupTitle}>Schedule</div>
           <div className={styles.summaryRow}>
@@ -137,36 +162,36 @@ const PaymentForm = ({
 
         <div className={styles.summaryDivider} />
 
-        {/* ── Patient Info ── */}
+        {/* ── Patient Profile ── */}
         <div className={styles.summaryGroup}>
           <div className={styles.summaryGroupTitle}>Patient Profile</div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Patient Name:</span>
-            <span className={styles.summaryVal}>{patientName}</span>
+            <span className={styles.summaryVal}>{patient.fullName}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Date of Birth:</span>
-            <span className={styles.summaryVal}>{profileData.dateOfBirth || '—'}</span>
+            <span className={styles.summaryVal}>{patient.dateOfBirth}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Age:</span>
-            <span className={styles.summaryVal}>{profileData.age || '—'}</span>
+            <span className={styles.summaryVal}>{patient.age}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Sex:</span>
-            <span className={styles.summaryVal}>{profileData.sex || '—'}</span>
+            <span className={styles.summaryVal}>{patient.sex}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Contact No.:</span>
-            <span className={styles.summaryVal}>{profileData.contactNo || '—'}</span>
+            <span className={styles.summaryVal}>{patient.contactNo}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Email:</span>
-            <span className={styles.summaryVal}>{profileData.email || '—'}</span>
+            <span className={styles.summaryVal}>{patient.email}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Address:</span>
-            <span className={styles.summaryVal}>{profileData.address || '—'}</span>
+            <span className={styles.summaryVal}>{patient.address}</span>
           </div>
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Patient Type:</span>
@@ -178,19 +203,19 @@ const PaymentForm = ({
           </div>
         </div>
 
-        {/* ── Informant Info (only if applicable) ── */}
-        {profileData.isInformant && (
+        {/* ── Complainant Info (only if complainant mode) ── */}
+        {isComplainant && (
           <>
             <div className={styles.summaryDivider} />
             <div className={styles.summaryGroup}>
-              <div className={styles.summaryGroupTitle}>Informant</div>
+              <div className={styles.summaryGroupTitle}>Complainant</div>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryKey}>Name:</span>
-                <span className={styles.summaryVal}>{profileData.informantName || '—'}</span>
+                <span className={styles.summaryVal}>{profileData.complainantName || '—'}</span>
               </div>
               <div className={styles.summaryRow}>
                 <span className={styles.summaryKey}>Relation:</span>
-                <span className={styles.summaryVal}>{profileData.informantRelation || '—'}</span>
+                <span className={styles.summaryVal}>{profileData.complainantRelation || '—'}</span>
               </div>
             </div>
           </>
@@ -252,7 +277,7 @@ const PaymentForm = ({
           )}
         </div>
         <p className={styles.qrNote}>Transfer fees may apply.</p>
-        <p className={styles.accountName}>{[paymentMode]}</p>
+        <p className={styles.accountName}>{paymentMode}</p>
       </div>
 
       {/* ── Reference Number ── */}
@@ -289,7 +314,6 @@ const PaymentForm = ({
           </span>
         </div>
 
-        {/* ── Error Message ── */}
         {showError && (
           <div className={styles.fileErrorMsg}>
             <svg className={styles.fileErrorIcon} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
@@ -299,7 +323,6 @@ const PaymentForm = ({
           </div>
         )}
 
-        {/* ── Accepted formats hint ── */}
         <p className={styles.fileHint}>
           Accepted formats: JPG, PNG, GIF, WEBP, BMP
         </p>

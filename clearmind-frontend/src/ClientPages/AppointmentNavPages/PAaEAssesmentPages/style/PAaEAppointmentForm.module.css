@@ -183,16 +183,28 @@
 .stickyFooter {
   flex-shrink: 0;
   display: flex;
-  justify-content: center;
   padding: clamp(0.65rem, 2vw, 0.9rem) clamp(1rem, 4vw, 2rem);
   padding-bottom: calc(clamp(0.65rem, 2vw, 0.9rem) + env(safe-area-inset-bottom, 0px));
   background: white;
-  border-top: 1px solid #e9e0f8;
   z-index: 20;
+  max-width: 720px;
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  position: relative;
   gap: clamp(0.5rem, 2vw, 0.75rem);
+}
+
+.stickyFooter::before {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--footer-h, 70px);
+  background: white;
+  border-top: 1px solid #e9e0f8;
+  z-index: -1;
 }
 
 .continueButton {
@@ -222,9 +234,6 @@
 }
 
 .cancelButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
   border-radius: clamp(6px, 1.5vw, 9px);
   border: 1.5px solid #c4aee8;
