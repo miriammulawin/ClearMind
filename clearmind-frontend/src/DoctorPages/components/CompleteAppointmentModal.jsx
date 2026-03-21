@@ -201,7 +201,7 @@ function ClinicalNotesSection() {
         </button>
       </div>
 
-      {/* Entries */}
+      {/* ✅ FIXED: Entries container with bounded scroll */}
       <div className="clinical-entries">
         {notes[activeTab].length === 0 ? (
           <div className="clinical-empty">
@@ -336,7 +336,7 @@ function ClinicalNotesSection() {
 
 /* ─────────────────────────────────────────────────────────────────
    CompleteAppointmentModal
-   ✅ FIXED: Proper flex layout, removed conflicting inline styles
+   ✅ FIXED: Modal scroll body with .scrollBody class
 ───────────────────────────────────────────────────────────────── */
 function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   if (!isOpen || !appt) return null;
@@ -383,10 +383,42 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
         }
         .clinical-add-btn:hover { filter: brightness(1.1); }
 
-        .clinical-entries { display: flex; flex-direction: column; gap: 10px; }
+        /* ✅ FIXED: Clinical entries with bounded scroll */
+        .clinical-entries {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-height: 350px;     /* ✅ Bounded height */
+          overflow-y: auto;      /* ✅ Enable scroll */
+          overflow-x: hidden;
+          padding-right: 2px;    /* Make room for scrollbar */
+        }
+
+        /* ✅ Custom scrollbar for clinical entries */
+        .clinical-entries::-webkit-scrollbar {
+          width: 6px;
+        }
+        .clinical-entries::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .clinical-entries::-webkit-scrollbar-thumb {
+          background: #d4c4ff;
+          border-radius: 3px;
+        }
+        .clinical-entries::-webkit-scrollbar-thumb:hover {
+          background: #b8a5d9;
+        }
+
+        /* Firefox scrollbar */
+        .clinical-entries {
+          scrollbar-color: #d4c4ff transparent;
+          scrollbar-width: thin;
+        }
+
         .clinical-entry-card {
           border-radius: 10px; border: 1px solid #e5e7eb;
           border-left-width: 4px; padding: 12px 14px; background: #fdfcff;
+          flex-shrink: 0;  /* ✅ Don't shrink cards */
         }
         .clinical-entry-header {
           display: flex; align-items: flex-start;
@@ -465,7 +497,7 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
         }
         .clinical-save-btn:hover { filter: brightness(1.1); }
 
-        /* ✅ FIXED: Proper footer styling without conflicting inline styles */
+        /* ✅ FIXED: Modal footer — proper styling */
         .cam-footer {
           padding: 14px 20px;
           border-top: 1px solid #ede7f6;
@@ -473,7 +505,7 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
           justify-content: flex-end;
           gap: 10px;
           background: #faf7ff;
-          flex-shrink: 0;  /* ✅ Footer doesn't shrink */
+          flex-shrink: 0;
         }
 
         /* confirm button in footer */
@@ -506,7 +538,7 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
             </div>
           </div>
 
-          {/* ── Scroll body ✅ FIXED: Proper flex layout ── */}
+          {/* ✅ FIXED: Scroll body with proper flex layout */}
           <div className={styles.scrollBody}>
             {/* Appointment info card — same card style as DayAppointmentsModal */}
             <section className={styles.card}>
@@ -548,13 +580,21 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
               </div>
             </section>
 
-            {/* Clinical notes section */}
-            <section className={styles.card} style={{ padding: "16px 20px" }}>
-              <ClinicalNotesSection />
+            {/* ✅ FIXED: Clinical notes section — now scrollable within modal */}
+            <section
+              className={styles.card}
+              style={{ display: "flex", flexDirection: "column", minHeight: 0 }}
+            >
+              <div className={styles.cardHeader}>Clinical Notes</div>
+              <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                <div style={{ padding: "12px 14px", height: "100%" }}>
+                  <ClinicalNotesSection />
+                </div>
+              </div>
             </section>
           </div>
 
-          {/* ── Footer ✅ FIXED: Proper CSS class instead of inline styles ── */}
+          {/* ── Footer — proper CSS class ── */}
           <div className="cam-footer">
             <button className="cam-cancel-btn" onClick={onClose}>
               Cancel

@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   DayAppointmentsModal.module.css — FINAL VERSION
-   Full content display for all accordion sections
+   DayAppointmentsModal.module.css — COMPACT DRAWER ACCORDION VERSION
+   ✅ Perfect balance: visible content + scrolling + compact size
 ───────────────────────────────────────────────────────────────────────── */
 
 /* ── Overlay & Modal ────────────────────────────────────────────────────── */
@@ -19,7 +19,7 @@
 
 .modal {
   width: 95%;
-  max-width: 600px;  /* ✅ Narrow width */
+  max-width: 600px;
   max-height: 90vh;
   background: #fff;
   border-radius: 12px;
@@ -83,6 +83,11 @@
   font-size: 16px;
   padding: 0;
   flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.closeBtn:hover {
+  background-color: #f0f0f0;
 }
 
 .clinicDot {
@@ -104,7 +109,7 @@
   white-space: nowrap;
 }
 
-/* ── Scrollable Body ────────────────────────────────────────────────────── */
+/* ── Scrollable Body (Main Modal Scroll) ────────────────────────────────– */
 .scrollBody {
   flex: 1;
   overflow-y: auto;
@@ -114,6 +119,30 @@
   flex-direction: column;
   gap: 8px;
   min-height: 0;
+}
+
+/* ✅ Custom scrollbar for main modal scroll */
+.scrollBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollBody::-webkit-scrollbar-thumb {
+  background: #d4c4ff;
+  border-radius: 3px;
+}
+
+.scrollBody::-webkit-scrollbar-thumb:hover {
+  background: #b8a5d9;
+}
+
+/* Firefox scrollbar */
+.scrollBody {
+  scrollbar-color: #d4c4ff transparent;
+  scrollbar-width: thin;
 }
 
 /* ── Info Row ───────────────────────────────────────────────────────────── */
@@ -131,21 +160,17 @@
 }
 
 .infoValue {
-  color: #1f2937;  /* ✅ Dark gray - visible text */
+  color: #1f2937;
   word-break: break-word;
-  font-weight: 500;  /* ✅ Added slight weight for clarity */
-}
-
-/* ✅ NEW: Specific styling for Status value */
-.infoRow:has(+ .infoRow) .infoValue {
-  color: #1f2937;  /* Ensure all values are dark */
+  font-weight: 500;
 }
 
 /* ── Cards ──────────────────────────────────────────────────────────────── */
 .card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
+  flex-shrink: 0;
 }
 
 .cardHeader {
@@ -225,12 +250,13 @@
   transform: rotate(180deg);
 }
 
-/* ✅ UPDATED: Scrollable accordion content with internal scroll */
+/* ✅ OPTIMIZED: Compact drawer accordion - max 240px with scroll */
 .accordionBodyWrapper {
-  max-height: 400px;  /* ✅ Set max height for scroll */
-  overflow-y: auto;   /* ✅ Enable vertical scroll */
+  max-height: 240px;
+  overflow-y: auto;
   overflow-x: hidden;
   border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
 }
 
 /* ✅ Custom scrollbar styling for accordions */
@@ -262,7 +288,8 @@
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  font-size: 11px;
 }
 
 /* ── Purpose Badge Row ──────────────────────────────────────────────────── */
@@ -281,10 +308,22 @@
   white-space: nowrap;
 }
 
-.purposeVawc   { background-color: #fee2e2; color: #b91c1c; }
-.purposeLegal  { background-color: #e0f2fe; color: #0369a1; }
-.purposeSchool { background-color: #dcfce7; color: #15803d; }
-.purposeWork   { background-color: #fef9c3; color: #a16207; }
+.purposeVawc {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+.purposeLegal {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+.purposeSchool {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+.purposeWork {
+  background-color: #fef9c3;
+  color: #a16207;
+}
 
 /* ── Payment Badge ──────────────────────────────────────────────────────── */
 .paymentWrap {
@@ -346,6 +385,8 @@
   color: #374151;
   line-height: 1.4;
   min-height: 45px;
+  max-height: 100px;
+  overflow-y: auto;
 }
 
 .complaintEmpty {
@@ -477,7 +518,9 @@
   transition: background-color 0.15s;
 }
 
-.pdfViewerDownload:hover { background-color: #3a1a5c; }
+.pdfViewerDownload:hover {
+  background-color: #3a1a5c;
+}
 
 .pdfViewerClose {
   background-color: #3a3a3a;
@@ -495,7 +538,9 @@
   font-size: 14px;
 }
 
-.pdfViewerClose:hover { background-color: #555; }
+.pdfViewerClose:hover {
+  background-color: #555;
+}
 
 /* ── PDF Toolbar (pagination + zoom) ────────────────────────────────────── */
 .pdfToolbar {
@@ -533,8 +578,13 @@
   line-height: 1;
 }
 
-.pdfNavBtn:hover:not(:disabled) { background-color: #4d227c; }
-.pdfNavBtn:disabled              { opacity: 0.35; cursor: default; }
+.pdfNavBtn:hover:not(:disabled) {
+  background-color: #4d227c;
+}
+.pdfNavBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
 
 .pdfPageInfo {
   color: #e5e5e5;
@@ -719,7 +769,9 @@
   white-space: nowrap;
 }
 
-.btnPurple:hover { background-color: #3a1a5c; }
+.btnPurple:hover {
+  background-color: #3a1a5c;
+}
 
 .btnGreen {
   padding: 6px 12px;
@@ -734,24 +786,106 @@
   white-space: nowrap;
 }
 
-.btnGreen:hover { background-color: #15803d; }
+.btnGreen:hover {
+  background-color: #15803d;
+}
+
+/* ── Status Badges ──────────────────────────────────────────────────────── */
+.statusScheduled {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.statusCancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.statusCompleted {
+  background-color: #dbeafe;
+  color: #0c4a6e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.statusRescheduled {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
 
 /* ── Media Queries (structural shifts only) ─────────────────────────────── */
 @media (max-width: 640px) {
-  .overlay        { padding: 0; align-items: flex-end; }
-  .modal          { width: 100%; max-width: 100%; border-radius: 16px 16px 0 0; max-height: 95vh; }
-  .cardBody       { flex-direction: column; }
-  .pdfViewerModal { max-width: 100%; max-height: 94vh; border-radius: 12px 12px 0 0; }
-  .btnPurple      { width: 100%; }
-  .scrollBody     { padding: 8px 12px; gap: 6px; }
-  .cardHeader     { padding: 6px 8px; }
-  .cardBody       { padding: 6px 8px; }
-  .infoLabel      { min-width: 80px; }
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 95vh;
+  }
+  .cardBody {
+    flex-direction: column;
+  }
+  .pdfViewerModal {
+    max-width: 100%;
+    max-height: 94vh;
+    border-radius: 12px 12px 0 0;
+  }
+  .btnPurple {
+    width: 100%;
+  }
+  .scrollBody {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .cardHeader {
+    padding: 6px 8px;
+  }
+  .cardBody {
+    padding: 6px 8px;
+  }
+  .infoLabel {
+    min-width: 80px;
+  }
+
+  /* Smaller accordion on mobile */
+  .accordionBodyWrapper {
+    max-height: 200px;
+  }
 }
 
 @media (max-width: 400px) {
-  .dateBadge { display: none; }
-  .infoRow   { flex-direction: column; gap: 2px; }
-  .modalTitle { font-size: 13px; }
-  .modal { max-width: 95%; }
+  .dateBadge {
+    display: none;
+  }
+  .infoRow {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .modalTitle {
+    font-size: 13px;
+  }
+  .modal {
+    max-width: 95%;
+  }
 }
