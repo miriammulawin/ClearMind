@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FiCheckCircle } from 'react-icons/fi';
+import { FaArrowLeft } from 'react-icons/fa';
+
 import { CONSULTATION_FEES } from '../../../../MockData/MockDoctors.js';
 import styles from '../../../ClientStyle/SetAppointmentForm.module.css';
 import SetAppointmentFormHeader from './SetAppointmentFormHeader.jsx';

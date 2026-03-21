@@ -8,6 +8,20 @@ import { useCurrentUser } from '../../../../hooks/userCurrentUser';
  * PaymentForm  –  Step 3 body
  *
  * Location: ClientComponent/AppointmentComponents/AppointmentForm/PaymentForm.jsx
+<<<<<<< HEAD
+=======
+ *
+ * Props:
+ *   doctorData       – doctor object (name, etc.)
+ *   selectedDate     – dateSlot object ({ date, day })
+ *   selectedTime     – time string
+ *   consultationMode – 'IN-PERSON' | 'ONLINE'
+ *   consultationFee  – number
+ *   profileData      – object from VerifyProfileForm
+ *   paymentData      – object containing payment field values
+ *   setPaymentData   – setter
+ *   qrImages         – { gcash, bankTransfer } image sources
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
  */
 const PaymentForm = ({
   doctorData       = {},
@@ -21,6 +35,10 @@ const PaymentForm = ({
   qrImages         = { gcash: sampleQr, bankTransfer: sampleQr },
 }) => {
 
+<<<<<<< HEAD
+=======
+  // ── Get logged-in user for Patient mode ───────────────────────
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
   const user = useCurrentUser();
 
   const [fileError, setFileError] = useState('');
@@ -45,7 +63,11 @@ const PaymentForm = ({
     const file = e.target.files[0] || null;
     if (!file) { handleChange('receiptFile', null); return; }
 
+<<<<<<< HEAD
     const isValidMime       = ALLOWED_IMAGE_TYPES.includes(file.type);
+=======
+    const isValidMime      = ALLOWED_IMAGE_TYPES.includes(file.type);
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
     const allowedExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/i;
     const isValidExtension  = allowedExtensions.test(file.name);
 
@@ -85,10 +107,16 @@ const PaymentForm = ({
   const toTitleCase = (str) =>
     str.replace(/\w\S*/g, w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
 
+<<<<<<< HEAD
   // ── Only show a summary row if the value is a real non-dash string ──
   const hasValue = (val) => val && val !== '—';
 
   // ── Resolve patient info ──────────────────────────────────────
+=======
+  // ── Resolve patient info based on mode ────────────────────────
+  // Patient mode  → use pre-loaded user object from useCurrentUser
+  // Complainant mode → use manually entered profileData fields
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
   const isComplainant = profileData.isInformant === true;
 
   const patient = isComplainant
@@ -105,6 +133,10 @@ const PaymentForm = ({
         address:     profileData.address     || '—',
       }
     : {
+<<<<<<< HEAD
+=======
+        // Patient mode — from useCurrentUser
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
         fullName:    user?.fullName    || '—',
         dateOfBirth: user?.dateOfBirth || '—',
         age:         user?.age         ? String(user.age) : '—',
@@ -114,8 +146,13 @@ const PaymentForm = ({
         address:     user?.homeAddress || '—',
       };
 
+<<<<<<< HEAD
   const visitType       = consultationMode === 'ONLINE' ? 'Online' : 'On-site / Clinic';
   const dateTimeDisplay = selectedDate?.date && selectedTime
+=======
+  const visitType        = consultationMode === 'ONLINE' ? 'Online' : 'On-site / Clinic';
+  const dateTimeDisplay  = selectedDate?.date && selectedTime
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
     ? `${selectedDate.date}, ${selectedTime} – ${getEndTime(selectedTime)}`
     : '—';
 
@@ -180,6 +217,17 @@ const PaymentForm = ({
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Address:</span>
             <span className={styles.summaryVal}>{patient.address}</span>
+<<<<<<< HEAD
+=======
+          </div>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryKey}>Patient Type:</span>
+            <span className={styles.summaryVal}>{profileData.patientType || '—'}</span>
+          </div>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryKey}>Classification:</span>
+            <span className={styles.summaryVal}>{profileData.classification || '—'}</span>
+>>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
           </div>
 
           {/* Only shown when actually collected (PAC) — hidden for PAaE */}
