@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FiCheckCircle } from 'react-icons/fi';
 import { FaArrowLeft } from 'react-icons/fa';
-import { FaArrowLeft } from 'react-icons/fa';
+
 import styles from '../../PAaEAssesmentPages/style/PAaEAppointmentForm.module.css';
 import { useCurrentUser } from '../../../../hooks/userCurrentUser';
 
@@ -16,14 +16,6 @@ import PAaEReason      from '../AppointmentForm/PAaEReason';
 import PAaEChooseRPm   from '../AppointmentForm/PAaEChooseRPm';
 import PAeEDocuments   from '../AppointmentForm/PAaEDocuments';
 import PAeEPayment     from '../../PaCAssesmentPages/AppointmentForm/PaymentForm';
-
-/* -----------------------------------------------------------------
-   Fee constants
------------------------------------------------------------------- */
-const BASE_FEES = {
-  'Pre-Employment Purpose': 3000,
-};
-const PRINTED_REPORT_FEE = 500;
 
 /* -----------------------------------------------------------------
    Fee constants
@@ -437,6 +429,7 @@ const PAaESetAppointmentForm = () => {
 
   // ── Validation ────────────────────────────────────────────────
   const getStepError = () => {
+
     if (currentLabel === 'Details' && config.extraField === 'preEmployment') {
       if (!form.employerName?.trim())      return 'Please enter the name of the employer or company.';
       if (!form.assessmentPurpose?.trim()) return 'Please enter the purpose of the assessment.';
@@ -446,8 +439,10 @@ const PAaESetAppointmentForm = () => {
       if (!form.schoolName?.trim()) return 'Please enter the name of the school or university.';
       if (!form.program?.trim())    return 'Please enter the program or course.';
     }
+
     if (currentLabel === 'Reason' || currentLabel === 'Submit') {
       if (!form.reason) return 'Please enter your reason for consultation.';
+
       if (form.isInformant) {
         if (!form.complainantName)     return 'Please enter your full name.';
         if (!form.complainantRelation) return 'Please enter your relation to the patient.';
@@ -479,18 +474,10 @@ const PAaESetAppointmentForm = () => {
       const missing = config.mandatoryDocs.filter(d => !(form.docFiles || {})[d]);
       if (missing.length > 0) return `Please upload: ${missing.join(', ')}.`;
     }
-    if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
-      if (form.wantsPrintedReport === undefined)
-        return 'Please indicate whether you want the printed psychological report.';
-    if (currentLabel === 'Payment') {
-    if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
-      if (form.wantsPrintedReport === undefined)
-        return 'Please indicate whether you want the printed psychological report.';
-      if (!form.payMethod) return 'Please select a payment method.';
-      if (!form.proofFile) return 'Please upload your proof of payment.';
-    }
 
-    if (currentLabel === 'Payment' && config.extraField !== 'preEmployment') {
+    if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
+      if (form.wantsPrintedReport === undefined)
+        return 'Please indicate whether you want the printed psychological report.';
       if (!form.payMethod) return 'Please select a payment method.';
       if (!form.proofFile) return 'Please upload your proof of payment.';
     }
