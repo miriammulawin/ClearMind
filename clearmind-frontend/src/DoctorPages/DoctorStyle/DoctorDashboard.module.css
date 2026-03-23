@@ -3,11 +3,7 @@
 /* ══════════════════════════════════════════════
    BASE
 ══════════════════════════════════════════════ */
-.admin-content .row {
-  background-color: white;
-}
-
-.container-fluid {
+.containerFluid {
   background-color: white;
   font-family: "Poppins", sans-serif;
   padding: clamp(10px, 2vw, 24px);
@@ -16,31 +12,32 @@
 /* ══════════════════════════════════════════════
    DASHBOARD CARD
 ══════════════════════════════════════════════ */
-.dashboard-card {
-  background: rgba(78, 35, 124, 0.06);
-  border-radius: clamp(10px, 1.5vw, 14px);
-  padding: clamp(0.8rem, 2vw, 1.2rem) clamp(0.9rem, 2.5vw, 1.5rem);
+.dashboardCard {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.5rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
   border: 1px solid #e0d4ff;
   height: 100%;
   margin-top: clamp(8px, 1.5vw, 12px);
 }
 
-.dashboard-card hr {
+.dashboardCard hr {
   margin-top: -17px;
 }
 
-.dashboard-card h5 {
+.dashboardCard h5 {
   font-weight: 700;
   color: #2e104e;
-  margin: 0;
+  margin: 0 0 1rem 0;
   font-size: clamp(0.85rem, 1.8vw, 1rem);
+  font-family: "Poppins", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
    CARD HEADER
 ══════════════════════════════════════════════ */
-.card-header {
+.cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -51,23 +48,25 @@
   margin-bottom: clamp(0.6rem, 1.5vw, 1rem);
 }
 
-.card-header h5 {
+.cardHeader h5 {
   font-weight: 700;
   color: #2e104e;
   margin: 0;
   font-size: clamp(0.85rem, 1.8vw, 1rem);
+  font-family: "Poppins", sans-serif;
 }
 
-.card-date {
+.cardDate {
   font-size: clamp(0.72rem, 1.3vw, 0.85rem);
   color: #888;
   display: flex;
   align-items: center;
   gap: clamp(4px, 0.8vw, 8px);
   flex-wrap: wrap;
+  font-family: "Poppins", sans-serif;
 }
 
-.card-date span {
+.cardDate span {
   background: #4d227c;
   color: #fff;
   font-size: clamp(0.65rem, 1.1vw, 0.75rem);
@@ -79,63 +78,38 @@
 /* ══════════════════════════════════════════════
    CARD BODY
 ══════════════════════════════════════════════ */
-.card-body {
+.cardBody {
   display: flex;
   flex-direction: column;
   gap: clamp(8px, 1.5vw, 14px);
 }
 
 /* ══════════════════════════════════════════════
-   CONSULT ITEM
-══════════════════════════════════════════════ */
-.consult-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.consult-item p {
-  margin: 0;
-  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
-  color: #555;
-}
-
-.verify-btn {
-  background: #6f2dbd;
-  color: #fff;
-  border: none;
-  padding: clamp(4px, 0.8vw, 6px) clamp(10px, 1.5vw, 14px);
-  border-radius: 8px;
-  font-size: clamp(0.72rem, 1.2vw, 0.8rem);
-  cursor: pointer;
-  font-family: "Poppins", sans-serif;
-  transition: background 0.2s;
-}
-
-.verify-btn:hover {
-  background: #5a23a3;
-}
-
-/* ══════════════════════════════════════════════
    APPOINTMENT ITEMS
 ══════════════════════════════════════════════ */
-.appointment-icon-text {
+.appointmentIconText {
   display: flex;
   align-items: center;
   gap: clamp(0.3rem, 0.8vw, 0.5rem);
   font-size: clamp(1rem, 1.8vw, 1.2rem);
   color: #4d227c;
+  font-family: "Poppins", sans-serif;
 }
 
-.appointment-items p {
+.appointmentItems {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointmentItems p {
   color: #555555a8;
   font-size: clamp(0.75rem, 1.3vw, 0.85rem);
   margin: 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.appointment-icon {
+.appointmentIcon {
   font-size: clamp(1.2rem, 2vw, 1.5rem);
   color: #4d227c;
 }
@@ -143,37 +117,38 @@
 /* ══════════════════════════════════════════════
    PATIENTS TABLE
 ══════════════════════════════════════════════ */
-.patients-table {
+.patientsTable {
   width: 100%;
   border-collapse: collapse;
   font-size: clamp(0.75rem, 1.3vw, 0.9rem);
+  font-family: "Poppins", sans-serif;
 }
 
-.patients-table th,
-.patients-table td {
+.patientsTable th,
+.patientsTable td {
   padding: clamp(0.45rem, 1vw, 0.8rem) clamp(0.5rem, 1.5vw, 1rem);
   text-align: left;
   border-bottom: 1px solid #e0d4ff;
   white-space: nowrap;
 }
 
-.patients-table th {
+.patientsTable th {
   color: #4d227c;
   font-weight: 600;
 }
 
-.patients-table td {
+.patientsTable td {
   color: #4d4952;
 }
 
-.table-responsive {
+.tableResponsive {
   overflow-x: auto;
 }
 
 /* ══════════════════════════════════════════════
    TABLE PAGINATION
 ══════════════════════════════════════════════ */
-.table-pagination {
+.tablePagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -182,15 +157,16 @@
   margin-top: clamp(0.6rem, 1.5vw, 1rem);
   font-size: clamp(0.72rem, 1.2vw, 0.85rem);
   color: #888;
+  font-family: "Poppins", sans-serif;
 }
 
-.pagination-buttons {
+.paginationButtons {
   display: flex;
   flex-wrap: wrap;
   gap: clamp(2px, 0.5vw, 4px);
 }
 
-.pagination-buttons button {
+.paginationButtons button {
   background: #f0e6ff;
   border: none;
   padding: clamp(2px, 0.5vw, 3px) clamp(6px, 1vw, 8px);
@@ -198,12 +174,10 @@
   cursor: pointer;
   font-size: clamp(0.7rem, 1.1vw, 0.8rem);
   font-family: "Poppins", sans-serif;
-  transition:
-    background 0.2s,
-    color 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 
-.pagination-buttons button:hover {
+.paginationButtons button:hover {
   background: #4d227c;
   color: #fff;
 }
@@ -211,7 +185,7 @@
 /* ══════════════════════════════════════════════
    PIE CHART
 ══════════════════════════════════════════════ */
-.pie-chart-container {
+.pieChartContainer {
   position: relative;
   height: clamp(220px, 30vw, 300px);
   display: flex;
@@ -220,158 +194,126 @@
 }
 
 /* ══════════════════════════════════════════════
-   ANNOUNCEMENTS
+   ANNOUNCEMENTS — exact match to AdminDashboard
 ══════════════════════════════════════════════ */
-.announcement-title {
+.announcementCard {
+  /* inherits dashboardCard */
+}
+
+.announcementTitle {
   display: flex;
   align-items: center;
-  gap: clamp(5px, 1vw, 8px);
+  gap: 8px;
   font-weight: 700;
   color: #2e104e;
   margin: 0;
   font-size: clamp(0.85rem, 1.8vw, 1rem);
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-icon {
+.announceIcon {
   color: #4d227c;
-  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+  font-size: 1.1rem;
 }
 
-.announce-list {
+.announceList {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.5vw, 12px);
+  gap: 12px;
   margin-top: 4px;
 }
 
-.announce-item {
+.announceItem {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border-radius: clamp(8px, 1.2vw, 10px);
-  padding: clamp(10px, 1.8vw, 14px) clamp(12px, 2vw, 16px);
-  gap: clamp(8px, 1.5vw, 12px);
+  border-radius: 10px;
+  padding: 14px 16px;
+  gap: 12px;
   border: 1px solid #e0d4ff;
   background: #faf7ff;
-  transition:
-    box-shadow 0.2s,
-    transform 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.announce-item:hover {
+.announceItem:hover {
   box-shadow: 0 4px 14px rgba(77, 34, 124, 0.1);
   transform: translateY(-2px);
 }
 
-.announce-high {
+.announceHigh {
   border-left: 4px solid #dc2626;
   background: #fff8f8;
 }
 
-.announce-normal {
+.announceNormal {
   border-left: 4px solid #4d227c;
 }
 
-.announce-left {
+.announceLeft {
   flex: 1;
   min-width: 0;
 }
 
-.announce-item-header {
+.announceItemHeader {
   display: flex;
   align-items: center;
-  gap: clamp(5px, 1vw, 8px);
+  gap: 8px;
   margin-bottom: 4px;
   flex-wrap: wrap;
 }
 
-.priority-badge {
+.priorityBadge {
   background: #dc2626;
   color: #fff;
-  font-size: clamp(0.62rem, 1vw, 0.7rem);
-  padding: 2px clamp(5px, 1vw, 8px);
+  font-size: 0.7rem;
+  padding: 2px 8px;
   border-radius: 20px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-item-title {
-  font-size: clamp(0.82rem, 1.5vw, 0.95rem);
+.announceItemTitle {
+  font-size: 0.95rem;
   color: #2e104e;
   font-weight: 600;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-message {
-  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
+.announceMessage {
+  font-size: 0.85rem;
   color: #555;
   margin: 0 0 6px 0;
   line-height: 1.5;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-date {
-  font-size: clamp(0.65rem, 1vw, 0.75rem);
+.announceDate {
+  font-size: 0.75rem;
   color: #aaa;
+  font-family: "Poppins", sans-serif;
 }
 
-.no-announce {
+.noAnnounce {
   text-align: center;
   color: #bbb;
-  padding: clamp(12px, 2.5vw, 20px) 0;
-  font-size: clamp(0.8rem, 1.4vw, 0.9rem);
-}
-
-/* ══════════════════════════════════════════════
-   AVAILABILITY / SCHEDULE
-══════════════════════════════════════════════ */
-.availability-count {
-  background: linear-gradient(135deg, #4e237c 0%, #6b3a9e 100%);
-  color: white;
-  padding: clamp(4px, 0.8vw, 6px) clamp(8px, 1.5vw, 12px);
-  border-radius: 20px;
-  font-size: clamp(0.65rem, 1.1vw, 0.75rem);
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(78, 35, 124, 0.2);
-}
-
-.day-schedules {
-  padding: clamp(8px, 1.5vw, 12px) clamp(4px, 1vw, 8px);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(5px, 1vw, 8px);
-  min-height: clamp(120px, 20vw, 180px);
-  max-height: clamp(180px, 28vw, 280px);
-  overflow-y: auto;
-}
-
-.day-schedules::-webkit-scrollbar {
-  width: 4px;
-}
-.day-schedules::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-.day-schedules::-webkit-scrollbar-thumb {
-  background: #4e237c;
-  border-radius: 10px;
-}
-.day-schedules::-webkit-scrollbar-thumb:hover {
-  background: #3a1a5e;
+  padding: 20px 0;
+  font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
    WEEK NAVIGATION
 ══════════════════════════════════════════════ */
-.week-navigation {
+.weekNavigation {
   display: flex;
   align-items: center;
   gap: clamp(6px, 1.2vw, 12px);
 }
 
-.week-nav-btn {
+.weekNavBtn {
   background: #4e237c;
   color: white;
   border: none;
@@ -387,49 +329,51 @@
   flex-shrink: 0;
 }
 
-.week-nav-btn:hover {
+.weekNavBtn:hover {
   background: #3a1a5e;
   transform: scale(1.05);
 }
 
-.week-range {
+.weekRange {
   font-size: clamp(0.72rem, 1.3vw, 0.9rem);
   color: #4e237c;
   font-weight: 600;
   padding: 0 clamp(4px, 0.8vw, 8px);
   white-space: nowrap;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
    CALENDAR
 ══════════════════════════════════════════════ */
-.calendar-grid {
+.calendarGrid {
   padding: clamp(2px, 0.5vw, 4px);
 }
 
-.calendar-header {
+.calendarHeader {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: clamp(2px, 0.5vw, 4px);
   margin-bottom: clamp(4px, 0.8vw, 6px);
 }
 
-.calendar-day-label {
+.calendarDayLabel {
   text-align: center;
   font-size: clamp(0.5rem, 1vw, 0.6rem);
   font-weight: 600;
   color: #888;
   padding: clamp(2px, 0.5vw, 4px) 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.calendar-dates {
+.calendarDates {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: clamp(3px, 0.6vw, 6px);
   grid-auto-rows: minmax(clamp(22px, 3.5vw, 28px), auto);
 }
 
-.calendar-date {
+.calendarDate {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -441,40 +385,101 @@
   padding: clamp(3px, 0.6vw, 6px);
   min-height: clamp(22px, 3.5vw, 28px);
   height: clamp(22px, 3.5vw, 28px);
+  font-family: "Poppins", sans-serif;
 }
 
-.calendar-date:hover {
+.calendarDate:hover {
   background: #f0e6ff;
 }
-.calendar-date.other-month {
+
+.otherMonth {
   color: #ccc;
 }
-.calendar-date.today {
+
+.today {
   background: #4e237c;
   color: white;
   font-weight: 600;
 }
 
 /* ══════════════════════════════════════════════
-   ONE NARROW BREAKPOINT — stacking only
+   RESPONSIVE
 ══════════════════════════════════════════════ */
+@media (max-width: 992px) {
+  .dashboardCard {
+    margin-top: 8px;
+  }
+
+  .pieChartContainer {
+    height: 260px;
+  }
+
+  .appointmentItems {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboardCard {
+    padding: 1rem;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .appointmentIconText {
+    font-size: 1rem;
+  }
+
+  .appointmentIcon {
+    font-size: 1.2rem;
+  }
+
+  .patientsTable {
+    font-size: 0.8rem;
+  }
+
+  .patientsTable th,
+  .patientsTable td {
+    padding: 0.5rem;
+    white-space: nowrap;
+  }
+
+  .tablePagination {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pieChartContainer {
+    height: 240px;
+  }
+
+  .announceItem {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 480px) {
-  .card-header {
+  .cardHeader {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .announce-item {
-    flex-direction: column;
-  }
-
-  .table-pagination {
+  .tablePagination {
     flex-direction: column;
     align-items: flex-start;
   }
+}
 
-  .verify-btn {
-    width: 100%;
-    text-align: center;
+@media (max-width: 400px) {
+  .paginationButtons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
   }
 }
