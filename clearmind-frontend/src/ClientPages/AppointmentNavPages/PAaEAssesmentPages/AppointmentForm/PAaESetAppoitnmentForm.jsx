@@ -1,19 +1,12 @@
 // PAaESetAppointmentForm.jsx
 // Route: /client/appointment/psychological-assessment/set-appointment-form
 // Receives: location.state.selectedService (string title from PAaEAppointment)
-//
-// Folder structure expected:
-//   AppointmentForm/
-//     PAaEFormHeader.jsx
-//     PAaEReason.jsx
-//     PAaEChooseRPm.jsx
-//     PAeEDocuments.jsx
-//     PAeEPayment.jsx
 
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FiCheckCircle } from 'react-icons/fi';
+import { FaArrowLeft } from 'react-icons/fa';
 
 import styles from '../../PAaEAssesmentPages/style/PAaEAppointmentForm.module.css';
 import { useCurrentUser } from '../../../../hooks/userCurrentUser';
@@ -23,6 +16,14 @@ import PAaEReason      from '../AppointmentForm/PAaEReason';
 import PAaEChooseRPm   from '../AppointmentForm/PAaEChooseRPm';
 import PAeEDocuments   from '../AppointmentForm/PAaEDocuments';
 import PAeEPayment     from '../../PaCAssesmentPages/AppointmentForm/PaymentForm';
+
+/* -----------------------------------------------------------------
+   Fee constants
+------------------------------------------------------------------ */
+const BASE_FEES = {
+  'Pre-Employment Purpose': 3000,
+};
+const PRINTED_REPORT_FEE = 500;
 
 /* -----------------------------------------------------------------
    Services Config
@@ -72,13 +73,15 @@ const SERVICE_CONFIG = {
     extraField: 'company',
   },
   'Pre-Employment Purpose': {
-    steps: ['Reason', 'Submit'],
+    steps: ['Details', 'Choose RPm', 'Payment'],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: [],
-    hasPayment: false,
+    hasPayment: true,
     refPrefix: 'PREE',
-    extraField: 'company',
+    extraField: 'preEmployment',
+    baseFee: BASE_FEES['Pre-Employment Purpose'],
+    printedReportFee: PRINTED_REPORT_FEE,
   },
   'Emotional Support Animal (ESA) Certification': {
     steps: ['Reason', 'Submit'],
@@ -97,10 +100,281 @@ const SERVICE_CONFIG = {
     refPrefix: 'MHC',
     extraField: 'institution',
   },
+  'Mental Health Certification for Internship': {
+    steps: ['Details', 'Choose RPm', 'Documents', 'Payment'],
+    femaleOnly: false,
+    mandatoryDocs: [],
+    optionalDocs: ['Incident Report (if applicable)'],
+    hasPayment: true,
+    refPrefix: 'MHCI',
+    extraField: 'internship',
+  },
 };
 
 /* -----------------------------------------------------------------
-   Success Screen (small enough to stay here)
+   Helper — build the props PaymentForm expects from PAaE's flat form
+
+   Key fix:
+     PAaEChooseRPm stores handleSetDate's dateSlot object directly into
+     form.date (e.g. { date: "April 5, 2026", day: "Saturday" }).
+     PaymentForm expects selectedDate = { date, day }.
+     So we pass form.date AS-IS — do NOT wrap it again.
+------------------------------------------------------------------ */
+function buildPaymentProps(form, setForm, consultationFee) {
+  // ── Doctor / RPm ──────────────────────────────────────────────
+  const doctorData = form.selectedRpm || { name: form.rpm || '—' };
+
+  // ── Date — form.date is already the dateSlot object { date, day } ──
+  const selectedDate = form.date ?? {};
+
+  // ── Time ──────────────────────────────────────────────────────
+  const selectedTime = form.time || '';
+
+  // ── Consultation mode ─────────────────────────────────────────
+  const modeMap = { Virtual: 'ONLINE', Onsite: 'IN-PERSON', Both: 'IN-PERSON' };
+  const consultationMode = modeMap[form.mode] || 'IN-PERSON';
+
+  // ── Profile data ──────────────────────────────────────────────
+  const profileData = {
+    isInformant:         form.isInformant         || false,
+    complainantName:     form.complainantName     || '',
+    complainantRelation: form.complainantRelation || '',
+    firstName:           form.firstName           || '',
+    middleName:          form.middleName          || '',
+    lastName:            form.lastName            || '',
+    dateOfBirth:         form.dateOfBirth         || '',
+    age:                 form.age                 || '',
+    sex:                 form.sex                 || '',
+    contactNo:           form.contactNo           || '',
+    email:               form.email               || '',
+    address:             form.address             || '',
+    patientType:         form.patientType     || '',
+    classification:      form.classification  || '',
+    reason:              form.reason          || '',
+  };
+
+  // ── Payment data ──────────────────────────────────────────────
+  // PaymentForm uses { paymentMode, referenceNo, receiptFile }
+  // PAaE validation reads form.payMethod and form.proofFile — kept in sync.
+  const paymentData = {
+    paymentMode: form.payMethod   || 'G-Cash',
+    referenceNo: form.referenceNo || '',
+    receiptFile: form.proofFile   || null,
+  };
+
+  const setPaymentData = (updater) => {
+    setForm(prev => {
+      const current = {
+        paymentMode: prev.payMethod   || 'G-Cash',
+        referenceNo: prev.referenceNo || '',
+        receiptFile: prev.proofFile   || null,
+      };
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      return {
+        ...prev,
+        payMethod:   next.paymentMode ?? prev.payMethod,
+        referenceNo: next.referenceNo  ?? prev.referenceNo,
+        proofFile:   next.receiptFile  ?? prev.proofFile,
+      };
+    });
+  };
+
+  return {
+    doctorData,
+    selectedDate,       // ← { date: "April 5, 2026", day: "Saturday" }  (not re-wrapped)
+    selectedTime,
+    consultationMode,
+    consultationFee,
+    profileData,
+    paymentData,
+    setPaymentData,
+  };
+}
+
+/* -----------------------------------------------------------------
+   Pre-Employment Details Step
+------------------------------------------------------------------ */
+function PreEmploymentDetails({ form, setForm }) {
+  return (
+    <div className={styles.stepCard}>
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Name of Employer / Company <span className={styles.req}>*</span>
+        </label>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="e.g. ABC Corporation"
+          value={form.employerName || ''}
+          onChange={e => setForm(f => ({ ...f, employerName: e.target.value }))}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Purpose of Assessment <span className={styles.req}>*</span>
+        </label>
+        <textarea
+          className={styles.textarea}
+          placeholder="Briefly describe the purpose of this pre-employment assessment..."
+          value={form.assessmentPurpose || ''}
+          maxLength={500}
+          onChange={e => setForm(f => ({ ...f, assessmentPurpose: e.target.value }))}
+        />
+        <div className={`${styles.charCount} ${(form.assessmentPurpose || '').length > 450 ? styles.charCountWarn : ''}`}>
+          {(form.assessmentPurpose || '').length}/500
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -----------------------------------------------------------------
+   Mental Health Certification for Internship — Details Step
+------------------------------------------------------------------ */
+function InternshipDetails({ form, setForm }) {
+  return (
+    <div className={styles.stepCard}>
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Name of School / University <span className={styles.req}>*</span>
+        </label>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="e.g. University of the Philippines"
+          value={form.schoolName || ''}
+          onChange={e => setForm(f => ({ ...f, schoolName: e.target.value }))}
+        />
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Program / Course <span className={styles.req}>*</span>
+        </label>
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="e.g. BS Psychology"
+          value={form.program || ''}
+          onChange={e => setForm(f => ({ ...f, program: e.target.value }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* -----------------------------------------------------------------
+   Pre-Employment Payment Step
+   — disclaimer + printed-report toggle + fee summary + PaymentForm
+------------------------------------------------------------------ */
+function PreEmploymentPayment({ config, form, setForm }) {
+  const baseFee     = config.baseFee          || 3000;
+  const reportFee   = config.printedReportFee || 500;
+  const wantsReport = form.wantsPrintedReport === true;
+  const totalFee    = baseFee + (wantsReport ? reportFee : 0);
+
+  const paymentProps = buildPaymentProps(form, setForm, totalFee);
+
+  return (
+    <div className={styles.stepCard}>
+
+      {/* ── Disclaimer ── */}
+      <div className={styles.infoBanner} style={{ marginBottom: '16px' }}>
+        <span className={styles.bannerIcon}>ℹ️</span>
+        <span>
+          <strong>Disclaimer:</strong> This service covers <strong>test administration only</strong>.
+          The fee below applies to the psychological test session.
+          An official printed psychological report (evaluation) is a separate deliverable
+          and may require an additional fee.
+        </span>
+      </div>
+
+      {/* ── Printed Report Toggle ── */}
+      <div className={styles.field}>
+        <label className={styles.label}>
+          Would you like to receive the official printed psychological report (evaluation)?
+        </label>
+
+        <div style={{ display: 'flex', gap: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
+          {/* YES */}
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, wantsPrintedReport: true }))}
+            style={{
+              flex: '1', minWidth: '120px', padding: '10px 14px',
+              borderRadius: '10px',
+              border: `2px solid ${wantsReport ? '#5B2C91' : '#ddd0f0'}`,
+              background: wantsReport ? '#f3eeff' : '#fff',
+              color: wantsReport ? '#5B2C91' : '#9b8ab0',
+              fontWeight: wantsReport ? 700 : 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 'clamp(13px,3vw,14px)', transition: 'all 0.18s ease',
+              display: 'flex', alignItems: 'center', gap: '8px',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>{wantsReport ? '✅' : '⬜'}</span>
+            Yes — include printed report
+            <span style={{
+              marginLeft: 'auto', background: '#ede8f7', color: '#5B2C91',
+              borderRadius: '20px', padding: '2px 10px', fontSize: '11px', fontWeight: 700,
+            }}>
+              +₱{reportFee.toLocaleString()}
+            </span>
+          </button>
+
+          {/* NO */}
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, wantsPrintedReport: false }))}
+            style={{
+              flex: '1', minWidth: '120px', padding: '10px 14px',
+              borderRadius: '10px',
+              border: `2px solid ${form.wantsPrintedReport === false ? '#5B2C91' : '#ddd0f0'}`,
+              background: form.wantsPrintedReport === false ? '#f3eeff' : '#fff',
+              color: form.wantsPrintedReport === false ? '#5B2C91' : '#9b8ab0',
+              fontWeight: form.wantsPrintedReport === false ? 700 : 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 'clamp(13px,3vw,14px)', transition: 'all 0.18s ease',
+              display: 'flex', alignItems: 'center', gap: '8px',
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>{form.wantsPrintedReport === false ? '✅' : '⬜'}</span>
+            No — test administration only
+          </button>
+        </div>
+      </div>
+
+      {/* ── Fee Summary ── */}
+      {form.wantsPrintedReport !== undefined && (
+        <div className={styles.payDetailBox} style={{ marginBottom: '16px' }}>
+          <div className={styles.payRow}>
+            <span className={styles.payRowLabel}>Test Administration</span>
+            <span className={styles.payRowVal}>₱{baseFee.toLocaleString()}</span>
+          </div>
+          {wantsReport && (
+            <div className={styles.payRow}>
+              <span className={styles.payRowLabel}>Printed Psychological Report</span>
+              <span className={styles.payRowVal}>+₱{reportFee.toLocaleString()}</span>
+            </div>
+          )}
+          <div className={styles.payRow} style={{ borderTop: '2px solid #ddd0f0', marginTop: '4px', paddingTop: '8px' }}>
+            <span className={styles.payRowLabel} style={{ fontWeight: 700, color: '#1a1a1a' }}>Total</span>
+            <span className={styles.payRowVal} style={{ color: '#5B2C91', fontSize: '15px' }}>
+              ₱{totalFee.toLocaleString()}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── PaymentForm with all required props ── */}
+      <PAeEPayment {...paymentProps} />
+    </div>
+  );
+}
+
+/* -----------------------------------------------------------------
+   Success Screen
 ------------------------------------------------------------------ */
 function SuccessScreen({ config, serviceTitle, onBack }) {
   const ref = `${config.refPrefix}-2026-${String(Math.floor(Math.random() * 9000) + 1000).padStart(5, '0')}`;
@@ -141,7 +415,10 @@ const PAaESetAppointmentForm = () => {
 
   const [step,           setStep]           = useState(1);
   const [submitted,      setSubmitted]      = useState(false);
-  const [form,           setForm]           = useState({});
+  const [form,           setForm]           = useState({
+    patientType:    'New Patient',
+    classification: 'Regular',
+  });
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [confirmModal,   setConfirmModal]   = useState(false);
   const [errorModal,     setErrorModal]     = useState({ show: false, message: '' });
@@ -153,11 +430,19 @@ const PAaESetAppointmentForm = () => {
   // ── Validation ────────────────────────────────────────────────
   const getStepError = () => {
 
+    if (currentLabel === 'Details' && config.extraField === 'preEmployment') {
+      if (!form.employerName?.trim())      return 'Please enter the name of the employer or company.';
+      if (!form.assessmentPurpose?.trim()) return 'Please enter the purpose of the assessment.';
+    }
+
+    if (currentLabel === 'Details' && config.extraField === 'internship') {
+      if (!form.schoolName?.trim()) return 'Please enter the name of the school or university.';
+      if (!form.program?.trim())    return 'Please enter the program or course.';
+    }
+
     if (currentLabel === 'Reason' || currentLabel === 'Submit') {
-      // ── Reason is always required ──
       if (!form.reason) return 'Please enter your reason for consultation.';
 
-      // ── Complainant mode: validate all manual patient fields ──
       if (form.isInformant) {
         if (!form.complainantName)     return 'Please enter your full name.';
         if (!form.complainantRelation) return 'Please enter your relation to the patient.';
@@ -173,7 +458,6 @@ const PAaESetAppointmentForm = () => {
         if (!form.address)             return "Please enter the patient's home address.";
       }
 
-      // ── Free services without RPm step: also need date/time ──
       if (!config.steps.includes('Choose RPm')) {
         if (!form.date) return 'Please select a preferred date.';
         if (!form.time) return 'Please select a time slot.';
@@ -191,7 +475,14 @@ const PAaESetAppointmentForm = () => {
       if (missing.length > 0) return `Please upload: ${missing.join(', ')}.`;
     }
 
-    if (currentLabel === 'Payment') {
+    if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
+      if (form.wantsPrintedReport === undefined)
+        return 'Please indicate whether you want the printed psychological report.';
+      if (!form.payMethod) return 'Please select a payment method.';
+      if (!form.proofFile) return 'Please upload your proof of payment.';
+    }
+
+    if (currentLabel === 'Payment' && config.extraField !== 'preEmployment') {
       if (!form.payMethod) return 'Please select a payment method.';
       if (!form.proofFile) return 'Please upload your proof of payment.';
     }
@@ -209,20 +500,27 @@ const PAaESetAppointmentForm = () => {
 
   const handleBack = () => {
     if (step > 1) setStep(s => s - 1);
-    else navigate(-1);
+    else navigate('/client/appointment/psychological-assessment');
+  };
+
+  const handleConfirm = () => {
+    setConfirmModal(false);
+    setSubmitted(true);
+    setTimeout(() => navigate('/client/appointment/pending'), 3000);
   };
 
   // ── Step renderer ─────────────────────────────────────────────
   const renderStep = () => {
+
+    if (currentLabel === 'Details' && config.extraField === 'preEmployment')
+      return <PreEmploymentDetails form={form} setForm={setForm} />;
+
+    if (currentLabel === 'Details' && config.extraField === 'internship')
+      return <InternshipDetails form={form} setForm={setForm} />;
+
     if (currentLabel === 'Reason' || currentLabel === 'Submit')
-      return (
-        <PAaEReason
-          config={config}
-          form={form}
-          setForm={setForm}
-          user={user}
-        />
-      );
+      return <PAaEReason config={config} form={form} setForm={setForm} user={user} />;
+
     if (currentLabel === 'Choose RPm')
       return (
         <PAaEChooseRPm
@@ -230,31 +528,32 @@ const PAaESetAppointmentForm = () => {
           form={form}
           setForm={setForm}
           selectedDoctor={selectedDoctor}
-          onDoctorSelect={setSelectedDoctor}
+          onDoctorSelect={(doc) => {
+            setSelectedDoctor(doc);
+            // Store full doctor object so buildPaymentProps can pass it to PaymentForm
+            setForm(f => ({ ...f, selectedRpm: doc }));
+          }}
         />
       );
+
     if (currentLabel === 'Documents')
-      return (
-        <PAeEDocuments
-          config={config}
-          form={form}
-          setForm={setForm}
-        />
-      );
-    if (currentLabel === 'Payment')
-      return (
-        <PAeEPayment
-          form={form}
-          setForm={setForm}
-        />
-      );
+      return <PAeEDocuments config={config} form={form} setForm={setForm} />;
+
+    if (currentLabel === 'Payment' && config.extraField === 'preEmployment')
+      return <PreEmploymentPayment config={config} form={form} setForm={setForm} />;
+
+    // Standard payment — all required props mapped via buildPaymentProps
+    if (currentLabel === 'Payment') {
+      const paymentProps = buildPaymentProps(form, setForm, form.fee ?? 0);
+      return <PAeEPayment {...paymentProps} />;
+    }
+
     return null;
   };
 
   return (
     <div className={styles.pageWrapper}>
 
-      {/* ── Header (sticky) ── */}
       <PAaEFormHeader
         serviceTitle={serviceTitle}
         steps={config.steps}
@@ -262,20 +561,21 @@ const PAaESetAppointmentForm = () => {
         onBack={handleBack}
       />
 
-      {/* ── Scrollable body ── */}
       <div className={styles.scrollContent}>
         {submitted
-          ? <SuccessScreen config={config} serviceTitle={serviceTitle} onBack={() => navigate(-1)} />
+          ? <SuccessScreen config={config} serviceTitle={serviceTitle} onBack={() => navigate('/client/appointment/psychological-assessment')} />
           : renderStep()
         }
         <div className={styles.footerSpacer} />
       </div>
 
-      {/* ── Sticky footer ── */}
       {!submitted && (
         <div className={styles.stickyFooter}>
           {isLastStep && (
-            <button className={styles.cancelButton} onClick={handleBack}>
+            <button
+              className={styles.cancelButton}
+              onClick={() => navigate('/client/appointment/psychological-assessment')}
+            >
               Cancel
             </button>
           )}
@@ -290,12 +590,7 @@ const PAaESetAppointmentForm = () => {
       )}
 
       {/* ── Confirm Modal ── */}
-      <Modal
-        show={confirmModal}
-        onHide={() => setConfirmModal(false)}
-        centered size="sm"
-        contentClassName={styles.confirmModalContent}
-      >
+      <Modal show={confirmModal} onHide={() => setConfirmModal(false)} centered size="sm" contentClassName={styles.confirmModalContent}>
         <Modal.Body className={styles.confirmModalBody}>
           <div className={styles.confirmModalIconWrapper}>
             <FiCheckCircle className={styles.confirmModalIcon} />
@@ -305,29 +600,14 @@ const PAaESetAppointmentForm = () => {
             You're about to submit your appointment request. Would you like to continue?
           </p>
           <div className={styles.confirmModalActions}>
-            <button
-              className={styles.confirmModalBtnBack}
-              onClick={() => setConfirmModal(false)}
-            >
-              CANCEL
-            </button>
-            <button
-              className={styles.confirmModalBtnConfirm}
-              onClick={() => { setConfirmModal(false); setSubmitted(true); }}
-            >
-              YES, CONFIRM
-            </button>
+            <button className={styles.confirmModalBtnBack} onClick={() => setConfirmModal(false)}>CANCEL</button>
+            <button className={styles.confirmModalBtnConfirm} onClick={handleConfirm}>YES, CONFIRM</button>
           </div>
         </Modal.Body>
       </Modal>
 
       {/* ── Error Modal ── */}
-      <Modal
-        show={errorModal.show}
-        onHide={() => setErrorModal({ show: false, message: '' })}
-        centered size="sm"
-        contentClassName={styles.errorModalContent}
-      >
+      <Modal show={errorModal.show} onHide={() => setErrorModal({ show: false, message: '' })} centered size="sm" contentClassName={styles.errorModalContent}>
         <Modal.Body className={styles.errorModalBody}>
           <div className={styles.errorModalIconWrapper}>
             <svg className={styles.errorModalIcon} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
@@ -336,12 +616,7 @@ const PAaESetAppointmentForm = () => {
           </div>
           <p className={styles.errorModalTitle}>Incomplete Form</p>
           <p className={styles.errorModalMessage}>{errorModal.message}</p>
-          <button
-            className={styles.errorModalBtn}
-            onClick={() => setErrorModal({ show: false, message: '' })}
-          >
-            Got it
-          </button>
+          <button className={styles.errorModalBtn} onClick={() => setErrorModal({ show: false, message: '' })}>Got it</button>
         </Modal.Body>
       </Modal>
 

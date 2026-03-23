@@ -21,11 +21,11 @@ const PendingTab = () => {
     return <FaVideo className='appointment-icon' />;
   };
 
+  // ✅ Fixed: correct route + passes from state so back button returns to pending tab
   const handleViewDetails = (appointmentId) => {
-    navigate(`/client/appointment/upcoming/${appointmentId}`);
+    navigate(`/client/appointment/details/${appointmentId}`, { state: { from: 'pending' } });
   };
 
-  // Only Pending appointments
   const pendingAppointments = MOCK_APPOINTMENTS.filter(
     (apt) => apt.status === 'Pending'
   );

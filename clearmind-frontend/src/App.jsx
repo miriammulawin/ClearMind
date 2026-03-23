@@ -51,6 +51,7 @@ function App() {
           <Route path="upcoming" element={<ScheduleTab />} />
           <Route path="history" element={<HistoryTab />} />
           <Route path="upcoming/:id" element={<AppointmentDetails />} />
+          <Route path="details/:id" element={<AppointmentDetails />} />
         </Route>
         <Route path="/client/messages" element={<ClientMessages />} />
         <Route path="/client/profile" element={<ClientProfile />} />
