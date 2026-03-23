@@ -6,15 +6,8 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FiCheckCircle } from 'react-icons/fi';
-<<<<<<< HEAD
-<<<<<<< HEAD
 import { FaArrowLeft } from 'react-icons/fa';
-=======
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
 import { FaArrowLeft } from 'react-icons/fa';
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
-
 import styles from '../../PAaEAssesmentPages/style/PAaEAppointmentForm.module.css';
 import { useCurrentUser } from '../../../../hooks/userCurrentUser';
 
@@ -23,7 +16,6 @@ import PAaEReason      from '../AppointmentForm/PAaEReason';
 import PAaEChooseRPm   from '../AppointmentForm/PAaEChooseRPm';
 import PAeEDocuments   from '../AppointmentForm/PAaEDocuments';
 import PAeEPayment     from '../../PaCAssesmentPages/AppointmentForm/PaymentForm';
-<<<<<<< HEAD
 
 /* -----------------------------------------------------------------
    Fee constants
@@ -32,8 +24,6 @@ const BASE_FEES = {
   'Pre-Employment Purpose': 3000,
 };
 const PRINTED_REPORT_FEE = 500;
-=======
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
 
 /* -----------------------------------------------------------------
    Fee constants
@@ -447,11 +437,6 @@ const PAaESetAppointmentForm = () => {
 
   // ── Validation ────────────────────────────────────────────────
   const getStepError = () => {
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
     if (currentLabel === 'Details' && config.extraField === 'preEmployment') {
       if (!form.employerName?.trim())      return 'Please enter the name of the employer or company.';
       if (!form.assessmentPurpose?.trim()) return 'Please enter the purpose of the assessment.';
@@ -461,22 +446,8 @@ const PAaESetAppointmentForm = () => {
       if (!form.schoolName?.trim()) return 'Please enter the name of the school or university.';
       if (!form.program?.trim())    return 'Please enter the program or course.';
     }
-
-<<<<<<< HEAD
-=======
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
     if (currentLabel === 'Reason' || currentLabel === 'Submit') {
       if (!form.reason) return 'Please enter your reason for consultation.';
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-      // ── Complainant mode: validate all manual patient fields ──
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
       if (form.isInformant) {
         if (!form.complainantName)     return 'Please enter your full name.';
         if (!form.complainantRelation) return 'Please enter your relation to the patient.';
@@ -492,13 +463,6 @@ const PAaESetAppointmentForm = () => {
         if (!form.address)             return "Please enter the patient's home address.";
       }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-      // ── Free services without RPm step: also need date/time ──
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
       if (!config.steps.includes('Choose RPm')) {
         if (!form.date) return 'Please select a preferred date.';
         if (!form.time) return 'Please select a time slot.';
@@ -515,16 +479,10 @@ const PAaESetAppointmentForm = () => {
       const missing = config.mandatoryDocs.filter(d => !(form.docFiles || {})[d]);
       if (missing.length > 0) return `Please upload: ${missing.join(', ')}.`;
     }
-
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
       if (form.wantsPrintedReport === undefined)
         return 'Please indicate whether you want the printed psychological report.';
-=======
     if (currentLabel === 'Payment') {
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
     if (currentLabel === 'Payment' && config.extraField === 'preEmployment') {
       if (form.wantsPrintedReport === undefined)
         return 'Please indicate whether you want the printed psychological report.';
@@ -533,19 +491,15 @@ const PAaESetAppointmentForm = () => {
     }
 
     if (currentLabel === 'Payment' && config.extraField !== 'preEmployment') {
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
       if (!form.payMethod) return 'Please select a payment method.';
       if (!form.proofFile) return 'Please upload your proof of payment.';
     }
 
-<<<<<<< HEAD
     if (currentLabel === 'Payment' && config.extraField !== 'preEmployment') {
       if (!form.payMethod) return 'Please select a payment method.';
       if (!form.proofFile) return 'Please upload your proof of payment.';
     }
 
-=======
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
     return '';
   };
 
@@ -631,20 +585,10 @@ const PAaESetAppointmentForm = () => {
       {!submitted && (
         <div className={styles.stickyFooter}>
           {isLastStep && (
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
             <button
               className={styles.cancelButton}
               onClick={() => navigate('/client/appointment/psychological-assessment')}
             >
-<<<<<<< HEAD
-=======
-            <button className={styles.cancelButton} onClick={handleBack}>
->>>>>>> 83030e3 (- Changing the Profile form for PAC and PAaE services)
-=======
->>>>>>> 0a933fb (- Fixing the appointment summary for PAaE Form.)
               Cancel
             </button>
           )}
