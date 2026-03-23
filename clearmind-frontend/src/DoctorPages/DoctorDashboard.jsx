@@ -89,10 +89,10 @@ function DoctorDashboard() {
   });
 
   const patientsData = [
-    { name: "Liezel Paciente", gender: "Female", date: "January 20, 2026", time: "2:00 pm", type: "Follow Up", status: "Scheduled" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Completed" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Scheduled" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Cancelled" },
+    { name: "Liezel Paciente",     gender: "Female", date: "January 20, 2026", time: "2:00 pm",  type: "Follow Up",   status: "Scheduled" },
+    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am",  type: "New Concern", status: "Completed" },
+    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am",  type: "New Concern", status: "Scheduled" },
+    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am",  type: "New Concern", status: "Cancelled" },
   ];
 
   const navigateWeek = (direction) => {
@@ -201,43 +201,43 @@ function DoctorDashboard() {
         <DoctorTopNavbar activeMenu={activeMenu} />
 
         <div className="doctor-content">
-          <div className={styles["container-fluid"]}>
+          <div className={styles.containerFluid}>
 
-            {/* ── Announcements (admin style) ── */}
+            {/* ── Announcements ── */}
             <div className="row mb-4">
               <div className="col-12">
-                <div className={`${styles["dashboard-card"]} ${styles["announcement-card"]}`}>
-                  <div className={styles["card-header"]}>
-                    <h5 className={styles["announcement-title"]}>
-                      <FaBullhorn className={styles["announce-icon"]} />
+                <div className={`${styles.dashboardCard} ${styles.announcementCard}`}>
+                  <div className={styles.cardHeader}>
+                    <h5 className={styles.announcementTitle}>
+                      <FaBullhorn className={styles.announceIcon} />
                       Announcements
                     </h5>
                   </div>
                   <hr />
                   {adminAnnouncements.length === 0 ? (
-                    <div className={styles["no-announce"]}>No announcements yet.</div>
+                    <div className={styles.noAnnounce}>No announcements yet.</div>
                   ) : (
-                    <div className={styles["announce-list"]}>
+                    <div className={styles.announceList}>
                       {adminAnnouncements.map((ann) => (
                         <div
                           key={ann.id}
-                          className={`${styles["announce-item"]} ${
+                          className={`${styles.announceItem} ${
                             ann.priority === "high"
-                              ? styles["announce-high"]
-                              : styles["announce-normal"]
+                              ? styles.announceHigh
+                              : styles.announceNormal
                           }`}
                         >
-                          <div className={styles["announce-left"]}>
-                            <div className={styles["announce-item-header"]}>
+                          <div className={styles.announceLeft}>
+                            <div className={styles.announceItemHeader}>
                               {ann.priority === "high" && (
-                                <span className={styles["priority-badge"]}>Urgent</span>
+                                <span className={styles.priorityBadge}>Urgent</span>
                               )}
-                              <strong className={styles["announce-item-title"]}>
+                              <strong className={styles.announceItemTitle}>
                                 {ann.title}
                               </strong>
                             </div>
-                            <p className={styles["announce-message"]}>{ann.message}</p>
-                            <small className={styles["announce-date"]}>
+                            <p className={styles.announceMessage}>{ann.message}</p>
+                            <small className={styles.announceDate}>
                               Posted: {ann.postedDate}
                             </small>
                           </div>
@@ -252,25 +252,25 @@ function DoctorDashboard() {
             {/* Today's Appointment + Calendar */}
             <div className="row g-4">
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Today's Appointment</h5>
-                    <div className={styles["card-date"]}>
+                    <div className={styles.cardDate}>
                       {formattedDate} <span>1</span>
                     </div>
                   </div>
                   <hr />
-                  <div className={styles["card-body"]}>
-                    <div className={styles["appointment-items"]}>
-                      <div className={styles["appointment-icon-text"]}>
-                        <IoVideocam className={styles["appointment-icon"]} />
+                  <div className={styles.cardBody}>
+                    <div className={styles.appointmentItems}>
+                      <div className={styles.appointmentIconText}>
+                        <IoVideocam className={styles.appointmentIcon} />
                         <strong>Online Clinic</strong>
                       </div>
                       <p>1 Appointment</p>
                     </div>
-                    <div className={styles["appointment-items"]}>
-                      <div className={styles["appointment-icon-text"]}>
-                        <FaClinicMedical className={styles["appointment-icon"]} />
+                    <div className={styles.appointmentItems}>
+                      <div className={styles.appointmentIconText}>
+                        <FaClinicMedical className={styles.appointmentIcon} />
                         <strong>Physical Clinic</strong>
                       </div>
                       <p>0 Appointment</p>
@@ -280,30 +280,30 @@ function DoctorDashboard() {
               </div>
 
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Calendar</h5>
-                    <div className={styles["week-navigation"]}>
-                      <button className={styles["week-nav-btn"]} onClick={() => navigateWeek(-1)}>
+                    <div className={styles.weekNavigation}>
+                      <button className={styles.weekNavBtn} onClick={() => navigateWeek(-1)}>
                         <FaChevronLeft />
                       </button>
-                      <span className={styles["week-range"]}>
+                      <span className={styles.weekRange}>
                         {currentWeekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                       </span>
-                      <button className={styles["week-nav-btn"]} onClick={() => navigateWeek(1)}>
+                      <button className={styles.weekNavBtn} onClick={() => navigateWeek(1)}>
                         <FaChevronRight />
                       </button>
                     </div>
                   </div>
                   <hr />
-                  <div className={styles["card-body"]}>
-                    <div className={styles["calendar-grid"]}>
-                      <div className={styles["calendar-header"]}>
+                  <div className={styles.cardBody}>
+                    <div className={styles.calendarGrid}>
+                      <div className={styles.calendarHeader}>
                         {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                          <div key={day} className={styles["calendar-day-label"]}>{day}</div>
+                          <div key={day} className={styles.calendarDayLabel}>{day}</div>
                         ))}
                       </div>
-                      <div className={styles["calendar-dates"]}>
+                      <div className={styles.calendarDates}>
                         {(() => {
                           const dates = [];
                           const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
@@ -314,7 +314,7 @@ function DoctorDashboard() {
 
                           for (let i = startDay - 1; i >= 0; i--) {
                             dates.push(
-                              <div key={`prev-${i}`} className={`${styles["calendar-date"]} ${styles["other-month"]}`}>
+                              <div key={`prev-${i}`} className={`${styles.calendarDate} ${styles.otherMonth}`}>
                                 {prevMonthLastDay - i}
                               </div>
                             );
@@ -322,7 +322,7 @@ function DoctorDashboard() {
                           for (let day = 1; day <= daysInMonth; day++) {
                             const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
                             dates.push(
-                              <div key={day} className={`${styles["calendar-date"]} ${isToday(date) ? styles["today"] : ""}`}>
+                              <div key={day} className={`${styles.calendarDate} ${isToday(date) ? styles.today : ""}`}>
                                 {day}
                               </div>
                             );
@@ -330,7 +330,7 @@ function DoctorDashboard() {
                           const remainingCells = 42 - dates.length;
                           for (let day = 1; day <= remainingCells; day++) {
                             dates.push(
-                              <div key={`next-${day}`} className={`${styles["calendar-date"]} ${styles["other-month"]}`}>
+                              <div key={`next-${day}`} className={`${styles.calendarDate} ${styles.otherMonth}`}>
                                 {day}
                               </div>
                             );
@@ -347,16 +347,16 @@ function DoctorDashboard() {
             {/* Patients Table */}
             <div className="row mt-4">
               <div className="col-12">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Total's Patients</h5>
-                    <div className={styles["card-date"]}>
+                    <div className={styles.cardDate}>
                       <span>{patientsData.length}</span>
                     </div>
                   </div>
                   <hr />
-                  <div className={`${styles["card-body"]} ${styles["table-responsive"]}`}>
-                    <table className={styles["patients-table"]}>
+                  <div className={`${styles.cardBody} ${styles.tableResponsive}`}>
+                    <table className={styles.patientsTable}>
                       <thead>
                         <tr>
                           <th>Name</th>
@@ -381,9 +381,9 @@ function DoctorDashboard() {
                       </tbody>
                     </table>
                   </div>
-                  <div className={styles["table-pagination"]}>
+                  <div className={styles.tablePagination}>
                     <span>Page 1 of 5</span>
-                    <div className={styles["pagination-buttons"]}>
+                    <div className={styles.paginationButtons}>
                       <button>{"< Previous"}</button>
                       {[1, 2, 3, 4, 5].map((n) => <button key={n}>{n}</button>)}
                       <button>{"Next >"}</button>
@@ -396,7 +396,7 @@ function DoctorDashboard() {
             {/* Charts */}
             <div className="row mt-4">
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
+                <div className={styles.dashboardCard}>
                   <h5>Monthly Patients</h5>
                   <div style={{ overflowX: "auto" }}>
                     <div style={{ minWidth: "900px", height: "300px" }}>
@@ -406,9 +406,9 @@ function DoctorDashboard() {
                 </div>
               </div>
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
+                <div className={styles.dashboardCard}>
                   <h5>Appointment Status</h5>
-                  <div className={styles["pie-chart-container"]}>
+                  <div className={styles.pieChartContainer}>
                     <Pie data={pieData} options={pieOptions} />
                   </div>
                 </div>
