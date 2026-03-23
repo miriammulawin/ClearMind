@@ -21,7 +21,7 @@ const PATIENT_LIST = [
   { id: 8, firstName: "Jose", lastName: "Villanueva", mi: "P" },
 ];
 
-/* ── Patient Searchable Dropdown ── */
+/* ── Patient Dropdown ── */
 function PatientDropdown({ onSelect }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -220,14 +220,103 @@ function PatientDropdown({ onSelect }) {
   );
 }
 
-/* ── Main CreateAppointmentModal ── */
-/* showReceipt — pass true from Admin, omit/false from Doctor */
-function CreateAppointmentModal({
-  isOpen,
-  onClose,
-  onAdd,
-  showReceipt = false,
-}) {
+/* ══════════════════════════════════════
+   Receipt Full-View Modal
+══════════════════════════════════════ */
+function ReceiptModal({ src, onClose }) {
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 999999,
+        padding: "20px",
+        overflowY: "auto",
+      }}
+    >
+      <div
+        className="appointment-modal-lg"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "480px", width: "100%" }}
+      >
+        <div className="modal-header">
+          <button
+            className="close-btn"
+            onClick={onClose}
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "20px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <FiX />
+          </button>
+        </div>
+
+        <div style={{ overflowY: "auto", maxHeight: "65vh" }}>
+          <img
+            src={src}
+            alt="Payment Receipt"
+            style={{
+              width: "100%",
+              display: "block",
+              objectFit: "contain",
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextSibling.style.display = "flex";
+            }}
+          />
+          <div
+            style={{
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+              gap: "10px",
+              padding: "48px 24px",
+              backgroundColor: "#f3ecfc",
+              color: "#4D227C",
+            }}
+          >
+            <span style={{ fontSize: "40px" }}>🧾</span>
+            <span style={{ fontWeight: "600" }}>Receipt image not found</span>
+            <span style={{ fontSize: "12px", color: "#aaa" }}>
+              Check assets/payment/images.png
+            </span>
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-add" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════
+   Main CreateAppointmentModal Component
+══════════════════════════════════════ */
+function CreateAppointmentModal({ isOpen, onClose, onAdd }) {
   const [newEvent, setNewEvent] = useState({
     title: "",
     date: "",
@@ -238,6 +327,9 @@ function CreateAppointmentModal({
   const [serviceType, setServiceType] = useState("");
   const [assessmentPurpose, setAssessmentPurpose] = useState("");
   const [receiptFile, setReceiptFile] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [showReceiptDropdown, setShowReceiptDropdown] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const receiptInputRef = useRef(null);
 
   /* Auto-compute age from DOB */
@@ -283,13 +375,70 @@ function CreateAppointmentModal({
     setReceiptFile(null);
   };
 
-  const LabeledInput = ({ label, disabled, children }) => (
-    <div className={styles.labeledField}>
-      <span
-        className={`${styles.fieldLabel} ${disabled ? styles.fieldLabelDisabled : ""}`}
+  /* ── Shared styles ── */
+  const inputStyle = {
+    width: "100%",
+    padding: "9px 12px",
+    borderRadius: "8px",
+    border: "1px solid #ddd",
+    fontSize: "13px",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
+    color: "#333",
+    backgroundColor: "#fff",
+  };
+
+  const selectStyle = { ...inputStyle, cursor: "pointer" };
+
+  const sectionLabelStyle = {
+    fontSize: "11px",
+    fontWeight: "700",
+    color: "#4D227C",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    margin: "0 0 8px 0",
+  };
+
+  const radioGroupStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  };
+
+  const radioLabelStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "13px",
+    color: "#444",
+    cursor: "pointer",
+    margin: 0,
+  };
+
+  const radioInputStyle = {
+    width: "15px",
+    height: "15px",
+    accentColor: "#4D227C",
+    cursor: "pointer",
+    margin: 0,
+    flexShrink: 0,
+  };
+
+  const LabeledInput = ({ label, children }) => (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <label
+        style={{
+          fontSize: "11px",
+          fontWeight: "600",
+          color: "#4D227C",
+          marginBottom: "4px",
+          textTransform: "uppercase",
+          letterSpacing: "0.4px",
+        }}
       >
         {label}
-      </span>
+      </label>
       {children}
     </div>
   );
@@ -298,28 +447,52 @@ function CreateAppointmentModal({
 
   return (
     <>
-      <div className={styles.backdrop}>
-        <div className={styles.modal}>
+      {/* ── Appointment Modal Backdrop ── */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: "20px",
+          overflowY: "auto",
+        }}
+      >
+        <div className="appointment-modal-lg">
           {/* ── Header ── */}
-          <div className={styles.header}>
-            <h2 className={styles.headerTitle}>Create Appointment</h2>
-            <div className={styles.headerRight}>
-              <span className={styles.headerDate}>
-                {newEvent.date
-                  ? format(new Date(newEvent.date + "T00:00:00"), "MMM d, yyyy")
-                  : format(new Date(), "MMM d, yyyy")}
-              </span>
-              <button className={styles.closeBtn} onClick={onClose}>
-                <FiX />
-              </button>
-            </div>
+          <div className="modal-header">
+            <h2>New Appointment</h2>
+            <span className="modal-date">
+              {newEvent.date
+                ? format(new Date(newEvent.date), "MMMM d, yyyy")
+                : format(new Date(), "MMMM d, yyyy")}
+            </span>
+            <button
+              className="close-btn"
+              onClick={onClose}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "20px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <FiX />
+            </button>
           </div>
 
-          {/* ── Scrollable Body ── */}
-          <div className={styles.body}>
-            {/* ▸ Patient Information */}
-            <div className={styles.section}>
-              <h4 className={styles.sectionTitle}>Patient Information</h4>
+          <div className="modal-body">
+            {/* ── PATIENT INFORMATION ── */}
+            <div className="modal-section">
+              <h4>Patient Information</h4>
 
               <div className={styles.fieldRow}>
                 <input
@@ -342,7 +515,11 @@ function CreateAppointmentModal({
                   onChange={(e) => setDob(e.target.value)}
                 />
                 <input
-                  className={styles.input}
+                  style={{
+                    ...inputStyle,
+                    cursor: "not-allowed",
+                    transition: "all 0.3s ease",
+                  }}
                   type="text"
                   disabled
                   readOnly
@@ -388,61 +565,71 @@ function CreateAppointmentModal({
                 <input className={styles.input} placeholder="Address" />
               </div>
 
-              <div className={styles.radioSection}>
-                <div className={styles.radioGroup}>
-                  <p className={styles.radioGroupLabel}>Patient Type</p>
-                  <div className={styles.radioRow}>
-                    <label className={styles.radioLabel}>
+              {/* Radio groups */}
+              <div style={{ display: "flex", gap: "48px" }}>
+                <div className="mt-2">
+                  <p style={sectionLabelStyle}>Patient Type</p>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: "20px",
+                    }}
+                  >
+                    <label style={radioLabelStyle}>
                       <input
                         type="radio"
                         name="ptype"
                         value="existing"
-                        className={styles.radioInput}
+                        style={radioInputStyle}
                       />
                       Existing Patient
                     </label>
-                    <label className={styles.radioLabel}>
+                    <label style={radioLabelStyle}>
                       <input
                         type="radio"
                         name="ptype"
                         value="new"
-                        className={styles.radioInput}
+                        style={radioInputStyle}
                       />
                       New Patient
                     </label>
                   </div>
                 </div>
-
-                <div className={styles.radioGroup}>
-                  <p className={styles.radioGroupLabel}>
-                    Patient Classification
-                  </p>
-                  <div className={styles.radioRow}>
-                    <label className={styles.radioLabel}>
+                <div className="mt-2">
+                  <p style={sectionLabelStyle}>Patient Classification</p>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: "20px",
+                    }}
+                  >
+                    <label style={radioLabelStyle}>
                       <input
                         type="radio"
                         name="class"
                         value="pwd"
-                        className={styles.radioInput}
-                      />{" "}
+                        style={radioInputStyle}
+                      />
                       PWD
                     </label>
-                    <label className={styles.radioLabel}>
+                    <label style={radioLabelStyle}>
                       <input
                         type="radio"
                         name="class"
                         value="senior"
-                        className={styles.radioInput}
-                      />{" "}
+                        style={radioInputStyle}
+                      />
                       Senior Citizen
                     </label>
-                    <label className={styles.radioLabel}>
+                    <label style={radioLabelStyle}>
                       <input
                         type="radio"
                         name="class"
                         value="regular"
-                        className={styles.radioInput}
-                      />{" "}
+                        style={radioInputStyle}
+                      />
                       Regular
                     </label>
                   </div>
@@ -474,9 +661,13 @@ function CreateAppointmentModal({
                     onChange={handleStartTimeChange}
                   />
                 </LabeledInput>
-                <LabeledInput label="End Time" disabled>
+                <LabeledInput label="End Time">
                   <input
-                    className={styles.input}
+                    style={{
+                      ...inputStyle,
+                      cursor: "not-allowed",
+                      transition: "all 0.3s ease",
+                    }}
                     type="time"
                     value={newEvent.endTime}
                     readOnly
@@ -491,21 +682,21 @@ function CreateAppointmentModal({
               >
                 <p className={styles.radioGroupLabel}>Consultation Mode</p>
                 <div className={styles.radioRow}>
-                  <label className={styles.radioLabel}>
+                  <label style={radioLabelStyle}>
                     <input
                       type="radio"
                       name="visit"
                       value="onsite"
-                      className={styles.radioInput}
+                      style={radioInputStyle}
                     />
                     Onsite Consultation
                   </label>
-                  <label className={styles.radioLabel}>
+                  <label style={radioLabelStyle}>
                     <input
                       type="radio"
                       name="visit"
                       value="virtual"
-                      className={styles.radioInput}
+                      style={radioInputStyle}
                     />
                     Virtual Consultation
                   </label>
@@ -514,44 +705,37 @@ function CreateAppointmentModal({
 
               <hr className={styles.divider} />
 
+              {/* Service Type Selection */}
               <div
                 className={styles.radioGroup}
-                style={{ marginBottom: "12px" }}
+                style={{ marginBottom: "14px" }}
               >
-                <p className={styles.radioGroupLabel}>Type of Service</p>
-                <div className={styles.radioRow}>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="counseling"
-                      className={styles.radioInput}
-                      checked={serviceType === "counseling"}
-                      onChange={() => {
-                        setServiceType("counseling");
-                        setAssessmentPurpose("");
-                      }}
-                    />
-                    Counseling / Therapy
-                  </label>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="serviceType"
-                      value="assessment"
-                      className={styles.radioInput}
-                      checked={serviceType === "assessment"}
-                      onChange={() => setServiceType("assessment")}
-                    />
-                    Psychological Assessment and Evaluation
-                  </label>
-                </div>
+                <p style={sectionLabelStyle}>Service Type</p>
+                <label style={radioLabelStyle}>
+                  <input
+                    type="radio"
+                    name="serviceType"
+                    value="counseling"
+                    style={radioInputStyle}
+                    checked={serviceType === "counseling"}
+                    onChange={() => setServiceType("counseling")}
+                  />
+                  Counseling / Therapy
+                </label>
+                <label style={radioLabelStyle}>
+                  <input
+                    type="radio"
+                    name="serviceType"
+                    value="assessment"
+                    style={radioInputStyle}
+                    checked={serviceType === "assessment"}
+                    onChange={() => setServiceType("assessment")}
+                  />
+                  Psychological Assessment and Evaluation
+                </label>
               </div>
 
-              <LabeledInput
-                label="Purpose of Assessment"
-                disabled={serviceType !== "assessment"}
-              >
+              <LabeledInput label="Purpose of Assessment">
                 <select
                   className={styles.select}
                   disabled={serviceType !== "assessment"}
@@ -561,10 +745,6 @@ function CreateAppointmentModal({
                     opacity: serviceType === "assessment" ? 1 : 0.4,
                     cursor:
                       serviceType === "assessment" ? "pointer" : "not-allowed",
-                    border:
-                      serviceType === "assessment"
-                        ? "1.5px solid #4D227C"
-                        : undefined,
                   }}
                 >
                   <option value="">Select Purpose of Assessment</option>
@@ -591,7 +771,7 @@ function CreateAppointmentModal({
                 </select>
               </div>
 
-              {/* ── Upload Receipt — only shown when showReceipt=true (Admin) ── */}
+              {/* ── Upload Receipt ── */}
               {showReceipt && (
                 <>
                   <div className={styles.uploadLabel}>Upload Receipt</div>
@@ -651,11 +831,8 @@ function CreateAppointmentModal({
           </div>
 
           {/* ── Footer ── */}
-          <div className={styles.footer}>
-            <button className={styles.btnCancel} onClick={onClose}>
-              Cancel
-            </button>
-            <button className={styles.btnAdd} onClick={handleAdd}>
+          <div className="modal-footer">
+            <button className="btn-add" onClick={handleAdd}>
               Add Appointment
             </button>
           </div>

@@ -529,30 +529,33 @@ const SchoolSection = ({ appt }) => {
       accentColor="#1e6091"
       defaultOpen={false}
     >
-      <InfoRow label="School Name" value="De La Salle University" />
-      <InfoRow label="Program" value="Bachelor of Science in Psychology" />
-      <InfoRow label="Year Level" value="3rd Year" />
-      <InfoRow
-        label="Assessment Type"
-        value="Academic Stress & Performance Evaluation"
-      />
-      <InfoRow label="Required By" value="College Guidance Office" />
-
-      <div className={styles.docsSection} style={{ marginTop: 12 }}>
-        <div className={styles.docsSectionLabel}>Academic Documents:</div>
-        <div
-          className={styles.docsChipRow}
-          style={{ flexWrap: "wrap", gap: 8 }}
-        >
-          {docs.map((doc, i) => (
-            <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
-          ))}
-          <PdfFileChip label="Transcript" filename="Student_Transcript.pdf" />
-          <PdfFileChip
-            label="Recommendation Letter"
-            filename="Prof_Recommendation.pdf"
-          />
+      <div className={styles.docsSection}>
+        <div className={styles.docsSectionLabel}>
+          Patient-Uploaded Documents:
         </div>
+        {docs.map((doc, i) => (
+          <div key={i}>
+            {/* Per-file metadata row */}
+            <div
+              className={styles.uploadedFileMeta}
+              style={{ marginBottom: 6 }}
+            >
+              <span className={styles.uploadedFileMetaItem}>
+                <span className={styles.uploadedFileMetaLabel}>
+                  Uploaded by:
+                </span>
+                {doc.uploadedBy}
+              </span>
+              <span className={styles.uploadedFileMetaItem}>
+                <span className={styles.uploadedFileMetaLabel}>Date:</span>
+                {format(new Date(doc.uploadedAt), "MMMM dd, yyyy")}
+              </span>
+            </div>
+            <div className={styles.docsChipRow}>
+              <PdfFileChip label={doc.label} filename={doc.filename} />
+            </div>
+          </div>
+        ))}
       </div>
     </DrawerAccordion>
   );
@@ -836,9 +839,10 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const endTime = toTime12(toTime24(appt.end));
   const isOnline = appt.title?.toLowerCase().includes("online");
   const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
+  const clinicColor = isOnline ? EVENT_COLORS.online : EVENT_COLORS.physical;
+
   const isRescheduled = appt.status === "Rescheduled" || isGhost;
   const displayDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const displayDateShort = format(new Date(appt.start), "MMM dd, yyyy");
 
   const serviceType = appt.serviceType || appt.visitType || "";
   const isAssessment = isPsychAssessment(serviceType);
@@ -846,17 +850,14 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const isIntern = isInternship(serviceType);
   const purpose = isAssessment ? getPurpose(appt) : null;
 
-  const serviceLabel = isAssessment
-    ? "Psychological Assessment and Evaluation"
-    : isEsa
-      ? "Emotional Support Animal (ESA)"
-      : isIntern
-        ? "Mental Health for Internship"
-        : "Counseling / Therapy";
-
-  const clinicColor = getDotColor(appt);
+  // VAWC only for female patients
   const showVawc =
     isAssessment && purpose === PURPOSES.VAWC && isFemalePatient(appt);
+
+  // Service label
+  const serviceLabel = isAssessment
+    ? "Psychological Assessment and Evaluation"
+    : "Counseling / Therapy";
 
   return (
     <>
@@ -1068,10 +1069,6 @@ function DayAppointmentsModal({
                 const isGhost = !!appt.isRescheduledGhost;
                 const startTime = toTime12(toTime24(appt.start));
                 const endTime = toTime12(toTime24(appt.end));
-                const isOnline = appt.title?.toLowerCase().includes("online");
-                const clinicType = isOnline
-                  ? "Online Clinic"
-                  : "Physical Clinic";
                 const cardDate = format(new Date(appt.start), "MMMM dd, yyyy");
 
                 const svc = appt.serviceType || appt.visitType || "";
@@ -1083,11 +1080,7 @@ function DayAppointmentsModal({
 
                 const serviceLabel = isAssessment
                   ? "Psychological Assessment and Evaluation"
-                  : isEsa
-                    ? "Emotional Support Animal (ESA)"
-                    : isIntern
-                      ? "Mental Health for Internship"
-                      : "Counseling / Therapy";
+                  : "Counseling / Therapy";
 
                 const displayPurpose =
                   purpose === PURPOSES.VAWC
@@ -1152,7 +1145,14 @@ function DayAppointmentsModal({
                         label="Time"
                         value={`${startTime} – ${endTime}`}
                       />
-                      <InfoRow label="Clinic Type" value={clinicType} />
+                      <InfoRow
+                        label="Clinic Type"
+                        value={
+                          appt.title?.toLowerCase().includes("online")
+                            ? "Online Clinic"
+                            : "Physical Clinic"
+                        }
+                      />
 
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>

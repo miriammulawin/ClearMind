@@ -1,6 +1,6 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
-import DoctorSidebar from "./components/DoctorSideBar";
+import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import "./DoctorStyle/DoctorPatient.module.css";
 import {
@@ -19,326 +19,21 @@ import {
   FiActivity,
   FiChevronDown,
   FiChevronUp,
-  FiPlus,
-  FiEdit3,
-  FiTrash2,
-  FiCheck,
 } from "react-icons/fi";
+
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
+
 import samplePayment from "../assets/payment/images.png";
 
-function ClinicalNotesSection() {
-  const [activeTab, setActiveTab] = useState("intake");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
-  const [formValue, setFormValue] = useState("");
-
-  const [notes, setNotes] = useState({
-    intake: [
-      {
-        id: 1,
-        date: "January 15, 2026",
-        author: "Dr. Maria Santos, MD",
-        content:
-          "Patient presents with persistent anxiety symptoms for the past 6 months. Reports difficulty sleeping, excessive worry, and occasional panic attacks. No prior psychiatric history. Family history of anxiety disorder on maternal side. Patient is cooperative and motivated for treatment.",
-      },
-    ],
-    progress: [
-      {
-        id: 1,
-        date: "February 10, 2026",
-        author: "Dr. John Cruz, MD",
-        content:
-          "Patient reports reduced frequency of panic attacks (from 3x/week to 1x/week). Sleeping better with medication. Continues CBT exercises at home. GAD-7 score improved from 18 to 12. Medication compliance confirmed.",
-      },
-    ],
-    recommendation: [
-      {
-        id: 1,
-        date: "February 10, 2026",
-        author: "Dr. John Cruz, MD",
-        content:
-          "Continue escitalopram 10mg once daily. Maintain weekly CBT sessions. Patient advised to practice mindfulness exercises daily. Follow-up in 4 weeks. Refer to support group if symptoms persist.",
-      },
-    ],
-  });
-
-  const tabConfig = [
-    {
-      key: "intake",
-      label: "Intake",
-      icon: <FiClipboard size={15} />,
-      color: "#4D227C",
-      light: "#f0e8ff",
-    },
-    {
-      key: "progress",
-      label: "Progress Note",
-      icon: <FiActivity size={15} />,
-      color: "#1d6fa4",
-      light: "#e8f4ff",
-    },
-    {
-      key: "recommendation",
-      label: "Recommendation",
-      icon: <FiFileText size={15} />,
-      color: "#15803d",
-      light: "#e8faf0",
-    },
-  ];
-
-  const currentTab = tabConfig.find((t) => t.key === activeTab);
-
-  const handleAdd = () => {
-    if (!formValue.trim()) return;
-    const newEntry = {
-      id: Date.now(),
-      date: new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      }),
-      author: "Dr. Admin",
-      content: formValue.trim(),
-    };
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: [newEntry, ...prev[activeTab]],
-    }));
-    setFormValue("");
-    setShowAddModal(false);
-  };
-
-  const handleEdit = (entry) => {
-    setEditingEntry(entry);
-    setFormValue(entry.content);
-    setShowAddModal(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (!formValue.trim()) return;
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].map((e) =>
-        e.id === editingEntry.id ? { ...e, content: formValue.trim() } : e,
-      ),
-    }));
-    setFormValue("");
-    setEditingEntry(null);
-    setShowAddModal(false);
-  };
-
-  const handleDelete = (id) => {
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((e) => e.id !== id),
-    }));
-  };
-
-  const openAdd = () => {
-    setEditingEntry(null);
-    setFormValue("");
-    setShowAddModal(true);
-  };
-
-  return (
-    <div className="clinical-notes-section">
-      {/* ── Tab Bar ── */}
-      <div className="clinical-tabs-bar">
-        <div className="clinical-tabs">
-          {tabConfig.map((tab) => (
-            <button
-              key={tab.key}
-              className={`clinical-tab-btn ${activeTab === tab.key ? "clinical-tab-active" : ""}`}
-              style={
-                activeTab === tab.key
-                  ? {
-                      background: tab.color,
-                      color: "#fff",
-                      borderColor: tab.color,
-                    }
-                  : {}
-              }
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-              <span
-                className="clinical-tab-count"
-                style={
-                  activeTab === tab.key
-                    ? { background: "rgba(255,255,255,0.25)", color: "#fff" }
-                    : { background: tab.light, color: tab.color }
-                }
-              >
-                {notes[tab.key].length}
-              </span>
-            </button>
-          ))}
-        </div>
-        <button
-          className="clinical-add-btn"
-          style={{ background: currentTab.color }}
-          onClick={openAdd}
-        >
-          <FiPlus size={14} />
-          Add {currentTab.label}
-        </button>
-      </div>
-
-      {/* ── Entries List ── */}
-      <div className="clinical-entries">
-        {notes[activeTab].length === 0 ? (
-          <div className="clinical-empty">
-            <span style={{ fontSize: "36px", opacity: 0.25 }}>📋</span>
-            <p>No {currentTab.label} entries yet.</p>
-            <button
-              className="clinical-add-btn"
-              style={{ background: currentTab.color }}
-              onClick={openAdd}
-            >
-              <FiPlus size={13} /> Add First Entry
-            </button>
-          </div>
-        ) : (
-          notes[activeTab].map((entry, index) => (
-            <div
-              key={entry.id}
-              className="clinical-entry-card"
-              style={{ borderLeftColor: currentTab.color }}
-            >
-              <div className="clinical-entry-header">
-                <div className="clinical-entry-meta">
-                  <span
-                    className="clinical-entry-badge"
-                    style={{
-                      background: currentTab.light,
-                      color: currentTab.color,
-                    }}
-                  >
-                    {currentTab.icon}
-                    {currentTab.label} #{notes[activeTab].length - index}
-                  </span>
-                  <span className="clinical-entry-date">
-                    <FiCalendar size={11} /> {entry.date}
-                  </span>
-                  <span className="clinical-entry-author">
-                    <FiUser size={11} /> {entry.author}
-                  </span>
-                </div>
-                <div className="clinical-entry-actions">
-                  <button
-                    className="clinical-action-btn clinical-edit-btn"
-                    onClick={() => handleEdit(entry)}
-                    title="Edit"
-                  >
-                    <FiEdit3 size={13} />
-                  </button>
-                  <button
-                    className="clinical-action-btn clinical-delete-btn"
-                    onClick={() => handleDelete(entry.id)}
-                    title="Delete"
-                  >
-                    <FiTrash2 size={13} />
-                  </button>
-                </div>
-              </div>
-              <p className="clinical-entry-content">{entry.content}</p>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* ── Add / Edit Modal ── */}
-      {showAddModal && (
-        <div
-          className="clinical-modal-overlay"
-          onClick={() => {
-            setShowAddModal(false);
-            setEditingEntry(null);
-            setFormValue("");
-          }}
-        >
-          <div className="clinical-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div
-              className="clinical-modal-header"
-              style={{ background: currentTab.color }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                {currentTab.icon}
-                <h3>
-                  {editingEntry ? "Edit" : "Add"} {currentTab.label}
-                </h3>
-              </div>
-              <button
-                className="doctor-close-btn"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingEntry(null);
-                  setFormValue("");
-                }}
-              >
-                <FiX />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="clinical-modal-body">
-              <label className="clinical-form-label">
-                {currentTab.label} Entry
-              </label>
-              <textarea
-                className="clinical-textarea"
-                placeholder={`Write your ${currentTab.label.toLowerCase()} notes here…`}
-                value={formValue}
-                onChange={(e) => setFormValue(e.target.value)}
-                rows={7}
-                autoFocus
-              />
-            </div>
-
-            {/* Footer */}
-            <div className="clinical-modal-footer">
-              <button
-                className="clinical-cancel-btn"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingEntry(null);
-                  setFormValue("");
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="clinical-save-btn"
-                style={{ background: currentTab.color }}
-                onClick={editingEntry ? handleSaveEdit : handleAdd}
-              >
-                <FiCheck size={14} />
-                {editingEntry ? "Save Changes" : "Add Entry"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════
-   Main AdminPatientProfile Component
-══════════════════════════════════════ */
 function DoctorPatientProfile() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [activeMenu, setActiveMenu] = useState("Patients");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const patient = state?.patient;
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [zoomImage, setZoomImage] = useState(null);
+
+  const patient = state?.patient;
 
   if (!patient) {
     return (
@@ -427,9 +122,9 @@ function DoctorPatientProfile() {
 
   return (
     <div className="doctor-layout">
-      <DoctorSidebar activeMenu="Patients" />
+      <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="doctor-main">
-        <DoctorTopNavbar activeMenu="Patients" />
+        <DoctorTopNavbar activeMenu={activeMenu} />
 
         <div className="doctor-content patient-profile-container">
           <button onClick={() => navigate(-1)} className="patient-back-btn">
@@ -440,6 +135,7 @@ function DoctorPatientProfile() {
           {/* ── PATIENT INFO CARD ── */}
           <div className="patient-profile-card">
             <div className="patient-profile-layout">
+              {/* AVATAR */}
               <div className="patient-avatar-large">
                 {patient.profileImage ? (
                   <img src={patient.profileImage} alt="Profile" />
@@ -448,9 +144,11 @@ function DoctorPatientProfile() {
                 )}
               </div>
 
+              {/* DETAILS */}
               <div className="patient-details-section">
                 <h2 className="patient-profile-title">{patient.name}</h2>
 
+                {/* ── SECTION: Personal Information ── */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -509,6 +207,7 @@ function DoctorPatientProfile() {
                   </div>
                 </div>
 
+                {/* ── DIVIDER ── */}
                 <div
                   style={{
                     borderTop: "1.5px solid #e5d6f5",
@@ -516,6 +215,7 @@ function DoctorPatientProfile() {
                   }}
                 />
 
+                {/* ── SECTION: Contact Information ── */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -568,6 +268,7 @@ function DoctorPatientProfile() {
                   </div>
                 </div>
 
+                {/* ── DIVIDER ── */}
                 <div
                   style={{
                     borderTop: "1.5px solid #e5d6f5",
@@ -575,6 +276,7 @@ function DoctorPatientProfile() {
                   }}
                 />
 
+                {/* ── SECTION: Patient Details ── */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -616,8 +318,7 @@ function DoctorPatientProfile() {
             </div>
           </div>
 
-          <ClinicalNotesSection />
-
+          {/* ── APPOINTMENT HISTORY CARD ── */}
           <div className="appointment-history-card">
             <h3 className="appointment-history-title">Appointment History</h3>
             <table className="appointment-table">
@@ -675,7 +376,10 @@ function DoctorPatientProfile() {
                           height: "30px",
                           fontSize: "12px",
                         }}
-                        onClick={() => setSelectedAppointment(appt)}
+                        onClick={() => {
+                          setSelectedAppointment(appt);
+                          setPaymentOpen(false);
+                        }}
                       >
                         View
                       </button>
@@ -688,6 +392,9 @@ function DoctorPatientProfile() {
         </div>
       </div>
 
+      {/* ══════════════════════════════════════
+          APPOINTMENT DETAIL MODAL
+      ══════════════════════════════════════ */}
       {selectedAppointment && (
         <div
           className="patient-modal-overlay"
@@ -698,6 +405,7 @@ function DoctorPatientProfile() {
             style={{ maxWidth: "560px" }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* ── HEADER ── */}
             <div className="modal-profile-header">
               <button
                 className="close-btn profile-close-btn"
@@ -732,6 +440,7 @@ function DoctorPatientProfile() {
             </div>
 
             <div className="modal-body">
+              {/* ── APPOINTMENT INFO ── */}
               <div
                 className="modal-content-card"
                 style={{ marginBottom: "12px" }}
@@ -824,6 +533,7 @@ function DoctorPatientProfile() {
                   </div>
                 </div>
 
+                {/* ASSIGNED DOCTOR */}
                 <div
                   style={{
                     marginTop: "16px",
@@ -839,9 +549,6 @@ function DoctorPatientProfile() {
                       textTransform: "uppercase",
                       letterSpacing: "0.07em",
                       marginBottom: "10px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
                     }}
                   >
                     Assigned Doctor
@@ -899,9 +606,13 @@ function DoctorPatientProfile() {
                 </div>
               </div>
 
+              {/* ── CLINICAL NOTES ── */}
               {selectedAppointment.status === "Completed" &&
                 selectedAppointment.notes && (
-                  <div className="modal-content-card">
+                  <div
+                    className="modal-content-card"
+                    style={{ marginBottom: "12px" }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -960,10 +671,8 @@ function DoctorPatientProfile() {
                   </div>
                 )}
 
-              <div
-                className="modal-content-card"
-                style={{ marginBottom: "12px" }}
-              >
+              {/* ── PAYMENT DETAILS ── */}
+              <div className="modal-content-card">
                 <button
                   className="payment-collapse-toggle"
                   onClick={() => setPaymentOpen(!paymentOpen)}
@@ -1007,74 +716,110 @@ function DoctorPatientProfile() {
                     </span>
                   </span>
                 </button>
+
                 {paymentOpen && (
                   <div className="payment-collapse-body">
-                    <div className="payment-layout">
-                      <div className="payment-fields">
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            ₱
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Paid Amount
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            #
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Reference No.
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            PAY
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Payment Option
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="payment-proof">
-                        <span className="payment-proof-label">
-                          Payment Proof
-                        </span>
+                    {/* Payment Status */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "14px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#9b7ec8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                        }}
+                      >
+                        Payment Status
+                      </span>
+                      <span
+                        style={{
+                          background: "#dcfce7",
+                          color: "#16a34a",
+                          border: "1px solid #bbf7d0",
+                          padding: "3px 12px",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Paid
+                      </span>
+                    </div>
+
+                    {/* Proof label */}
+                    <p
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#9b7ec8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Payment Proof
+                    </p>
+
+                    {/* Two-panel inline preview */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      {/* Small thumbnail */}
+                      <div
+                        style={{
+                          width: "110px",
+                          flexShrink: 0,
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          border: "2px solid #d8ccf0",
+                          boxShadow: "0 2px 8px rgba(77,34,124,0.12)",
+                        }}
+                      >
                         <img
                           src={samplePayment}
-                          alt="Payment Proof"
-                          className="payment-proof-img"
-                          onClick={() => setZoomImage(samplePayment)}
+                          alt="Payment Proof Thumbnail"
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            objectFit: "cover",
+                            objectPosition: "top",
+                          }}
+                        />
+                      </div>
+
+                      {/* Large expanded preview */}
+                      <div
+                        style={{
+                          flex: 1,
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          border: "1.5px solid #d8ccf0",
+                          boxShadow: "0 4px 16px rgba(77,34,124,0.13)",
+                          background: "#faf7ff",
+                          maxHeight: "320px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        <img
+                          src={samplePayment}
+                          alt="Payment Proof Full"
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            objectFit: "contain",
+                          }}
                         />
                       </div>
                     </div>
@@ -1083,6 +828,7 @@ function DoctorPatientProfile() {
               </div>
             </div>
 
+            {/* ── FOOTER ── */}
             <div className="modal-footer">
               <button
                 style={{
