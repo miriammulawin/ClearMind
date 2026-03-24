@@ -1,6 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Row, Col, Form, Button, Image, Container } from "react-bootstrap";
+import {
+  Card,
+  Row,
+  Col,
+  Form,
+  Button,
+  Image,
+  Container,
+} from "react-bootstrap";
 import "./Registration.css";
 import logo_registration from "./assets/CMPS_Logo.png";
 import {
@@ -11,12 +19,15 @@ import {
   FaPhone,
   FaEnvelope,
   FaLock,
+  FaChevronDown,
 } from "react-icons/fa";
 
 function Registration() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showGenderDropdown, setShowGenderDropdown] = useState(false);
+  const genderDropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -38,17 +49,17 @@ function Registration() {
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
     { value: "transgender", label: "Transgender" },
-    { value: "trans-woman", label: "Trans woman" },
-    { value: "trans-man", label: "Trans man" },
+    { value: "trans-woman", label: "Trans Woman" },
+    { value: "trans-man", label: "Trans Man" },
     { value: "non-binary", label: "Non-binary" },
     { value: "genderqueer", label: "Genderqueer" },
-    { value: "gender-fluid", label: "Gender fluid" },
+    { value: "gender-fluid", label: "Gender Fluid" },
     { value: "agender", label: "Agender" },
     { value: "bigender", label: "Bigender" },
-    { value: "two-spirit", label: "Two-spirit" },
+    { value: "two-spirit", label: "Two-Spirit" },
     { value: "intersex", label: "Intersex" },
     { value: "pangender", label: "Pangender" },
-    { value: "prefer-not-to-say", label: "Prefer not to say" },
+    { value: "prefer-not-to-say", label: "Prefer Not to Say" },
   ];
 
   // Handle input change
@@ -68,6 +79,39 @@ function Registration() {
       });
     }
   };
+
+  // Handle gender selection
+  const handleGenderSelect = (value) => {
+    setFormData((prev) => ({
+      ...prev,
+      sex: value,
+    }));
+    setShowGenderDropdown(false);
+
+    // Clear error
+    if (errors.sex) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.sex;
+        return newErrors;
+      });
+    }
+  };
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        genderDropdownRef.current &&
+        !genderDropdownRef.current.contains(event.target)
+      ) {
+        setShowGenderDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Validate form
   const validateForm = () => {
@@ -158,21 +202,9 @@ function Registration() {
       // Simulate API call
       console.log("Form submitted:", formData);
 
-      // Here you would normally send data to your backend
-      // const response = await fetch('/api/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
-
-      // if (response.ok) {
-      //   alert('Registration successful!');
-      //   navigate('/');
-      // }
-
       // For demo purposes:
       alert("Registration successful! Redirecting to home...");
-      
+
       // Reset form
       setFormData({
         firstName: "",
@@ -212,6 +244,12 @@ function Registration() {
   const handleLoginLink = (e) => {
     e.preventDefault();
     navigate("/login");
+  };
+
+  // Get selected gender label
+  const getSelectedGenderLabel = () => {
+    const selected = genderOptions.find((opt) => opt.value === formData.sex);
+    return selected ? selected.label : "Sex *";
   };
 
   return (
@@ -348,27 +386,58 @@ function Registration() {
                   </div>
                 </Form.Group>
 
-                {/* Sex - RESPONSIVE DROPDOWN */}
+                {/* Sex - CUSTOM DROPDOWN THAT OPENS DOWNWARD */}
                 <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaUser className="input-icon-left" />
-                    <Form.Select
-                      name="sex"
-                      value={formData.sex}
-                      onChange={handleChange}
-                      isInvalid={!!errors.sex}
-                      className="input-with-icon"
-                      size="sm"
-                      disabled={isSubmitting}
-                      aria-label="Select your sex/gender"
+                  <div
+                    className="custom-dropdown-wrapper"
+                    ref={genderDropdownRef}
+                  >
+                    <div
+                      className={`custom-dropdown-button input-with-icon ${
+                        errors.sex ? "is-invalid" : ""
+                      }`}
+                      onClick={() =>
+                        !isSubmitting &&
+                        setShowGenderDropdown(!showGenderDropdown)
+                      }
+                      role="button"
+                      tabIndex="0"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setShowGenderDropdown(!showGenderDropdown);
+                        }
+                      }}
                     >
-                      <option value="">Sex *</option>
-                      {genderOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </Form.Select>
+                      <FaUser className="input-icon-left" />
+                      <span className="dropdown-label">
+                        {getSelectedGenderLabel()}
+                      </span>
+                      <FaChevronDown
+                        className={`dropdown-icon ${
+                          showGenderDropdown ? "open" : ""
+                        }`}
+                      />
+                    </div>
+
+                    {/* Dropdown Menu - Opens DOWNWARD */}
+                    {showGenderDropdown && !isSubmitting && (
+                      <div className="custom-dropdown-menu">
+                        {genderOptions.map((option) => (
+                          <div
+                            key={option.value}
+                            className={`custom-dropdown-item ${
+                              formData.sex === option.value ? "active" : ""
+                            }`}
+                            onClick={() => handleGenderSelect(option.value)}
+                            role="option"
+                            aria-selected={formData.sex === option.value}
+                          >
+                            {option.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {errors.sex && (
                       <Form.Control.Feedback type="invalid" className="d-block">
                         {errors.sex}
@@ -503,7 +572,11 @@ function Registration() {
                     label={
                       <>
                         I agree to the{" "}
-                        <a href="#" onClick={(e) => e.preventDefault()} className="terms-link">
+                        <a
+                          href="#"
+                          onClick={(e) => e.preventDefault()}
+                          className="terms-link"
+                        >
                           Terms and Conditions
                         </a>{" "}
                         <span className="text-danger">*</span>

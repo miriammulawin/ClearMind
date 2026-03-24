@@ -1,141 +1,418 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+/* Registration.css - Enhanced with DOWNWARD-OPENING CUSTOM DROPDOWN */
+/* Original Color Theme: Deep Purple/Violet */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Poppins", sans-serif;
-}
-
-/* Registration Container */
+/* General Container */
 .registration-container {
-  background-color: #e1d8eb;
+  background: linear-gradient(135deg, #f3e9ff 0%, #e8d9f5 100%);
   min-height: 100vh;
 }
 
-/* Left Panel - Welcome Section */
-.left-panel {
-  background: linear-gradient(135deg, #4e237c 0%, #6b3fa0 100%);
-  color: white;
+/* Registration Card */
+.registration-card {
+  border: none;
+  box-shadow: 0 8px 20px rgba(107, 63, 160, 0.15);
+  border-radius: 20px;
 }
 
-/* Form Title */
-.form-title {
-  color: #4e237c;
-  font-weight: 700;
-  letter-spacing: 1px;
+.registration-card .card-body {
+  background: white;
 }
 
 /* Input Icon Wrapper */
 .input-icon-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .input-icon-left {
   position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #4e237c;
-  z-index: 10;
-  font-size: 1rem;
+  left: 12px;
+  color: #6b3fa0;
+  z-index: 3;
+  pointer-events: none;
+  font-size: 16px;
 }
 
 .input-icon-right {
   position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #4e237c;
-  z-index: 10;
-  cursor: pointer;
-  font-size: 1rem;
+  right: 12px;
+  color: #6b3fa0;
+  z-index: 3;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Input with Icon */
 .input-with-icon {
-  padding-left: 2.5rem;
-  border-radius: 10px;
-  border: 1px solid #c0b0e0;
+  padding-left: 38px !important;
+  padding-right: 38px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 10px !important;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
 }
 
 .input-with-icon:focus {
-  border-color: #4e237c;
-  box-shadow: 0 0 0 0.2rem rgba(78, 35, 124, 0.25);
+  border-color: #6b3fa0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(107, 63, 160, 0.15) !important;
+  background-color: white;
 }
 
-/* Checkbox */
+.input-with-icon:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ===== CUSTOM DROPDOWN STYLES - OPENS DOWNWARD ===== */
+
+.custom-dropdown-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-dropdown-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 38px !important;
+  padding-right: 38px !important;
+  border: 2px solid #e0e0e0 !important;
+  border-radius: 10px !important;
+  font-size: 14px;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 40px;
+  position: relative;
+}
+
+.custom-dropdown-button:hover {
+  border-color: #6b3fa0 !important;
+  background-color: #fafafa;
+}
+
+.custom-dropdown-button:focus,
+.custom-dropdown-button:focus-visible {
+  border-color: #6b3fa0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(107, 63, 160, 0.15) !important;
+  background-color: white;
+  outline: none;
+}
+
+.custom-dropdown-button.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.custom-dropdown-button.is-invalid:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15) !important;
+}
+
+.dropdown-label {
+  flex: 1;
+  text-align: left;
+  color: #333;
+  font-weight: 500;
+}
+
+.custom-dropdown-button:has(+ .custom-dropdown-menu) .dropdown-label,
+.custom-dropdown-button.open .dropdown-label {
+  color: #a276d0;
+}
+
+.dropdown-icon {
+  color: #6b3fa0;
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu - Opens DOWNWARD with scroll */
+.custom-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #6b3fa0;
+  border-radius: 10px;
+  margin-top: 8px;
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(107, 63, 160, 0.2);
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.custom-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.custom-dropdown-item:hover {
+  background-color: #f3e9ff;
+  color: #6b3fa0;
+  padding-left: 20px;
+}
+
+.custom-dropdown-item.active {
+  background-color: #6b3fa0;
+  color: white;
+  font-weight: 600;
+  padding-left: 20px;
+}
+
+.custom-dropdown-item.active:hover {
+  background-color: #562f7e;
+}
+
+/* Scrollbar styling for dropdown */
+.custom-dropdown-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #6b3fa0;
+  border-radius: 10px;
+}
+
+.custom-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #562f7e;
+}
+
+/* Form Control Feedback */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15) !important;
+}
+
+.form-control-feedback,
+.invalid-feedback {
+  font-size: 12px;
+  color: #dc3545;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Custom Checkbox Styling */
 .custom-checkbox .form-check-input {
   width: 18px;
   height: 18px;
+  border: 2px solid #6b3fa0;
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 3px;
 }
 
 .custom-checkbox .form-check-input:checked {
-  background-color: #4e237c;
-  border-color: #4e237c;
+  background-color: #6b3fa0;
+  border-color: #6b3fa0;
+  box-shadow: 0 0 0 0.2rem rgba(107, 63, 160, 0.25);
 }
 
 .custom-checkbox .form-check-input:focus {
-  border-color: #4e237c;
-  box-shadow: 0 0 0 0.2rem rgba(78, 35, 124, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(107, 63, 160, 0.25);
+  border-color: #6b3fa0;
 }
 
 .custom-checkbox .form-check-label {
-  font-size: 15px;
-  color: #555;
+  margin-left: 8px;
+  font-size: 14px;
   cursor: pointer;
+  user-select: none;
 }
 
 .terms-link {
-  color: #4e237c;
+  color: #6b3fa0;
   text-decoration: underline;
+  font-weight: 500;
 }
 
 .terms-link:hover {
-  text-decoration: underline;
+  color: #562f7e;
 }
 
 /* Submit Button */
 .submit-btn {
-  background: #4e237c;
-  color: white;
+  background: linear-gradient(135deg, #6b3fa0 0%, #562f7e 100%);
   border: none;
-  border-radius: 12px;
-  padding: 14px;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  font-size: 17px;
-  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(107, 63, 160, 0.3);
 }
 
-.submit-btn:hover {
-  background: #160f1f;
+.submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(107, 63, 160, 0.4);
+  background: linear-gradient(135deg, #562f7e 0%, #4a2563 100%);
+  color: white;
 }
 
-/* Link Button */
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(107, 63, 160, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Link Button (Login) */
 .link-button {
   background: none;
   border: none;
-  color: #4e237c;
-  font-weight: 600;
+  color: #6b3fa0;
+  text-decoration: underline;
   cursor: pointer;
   padding: 0;
-  font-family: "Poppins", sans-serif;
+  font-size: inherit;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
-.link-button:hover {
-  text-decoration: underline;
+.link-button:hover:not(:disabled) {
+  color: #562f7e;
 }
 
-/* Card Styling */
-.registration-card {
-  border: none;
-  border-radius: 0;
-  background: transparent;
+.link-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
-/* Password reveal/clear icons */
-input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear {
-  display: none;
+/* Form Title */
+.form-title {
+  color: #6b3fa0;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Left Panel Styling */
+.left-panel {
+  background: linear-gradient(135deg, #6b3fa0 0%, #562f7e 100%);
+  color: white;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .registration-card .card-body {
+    padding: 30px !important;
+  }
+
+  .custom-dropdown-menu {
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 576px) {
+  .registration-card .card-body {
+    padding: 20px !important;
+  }
+
+  .input-with-icon {
+    font-size: 13px;
+    padding-left: 35px !important;
+    padding-right: 35px !important;
+  }
+
+  .custom-dropdown-button {
+    padding-left: 35px !important;
+    padding-right: 35px !important;
+    font-size: 13px;
+  }
+
+  .input-icon-left {
+    left: 10px;
+    font-size: 14px;
+  }
+
+  .input-icon-right {
+    right: 10px;
+    font-size: 14px;
+  }
+
+  .custom-dropdown-menu {
+    max-height: 280px;
+    margin-top: 6px;
+  }
+
+  .custom-dropdown-item {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .submit-btn {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .form-title {
+    font-size: 20px;
+  }
+}
+
+/* Focus States for Better Accessibility */
+.input-with-icon:focus-visible,
+.form-check-input:focus-visible,
+.custom-dropdown-button:focus-visible {
+  outline: 2px solid #6b3fa0;
+  outline-offset: 2px;
+}
+
+/* Placeholder Styling */
+.input-with-icon::placeholder {
+  color: #999;
+  opacity: 0.8;
+}
+
+/* Spinner Animation */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.25em;
 }

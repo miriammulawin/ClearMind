@@ -613,13 +613,16 @@ const ESASection = ({ appt }) => {
 
 const InternshipSection = ({ appt }) => (
   <DrawerAccordion
-    title="Mental Health Certificate for Internship"
+    title="Mental Health for Internship"
     accentColor="#5b21b6"
     defaultOpen={false}
   >
-    <InfoRow label="School Name" value={appt.schoolName || "Not specified"} />
-
+    <InfoRow
+      label="University"
+      value={appt.schoolName || "Not specified"}
+    />
     <InfoRow label="Program" value={appt.program || "Not specified"} />
+
   </DrawerAccordion>
 );
 
@@ -687,8 +690,6 @@ const RescheduleSection = ({ appt }) => (
       label="Reason for Reschedule"
       value={appt.rescheduledTo.reason || "Not specified"}
     />
-    <InfoRow label="Rescheduled By" value="Patient Request" />
-    <InfoRow label="Confirmation Email Sent" value="March 4, 2026 at 3:45 PM" />
   </DrawerAccordion>
 );
 
