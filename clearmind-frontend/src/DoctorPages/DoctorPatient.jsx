@@ -24,6 +24,7 @@ import {
 import { FaCalendarAlt } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
+import CompleteAppointmentModal from "./components/CompleteAppointmentModal";
 
 const AvatarPlaceholder = ({ name, size = 80 }) => {
   const initials = name
@@ -72,6 +73,8 @@ function DoctorPatient() {
   const [zoomImage, setZoomImage] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [patientTypeFilter, setPatientTypeFilter] = useState("all");
+  const [showClinicalModal, setShowClinicalModal] = useState(false);
+  const [clinicalModalPatient, setClinicalModalPatient] = useState(null);
   const navigate = useNavigate();
 
   const [patientList, setPatientList] = useState([
@@ -201,7 +204,13 @@ function DoctorPatient() {
     setProgressionDraft("");
   };
 
-  // ── Badge helpers (from AdminPatient) ──
+  // ── Open Clinical Notes Modal ──
+  const handleOpenClinical = (row) => {
+    setClinicalModalPatient(row);
+    setShowClinicalModal(true);
+  };
+
+  // ── Badge helpers ──
   const getStatusBadgeStyle = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -251,7 +260,7 @@ function DoctorPatient() {
         <DoctorTopNavbar activeMenu={activeMenu} />
         <div className="doctor-content" style={{ padding: "20px" }}>
           <div className="patient-card">
-            {/* ── Tab + Filter Row (admin style) ── */}
+            {/* ── Tab + Filter Row ── */}
             <div className="patient-tabs-row">
               <div className="patient-tabs">
                 <button className="tab-active">
@@ -331,6 +340,38 @@ function DoctorPatient() {
                             onClick={() => handleView(row)}
                           >
                             View
+                          </button>
+                          <button
+                            className="btn-confirm"
+                            style={{
+                              height: 32,
+                              width: "auto",
+                              padding: "0 14px",
+                              fontSize: 12,
+                              borderRadius: 8,
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              cursor:
+                                row.status === "Completed"
+                                  ? "not-allowed"
+                                  : "pointer",
+                              border: "1px solid #4a965b",
+                              background:
+                                row.status === "Completed"
+                                  ? "#a8d5b5"
+                                  : "#4a965b",
+                              color: "#fff",
+                              opacity: row.status === "Completed" ? 0.55 : 1,
+                            }}
+                            disabled={row.status === "Completed"}
+                            onClick={() =>
+                              row.status !== "Completed" &&
+                              handleOpenClinical(row)
+                            }
+                          >
+                            Complete
                           </button>
                         </td>
                       </tr>
@@ -417,7 +458,6 @@ function DoctorPatient() {
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
-                    {/* Patient type chip (from admin) */}
                     <span
                       className={`patient-type-badge ${
                         selectedPatient.patientType === "New Patient"
@@ -560,7 +600,6 @@ function DoctorPatient() {
                     </div>
                     <div>
                       <span className="modal-info-label">Mode</span>
-                      {/* consultation mode badge (from admin) */}
                       <span
                         style={getConsultationModeBadge(
                           selectedPatient.consultationMode,
@@ -921,6 +960,40 @@ function DoctorPatient() {
             />
           </div>
         </div>
+      )}
+
+      {/* ══════════════════════════════════════
+          CLINICAL NOTES MODAL
+      ══════════════════════════════════════ */}
+      {showClinicalModal && clinicalModalPatient && (
+        <CompleteAppointmentModal
+          isOpen={showClinicalModal}
+          onClose={() => {
+            setShowClinicalModal(false);
+            setClinicalModalPatient(null);
+          }}
+          appt={{
+            patientName: clinicalModalPatient.name,
+            start: new Date(
+              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
+            ),
+            end: new Date(
+              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
+            ),
+            title:
+              clinicalModalPatient.consultationMode === "Virtual"
+                ? "Online Clinic"
+                : "Physical Clinic",
+          }}
+          onConfirm={() => {
+            const updated = patientList.map((p) =>
+              p.id === clinicalModalPatient.id
+                ? { ...p, status: "Completed" }
+                : p,
+            );
+            setPatientList(updated);
+          }}
+        />
       )}
     </div>
   );
