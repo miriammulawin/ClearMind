@@ -1,27 +1,14 @@
 import React from 'react';
-import { Container, Card, Button, Badge } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FaCalendarTimes, FaVideo, FaClinicMedical } from "react-icons/fa";
+import { FaCalendarTimes } from 'react-icons/fa';
 import MOCK_APPOINTMENTS from '../../MockData/MockAppointment';
+import AppointmentCard from './AppointmentComponents/AppointmentCard';
 import "./styles/PendingTab.css";
 
 const PendingTab = () => {
   const navigate = useNavigate();
 
-  const getDayOfWeek = (dateString) => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const date = new Date(dateString);
-    return days[date.getDay()];
-  };
-
-  const getAppointmentIcon = (type) => {
-    if (type === 'Clinic - CMPS') {
-      return <FaClinicMedical className='appointment-icon' />;
-    }
-    return <FaVideo className='appointment-icon' />;
-  };
-
-  // ✅ Fixed: correct route + passes from state so back button returns to pending tab
   const handleViewDetails = (appointmentId) => {
     navigate(`/client/appointment/details/${appointmentId}`, { state: { from: 'pending' } });
   };
@@ -44,49 +31,11 @@ const PendingTab = () => {
           </div>
         ) : (
           pendingAppointments.map((appointment) => (
-            <Card key={appointment.id} className='appointment-card'>
-              <Card.Body>
-                <Badge bg="warning" className='status-badge-upcoming'>
-                  {appointment.status}
-                </Badge>
-
-                <div className='appointment-details'>
-                  <div className='appointment-info'>
-                    <div className='info-row'>
-                      <span className='label'>Time:</span>
-                      <span className='value'>{appointment.time}</span>
-                    </div>
-                    <div className='info-row'>
-                      <span className='label'>Date:</span>
-                      <span className='value date-value'>
-                        {appointment.date} ({getDayOfWeek(appointment.date)})
-                      </span>
-                    </div>
-                    <hr className='hr-upcoming' />
-                    <div className='info-row consultation-type'>
-                      {getAppointmentIcon(appointment.type)}
-                      <span>{appointment.type}</span>
-                    </div>
-                    <div className='info-row'>
-                      <span className='label'>Type of Service:</span>
-                      <span className='value service-type'>{appointment.serviceType}</span>
-                    </div>
-                    <div className='info-row'>
-                      <span className='label'>Assigned Doctor:</span>
-                      <span className='value doctor-name'>{appointment.doctor}</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    variant="outline-purple"
-                    className='view-details-btn'
-                    onClick={() => handleViewDetails(appointment.id)}
-                  >
-                    VIEW DETAILS
-                  </Button>
-                </div>
-              </Card.Body>
-            </Card>
+            <AppointmentCard
+              key={appointment.id}
+              appointment={appointment}
+              onViewDetails={handleViewDetails}
+            />
           ))
         )}
       </div>

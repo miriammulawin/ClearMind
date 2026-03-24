@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Modal } from 'react-bootstrap';
 import { FiCheckCircle } from 'react-icons/fi';
 import { CONSULTATION_FEES } from '../../../../MockData/MockDoctors.js';
-import styles from '../../../ClientStyle/SetAppointmentForm.module.css';
+import styles from '../style/PACSetAppointmentForm.module.css';
 import SetAppointmentFormHeader from './SetAppointmentFormHeader.jsx';
 import ScheduleForm from './ScheduleForm.jsx';
 import VerifyProfileForm from './VerifyProfileForm.jsx';

@@ -116,24 +116,22 @@ const AppointmentDetails = () => {
             </Button>
           </div>
         </div>
-
-      </div>
-
-      {/* ── Actions ── Pending: Cancel only | Confirmed: Reschedule + Cancel ── */}
-      <div className="ad-actions">
-        {appointment.status === 'Confirmed' && (
-          <button
-            className="ad-reschedule-btn"
-            onClick={() => alert('Reschedule will be implemented with backend')}
-          >
-            RESCHEDULE
-          </button>
-        )}
-        {(appointment.status === 'Pending' || appointment.status === 'Confirmed') && (
-          <button className="ad-cancel-btn" onClick={handleCancel}>
-            CANCEL
-          </button>
-        )}
+        {/* ── Actions ── Pending: Cancel only | Confirmed: Reschedule + Cancel ── */}
+        <div className="ad-actions">
+          {appointment.status === 'Confirmed' && (
+            <button
+              className="ad-reschedule-btn"
+              onClick={() => alert('Reschedule will be implemented with backend')}
+            >
+              RESCHEDULE
+            </button>
+          )}
+          {(appointment.status === 'Pending' || appointment.status === 'Confirmed') && (
+            <button className="ad-cancel-btn" onClick={handleCancel}>
+              CANCEL
+            </button>
+          )}
+        </div>
       </div>
 
     </Container>

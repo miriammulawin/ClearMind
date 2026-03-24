@@ -1,0 +1,239 @@
+/* =============================================
+   AppointmentCard.module.css
+   Scoped styles for the AppointmentCard component
+   ============================================= */
+
+/* Card */
+.appointmentCard {
+  background-color: white;
+  border: 2px solid #5B2C91;
+  border-radius: 20px;
+  margin-bottom: 15px;
+  transition: box-shadow 0.3s ease;
+  position: relative;
+}
+
+.appointmentCard:hover {
+  box-shadow: 0 4px 12px rgba(91, 44, 145, 0.15);
+}
+
+.appointmentCard :global(.card-body) {
+  padding: 1.25rem;
+}
+
+/* =============================================
+   Status Badge — fully self-contained, no Bootstrap bg variant
+   ============================================= */
+.statusBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Pending - soft yellow */
+.badgePending {
+  background-color: #fff5b5;
+  color: rgb(130, 130, 130);
+}
+
+/* Confirmed - soft blue */
+.badgeConfirmed {
+  background-color: #a8bffd;
+  color: white;
+}
+
+/* Rescheduled - soft orange */
+.badgeRescheduled {
+  background-color: #FFCE99;
+  color: white;
+}
+
+/* Completed - soft green */
+.badgeCompleted {
+  background-color: #94caa1;
+  color: white;
+}
+
+/* Cancelled - soft red */
+.badgeCancelled {
+  background-color: #f97b88;
+  color: white;
+}
+
+/* =============================================
+   Card Content Layout
+   ============================================= */
+.appointmentDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.appointmentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* =============================================
+   Info Rows
+   ============================================= */
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.label {
+  color: #6c757d;
+  font-weight: 500;
+  min-width: 130px;
+  font-size: 0.9rem;
+}
+
+.value {
+  color: #5B2C91;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.dateValue {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+.divider {
+  border: 2px solid #694c95;
+  margin: 0.25rem 0;
+}
+
+/* Consultation Type row */
+.consultationType {
+  color: #5B2C91;
+  border-radius: 8px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.appointmentIcon {
+  margin-right: 6px;
+  font-size: 1rem;
+}
+
+/* Service Type pill */
+.serviceType {
+  background-color: #f0e6ff;
+  border: 2px solid #5B2C91;
+  color: #5B2C91;
+  padding: 4px 16px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.doctorName {
+  color: #5B2C91;
+  font-weight: 600;
+}
+
+/* =============================================
+   View Details Button
+   ============================================= */
+.viewDetailsBtn {
+  border: 2px solid #5B2C91 !important;
+  color: white !important;
+  border-radius: 20px !important;
+  padding: 8px 24px !important;
+  font-weight: 600 !important;
+  background: #5B2C91 !important;
+  align-self: flex-end;
+  margin-top: 0.75rem;
+  transition: all 0.3s ease !important;
+}
+
+.viewDetailsBtn:hover {
+  background-color: #f0e6ff !important;
+  color: #5B2C91 !important;
+  border: 2px solid #5B2C91 !important;
+}
+
+/* =============================================
+   Responsive
+   ============================================= */
+@media (max-width: 575px) {
+  .appointmentCard :global(.card-body) {
+    padding: 1rem;
+  }
+
+  .statusBadge {
+    top: 10px;
+    right: 10px;
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+
+  .infoRow {
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .label {
+    min-width: 110px;
+    font-size: 0.8rem;
+  }
+
+  .value {
+    font-size: 0.85rem;
+  }
+
+  .consultationType {
+    font-size: 0.85rem;
+  }
+
+  .viewDetailsBtn {
+    font-size: 0.85rem !important;
+    padding: 6px 20px !important;
+    width: 100%;
+  }
+}
+
+@media (max-width: 374px) {
+  .appointmentCard :global(.card-body) {
+    padding: 0.7rem;
+  }
+
+  .statusBadge {
+    top: 7px;
+    right: 7px;
+    padding: 4px 7px;
+    font-size: 0.58rem;
+  }
+
+  .label {
+    min-width: auto;
+    font-size: 0.73rem;
+  }
+
+  .value {
+    font-size: 0.78rem;
+  }
+
+  .consultationType {
+    font-size: 0.73rem;
+  }
+
+  .viewDetailsBtn {
+    font-size: 0.73rem !important;
+    padding: 6px 15px !important;
+    width: 100%;
+  }
+}
