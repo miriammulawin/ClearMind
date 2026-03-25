@@ -63,13 +63,6 @@ const ScheduleForm = ({
 
   return (
     <>
-      {/* ── Form Header (sticky): back btn, doctor strip, stepper, progress bar ── */}
-      <SetAppointmentFormHeader
-        doctorData={doctorData}
-        currentStep={currentStep ?? 1}
-        onBack={onBack}
-      />
-
       {/* ── Consultation Mode ── */}
       <div className={styles.section}>
         <p className={styles.sectionTitle}>
