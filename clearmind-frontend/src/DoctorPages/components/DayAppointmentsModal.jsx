@@ -59,6 +59,25 @@ const isFemalePatient = (appt) =>
   appt?.gender?.toLowerCase() === "female" ||
   appt?.gender?.toLowerCase() === "f";
 
+// ── Visit Type helper ──────────────────────────────────────────────────────
+const getVisitType = (appt) =>
+  appt.title?.toLowerCase().includes("online")
+    ? "Online Consultation"
+    : "Physical Consultation";
+
+// ── Service Label helper ───────────────────────────────────────────────────
+// Returns only the parent service title from the services list:
+//   "Psychological Assessment and Evaluation"  — for all PA sub-types
+//     (VAWC, Legal, School, Work, Pre-Employment, ESA, Internship)
+//   "Psychotherapy and Counseling"             — for everything else
+const getServiceLabel = (appt) => {
+  const svc = appt.serviceType || "";
+  if (isPsychAssessment(svc) || isESA(svc) || isInternship(svc)) {
+    return "Psychological Assessment and Evaluation";
+  }
+  return "Psychotherapy and Counseling";
+};
+
 // ── Inline badge styles ────────────────────────────────────────────────────
 const purposeInlineStyle = (purpose) => {
   switch (purpose) {
@@ -513,7 +532,6 @@ const PreEmploymentSection = ({ appt }) => (
       label="Employer Name"
       value={appt.employerName || "Not specified"}
     />
-
     <InfoRow
       label="Purpose of Assessment"
       value={appt.purposeOfAssessment || "Not specified"}
@@ -583,7 +601,6 @@ const ESASection = ({ appt }) => {
         }
       />
 
-      {/* Diagnosis Notes */}
       {hasDiagnosis && appt.existingDiagnosisNote && (
         <div style={{ marginTop: 8 }}>
           <div className={styles.complaintLabel}>Diagnosis Notes:</div>
@@ -593,7 +610,6 @@ const ESASection = ({ appt }) => {
         </div>
       )}
 
-      {/* Attachments ONLY if YES */}
       {hasDiagnosis && hasDocs && (
         <div className={styles.docsSection} style={{ marginTop: 12 }}>
           <div className={styles.docsSectionLabel}>
@@ -617,12 +633,8 @@ const InternshipSection = ({ appt }) => (
     accentColor="#5b21b6"
     defaultOpen={false}
   >
-    <InfoRow
-      label="University"
-      value={appt.schoolName || "Not specified"}
-    />
+    <InfoRow label="University" value={appt.schoolName || "Not specified"} />
     <InfoRow label="Program" value={appt.program || "Not specified"} />
-
   </DrawerAccordion>
 );
 
@@ -713,13 +725,11 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const isIntern = isInternship(serviceType);
   const purpose = isAssessment ? getPurpose(appt) : null;
 
-  const serviceLabel = isAssessment
-    ? "Psychological Assessment and Evaluation"
-    : isEsa
-      ? "Emotional Support Animal (ESA)"
-      : isIntern
-        ? "Mental Health for Internship"
-        : "Counseling / Therapy";
+  // ── CHANGED: use getServiceLabel helper ──
+  const serviceLabel = getServiceLabel(appt);
+
+  // ── CHANGED: use getVisitType helper ──
+  const visitTypeLabel = getVisitType(appt);
 
   const clinicColor = getDotColor(appt);
   const showVawc =
@@ -775,10 +785,11 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
                     <span className={styles.paymentPaid}>Paid</span>
                   </div>
 
-                  <InfoRow label="Visit Type" value={appt.visitType || "—"} />
+                  {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
+                  <InfoRow label="Visit Type" value={visitTypeLabel} />
 
                   <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Type of Service:</span>
+                    <span className={styles.infoLabel}>Service:</span>
                     <Badge style={serviceTypeInlineStyle(serviceType)}>
                       {serviceLabel}
                     </Badge>
@@ -967,13 +978,11 @@ function DayAppointmentsModal({
               const purpose = isAssessment ? getPurpose(appt) : null;
               const dotColor = getDotColor(appt);
 
-              const serviceLabel = isAssessment
-                ? "Psychological Assessment and Evaluation"
-                : isEsa
-                  ? "Emotional Support Animal (ESA)"
-                  : isIntern
-                    ? "Mental Health for Internship"
-                    : "Counseling / Therapy";
+              // ── CHANGED: use getServiceLabel helper ──
+              const serviceLabel = getServiceLabel(appt);
+
+              // ── CHANGED: use getVisitType helper ──
+              const visitTypeLabel = getVisitType(appt);
 
               const displayPurpose =
                 purpose === PURPOSES.VAWC
@@ -1036,11 +1045,10 @@ function DayAppointmentsModal({
                         label="Time"
                         value={`${startTime} – ${endTime}`}
                       />
-                      <InfoRow label="Clinic Type" value={clinicType} />
+                      {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
+                      <InfoRow label="Visit Type" value={visitTypeLabel} />
                       <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>
-                          Type of Service:
-                        </span>
+                        <span className={styles.infoLabel}>Service:</span>
                         <Badge
                           style={{
                             ...serviceTypeInlineStyle(svc),

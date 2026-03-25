@@ -1,751 +1,831 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import {
   FiX,
-  FiPlus,
-  FiEdit3,
+  FiChevronDown,
+  FiSearch,
+  FiUpload,
+  FiFile,
   FiTrash2,
   FiCheck,
-  FiCalendar,
-  FiUser,
-  FiClipboard,
-  FiActivity,
-  FiFileText,
+  FiChevronRight,
 } from "react-icons/fi";
-import styles from "../DoctorStyle/DayAppointmentsModal.module.css";
+import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
 
 /* ─────────────────────────────────────────────────────────────────
-   Helpers
+   Data
 ───────────────────────────────────────────────────────────────── */
-const toTime12 = (date) => {
-  const d = new Date(date);
-  const h = d.getHours(),
-    m = String(d.getMinutes()).padStart(2, "0");
-  return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
-};
+const PATIENT_LIST = [
+  { id: 1, firstName: "Maria", lastName: "Santos", mi: "C" },
+  { id: 2, firstName: "Juan", lastName: "dela Cruz", mi: "R" },
+  { id: 3, firstName: "Ana", lastName: "Reyes", mi: "L" },
+  { id: 4, firstName: "Carlo", lastName: "Mendoza", mi: "B" },
+  { id: 5, firstName: "Lucia", lastName: "Garcia", mi: "T" },
+  { id: 6, firstName: "Mark", lastName: "Torres", mi: "A" },
+  { id: 7, firstName: "Sofia", lastName: "Flores", mi: "M" },
+  { id: 8, firstName: "Jose", lastName: "Villanueva", mi: "P" },
+];
+
+const SERVICES = [
+  {
+    id: "0",
+    title: "Psychotherapy and Counseling",
+    description: "",
+  },
+  {
+    id: "1",
+    title: "Psychological Assessment and Evaluation",
+    description: "",
+  },
+];
+
+const PAE_SERVICES = [
+  { id: "0", title: "VAWC Purpose", description: "", available: true },
+  {
+    id: "1",
+    title: "Adoption or Other Legal Purposes",
+    description: "",
+    available: true,
+  },
+  {
+    id: "2",
+    title: "School / Academic Support",
+    description: "",
+    available: true,
+  },
+  { id: "3", title: "Work-related Purpose", description: "", available: true },
+  {
+    id: "4",
+    title: "Pre-Employment Purpose",
+    description: "",
+    available: true,
+  },
+  {
+    id: "5",
+    title: "Emotional Support Animal (ESA) Certification",
+    description: "",
+    available: true,
+  },
+  {
+    id: "6",
+    title: "Mental Health Certification",
+    description: "",
+    available: true,
+  },
+];
 
 /* ─────────────────────────────────────────────────────────────────
-   ClinicalNotesSection
+   PatientDropdown
 ───────────────────────────────────────────────────────────────── */
-function ClinicalNotesSection() {
-  const [activeTab, setActiveTab] = useState("intake");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
-  const [formValue, setFormValue] = useState("");
+function PatientDropdown({ onSelect }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(null);
+  const ref = useRef(null);
 
-  const [notes, setNotes] = useState({
-    intake: [],
-    progress: [],
-    recommendation: [],
-  });
+  const filtered = PATIENT_LIST.filter((p) =>
+    `${p.firstName} ${p.mi}. ${p.lastName}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
 
-  const tabConfig = [
-    {
-      key: "intake",
-      label: "Medical Intake",
-      icon: <FiClipboard size={14} />,
-      color: "#4D227C",
-      light: "#f0e8ff",
-    },
-    {
-      key: "progress",
-      label: "Progress Note",
-      icon: <FiActivity size={14} />,
-      color: "#1d6fa4",
-      light: "#e8f4ff",
-    },
-    {
-      key: "recommendation",
-      label: "Recommendation",
-      icon: <FiFileText size={14} />,
-      color: "#15803d",
-      light: "#e8faf0",
-    },
-  ];
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  const currentTab = tabConfig.find((t) => t.key === activeTab);
-
-  const handleAdd = () => {
-    if (!formValue.trim()) return;
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: [
-        {
-          id: Date.now(),
-          date: new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
-          author: "Dr. Admin",
-          content: formValue.trim(),
-        },
-        ...prev[activeTab],
-      ],
-    }));
-    closeForm();
+  const handleSelect = (patient) => {
+    setSelected(patient);
+    setQuery("");
+    setOpen(false);
+    if (onSelect) onSelect(patient);
   };
 
-  const handleEdit = (entry) => {
-    setEditingEntry(entry);
-    setFormValue(entry.content);
-    setShowAddModal(true);
-  };
+  const displayName = selected
+    ? `${selected.firstName} ${selected.mi}. ${selected.lastName}`
+    : "";
 
-  const handleSaveEdit = () => {
-    if (!formValue.trim()) return;
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].map((e) =>
-        e.id === editingEntry.id ? { ...e, content: formValue.trim() } : e,
-      ),
-    }));
-    closeForm();
-  };
-
-  const handleDelete = (id) =>
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((e) => e.id !== id),
-    }));
-
-  const openAdd = () => {
-    setEditingEntry(null);
-    setFormValue("");
-    setShowAddModal(true);
-  };
-
-  const closeForm = () => {
-    setShowAddModal(false);
-    setEditingEntry(null);
-    setFormValue("");
+  const triggerStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "10px 13px",
+    borderRadius: "9px",
+    border: open ? "1.5px solid #4D227C" : "1.5px solid #e2d5f5",
+    fontSize: "13px",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    color: selected ? "#333" : "#aaa",
+    boxSizing: "border-box",
+    userSelect: "none",
+    fontFamily: "inherit",
+    boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
+    transition: "border 0.2s, box-shadow 0.2s",
   };
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-        /* ── Tab Bar ── */
-        .cn-tab-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 14px;
-        }
-        .cn-tabs {
-          display: flex;
-          flex: 1;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .cn-tab-btn {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          padding: 8px 12px;
-          border-radius: 10px;
-          border: 1.5px solid #e2d5f5;
-          background: #faf7ff;
-          color: #777;
-          font-size: 12.5px;
-          font-weight: 600;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all 0.2s;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cn-tab-btn:hover {
-          border-color: #9b6bbf;
-          color: #4D227C;
-        }
-        .cn-tab-count {
-          padding: 1px 8px;
-          border-radius: 20px;
-          font-size: 11px;
-          font-weight: 700;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cn-add-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 16px;
-          border-radius: 10px;
-          border: none;
-          color: #fff;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: filter 0.15s, transform 0.1s;
-          font-family: 'Poppins', sans-serif;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-        }
-        .cn-add-btn:hover {
-          filter: brightness(1.1);
-        }
-        .cn-add-btn:active {
-          transform: translateY(1px);
-        }
-
-        /* ── Entries Container ── */
-        .cn-entries {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          max-height: 340px;
-          overflow-y: auto;
-          overflow-x: hidden;
-          padding-right: 4px;
-        }
-        .cn-entries::-webkit-scrollbar { width: 5px; }
-        .cn-entries::-webkit-scrollbar-track { background: #f0eaf8; border-radius: 10px; }
-        .cn-entries::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
-        .cn-entries { scrollbar-color: #4D227C #f0eaf8; scrollbar-width: thin; }
-
-        /* ── Entry Card ── */
-        .cn-entry-card {
-          border-radius: 12px;
-          border: 1px solid #ede5f7;
-          border-left-width: 4px;
-          padding: 14px 16px;
-          background: #fdfcff;
-          flex-shrink: 0;
-          box-shadow: 0 1px 6px rgba(77,34,124,0.05);
-        }
-        .cn-entry-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 8px;
-          margin-bottom: 10px;
-        }
-        .cn-entry-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 7px;
-          align-items: center;
-        }
-        .cn-entry-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          padding: 3px 10px;
-          border-radius: 20px;
-          font-size: 11px;
-          font-weight: 700;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cn-entry-date,
-        .cn-entry-author {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-size: 11px;
-          color: #9ca3af;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cn-entry-actions {
-          display: flex;
-          gap: 5px;
-          flex-shrink: 0;
-        }
-        .cn-action-btn {
-          padding: 5px 7px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          transition: background 0.14s;
-        }
-        .cn-edit-btn   { background: #f0e8ff; color: #4D227C; }
-        .cn-edit-btn:hover   { background: #e0d4f5; }
-        .cn-delete-btn { background: #fff0f0; color: #e53e3e; }
-        .cn-delete-btn:hover { background: #ffe0e0; }
-
-        .cn-entry-content {
-          font-size: 13px;
-          color: #374151;
-          line-height: 1.7;
-          margin: 0;
-          white-space: pre-wrap;
-          font-family: 'Poppins', sans-serif;
-        }
-
-        /* ── Empty State ── */
-        .cn-empty {
-          text-align: center;
-          padding: 32px 20px;
-          color: #bbb;
-          border: 1.5px dashed #e0d4f5;
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-        }
-        .cn-empty p { margin: 0; font-size: 13px; font-family: 'Poppins', sans-serif; }
-
-        /* ── Add/Edit sub-modal ── */
-        .cn-modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.60);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 12000;
-          padding: 20px;
-          box-sizing: border-box;
-        }
-        .cn-modal {
-          background: #fff;
-          border-radius: 16px;
-          width: 100%;
-          max-width: 520px;
-          box-shadow: 0 24px 64px rgba(77,34,124,0.25);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          animation: cnModalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        @keyframes cnModalIn {
-          from { opacity: 0; transform: translateY(-20px) scale(0.96); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .cn-modal-header {
-          padding: 18px 22px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .cn-modal-header-title {
-          margin: 0;
-          color: #fff;
-          font-size: 16px;
-          font-weight: 700;
-          font-family: 'Poppins', sans-serif;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-        .cn-modal-close {
-          background: rgba(255,255,255,0.18);
-          border: none;
-          color: #fff;
-          border-radius: 8px;
-          width: 32px;
-          height: 32px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.2s;
-        }
-        .cn-modal-close:hover { background: rgba(255,255,255,0.30); }
-        .cn-modal-body {
-          padding: 20px 24px;
-          background: #f5f0fb;
-        }
-        .cn-form-label {
-          display: block;
-          font-size: 11px;
-          font-weight: 700;
-          color: #4D227C;
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-          margin-bottom: 8px;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cn-textarea {
-          width: 100%;
-          min-height: 140px;
-          padding: 12px 14px;
-          border: 1.5px solid #e2d5f5;
-          border-radius: 10px;
-          font-size: 13.5px;
-          color: #333;
-          line-height: 1.6;
-          resize: vertical;
-          box-sizing: border-box;
-          outline: none;
-          font-family: 'Poppins', sans-serif;
-          transition: border-color 0.2s, box-shadow 0.2s;
-          background: #fff;
-        }
-        .cn-textarea:focus {
-          border-color: #4D227C;
-          box-shadow: 0 0 0 3px rgba(77,34,124,0.1);
-        }
-        .cn-modal-footer {
-          padding: 14px 22px;
-          border-top: 2px solid #ede5f7;
-          background: #fff;
-          display: flex;
-          justify-content: flex-end;
-          gap: 10px;
-        }
-        .cn-cancel-btn {
-          padding: 9px 20px;
-          border-radius: 10px;
-          border: 1.5px solid #e2d5f5;
-          background: #f0ebf7;
-          color: #4D227C;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-          font-family: 'Poppins', sans-serif;
-          transition: background 0.2s, color 0.2s;
-        }
-        .cn-cancel-btn:hover { background: #4D227C; color: #fff; }
-        .cn-save-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 9px 20px;
-          border-radius: 10px;
-          border: none;
-          color: #fff;
-          font-weight: 700;
-          font-size: 13px;
-          cursor: pointer;
-          font-family: 'Poppins', sans-serif;
-          transition: filter 0.15s, transform 0.1s;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-        }
-        .cn-save-btn:hover { filter: brightness(1.1); }
-        .cn-save-btn:active { transform: translateY(1px); }
-
-        @media (max-width: 480px) {
-          .cn-tabs { flex-direction: column; }
-          .cn-tab-btn { flex: none; width: 100%; }
-          .cn-add-btn { width: 100%; justify-content: center; }
-          .cn-tab-bar { flex-direction: column; align-items: stretch; }
-        }
-      `}</style>
-
-      {/* Tab Bar */}
-      <div className="cn-tab-bar">
-        <div className="cn-tabs">
-          {tabConfig.map((tab) => {
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="cn-tab-btn"
-                style={
-                  isActive
-                    ? {
-                        background: tab.color,
-                        color: "#fff",
-                        borderColor: tab.color,
-                      }
-                    : {}
-                }
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-                <span
-                  className="cn-tab-count"
-                  style={{
-                    background: isActive ? "rgba(255,255,255,0.25)" : tab.light,
-                    color: isActive ? "#fff" : tab.color,
-                  }}
-                >
-                  {notes[tab.key].length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          className="cn-add-btn"
-          style={{ background: currentTab.color }}
-          onClick={openAdd}
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <div onClick={() => setOpen((o) => !o)} style={triggerStyle}>
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
         >
-          <FiPlus size={14} /> Add {currentTab.label}
-        </button>
+          {displayName || "Select Patient Name"}
+        </span>
+        <FiChevronDown
+          style={{
+            flexShrink: 0,
+            marginLeft: 8,
+            color: "#4D227C",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+          }}
+        />
       </div>
 
-      {/* Entries */}
-      <div className="cn-entries">
-        {notes[activeTab].length === 0 ? (
-          <div className="cn-empty">
-            <span style={{ fontSize: 36, opacity: 0.25 }}>📋</span>
-            <p>No {currentTab.label} entries yet.</p>
-            <button
-              className="cn-add-btn"
-              style={{ background: currentTab.color }}
-              onClick={openAdd}
-            >
-              <FiPlus size={13} /> Add First Entry
-            </button>
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff",
+            border: "1px solid #e0d4f5",
+            borderRadius: "10px",
+            boxShadow: "0 8px 24px rgba(77,34,124,0.14)",
+            zIndex: 99999,
+            overflow: "hidden",
+            fontFamily: "inherit",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px 12px",
+              borderBottom: "1px solid #f0eaf8",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FiSearch style={{ color: "#aaa", flexShrink: 0 }} />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search patient…"
+              style={{
+                border: "none",
+                outline: "none",
+                fontSize: "13px",
+                width: "100%",
+                color: "#333",
+                backgroundColor: "transparent",
+                fontFamily: "inherit",
+              }}
+            />
           </div>
-        ) : (
-          notes[activeTab].map((entry, index) => (
-            <div
-              key={entry.id}
-              className="cn-entry-card"
-              style={{ borderLeftColor: currentTab.color }}
-            >
-              <div className="cn-entry-header">
-                <div className="cn-entry-meta">
-                  <span
-                    className="cn-entry-badge"
+          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div
+                style={{
+                  padding: "14px 16px",
+                  color: "#aaa",
+                  fontSize: "13px",
+                  textAlign: "center",
+                }}
+              >
+                No patients found
+              </div>
+            ) : (
+              filtered.map((p) => {
+                const isActive = selected?.id === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => handleSelect(p)}
                     style={{
-                      background: currentTab.light,
-                      color: currentTab.color,
+                      padding: "10px 16px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      color: isActive ? "#4D227C" : "#333",
+                      fontWeight: isActive ? "600" : "400",
+                      backgroundColor: isActive ? "#f3ecfc" : "transparent",
+                      transition: "background 0.15s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "#faf7ff";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "transparent";
                     }}
                   >
-                    {currentTab.icon} {currentTab.label} #
-                    {notes[activeTab].length - index}
-                  </span>
-                  <span className="cn-entry-date">
-                    <FiCalendar size={11} /> {entry.date}
-                  </span>
-                  <span className="cn-entry-author">
-                    <FiUser size={11} /> {entry.author}
-                  </span>
-                </div>
-                <div className="cn-entry-actions">
-                  <button
-                    className="cn-action-btn cn-edit-btn"
-                    onClick={() => handleEdit(entry)}
-                    title="Edit"
-                  >
-                    <FiEdit3 size={13} />
-                  </button>
-                  <button
-                    className="cn-action-btn cn-delete-btn"
-                    onClick={() => handleDelete(entry.id)}
-                    title="Delete"
-                  >
-                    <FiTrash2 size={13} />
-                  </button>
-                </div>
-              </div>
-              <p className="cn-entry-content">{entry.content}</p>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Add / Edit sub-modal */}
-      {showAddModal && (
-        <div className="cn-modal-overlay" onClick={closeForm}>
-          <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
-            <div
-              className="cn-modal-header"
-              style={{ background: currentTab.color }}
-            >
-              <h3 className="cn-modal-header-title">
-                {currentTab.icon}
-                {editingEntry ? "Edit" : "Add"} {currentTab.label}
-              </h3>
-              <button
-                className="cn-modal-close"
-                onClick={closeForm}
-                aria-label="Close"
-              >
-                <FiX size={16} />
-              </button>
-            </div>
-            <div className="cn-modal-body">
-              <label className="cn-form-label">{currentTab.label} Entry</label>
-              <textarea
-                className="cn-textarea"
-                placeholder={`Write your ${currentTab.label.toLowerCase()} notes here…`}
-                value={formValue}
-                onChange={(e) => setFormValue(e.target.value)}
-                rows={7}
-                autoFocus
-              />
-            </div>
-            <div className="cn-modal-footer">
-              <button className="cn-cancel-btn" onClick={closeForm}>
-                Cancel
-              </button>
-              <button
-                className="cn-save-btn"
-                style={{ background: currentTab.color }}
-                onClick={editingEntry ? handleSaveEdit : handleAdd}
-              >
-                <FiCheck size={14} />{" "}
-                {editingEntry ? "Save Changes" : "Add Entry"}
-              </button>
-            </div>
+                    <div
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        backgroundColor: "#4D227C",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {p.firstName[0]}
+                      {p.lastName[0]}
+                    </div>
+                    <span style={{ lineHeight: 1.3 }}>
+                      {p.firstName} {p.mi}. {p.lastName}
+                    </span>
+                    {isActive && (
+                      <span
+                        style={{
+                          marginLeft: "auto",
+                          color: "#4D227C",
+                          fontSize: "16px",
+                        }}
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   CompleteAppointmentModal
-   ✅ Fully matches CreateAppointmentModal design language
+   ServiceCard — matches screenshot design exactly
 ───────────────────────────────────────────────────────────────── */
-function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
-  if (!isOpen || !appt) return null;
+function ServiceCard({ service, selected, onClick, accent = "#4D227C" }) {
+  const isSelected = selected === service.id;
+  return (
+    <div
+      onClick={() => onClick(service.id)}
+      style={{
+        border: isSelected ? `2px solid ${accent}` : "1.5px solid #ddd",
+        borderRadius: "10px",
+        padding: "14px 16px",
+        cursor: "pointer",
+        background: isSelected ? "#f5f0fb" : "#fff",
+        transition: "all 0.15s",
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        position: "relative",
+      }}
+    >
+      {/* Radio circle */}
+      <div
+        style={{
+          width: "20px",
+          height: "20px",
+          borderRadius: "50%",
+          border: isSelected ? `6px solid ${accent}` : "2px solid #bbb",
+          flexShrink: 0,
+          background: "#fff",
+          transition: "all 0.15s",
+          boxSizing: "border-box",
+        }}
+      />
 
-  const isOnline = appt.title?.toLowerCase().includes("online");
-  const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
-  const startTime = toTime12(appt.start);
-  const endTime = toTime12(appt.end);
-  const apptDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const apptDateShort = format(new Date(appt.start), "MMMM dd, yyyy");
+      {/* Title only */}
+      <span
+        style={{
+          fontSize: "13.5px",
+          fontWeight: "400",
+          color: "#555",
+          fontFamily: "inherit",
+          flex: 1,
+        }}
+      >
+        {service.title}
+      </span>
 
-  const handleConfirm = () => {
-    onConfirm?.();
-    onClose();
+      {/* Check badge — only when selected */}
+      {isSelected && (
+        <div
+          style={{
+            width: "22px",
+            height: "22px",
+            borderRadius: "50%",
+            background: accent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <FiCheck size={12} color="#fff" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CreateAppointmentModal
+───────────────────────────────────────────────────────────────── */
+function CreateAppointmentModal({
+  isOpen,
+  onClose,
+  onAdd,
+  showReceipt = false,
+}) {
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+  });
+  const [dob, setDob] = useState("");
+  const [selectedService, setSelectedService] = useState(null); // "0" | "1"
+  const [selectedPAE, setSelectedPAE] = useState(null); // PAE sub id
+  const [showPAEPanel, setShowPAEPanel] = useState(false); // collapse after selection
+  const [receiptFile, setReceiptFile] = useState(null);
+  const receiptInputRef = useRef(null);
+
+  const isPAE = selectedService === "1";
+
+  /* Auto-compute age */
+  const computedAge = (() => {
+    if (!dob) return "";
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age >= 0 ? age : "";
+  })();
+
+  /* Auto end time = start + 1 hr */
+  const handleStartTimeChange = (e) => {
+    const startTime = e.target.value;
+    let endTime = "";
+    if (startTime) {
+      const [h, m] = startTime.split(":").map(Number);
+      endTime = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    }
+    setNewEvent({ ...newEvent, startTime, endTime });
   };
+
+  const handleServiceSelect = (id) => {
+    setSelectedService(id);
+    if (id !== "1") {
+      setSelectedPAE(null);
+      setShowPAEPanel(false);
+    } else {
+      setShowPAEPanel(true); // open panel when PAE selected
+    }
+  };
+
+  const handlePAESelect = (id) => {
+    setSelectedPAE(id);
+    setShowPAEPanel(false); // close panel after selection
+  };
+
+  const handleAdd = () => {
+    if (
+      !newEvent.title ||
+      !newEvent.date ||
+      !newEvent.startTime ||
+      !newEvent.endTime
+    ) {
+      alert("Please complete all required fields");
+      return;
+    }
+    const start = new Date(`${newEvent.date}T${newEvent.startTime}`);
+    const end = new Date(`${newEvent.date}T${newEvent.endTime}`);
+    onAdd({ title: newEvent.title, start, end, allDay: false });
+    onClose();
+    setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
+    setDob("");
+    setSelectedService(null);
+    setSelectedPAE(null);
+    setShowPAEPanel(false);
+    setReceiptFile(null);
+  };
+
+  const LabeledInput = ({ label, disabled, children }) => (
+    <div className={styles.labeledField}>
+      <span
+        className={`${styles.fieldLabel} ${disabled ? styles.fieldLabelDisabled : ""}`}
+      >
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+
+  if (!isOpen) return null;
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-        /* ── CAM Footer ── */
-        .cam-footer {
-          flex-shrink: 0;
-          border-top: 2px solid #ede5f7;
-          padding: 16px 24px;
-          background: #fff;
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          gap: 10px;
-          border-radius: 0 0 16px 16px;
-          font-family: 'Poppins', sans-serif;
-        }
-        .cam-cancel-btn {
-          background: #f0ebf7;
-          color: #4D227C;
-          border: 2px solid #c9b8f0;
-          padding: 11px 22px;
-          border-radius: 10px;
-          font-size: 14px;
-          font-weight: 600;
-          font-family: 'Poppins', sans-serif;
-          cursor: pointer;
-          transition: background 0.2s, color 0.2s, border-color 0.2s;
-        }
-        .cam-cancel-btn:hover {
-          background: #4D227C;
-          color: #fff;
-          border-color: #4D227C;
-        }
-        .cam-confirm-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 11px 26px;
-          border-radius: 10px;
-          border: 2px solid #15803d;
-          background: #15803d;
-          color: #fff;
+        .tos-label {
+          font-size: 11px;
           font-weight: 700;
-          font-size: 14px;
-          cursor: pointer;
-          font-family: 'Poppins', sans-serif;
-          transition: background 0.2s, color 0.2s;
+          color: #4D227C;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          box-shadow: 0 4px 14px rgba(21,128,61,0.3);
+          letter-spacing: 0.7px;
+          margin: 0 0 10px;
+          font-family: inherit;
         }
-        .cam-confirm-btn:hover {
-          background: #fff;
-          color: #15803d;
+        .tos-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
         }
-        .cam-confirm-btn:active { transform: translateY(1px); }
-
-        @media (max-width: 768px) {
-          .cam-footer {
-            padding: 14px 16px;
-            border-radius: 0 0 12px 12px;
-            flex-direction: column-reverse;
-            gap: 8px;
-          }
-          .cam-cancel-btn,
-          .cam-confirm-btn {
-            width: 100%;
-            justify-content: center;
-            text-align: center;
-          }
+        /* PAE sub-panel — matches screenshot light blue box */
+        .tos-pae-panel {
+          margin-top: 10px;
+          padding: 14px;
+          background: #e8f4fb;
+          border: 1.5px solid #c5dff0;
+          border-radius: 10px;
+          animation: paeSlideIn 0.2s ease;
+        }
+        @keyframes paeSlideIn {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .tos-pae-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #1d6fa4;
+          text-transform: uppercase;
+          letter-spacing: 0.7px;
+          margin: 0 0 10px;
+          font-family: inherit;
+        }
+        .tos-pae-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          max-height: 280px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+        .tos-pae-cards::-webkit-scrollbar { width: 6px; }
+        .tos-pae-cards::-webkit-scrollbar-track { background: #d0e8f5; border-radius: 10px; }
+        .tos-pae-cards::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
+        .tos-pae-cards { scrollbar-color: #4D227C #d0e8f5; scrollbar-width: thin; }
+        /* PAE cards get white bg inside the blue panel */
+        .tos-pae-cards > div {
+          background: #fff !important;
         }
       `}</style>
 
-      {/* Overlay — matches DayAppointmentsModal */}
-      <div className={styles.overlay} onClick={onClose}>
-        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          {/* Header — purple, Poppins, matches CreateAppointmentModal exactly */}
-          <div className={styles.modalHeader}>
-            <h3 className={styles.modalTitle}>Add Clinical Notes</h3>
-            <div className={styles.modalHeaderRight}>
-              <span className={styles.dateBadge}>{apptDateShort}</span>
-              <button
-                className={styles.closeBtn}
-                onClick={onClose}
-                aria-label="Close"
-              >
+      <div className={styles.backdrop}>
+        <div className={styles.modal}>
+          {/* Header */}
+          <div className={styles.header}>
+            <h2 className={styles.headerTitle}>Create Appointment</h2>
+            <div className={styles.headerRight}>
+              <span className={styles.headerDate}>
+                {newEvent.date
+                  ? format(new Date(newEvent.date + "T00:00:00"), "MMM d, yyyy")
+                  : format(new Date(), "MMM d, yyyy")}
+              </span>
+              <button className={styles.closeBtn} onClick={onClose}>
                 <FiX />
               </button>
             </div>
           </div>
 
-          {/* Scrollable body — purple #f5f0fb bg */}
-          <div className={styles.scrollBody}>
-            {/* ── Appointment info card ── */}
-            <section className={styles.card}>
-              <div className={styles.cardHeader}>Appointment Information</div>
-              <div className={styles.cardBody}>
-                <div className={styles.cardFields}>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Patient Name:</span>
-                    <span className={styles.infoValue}>
-                      {appt.patientName || "—"}
-                    </span>
+          {/* Scrollable Body */}
+          <div className={styles.body}>
+            {/* ▸ Patient Information */}
+            <div className={styles.section}>
+              <h4 className={styles.sectionTitle}>Patient Information</h4>
+
+              <div className={styles.fieldRow}>
+                <input
+                  className={styles.input}
+                  placeholder="Reason for Consultation"
+                />
+              </div>
+
+              <div className={styles.fieldRow}>
+                <PatientDropdown
+                  onSelect={(p) => console.log("Selected:", p)}
+                />
+              </div>
+
+              <div className={styles.grid2}>
+                <input
+                  className={styles.input}
+                  type="date"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                />
+                <input
+                  className={styles.input}
+                  type="text"
+                  disabled
+                  readOnly
+                  value={computedAge !== "" ? `${computedAge} years old` : ""}
+                  placeholder="Age"
+                />
+              </div>
+
+              <div className={styles.grid3}>
+                <select className={styles.select}>
+                  <option value="">Select Sex</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+                <input
+                  className={styles.input}
+                  placeholder="Patient Contact No."
+                />
+                <select className={styles.select}>
+                  <option value="">Civil Status</option>
+                  <option>Single</option>
+                  <option>Married</option>
+                  <option>Annulled</option>
+                  <option>Separated</option>
+                  <option>Widow / Widower</option>
+                  <option>Living-In</option>
+                </select>
+              </div>
+
+              <div className={styles.grid2}>
+                <input
+                  className={styles.input}
+                  placeholder="Full Name of Informant (if not the client)"
+                />
+                <input
+                  className={styles.input}
+                  placeholder="Relation to the Patient"
+                />
+              </div>
+
+              <div className={styles.fieldRow}>
+                <input className={styles.input} placeholder="Address" />
+              </div>
+
+              <div className={styles.radioSection}>
+                <div className={styles.radioGroup}>
+                  <p className={styles.radioGroupLabel}>Patient Type</p>
+                  <div className={styles.radioRow}>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="ptype"
+                        value="existing"
+                        className={styles.radioInput}
+                      />{" "}
+                      Existing Patient
+                    </label>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="ptype"
+                        value="new"
+                        className={styles.radioInput}
+                      />{" "}
+                      New Patient
+                    </label>
                   </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Appointment Date:</span>
-                    <span className={styles.infoValue}>
-                      {apptDate} | {startTime} – {endTime}
-                    </span>
-                  </div>
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Clinic:</span>
-                    <span className={styles.infoValue}>{clinicType}</span>
+                </div>
+                <div className={styles.radioGroup}>
+                  <p className={styles.radioGroupLabel}>
+                    Patient Classification
+                  </p>
+                  <div className={styles.radioRow}>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="class"
+                        value="pwd"
+                        className={styles.radioInput}
+                      />{" "}
+                      PWD
+                    </label>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="class"
+                        value="senior"
+                        className={styles.radioInput}
+                      />{" "}
+                      Senior Citizen
+                    </label>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="class"
+                        value="regular"
+                        className={styles.radioInput}
+                      />{" "}
+                      Regular
+                    </label>
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
 
-            {/* ── Clinical Notes card ── */}
-            <section className={styles.card}>
-              <div className={styles.cardHeader}>Clinical Notes</div>
-              <div style={{ padding: "16px 20px" }}>
-                <ClinicalNotesSection />
+            {/* ▸ Consultation Schedule */}
+            <div className={styles.section}>
+              <h4 className={styles.sectionTitle}>Consultation Schedule</h4>
+
+              <div className={styles.grid3}>
+                <LabeledInput label="Date">
+                  <input
+                    className={styles.input}
+                    type="date"
+                    value={newEvent.date}
+                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, date: e.target.value })
+                    }
+                  />
+                </LabeledInput>
+                <LabeledInput label="Start Time">
+                  <input
+                    className={styles.input}
+                    type="time"
+                    value={newEvent.startTime}
+                    onChange={handleStartTimeChange}
+                  />
+                </LabeledInput>
+                <LabeledInput label="End Time" disabled>
+                  <input
+                    className={styles.input}
+                    type="time"
+                    value={newEvent.endTime}
+                    readOnly
+                    placeholder="--:--"
+                  />
+                </LabeledInput>
               </div>
-            </section>
+
+              <div
+                className={styles.radioGroup}
+                style={{ marginBottom: "14px" }}
+              >
+                <p className={styles.radioGroupLabel}>Visit Type</p>
+                <div className={styles.radioRow}>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="visit"
+                      value="onsite"
+                      className={styles.radioInput}
+                    />{" "}
+                    Onsite Consultation
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="visit"
+                      value="virtual"
+                      className={styles.radioInput}
+                    />{" "}
+                    Virtual Consultation
+                  </label>
+                </div>
+              </div>
+
+              <hr className={styles.divider} />
+
+              {/* ── Type of Service ── */}
+              <p className="tos-label">Type of Service</p>
+              <div className="tos-cards">
+                {SERVICES.map((svc) => (
+                  <ServiceCard
+                    key={svc.id}
+                    service={svc}
+                    selected={selectedService}
+                    onClick={handleServiceSelect}
+                    accent="#4D227C"
+                  />
+                ))}
+              </div>
+
+              {/* ── PAE Purpose sub-panel (animated slide-in) ── */}
+              {isPAE && showPAEPanel && (
+                <div className="tos-pae-panel">
+                  <p className="tos-pae-header">
+                    <FiChevronRight size={13} /> Purpose of Assessment
+                  </p>
+                  <div className="tos-pae-cards">
+                    {PAE_SERVICES.map((pae) => (
+                      <ServiceCard
+                        key={pae.id}
+                        service={pae}
+                        selected={selectedPAE}
+                        onClick={handlePAESelect}
+                        accent="#1d6fa4"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ▸ Payment Status */}
+            <div className={styles.section}>
+              <h4 className={styles.sectionTitle}>Payment Status</h4>
+              <div className={styles.fieldRow}>
+                <select className={styles.select}>
+                  <option value="">Select Payment Status</option>
+                  <option value="paid">Paid</option>
+                  <option value="not_paid">Not Paid</option>
+                  <option value="probono">Probono</option>
+                </select>
+              </div>
+
+              {showReceipt && (
+                <>
+                  <div className={styles.uploadLabel}>Upload Receipt</div>
+                  <div
+                    className={styles.uploadZone}
+                    onClick={() => receiptInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file) setReceiptFile(file);
+                    }}
+                  >
+                    <input
+                      ref={receiptInputRef}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) setReceiptFile(file);
+                      }}
+                    />
+                    {receiptFile ? (
+                      <div className={styles.uploadedFile}>
+                        <FiFile className={styles.uploadedFileIcon} />
+                        <span className={styles.uploadedFileName}>
+                          {receiptFile.name}
+                        </span>
+                        <button
+                          className={styles.uploadedFileRemove}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setReceiptFile(null);
+                            if (receiptInputRef.current)
+                              receiptInputRef.current.value = "";
+                          }}
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.uploadPlaceholder}>
+                        <FiUpload className={styles.uploadIcon} />
+                        <span className={styles.uploadText}>
+                          Click or drag &amp; drop to upload receipt
+                        </span>
+                        <span className={styles.uploadHint}>
+                          Supports JPG, PNG, PDF
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Footer — matches CreateAppointmentModal footer */}
-          <div className="cam-footer">
-            <button className="cam-cancel-btn" onClick={onClose}>
+          {/* Footer */}
+          <div className={styles.footer}>
+            <button className={styles.btnCancel} onClick={onClose}>
               Cancel
             </button>
-            <button className="cam-confirm-btn" onClick={handleConfirm}>
-              <FiCheck size={15} /> Mark as Completed
+            <button className={styles.btnAdd} onClick={handleAdd}>
+              Add Appointment
             </button>
           </div>
         </div>
@@ -754,4 +834,4 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   );
 }
 
-export default CompleteAppointmentModal;
+export default CreateAppointmentModal;
