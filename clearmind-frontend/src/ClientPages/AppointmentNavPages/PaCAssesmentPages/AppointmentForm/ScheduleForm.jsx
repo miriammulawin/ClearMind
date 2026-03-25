@@ -2,11 +2,12 @@
 // Step 1 of the appointment booking flow.
 // Calendar + time picker are now delegated to SelectDateAndTime.jsx.
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { FaVideo, FaHome } from 'react-icons/fa';
 import styles from '../../../ClientStyle/ScheduleForm.module.css';
 
 import SelectDateAndTime, { getEndTime } from '../../AppointmentComponents/SelectDateandTime';
+import SetAppointmentFormHeader from './SetAppointmentFormHeader'; // ← adjust path as needed
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getDayMode = (dateSlot, doctorData) => {
@@ -29,6 +30,8 @@ const ScheduleForm = ({
   selectedTime,
   setSelectedTime,
   consultationFee,
+  currentStep,   // ← new prop (pass 1 for the Schedule tab)
+  onBack,        // ← new prop
 }) => {
 
   // ── Derive available modes from doctor data ──────────────────
@@ -60,6 +63,13 @@ const ScheduleForm = ({
 
   return (
     <>
+      {/* ── Form Header (sticky): back btn, doctor strip, stepper, progress bar ── */}
+      <SetAppointmentFormHeader
+        doctorData={doctorData}
+        currentStep={currentStep ?? 1}
+        onBack={onBack}
+      />
+
       {/* ── Consultation Mode ── */}
       <div className={styles.section}>
         <p className={styles.sectionTitle}>
