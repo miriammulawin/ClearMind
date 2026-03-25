@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DoctorSidebar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorPatient.module.css";
+import styles from "./DoctorStyle/DoctorPatient.module.css";
 import {
   FiX,
   FiCheck,
@@ -157,10 +157,8 @@ function DoctorPatient() {
   ]);
 
   const [progressionDraft, setProgressionDraft] = useState("");
-
   const rowsPerPage = 4;
 
-  // ── Filter by patient type ──
   const filteredList =
     patientTypeFilter === "all"
       ? patientList
@@ -204,13 +202,11 @@ function DoctorPatient() {
     setProgressionDraft("");
   };
 
-  // ── Open Clinical Notes Modal ──
   const handleOpenClinical = (row) => {
     setClinicalModalPatient(row);
     setShowClinicalModal(true);
   };
 
-  // ── Badge helpers ──
   const getStatusBadgeStyle = (status) => {
     switch (status?.toLowerCase()) {
       case "completed":
@@ -261,14 +257,13 @@ function DoctorPatient() {
         <div className="doctor-content" style={{ padding: "20px" }}>
           <div className="patient-card">
             {/* ── Tab + Filter Row ── */}
-            <div className="patient-tabs-row">
-              <div className="patient-tabs">
-                <button className="tab-active">
+            <div className={styles.patientTabsRow}>
+              <div className={styles.patientTabs}>
+                <button className={styles.tabActive}>
                   Total's Patients <span>{patientList.length}</span>
                 </button>
               </div>
-
-              <div className="patient-filter-dropdown">
+              <div className={styles.patientFilterDropdown}>
                 <FiFilter size={13} />
                 <select value={patientTypeFilter} onChange={handleFilterChange}>
                   <option value="all">All Patients</option>
@@ -279,8 +274,8 @@ function DoctorPatient() {
             </div>
 
             {/* ── Table ── */}
-            <div className="patient-table-wrapper">
-              <table className="patient-table">
+            <div className={styles.patientTableWrapper}>
+              <table className={styles.patientTable}>
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -315,11 +310,7 @@ function DoctorPatient() {
                         <td>{row.name}</td>
                         <td>
                           <span
-                            className={`patient-type-badge ${
-                              row.patientType === "New Patient"
-                                ? "badge-new"
-                                : "badge-existing"
-                            }`}
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                           >
                             {row.patientType}
                           </span>
@@ -329,20 +320,20 @@ function DoctorPatient() {
                         <td>{row.address}</td>
                         <td>
                           <span
-                            className={`status ${row.status.toLowerCase()}`}
+                            className={`${styles.status} ${styles[row.status.toLowerCase()]}`}
                           >
                             {row.status}
                           </span>
                         </td>
                         <td>
                           <button
-                            className="btn-view"
+                            className={styles.btnView}
                             onClick={() => handleView(row)}
                           >
                             View
                           </button>
                           <button
-                            className="btn-confirm"
+                            className={styles.btnConfirm}
                             style={{
                               height: 32,
                               width: "auto",
@@ -382,7 +373,7 @@ function DoctorPatient() {
             </div>
 
             {/* ── Pagination ── */}
-            <div className="pagination">
+            <div className={styles.pagination}>
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(currentPage - 1)}
@@ -392,7 +383,7 @@ function DoctorPatient() {
               {[...Array(totalPages)].map((_, i) => (
                 <button
                   key={i}
-                  className={currentPage === i + 1 ? "page-active" : ""}
+                  className={currentPage === i + 1 ? styles.pageActive : ""}
                   onClick={() => setCurrentPage(i + 1)}
                 >
                   {i + 1}
@@ -405,7 +396,7 @@ function DoctorPatient() {
                 Next ›
               </button>
             </div>
-            <div className="page-info">
+            <div className={styles.pageInfo}>
               Page {currentPage} of {totalPages || 1}
             </div>
           </div>
@@ -417,53 +408,49 @@ function DoctorPatient() {
       ══════════════════════════════════════ */}
       {showModal && selectedPatient && (
         <div
-          className="patient-modal-overlay"
+          className={styles.patientModalOverlay}
           onClick={() => setShowModal(false)}
         >
           <div
-            className="patient-modal-lg"
+            className={styles.patientModalLg}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="modal-profile-header">
+            <div className={styles.modalProfileHeader}>
               <button
-                className="close-btn profile-close-btn"
+                className={`${styles.closeBtn} ${styles.profileCloseBtn}`}
                 onClick={() => setShowModal(false)}
               >
                 <FiX />
               </button>
-              <div className="modal-profile-row">
+              <div className={styles.modalProfileRow}>
                 <AvatarPlaceholder name={selectedPatient.name} size={68} />
-                <div className="patient-profile-info">
-                  <h3 className="patient-profile-name">
+                <div className={styles.patientProfileInfo}>
+                  <h3 className={styles.patientProfileName}>
                     {selectedPatient.name}
                   </h3>
-                  <p className="patient-profile-contact">
+                  <p className={styles.patientProfileContact}>
                     <FiPhone size={12} style={{ marginRight: 5 }} />
                     {selectedPatient.contact}
                   </p>
-                  <div className="patient-profile-meta">
+                  <div className={styles.patientProfileMeta}>
                     {selectedPatient.age && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.age} yrs
                       </span>
                     )}
                     {selectedPatient.gender && (
-                      <span className="profile-meta-chip">
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.gender}
                       </span>
                     )}
                     {selectedPatient.totalVisits && (
-                      <span className="profile-meta-chip visits">
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
                     <span
-                      className={`patient-type-badge ${
-                        selectedPatient.patientType === "New Patient"
-                          ? "badge-new"
-                          : "badge-existing"
-                      }`}
+                      className={`${styles.patientTypeBadge} ${selectedPatient.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
                       style={{ fontSize: "11px" }}
                     >
                       {selectedPatient.patientType}
@@ -471,7 +458,7 @@ function DoctorPatient() {
                   </div>
                 </div>
                 <button
-                  className="btn-view-profile"
+                  className={styles.btnViewProfile}
                   onClick={() =>
                     navigate(`/doctor/patient-profile/${selectedPatient.id}`, {
                       state: { patient: selectedPatient },
@@ -485,10 +472,10 @@ function DoctorPatient() {
             </div>
 
             {/* Body */}
-            <div className="modal-body">
-              {/* Appointment Details card */}
+            <div className={styles.modalBody}>
+              {/* Appointment Details */}
               <div
-                className="modal-content-card"
+                className={styles.modalContentCard}
                 style={{ marginBottom: "12px" }}
               >
                 <div
@@ -526,57 +513,56 @@ function DoctorPatient() {
                     Appointment Details
                   </h4>
                 </div>
-
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div className={styles.modalTwoCol}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Date</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Date</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.date}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClock />
                     </div>
                     <div>
-                      <span className="modal-info-label">Time</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Time</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.time}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Visit Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Visit Type</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.type}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Status</span>
+                      <span className={styles.modalInfoLabel}>Status</span>
                       <span
-                        className="status-badge"
+                        className={styles.statusBadge}
                         style={getStatusBadgeStyle(selectedPatient.status)}
                       >
                         {selectedPatient.status}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       {selectedPatient.patientType === "Existing Patient" ? (
                         <FiUserCheck />
                       ) : (
@@ -584,14 +570,16 @@ function DoctorPatient() {
                       )}
                     </div>
                     <div>
-                      <span className="modal-info-label">Patient Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>
+                        Patient Type
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.patientType}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       {selectedPatient.consultationMode === "Virtual" ? (
                         <FiMonitor />
                       ) : (
@@ -599,7 +587,7 @@ function DoctorPatient() {
                       )}
                     </div>
                     <div>
-                      <span className="modal-info-label">Mode</span>
+                      <span className={styles.modalInfoLabel}>Mode</span>
                       <span
                         style={getConsultationModeBadge(
                           selectedPatient.consultationMode,
@@ -621,7 +609,7 @@ function DoctorPatient() {
               {selectedPatient.status === "Completed" &&
               selectedPatient.progressionNote ? (
                 <div
-                  className="modal-content-card"
+                  className={styles.modalContentCard}
                   style={{ marginBottom: "12px" }}
                 >
                   <div
@@ -696,7 +684,7 @@ function DoctorPatient() {
                 </div>
               ) : selectedPatient.status !== "Completed" ? (
                 <div
-                  className="modal-content-card"
+                  className={styles.modalContentCard}
                   style={{ marginBottom: "12px" }}
                 >
                   <div
@@ -799,9 +787,9 @@ function DoctorPatient() {
               ) : null}
 
               {/* Payment Details */}
-              <div className="modal-content-card">
+              <div className={styles.modalContentCard}>
                 <button
-                  className="payment-collapse-toggle"
+                  className={styles.paymentCollapseToggle}
                   onClick={() => setPaymentOpen(!paymentOpen)}
                 >
                   <span
@@ -826,13 +814,13 @@ function DoctorPatient() {
                       <FiFileText size={13} color="#fff" />
                     </div>
                     <span
-                      className="modal-section-title"
+                      className={styles.modalSectionTitle}
                       style={{ margin: 0, padding: 0, border: "none" }}
                     >
                       Payment Details
                     </span>
                   </span>
-                  <span className="payment-toggle-icon">
+                  <span className={styles.paymentToggleIcon}>
                     {paymentOpen ? (
                       <FiChevronUp size={18} />
                     ) : (
@@ -844,19 +832,19 @@ function DoctorPatient() {
                   </span>
                 </button>
                 {paymentOpen && (
-                  <div className="payment-collapse-body">
-                    <div className="payment-layout">
-                      <div className="payment-fields">
-                        <div className="modal-info-item">
-                          <div className="modal-info-icon">
+                  <div className={styles.paymentCollapseBody}>
+                    <div className={styles.paymentLayout}>
+                      <div className={styles.paymentFields}>
+                        <div className={styles.modalInfoItem}>
+                          <div className={styles.modalInfoIcon}>
                             <FiFileText />
                           </div>
                           <div>
-                            <span className="modal-info-label">
+                            <span className={styles.modalInfoLabel}>
                               Payment Status
                             </span>
                             <span
-                              className="status-badge"
+                              className={styles.statusBadge}
                               style={{
                                 background: "#dcfce7",
                                 color: "#16a34a",
@@ -872,14 +860,14 @@ function DoctorPatient() {
                           </div>
                         </div>
                       </div>
-                      <div className="payment-proof">
-                        <span className="payment-proof-label">
+                      <div className={styles.paymentProof}>
+                        <span className={styles.paymentProofLabel}>
                           Payment Proof
                         </span>
                         <img
                           src={samplePayment}
                           alt="Payment Proof"
-                          className="payment-proof-img"
+                          className={styles.paymentProofImg}
                           onClick={() => setZoomImage(samplePayment)}
                         />
                       </div>
@@ -890,9 +878,9 @@ function DoctorPatient() {
             </div>
 
             {/* Footer */}
-            <div className="modal-footer">
+            <div className={styles.modalFooter}>
               <button
-                className="btn-view-history"
+                className={styles.btnViewHistory}
                 onClick={() =>
                   navigate(`/doctor/patient-history/${selectedPatient.id}`, {
                     state: { patient: selectedPatient },
@@ -904,7 +892,7 @@ function DoctorPatient() {
               </button>
               {selectedPatient.status !== "Completed" && (
                 <button
-                  className="btn-confirm"
+                  className={styles.btnConfirm}
                   style={{
                     padding: "10px 28px",
                     fontSize: "14px",
@@ -933,7 +921,7 @@ function DoctorPatient() {
       {/* Zoom image */}
       {zoomImage && (
         <div
-          className="patient-modal-overlay"
+          className={styles.patientModalOverlay}
           onClick={() => setZoomImage(null)}
           style={{ cursor: "zoom-out" }}
         >
@@ -962,9 +950,7 @@ function DoctorPatient() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════
-          CLINICAL NOTES MODAL
-      ══════════════════════════════════════ */}
+      {/* Clinical Notes Modal */}
       {showClinicalModal && clinicalModalPatient && (
         <CompleteAppointmentModal
           isOpen={showClinicalModal}
