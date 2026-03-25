@@ -6,8 +6,6 @@
   overflow: hidden;
 }
 
-
-
 /* ═══════════════════════════════════════════
    TABS ROW
 ═══════════════════════════════════════════ */
@@ -39,7 +37,10 @@
   font-weight: 500;
   font-size: 14px;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .tabBtn:hover {
@@ -66,7 +67,7 @@
 }
 
 .tabBadgePending {
-  background: #DC2626 !important;
+  background: #dc2626 !important;
   color: #fff !important;
 }
 
@@ -84,7 +85,10 @@
   font-weight: 500;
   font-size: 14px;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .tabCancelledCount {
@@ -115,13 +119,13 @@
   border: 1px solid #e5d6f5;
   border-radius: 10px;
   padding: 6px 12px;
-  color: #7341A8;
+  color: #7341a8;
 }
 
 .filterDropdown select {
   border: none;
   background: transparent;
-  color: #4D227C;
+  color: #4d227c;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -135,14 +139,13 @@
 .tableWrapper {
   border: 1px solid #eadcf7;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   width: 100%;
 }
 
 .patientTable {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
 }
 
 .patientTable th,
@@ -150,8 +153,6 @@
   padding: 14px 12px;
   font-size: 14px;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -175,9 +176,15 @@
   font-weight: 500;
 }
 
-.statusScheduled { color: #005892; }
-.statusCompleted { color: #22c55e; }
-.statusCancelled { color: #ef4444; }
+.statusScheduled {
+  color: #005892;
+}
+.statusCompleted {
+  color: #22c55e;
+}
+.statusCancelled {
+  color: #ef4444;
+}
 
 /* ═══════════════════════════════════════════
    TABLE BUTTONS
@@ -196,32 +203,35 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
   font-family: inherit;
 }
 
 .btnView {
-  background: #7341A8;
+  background: #7341a8;
   color: #fff;
-  border-color: #7341A8;
+  border-color: #7341a8;
 }
 
 .btnView:hover {
   background: #fff;
-  color: #7341A8;
-  border-color: #7341A8;
+  color: #7341a8;
+  border-color: #7341a8;
 }
 
 .btnConfirm {
-  background: #4A965B;
+  background: #4a965b;
   color: #fff;
-  border-color: #4A965B;
+  border-color: #4a965b;
 }
 
 .btnConfirm:hover:not(:disabled) {
   background: #fff;
-  color: #4A965B;
-  border-color: #4A965B;
+  color: #4a965b;
+  border-color: #4a965b;
 }
 
 .btnConfirm:disabled {
@@ -262,7 +272,7 @@
 
 .badgeExisting {
   background: #ede9f6;
-  color: #4D227C;
+  color: #4d227c;
   border: 1px solid #d8ccf0;
 }
 
@@ -313,13 +323,15 @@
   cursor: pointer;
   font-size: 13px;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .pagination button:hover:not(:disabled) {
-  background: #4D227C;
+  background: #4d227c;
   color: #fff;
-  border-color: #4D227C;
+  border-color: #4d227c;
 }
 
 .pageActive {
@@ -372,13 +384,19 @@
 }
 
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Purple header ── */
 .modalProfileHeader {
-  background: #4D227C;
+  background: #4d227c;
   border-radius: 20px 20px 0 0;
   flex-shrink: 0;
   overflow: hidden;
@@ -460,7 +478,7 @@
   display: inline-flex;
   align-items: center;
   background: #fff;
-  color: #4D227C;
+  color: #4d227c;
   border: none;
   border-radius: 10px;
   padding: 9px 16px;
@@ -469,7 +487,9 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: background 0.2s, transform 0.15s;
+  transition:
+    background 0.2s,
+    transform 0.15s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-family: inherit;
 }
@@ -489,9 +509,16 @@
   padding: 20px 10px 10px 10px;
 }
 
-.modalBody::-webkit-scrollbar { width: 5px; }
-.modalBody::-webkit-scrollbar-track { background: transparent; }
-.modalBody::-webkit-scrollbar-thumb { background: #d8ccf0; border-radius: 10px; }
+.modalBody::-webkit-scrollbar {
+  width: 5px;
+}
+.modalBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modalBody::-webkit-scrollbar-thumb {
+  background: #d8ccf0;
+  border-radius: 10px;
+}
 
 /* ── Content cards ── */
 .modalCard {
@@ -520,7 +547,7 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #7341A8, #4D227C);
+  background: linear-gradient(135deg, #7341a8, #4d227c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -557,7 +584,7 @@
   height: 39px;
   background: #f0e8ff;
   border-radius: 8px;
-  color: #7341A8;
+  color: #7341a8;
   font-size: 17px;
   display: flex;
   align-items: center;
@@ -606,7 +633,7 @@
 }
 
 .paymentToggleTitle {
-  color: #4D227C;
+  color: #4d227c;
   font-size: 17px;
   font-weight: 800;
   margin: 0;
@@ -615,7 +642,7 @@
 .paymentToggleIcon {
   display: flex;
   align-items: center;
-  color: #7341A8;
+  color: #7341a8;
   font-weight: 600;
   font-size: 13px;
   background: #f0e8ff;
@@ -637,8 +664,14 @@
 }
 
 @keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .paymentLayout {
@@ -742,22 +775,26 @@
   justify-content: center;
   gap: 7px;
   padding: 10px 22px;
-  background: #4D227C;
+  background: #4d227c;
   color: #fff;
-  border: 2px solid #4D227C;
+  border: 2px solid #4d227c;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 4px 14px rgba(115, 65, 168, 0.35);
-  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.15s;
 }
 
 .btnViewHistory:hover {
   background: #fff;
-  color: #4D227C;
-  border-color: #4D227C;
+  color: #4d227c;
+  border-color: #4d227c;
   transform: translateY(-1px);
 }
 
@@ -766,20 +803,22 @@
   font-size: 14px;
   font-weight: 700;
   border-radius: 10px;
-  border: 2px solid #4A965B;
-  background: #4A965B;
+  border: 2px solid #4a965b;
+  background: #4a965b;
   color: #fff;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .btnFooterConfirm:hover:not(:disabled) {
   background: #fff;
-  color: #4A965B;
+  color: #4a965b;
 }
 
 .btnFooterConfirm:disabled {
@@ -800,7 +839,9 @@
   align-items: center;
   gap: 6px;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .btnDecline:hover:not(:disabled) {
@@ -941,7 +982,7 @@
 .refundGridItemValue {
   font-size: 16px;
   font-weight: 700;
-  color: #4D227C;
+  color: #4d227c;
 }
 
 .refundWarning {
@@ -969,7 +1010,7 @@
   border-radius: 8px;
   border: 1px solid #e5d6f5;
   background: #f0ebf7;
-  color: #4D227C;
+  color: #4d227c;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1143,10 +1184,10 @@
    PATIENT PROFILE PAGE
 ═══════════════════════════════════════════ */
 .profileContainer {
-  padding: 30px;
-  background: #faf7fd00;
+  padding: 24px;
+  background: #faf7fd;
   min-height: calc(100vh - 60px);
-  
+  box-sizing: border-box;
   overflow-y: auto;
 }
 
@@ -1154,22 +1195,23 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #4D227C;
+  background: #4d227c;
   color: #fff;
-  border: 2px solid #4D227C;
+  border: 2px solid #4d227c;
   padding: 8px 16px;
   border-radius: 8px;
   cursor: pointer;
-  margin-bottom: 20px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .backBtn:hover {
   background: #fff;
-  color: #4D227C;
+  color: #4d227c;
 }
 
 /* ── Profile info card ── */
@@ -1189,16 +1231,16 @@
 }
 
 .profileAvatar {
-  width: 250px;
-  height: 250px;
+  width: 180px;
+  height: 180px;
   border-radius: 20px;
   background: #f4f0fa;
-  border: 4px solid #4D227C;
+  border: 4px solid #4d227c;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  color: #4D227C;
+  color: #4d227c;
   box-shadow: 0 8px 24px rgba(77, 34, 124, 0.15);
   flex-shrink: 0;
 }
@@ -1270,7 +1312,7 @@
   border: 1.5px solid #e5d6f5;
   border-bottom: none;
   background: #faf7fd;
-  color: #7341A8;
+  color: #7341a8;
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -1282,7 +1324,7 @@
 
 .clinicalTabBtn:hover:not(.clinicalTabActive) {
   background: #f0e8ff;
-  color: #4D227C;
+  color: #4d227c;
 }
 
 .clinicalTabActive {
@@ -1312,7 +1354,9 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: filter 0.2s, transform 0.15s;
+  transition:
+    filter 0.2s,
+    transform 0.15s;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
   margin-bottom: 6px;
 }
@@ -1349,7 +1393,7 @@
 .clinicalEntryCard {
   border-radius: 12px;
   border: 1px solid #ede9f6;
-  border-left: 4px solid #4D227C;
+  border-left: 4px solid #4d227c;
   background: #faf8fc;
   padding: 16px 18px;
   transition: box-shadow 0.2s;
@@ -1421,7 +1465,9 @@
   border-color: #bfdbfe;
 }
 
-.clinicalEditBtn:hover { background: #dbeafe; }
+.clinicalEditBtn:hover {
+  background: #dbeafe;
+}
 
 .clinicalDeleteBtn {
   background: #fff5f5;
@@ -1429,7 +1475,9 @@
   border-color: #fecaca;
 }
 
-.clinicalDeleteBtn:hover { background: #fee2e2; }
+.clinicalDeleteBtn:hover {
+  background: #fee2e2;
+}
 
 .clinicalEntryContent {
   font-size: 13.5px;
@@ -1484,7 +1532,7 @@
 }
 
 .clinicalModalCloseBtn {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   border: none;
   cursor: pointer;
   width: 28px;
@@ -1499,7 +1547,9 @@
   padding: 0;
 }
 
-.clinicalModalCloseBtn:hover { background: rgba(255,255,255,0.35); }
+.clinicalModalCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
 
 .clinicalModalBody {
   padding: 24px;
@@ -1510,7 +1560,7 @@
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #4D227C;
+  color: #4d227c;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -1527,12 +1577,14 @@
   resize: vertical;
   box-sizing: border-box;
   line-height: 1.65;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   background: #fff;
 }
 
 .clinicalTextarea:focus {
-  border-color: #4D227C;
+  border-color: #4d227c;
   box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
   outline: none;
 }
@@ -1551,17 +1603,19 @@
   border-radius: 10px;
   border: 2px solid #e5d6f5;
   background: #f0ebf7;
-  color: #4D227C;
+  color: #4d227c;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
 .clinicalCancelBtn:hover {
   background: #e5d6f5;
-  border-color: #4D227C;
+  border-color: #4d227c;
 }
 
 .clinicalSaveBtn {
@@ -1576,7 +1630,9 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: filter 0.2s, transform 0.15s;
+  transition:
+    filter 0.2s,
+    transform 0.15s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -1611,7 +1667,7 @@
   text-align: left;
   padding: 12px 14px;
   background: #faf7fd;
-  color: #4D227C;
+  color: #4d227c;
   font-weight: 700;
   font-size: 13px;
   border-bottom: 2px solid #e5d6f5;
@@ -1656,19 +1712,21 @@
   width: 70px;
   height: 30px;
   border-radius: 8px;
-  border: 1.5px solid #7341A8;
-  background: #7341A8;
+  border: 1.5px solid #7341a8;
+  background: #7341a8;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .historyViewBtn:hover {
   background: #fff;
-  color: #7341A8;
+  color: #7341a8;
 }
 
 /* ── Appointment detail modal close btn ── */
@@ -1678,34 +1736,68 @@
   font-weight: 600;
   border-radius: 10px;
   background: #f0ebf7;
-  color: #4D227C;
+  color: #4d227c;
   border: 2px solid #e5d6f5;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .apptCloseBtn:hover {
-  background: #4D227C;
+  background: #4d227c;
   color: #fff;
-  border-color: #4D227C;
+  border-color: #4d227c;
 }
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .profileContainer { padding: 12px; }
-  .profileCard { padding: 18px; }
-  .profileLayout { flex-direction: column; align-items: center; gap: 20px; }
-  .profileAvatar { width: 140px; height: 140px; }
-  .profileDetails { width: 100%; }
-  .historyCard { padding: 16px; }
-  .historyTable th, .historyTable td { padding: 10px 8px; font-size: 12px; }
-  .clinicalTabsBar { padding: 14px 14px 0 14px; }
-  .clinicalEntries { padding: 14px; }
+  .profileContainer {
+    padding: 12px;
+  }
+  .profileCard {
+    padding: 18px;
+  }
+  .profileLayout {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .profileAvatar {
+    width: 140px;
+    height: 140px;
+  }
+  .profileDetails {
+    width: 100%;
+  }
+  .historyCard {
+    padding: 16px;
+  }
+  .historyTable th,
+  .historyTable td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+  .clinicalTabsBar {
+    padding: 14px 14px 0 14px;
+  }
+  .clinicalEntries {
+    padding: 14px;
+  }
 }
 
 @media (max-width: 480px) {
-  .clinicalTabs { flex-wrap: wrap; }
-  .clinicalTabBtn { font-size: 12px; padding: 7px 10px; }
-  .historyTable { font-size: 12px; }
+  .clinicalTabs {
+    flex-wrap: wrap;
+  }
+  .clinicalTabBtn {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+  .historyTable {
+    font-size: 12px;
+  }
 }
+

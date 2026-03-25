@@ -626,9 +626,9 @@ CREATE APPOINTMENT MODAL */
 
 /* ── Add / Submit button ── */
 .btnAdd {
-  background: #1f6aa5;
+  background:  #4d227c;
   color: #fff;
-  border: 2px solid #1f6aa5;
+  border: 2px solid #4d227c;
   padding: 11px 32px;
   border-radius: 10px;
   font-size: 14px;
@@ -636,13 +636,13 @@ CREATE APPOINTMENT MODAL */
   font-family: 'Poppins', sans-serif;
   cursor: pointer;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 14px rgba(31, 106, 165, 0.3);
+
   transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
 }
 
 .btnAdd:hover {
   background: #fff;
-  color: #1f6aa5;
+  color: #4d227c;
   box-shadow: 0 4px 14px rgba(31, 106, 165, 0.15);
 }
 
@@ -665,9 +665,9 @@ CREATE APPOINTMENT MODAL */
 }
 
 .btnCancel:hover {
-  background: #4D227C;
+ background: #4d227c;
   color: #fff;
-  border-color: #4D227C;
+  border-color: #4d227c;
 }
 
 /* ══════════════════════════════════════════════

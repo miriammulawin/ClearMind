@@ -7,7 +7,9 @@ import Swal from "sweetalert2";
 import axios from "axios";
 
 import "../../index.css";
-import "../DoctorStyle/NotificationModal.module.css";
+
+import styles from "../DoctorStyle/DoctorTopNavbar.module.css";
+import "../DoctorStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
 function DoctorTopNavbar({ activeMenu }) {
@@ -138,26 +140,26 @@ function DoctorTopNavbar({ activeMenu }) {
   };
 
   return (
-    <div className="top-navbar">
-      <div className="top-navbar-left">
+    <div className={styles.topNavbar}>
+      <div className={styles.topNavbarLeft}>
         <h3>{activeMenu}</h3>
       </div>
 
-      <div className="top-navbar-right">
+      <div className={styles.topNavbarRight}>
         <AiFillMessage
-          className="top-icon"
+          className={styles.topIcon}
           onClick={() => navigate("/doctor/messages")}
           style={{ cursor: "pointer" }}
         />
 
-        <div className="notification-container">
+        <div className={styles.notificationContainer}>
           <IoNotifications
-            className="top-icon"
+            className={styles.topIcon}
             onClick={() => setShowNotifications(!showNotifications)}
             style={{ cursor: "pointer" }}
           />
           {unreadCount > 0 && (
-            <span className="notification-badge">{unreadCount}</span>
+            <span className={styles.notificationBadge}>{unreadCount}</span>
           )}
 
           {showNotifications && (
@@ -194,9 +196,7 @@ function DoctorTopNavbar({ activeMenu }) {
                     notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`notification-item ${
-                          !notif.isRead ? "unread" : ""
-                        }`}
+                        className={`notification-item ${!notif.isRead ? "unread" : ""}`}
                         onClick={() => markAsRead(notif.id)}
                       >
                         <div className="notification-icon">
@@ -241,19 +241,18 @@ function DoctorTopNavbar({ activeMenu }) {
           )}
         </div>
 
-        <div className="search-box">
+        <div className={styles.searchBox}>
           <input type="text" placeholder="Search" />
-          <FiSearch className="search-icon" />
+          <FiSearch className={styles.searchIcon} />
         </div>
 
         <FiLogOut
-          className="top-icon"
+          className={styles.topIcon}
           style={{ cursor: "pointer" }}
           onClick={handleLogout}
         />
       </div>
 
-      {/* All Notifications Modal */}
       {showAllNotifications && (
         <AllNotifications
           onClose={() => setShowAllNotifications(false)}

@@ -1,0 +1,314 @@
+/* ClientAppointmentServices.css */
+.appointment-services-container {
+  /* max-height: 84%; */
+  max-width: 768px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  height: calc(100vh - 230px); 
+  margin-bottom: 30px;
+}
+
+.services-heading {
+  color: #4E237C;
+  font-weight: bold;
+  margin: 25px;
+  font-size: 1.5rem;
+}
+
+.scrollable-body {
+  background-color: transparent;
+  flex: 1;
+  overflow-y: auto;
+  background-color: transparent; ;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding-right: 22px !important; /* Add space for scrollbar */
+}
+
+/* Custom Scrollbar */
+.scrollable-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-body::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.scrollable-body::-webkit-scrollbar-thumb {
+  background: #aa80d4;
+  border-radius: 10px;
+}
+
+.scrollable-body::-webkit-scrollbar-thumb:hover {
+  background: #aa80d4;
+}
+
+.appointment-services-container .accordion-item {
+  border: none !important;
+  border-bottom: 3px solid #4E237C !important;
+  border-radius: 15px !important;
+  margin-bottom: 12px !important;
+  overflow: hidden;
+}
+
+.accordion-header-custom {
+  padding: 12px 16px;
+}
+
+.accordion-title {
+  color: #4E237C;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.accordion-body-custom {
+  background-color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.service-description {
+  color: #495057;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.appointment-services-container .continue-button {
+  background-color: #4E237C;
+  max-width: min-content;
+  border: none;
+  border-radius: 20px;
+  padding: 10px 32px;
+  font-weight: bold;
+  width: 100%;
+  font-size: 14px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.3s ease;
+  box-shadow: none !important;
+}
+
+.appointment-services-container .continue-button:hover {
+  background-color: #5B2C91;
+  color: white;
+}
+
+.appointment-services-container .continue-button:active,
+.appointment-services-container .continue-button:focus,
+.appointment-services-container .continue-button:focus-visible,
+.appointment-services-container .continue-button:active:focus {
+  background-color: #4E237C;
+  color: white;
+  box-shadow: none !important;
+  outline: none;
+}
+.bottom-navigation {
+  background-color: white;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Remove the blue border and box-shadow completely */
+.accordion-button:not(.collapsed) {
+  background-color: #f0ebf8 !important;
+  color: #2d1b69 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Remove focus outline and border */
+.accordion-button:focus {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+/* Remove active state border */
+.accordion-button:active {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Remove any transition effects on the border */
+.accordion-button {
+  box-shadow: none !important;
+  border: none !important;
+  transition: background-color 0.3s ease !important;
+}
+
+/* Remove the inset shadow from accordion items */
+.accordion-item {
+  box-shadow: none !important;
+  
+}
+
+.accordion-item:focus-within {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Remove collapse transition shadow */
+.accordion-collapse {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* responsive */
+/* Mobile-specific styles */
+@media (max-width: 576px) {
+  .appointment-services-container {
+    margin: auto;
+    max-width: 450px;
+    height: 87.5%;
+  }
+  
+  .scrollable-body {
+    /* padding: 16px 12px; */
+    margin-top: -5px;
+    padding-right: 20px !important; /* Adjust for mobile scrollbar */
+  }
+  
+  /* Mobile scrollbar */
+  .scrollable-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .services-heading {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  
+  .accordion-item-custom {
+    border-radius: 6px;
+  }
+  
+  .accordion-header-custom {
+    padding: 10px 12px;
+  }
+  
+  .accordion-title {
+    font-size: 16px;
+  }
+  
+  .accordion-body-custom {
+    padding: 16px 12px;
+  }
+  
+  .service-description {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .continue-button {
+    padding: 12px 24px;
+    font-size: 13px;
+    border-radius: 18px;
+  }
+}
+
+/* Extra small phones (iPhone SE, etc.) */
+@media (max-width: 376px) {
+  .appointment-services-container {
+    height: 84%;
+  }
+  
+  .scrollable-body {
+    padding: 12px 10px;
+  }
+  
+  .services-heading {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  
+  .accordion-title {
+    font-size: 16px;
+  }
+  
+  .service-description {
+    font-size: 14px;
+  }
+  
+  .continue-button {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 577px) and (max-width: 767px) {
+  .scrollable-body {
+    padding: 20px 18px;
+  }
+  
+  .services-heading {
+    font-size: 1.4rem;
+  }
+  
+  .accordion-title {
+    font-size: 14px;
+  }
+}
+
+/* Desktop and larger tablets */
+@media (min-width: 768px) {
+  .appointment-services-container {
+    margin: 0 auto;
+  }
+  
+  .scrollable-body {
+    padding: 28px 24px;
+  }
+  
+  .services-heading {
+    font-size: 1.75rem;
+  }
+  
+  .accordion-title {
+    font-size: 15px;
+  }
+  
+  .continue-button {
+    font-size: 15px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .scrollable-body {
+    padding: 12px 16px;
+  }
+  
+  .services-heading {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .accordion-item-custom {
+    margin-bottom: 8px;
+  }
+  
+  .bottom-navigation {
+    padding: 6px 0;
+  }
+}
+
+/* Safe area support for notched devices (iPhone X and newer) */
+@supports (padding: max(0px)) {
+  .scrollable-body {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+  }
+  
+  .bottom-navigation {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}

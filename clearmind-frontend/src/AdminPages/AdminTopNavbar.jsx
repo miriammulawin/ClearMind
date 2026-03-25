@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import axios from "axios";
 
-import "../index.css";
+import styles from "./AdminStyle/AdminTopNavbar.module.css";
 import "./AdminStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
@@ -138,26 +138,26 @@ function AdminTopNavbar({ activeMenu }) {
   };
 
   return (
-    <div className="top-navbar">
-      <div className="top-navbar-left">
+    <div className={styles.topNavbar}>
+      <div className={styles.topNavbarLeft}>
         <h3>{activeMenu}</h3>
       </div>
 
-      <div className="top-navbar-right">
+      <div className={styles.topNavbarRight}>
         <AiFillMessage
-          className="top-icon"
+          className={styles.topIcon}
           onClick={() => navigate("/admin/messages")}
           style={{ cursor: "pointer" }}
         />
 
-        <div className="notification-container">
+        <div className={styles.notificationContainer}>
           <IoNotifications
-            className="top-icon"
+            className={styles.topIcon}
             onClick={() => setShowNotifications(!showNotifications)}
             style={{ cursor: "pointer" }}
           />
           {unreadCount > 0 && (
-            <span className="notification-badge">{unreadCount}</span>
+            <span className={styles.notificationBadge}>{unreadCount}</span>
           )}
 
           {showNotifications && (
@@ -194,9 +194,7 @@ function AdminTopNavbar({ activeMenu }) {
                     notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`notification-item ${
-                          !notif.isRead ? "unread" : ""
-                        }`}
+                        className={`notification-item ${!notif.isRead ? "unread" : ""}`}
                         onClick={() => markAsRead(notif.id)}
                       >
                         <div className="notification-icon">
@@ -241,13 +239,13 @@ function AdminTopNavbar({ activeMenu }) {
           )}
         </div>
 
-        <div className="search-box">
+        <div className={styles.searchBox}>
           <input type="text" placeholder="Search" />
-          <FiSearch className="search-icon" />
+          <FiSearch className={styles.searchIcon} />
         </div>
 
         <FiLogOut
-          className="top-icon"
+          className={styles.topIcon}
           style={{ cursor: "pointer" }}
           onClick={handleLogout}
         />

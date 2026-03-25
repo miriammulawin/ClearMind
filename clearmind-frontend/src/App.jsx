@@ -29,6 +29,24 @@ import AdminAppointment from "./AdminPages/AdminAppointment";
 import AdminBilling from "./AdminPages/AdminBilling";
 import AdminPatientProfile from "./AdminPages/AdminPatientProfile";
 
+import ClientHome from "./ClientPages/ClientHome";
+import ClientAppointment from "./ClientPages/ClientAppointment";
+import ServicesTab from "./ClientPages/AppointmentNavPages/ServicesTab";
+import PendingTab from "./ClientPages/AppointmentNavPages/PendingTab";
+import ScheduleTab from "./ClientPages/AppointmentNavPages/ScheduleTab";
+import HistoryTab from "./ClientPages/AppointmentNavPages/HistoryTab";
+import ClientMessages from "./ClientPages/ClientMessages";
+import ClientProfile from "./ClientPages/ClientProfile";
+import Help from "./ClientPages/ClientComponents/Help";
+import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndConditions";
+import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
+import About from "./ClientPages/ClientComponents/About";
+import AppointmentDetails from "./ClientPages/AppointmentNavPages/AppointmentComponents/AppointmentDetails";
+import PACAppointment from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/PACAppointment";
+import PACSetAppointmentForm from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/AppointmentForm/PACSetAppointmentForm";
+import PAEAppointment from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/PAaEAppointment";
+import PAaESetAppointmentForm from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/AppointmentForm/PAaESetAppoitnmentForm";
+
 function App() {
   return (
     <>
@@ -61,6 +79,47 @@ function App() {
             element={<DoctorPatientProfile />}
           />
           <Route path="/doctor/schedule" element={<DoctorSchedule />} />
+
+          <Route path="/client/home" element={<ClientHome />} />
+
+          <Route path="/client/appointment" element={<ClientAppointment />}>
+            <Route index element={<Navigate to="services" replace />} />
+            <Route path="services" element={<ServicesTab />} />
+
+            <Route
+              path="psychotherapy-and-counseling"
+              element={<PACAppointment />}
+            >
+              <Route
+                path="set-appointment-form"
+                element={<PACSetAppointmentForm />}
+              />
+            </Route>
+
+            <Route path="psychological-assessment" element={<PAEAppointment />}>
+              <Route
+                path="set-appointment-form"
+                element={<PAaESetAppointmentForm />}
+              />
+            </Route>
+
+            <Route path="pending" element={<PendingTab />} />
+            <Route path="upcoming" element={<ScheduleTab />} />
+            <Route path="history" element={<HistoryTab />} />
+            <Route path="upcoming/:id" element={<AppointmentDetails />} />
+            <Route path="details/:id" element={<AppointmentDetails />} />
+          </Route>
+          <Route path="/client/messages" element={<ClientMessages />} />
+          <Route path="/client/profile" element={<ClientProfile />} />
+
+          {/* New Routes for Profile Menu Items */}
+          <Route path="/client/help" element={<Help />} />
+          <Route
+            path="/client/terms-and-conditions"
+            element={<TermsAndConditions />}
+          />
+          <Route path="/client/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/client/about" element={<About />} />
         </Routes>
       </Router>
     </>

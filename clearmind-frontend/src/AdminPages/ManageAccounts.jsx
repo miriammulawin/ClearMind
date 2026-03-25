@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
-import "./AdminStyle/ManageAccounts.css";
+import styles from "./AdminStyle/ManageAccounts.module.css";
 import { FiX } from "react-icons/fi";
 
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   const [users, setUsers] = useState([
@@ -22,7 +22,7 @@ function ManageAccounts() {
       email_address: "miriam.mulawin@gmail.com",
       phone: "+63 917 123 4567",
       description:
-        "Licensed clinical psychologist specializing in cognitive-behavioral therapy and trauma-informed care. Dedicated to supporting patients through anxiety, depression, and emotional regulation challenges with a compassionate, evidence-based approach.",
+        "Licensed clinical psychologist specializing in cognitive-behavioral therapy and trauma-informed care.",
       professional_title: "Clinical Psychologist",
       years_of_experience: 12,
       license_number: "LIC-2012-45678",
@@ -48,7 +48,7 @@ function ManageAccounts() {
       email_address: "liezel.reyes@hospital.com",
       phone: "+63 918 987 6543",
       description:
-        "Board-certified psychologist with expertise in child and adolescent psychology and developmental behavioral assessments. Committed to fostering mental well-being among young patients through play therapy and family-centered interventions.",
+        "Board-certified psychologist with expertise in child and adolescent psychology and developmental behavioral assessments.",
       professional_title: "Psychologist",
       years_of_experience: 8,
       license_number: "LIC-2016-78901",
@@ -76,16 +76,14 @@ function ManageAccounts() {
   const handleRoleChange = (userId, role) => {
     setUsers(
       users.map((user) => {
-        if (user.doctors_id === userId) {
-          const hasRole = user.roles.includes(role);
-          return {
-            ...user,
-            roles: hasRole
-              ? user.roles.filter((r) => r !== role)
-              : [...user.roles, role],
-          };
-        }
-        return user;
+        if (user.doctors_id !== userId) return user;
+        const hasRole = user.roles.includes(role);
+        return {
+          ...user,
+          roles: hasRole
+            ? user.roles.filter((r) => r !== role)
+            : [...user.roles, role],
+        };
       }),
     );
   };
@@ -100,19 +98,22 @@ function ManageAccounts() {
       <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
-        <div className="admin-content" style={{ padding: "20px" }}>
-          <div className="manage-accounts-header">
-            <h3 className="manage-accounts-title">Manage Account</h3>
+
+        <div className={`admin-content ${styles.page}`}>
+          {/* Header */}
+          <div className={styles.header}>
+            <h3 className={styles.title}>Manage Accounts</h3>
             <button
-              className="btn-create"
-              onClick={() => setShowDoctorModal(true)}
+              className={styles.btnCreate}
+              onClick={() => setShowCreateModal(true)}
             >
               + Create Account
             </button>
           </div>
 
-          <div className="table-container">
-            <table className="account-table">
+          {/* Table */}
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Email</th>
@@ -139,7 +140,7 @@ function ManageAccounts() {
                     ))}
                     <td>
                       <button
-                        className="btn-view"
+                        className={styles.btnView}
                         onClick={() => handleViewAccount(user)}
                       >
                         View
@@ -153,186 +154,188 @@ function ManageAccounts() {
         </div>
       </div>
 
-      {/* ── Create Doctor Account Modal ── */}
-      {showDoctorModal && (
+      {/* ════════════════════════════
+          CREATE ACCOUNT MODAL
+      ════════════════════════════ */}
+      {showCreateModal && (
         <div
-          className="doctor-modal-overlay"
-          onClick={() => setShowDoctorModal(false)}
+          className={styles.overlay}
+          onClick={() => setShowCreateModal(false)}
         >
-          <div className="doctor-modal-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="doctor-modal-header">
+          <div
+            className={styles.createModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.createHeader}>
               <h2>Create Doctor Account</h2>
               <button
-                className="doctor-close-btn"
-                onClick={() => setShowDoctorModal(false)}
+                className={styles.closeBtn}
+                onClick={() => setShowCreateModal(false)}
               >
                 <FiX />
               </button>
             </div>
 
-            <div className="doctor-modal-body">
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="row g-3">
-                  <div className="col-md-4">
-                    <label className="form-label">First Name</label>
+            <div className={styles.createBody}>
+              <div className={styles.formCard}>
+                <div className={styles.formGrid}>
+                  <label
+                    className={styles.formLabel}
+                    style={{ gridColumn: "1" }}
+                  >
+                    First Name
                     <input
                       type="text"
-                      className="form-control input-violet"
+                      className={styles.formInput}
                       placeholder="e.g. Maria"
                     />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Last Name</label>
+                  </label>
+                  <label className={styles.formLabel}>
+                    Last Name
                     <input
                       type="text"
-                      className="form-control input-violet"
+                      className={styles.formInput}
                       placeholder="e.g. Santos"
                     />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">M.I.</label>
+                  </label>
+                  <label className={styles.formLabel}>
+                    M.I.
                     <input
                       type="text"
-                      className="form-control input-violet"
+                      className={styles.formInput}
                       placeholder="e.g. B"
                       maxLength={1}
                     />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Sex</label>
-                    <select className="form-select input-violet">
+                  </label>
+                  <label className={styles.formLabel}>
+                    Sex
+                    <select className={styles.formInput}>
                       <option value="">Select Sex</option>
                       <option>Female</option>
                       <option>Male</option>
                     </select>
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Date of Birth</label>
-                    <input type="date" className="form-control input-violet" />
-                  </div>
-                  <div className="col-md-4">
-                    <label className="form-label">Email Address</label>
+                  </label>
+                  <label className={styles.formLabel}>
+                    Date of Birth
+                    <input type="date" className={styles.formInput} />
+                  </label>
+                  <label className={styles.formLabel}>
+                    Email Address
                     <input
                       type="email"
-                      className="form-control input-violet"
-                      placeholder="e.g. doctor@email.com"
+                      className={styles.formInput}
+                      placeholder="doctor@email.com"
                     />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Contact Number</label>
+                  </label>
+                  <label className={`${styles.formLabel} ${styles.col2}`}>
+                    Contact Number
                     <input
                       type="tel"
-                      className="form-control input-violet"
+                      className={styles.formInput}
                       placeholder="e.g. 09123456789"
                     />
-                  </div>
-                  <div className="col-md-6">
-                    <label className="form-label">Address</label>
+                  </label>
+                  <label className={styles.formLabel}>
+                    Address
                     <input
                       type="text"
-                      className="form-control input-violet"
-                      placeholder="e.g. Quezon City, Metro Manila"
+                      className={styles.formInput}
+                      placeholder="e.g. Quezon City"
                     />
-                  </div>
+                  </label>
                 </div>
-                <div className="d-flex justify-content-end gap-2 mt-4">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setShowDoctorModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary create-btn">
-                    Create
-                  </button>
-                </div>
-              </form>
+              </div>
+            </div>
+
+            <div className={styles.createFooter}>
+              <button
+                className={styles.btnCancel}
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </button>
+              <button className={styles.btnSubmit}>Create Account</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── View Account Modal ── */}
+      {/* ════════════════════════════
+          VIEW ACCOUNT MODAL
+      ════════════════════════════ */}
       {showViewModal && selectedUser && (
-        <div
-          className="view-modal-overlay"
-          onClick={() => setShowViewModal(false)}
-        >
-          <div className="view-modal-lg" onClick={(e) => e.stopPropagation()}>
-            {/* ── Purple Header with profile ── */}
-            <div className="view-modal-header">
-              <div className="view-modal-header-left">
+        <div className={styles.overlay} onClick={() => setShowViewModal(false)}>
+          <div
+            className={styles.viewModal}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.viewHeader}>
+              <div className={styles.viewHeaderLeft}>
                 <img
                   src={selectedUser.profile_pic}
                   alt="Profile"
-                  className="view-modal-avatar"
+                  className={styles.viewAvatar}
                 />
-                <div className="view-modal-header-info">
+                <div className={styles.viewHeaderInfo}>
                   <h2>
                     Dr. {selectedUser.first_name} {selectedUser.middle_initial}.{" "}
                     {selectedUser.last_name}
                   </h2>
-                  <p className="view-modal-subtitle">
+                  <p className={styles.viewSubtitle}>
                     {selectedUser.professional_title} &nbsp;•&nbsp;{" "}
                     {selectedUser.specialization}
                   </p>
                 </div>
               </div>
               <button
-                className="view-modal-close-btn"
+                className={styles.closeBtn}
                 onClick={() => setShowViewModal(false)}
               >
                 <FiX />
               </button>
             </div>
 
-            {/* ── Scrollable Body ── */}
-            <div className="view-modal-body">
+            <div className={styles.viewBody}>
               {/* Personal Information */}
-              <div className="view-modal-section">
-                <h4 className="view-modal-section-title">
-                  Personal Information
-                </h4>
-                <div className="view-info-grid">
-                  <div className="view-info-item">
-                    <span className="view-info-label">Doctor ID</span>
-                    <span className="view-info-value">
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>Personal Information</p>
+                <div className={styles.viewInfoGrid}>
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Doctor ID</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.doctors_id}
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Sex</span>
-                    <span className="view-info-value">{selectedUser.sex}</span>
-                  </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Date of Birth</span>
-                    <span className="view-info-value">
-                      {new Date(selectedUser.date_of_birth).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        },
-                      )}
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Sex</span>
+                    <span className={styles.viewInfoValue}>
+                      {selectedUser.sex}
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Age</span>
-                    <span className="view-info-value">
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Age</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.age} years old
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Email Address</span>
-                    <span className="view-info-value">
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Date of Birth</span>
+                    <span className={styles.viewInfoValue}>
+                      {new Date(selectedUser.date_of_birth).toLocaleDateString(
+                        "en-US",
+                        { year: "numeric", month: "long", day: "numeric" },
+                      )}
+                    </span>
+                  </div>
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Email</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.email_address}
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Phone Number</span>
-                    <span className="view-info-value">
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Phone</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.phone}
                     </span>
                   </div>
@@ -340,44 +343,56 @@ function ManageAccounts() {
               </div>
 
               {/* Professional Information */}
-              <div className="view-modal-section">
-                <h4 className="view-modal-section-title">
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>
                   Professional Information
-                </h4>
-                <div className="view-info-grid">
-                  <div className="view-info-item">
-                    <span className="view-info-label">License Number</span>
-                    <span className="view-info-value">
+                </p>
+                <div className={styles.viewInfoGrid}>
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>License No.</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.license_number}
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Years of Experience</span>
-                    <span className="view-info-value">
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Experience</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.years_of_experience} years
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Specialization</span>
-                    <span className="view-info-value">
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>Specialization</span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.specialization}
                     </span>
                   </div>
-                  <div className="view-info-item">
-                    <span className="view-info-label">Sub-Specialization</span>
-                    <span className="view-info-value">
+                  <div
+                    className={`${styles.viewInfoItem} ${styles.viewInfoFull}`}
+                  >
+                    <span className={styles.viewInfoLabel}>
+                      Sub-Specialization
+                    </span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.sub_specialization}
                     </span>
                   </div>
-                  <div className="view-info-item view-info-full">
-                    <span className="view-info-label">Board Certification</span>
-                    <span className="view-info-value">
+                  <div
+                    className={`${styles.viewInfoItem} ${styles.viewInfoFull}`}
+                  >
+                    <span className={styles.viewInfoLabel}>
+                      Board Certification
+                    </span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.board_certification}
                     </span>
                   </div>
-                  <div className="view-info-item view-info-full">
-                    <span className="view-info-label">Service Department</span>
-                    <span className="view-info-value">
+                  <div
+                    className={`${styles.viewInfoItem} ${styles.viewInfoFull}`}
+                  >
+                    <span className={styles.viewInfoLabel}>
+                      Service Department
+                    </span>
+                    <span className={styles.viewInfoValue}>
                       {selectedUser.service}
                     </span>
                   </div>
@@ -385,50 +400,49 @@ function ManageAccounts() {
               </div>
 
               {/* About */}
-              <div className="view-modal-section">
-                <h4 className="view-modal-section-title">About</h4>
-                <p className="view-modal-description">
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>About</p>
+                <p className={styles.viewDescription}>
                   {selectedUser.description}
                 </p>
               </div>
 
-              {/* Roles & Permissions */}
-              <div className="view-modal-section">
-                <h4 className="view-modal-section-title">
+              {/* Roles */}
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>
                   Assigned Roles & Permissions
-                </h4>
-                <div className="view-roles-list">
+                </p>
+                <div className={styles.viewRolesList}>
                   {selectedUser.roles.length > 0 ? (
-                    selectedUser.roles.map((role, index) => (
-                      <span key={index} className="view-role-badge">
+                    selectedUser.roles.map((role, i) => (
+                      <span key={i} className={styles.viewRoleBadge}>
                         {role}
                       </span>
                     ))
                   ) : (
-                    <span className="view-empty">No roles assigned</span>
+                    <span className={styles.viewEmpty}>No roles assigned</span>
                   )}
                 </div>
               </div>
 
-              {/* Certification */}
-              <div className="view-modal-section">
-                <h4 className="view-modal-section-title">
+              {/* Certificate */}
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>
                   Certification Document
-                </h4>
-                <div className="view-cert-container">
+                </p>
+                <div className={styles.viewCertContainer}>
                   <img
                     src={selectedUser.cert_image}
                     alt="Certificate"
-                    className="view-cert-image"
+                    className={styles.viewCertImage}
                   />
                 </div>
               </div>
             </div>
 
-            {/* ── Footer ── */}
-            <div className="view-modal-footer">
+            <div className={styles.viewFooter}>
               <button
-                className="view-btn-close"
+                className={styles.btnCloseView}
                 onClick={() => setShowViewModal(false)}
               >
                 Close

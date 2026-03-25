@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useCallback } from "react";
 import { format } from "date-fns";
 import {
   FiX,
   FiDownload,
-  FiChevronDown,
   FiFile,
   FiPaperclip,
+  FiChevronDown,
 } from "react-icons/fi";
 import { EVENT_COLORS } from "../data/appointmentsData";
 import styles from "../DoctorStyle/DayAppointmentsModal.module.css";
@@ -58,6 +58,25 @@ const getPurpose = (appt) => appt?.assessmentPurpose || null;
 const isFemalePatient = (appt) =>
   appt?.gender?.toLowerCase() === "female" ||
   appt?.gender?.toLowerCase() === "f";
+
+// ── Visit Type helper ──────────────────────────────────────────────────────
+const getVisitType = (appt) =>
+  appt.title?.toLowerCase().includes("online")
+    ? "Online Consultation"
+    : "Physical Consultation";
+
+// ── Service Label helper ───────────────────────────────────────────────────
+// Returns only the parent service title from the services list:
+//   "Psychological Assessment and Evaluation"  — for all PA sub-types
+//     (VAWC, Legal, School, Work, Pre-Employment, ESA, Internship)
+//   "Psychotherapy and Counseling"             — for everything else
+const getServiceLabel = (appt) => {
+  const svc = appt.serviceType || "";
+  if (isPsychAssessment(svc) || isESA(svc) || isInternship(svc)) {
+    return "Psychological Assessment and Evaluation";
+  }
+  return "Psychotherapy and Counseling";
+};
 
 // ── Inline badge styles ────────────────────────────────────────────────────
 const purposeInlineStyle = (purpose) => {
@@ -120,7 +139,6 @@ const serviceTypeInlineStyle = (serviceType) => {
       color: "#4D227C",
       border: "1px solid #d8ccf0",
     };
-  // Counseling / Therapy
   return {
     background: "#f3f4f6",
     color: "#374151",
@@ -128,7 +146,6 @@ const serviceTypeInlineStyle = (serviceType) => {
   };
 };
 
-// ── Dot color for modal header / list cards ────────────────────────────────
 const getDotColor = (appt) => {
   const svc = appt.serviceType || "";
   if (isESA(svc)) return EVENT_COLORS.esa ?? "#0e7490";
@@ -145,32 +162,28 @@ const getDotColor = (appt) => {
   return EVENT_COLORS.online;
 };
 
-// ── Reusable accordion ─────────────────────────────────────────────────────
-function Accordion({ titleLeft, defaultOpen = false, children }) {
-  const [open, setOpen] = useState(defaultOpen);
-  const ref = useRef(null);
-
-  const handleToggle = () => {
-    setOpen((o) => !o);
-    setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }, 0);
-  };
-
+// ── StatusBadge ────────────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const s = (status || "").toLowerCase();
+  if (s === "scheduled" || s === "confirmed")
+    return <span className={styles.statusScheduled}>{status}</span>;
+  if (s === "cancelled" || s === "canceled")
+    return <span className={styles.statusCancelled}>{status}</span>;
+  if (s === "completed" || s === "complete")
+    return <span className={styles.statusCompleted}>{status}</span>;
+  if (s === "rescheduled")
+    return <span className={styles.statusRescheduled}>{status}</span>;
   return (
-    <section className={styles.card} ref={ref}>
-      <button
-        className={`${styles.accordionHeader} ${open ? styles.open : ""}`}
-        onClick={handleToggle}
-      >
-        <span className={styles.cardHeaderLeft}>{titleLeft}</span>
-        <FiChevronDown
-          size={16}
-          className={`${styles.accordionChevron} ${open ? styles.rotated : ""}`}
-        />
-      </button>
-      {open && <div className={styles.accordionBody}>{children}</div>}
-    </section>
+    <span
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#4d227c",
+        fontFamily: "'Poppins', sans-serif",
+      }}
+    >
+      {status || "—"}
+    </span>
   );
 }
 
@@ -180,23 +193,22 @@ const ModalHeader = ({ title, dateLabel, onClose }) => (
     <h3 className={styles.modalTitle}>{title}</h3>
     <div className={styles.modalHeaderRight}>
       <span className={styles.dateBadge}>{dateLabel}</span>
-      <button className={styles.closeBtn} onClick={onClose}>
+      <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
         <FiX />
       </button>
     </div>
   </div>
 );
 
-const InfoRow = ({ label, value, minWidth = 190 }) => (
+const InfoRow = ({ label, value, minWidth }) => (
   <div className={styles.infoRow}>
-    <span className={styles.infoLabel} style={{ minWidth }}>
+    <span className={styles.infoLabel} style={minWidth ? { minWidth } : {}}>
       {label}:
     </span>
     <span className={styles.infoValue}>{value}</span>
   </div>
 );
 
-// ── Inline badge helper ────────────────────────────────────────────────────
 const Badge = ({ style, children }) => (
   <span
     style={{
@@ -204,8 +216,9 @@ const Badge = ({ style, children }) => (
       alignItems: "center",
       padding: "3px 12px",
       borderRadius: 20,
-      fontSize: 12,
+      fontSize: 11.5,
       fontWeight: 600,
+      fontFamily: "'Poppins', sans-serif",
       ...style,
     }}
   >
@@ -248,54 +261,17 @@ function PdfViewerModal({ label, filename, onClose }) {
             >
               <FiDownload size={14} /> Download
             </a>
-            <button className={styles.pdfViewerClose} onClick={onClose}>
+            <button
+              className={styles.pdfViewerClose}
+              onClick={onClose}
+              aria-label="Close PDF"
+            >
               <FiX size={16} />
             </button>
           </div>
         </div>
-        <div className={styles.pdfToolbar}>
-          <div className={styles.pdfPagination}>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-              disabled={pageNumber <= 1}
-            >
-              ‹
-            </button>
-            <span className={styles.pdfPageInfo}>
-              {numPages ? `${pageNumber} / ${numPages}` : "—"}
-            </span>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
-              disabled={!numPages || pageNumber >= numPages}
-            >
-              ›
-            </button>
-          </div>
-          <div className={styles.pdfZoom}>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() =>
-                setScale((s) => Math.max(0.5, +(s - 0.1).toFixed(1)))
-              }
-            >
-              −
-            </button>
-            <span className={styles.pdfPageInfo}>
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() =>
-                setScale((s) => Math.min(2.5, +(s + 0.1).toFixed(1)))
-              }
-            >
-              +
-            </button>
-          </div>
-        </div>
-        <div className={styles.pdfViewerBody}>
+
+        <div className={styles.pdfViewerContent}>
           <Document
             file={src}
             onLoadSuccess={({ numPages }) => {
@@ -313,6 +289,53 @@ function PdfViewerModal({ label, filename, onClose }) {
             />
           </Document>
         </div>
+
+        <div className={styles.pdfToolbar}>
+          <div className={styles.pdfPagination}>
+            <button
+              className={styles.pdfNavBtn}
+              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              disabled={pageNumber <= 1}
+              aria-label="Previous page"
+            >
+              ‹
+            </button>
+            <span className={styles.pdfPageInfo}>
+              {numPages ? `${pageNumber} / ${numPages}` : "—"}
+            </span>
+            <button
+              className={styles.pdfNavBtn}
+              onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
+              disabled={!numPages || pageNumber >= numPages}
+              aria-label="Next page"
+            >
+              ›
+            </button>
+          </div>
+          <div className={styles.pdfZoom}>
+            <button
+              className={styles.pdfNavBtn}
+              onClick={() =>
+                setScale((s) => Math.max(0.5, +(s - 0.1).toFixed(1)))
+              }
+              aria-label="Zoom out"
+            >
+              −
+            </button>
+            <span className={styles.pdfPageInfo}>
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              className={styles.pdfNavBtn}
+              onClick={() =>
+                setScale((s) => Math.min(2.5, +(s + 0.1).toFixed(1)))
+              }
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -323,7 +346,11 @@ function PdfFileChip({ label, filename }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className={styles.pdfChip} onClick={() => setOpen(true)}>
+      <button
+        className={styles.pdfChip}
+        onClick={() => setOpen(true)}
+        aria-label={`View ${label} PDF`}
+      >
         <FiFile size={13} className={styles.pdfChipIcon} />
         <span className={styles.pdfChipLabel}>{label}.pdf</span>
       </button>
@@ -352,22 +379,71 @@ const ComplaintBox = ({ text }) => (
   </div>
 );
 
-// ══════════════════════════════════════════════════════════════════════════
-// PURPOSE / SERVICE-SPECIFIC SECTIONS
-// ══════════════════════════════════════════════════════════════════════════
+// ── DRAWER ACCORDION ──────────────────────────────────────────────────────
+function DrawerAccordion({
+  title,
+  icon,
+  children,
+  defaultOpen = false,
+  accentColor = "#4D227C",
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  return (
+    <div className={styles.card}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={styles.accordionHeader}
+        style={{
+          background: isOpen ? `${accentColor}12` : "#faf7ff",
+          borderBottom: isOpen ? `2px solid ${accentColor}` : "none",
+        }}
+      >
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            color: accentColor,
+            flex: 1,
+          }}
+        >
+          {icon}
+          {title}
+        </span>
+        <FiChevronDown
+          size={18}
+          style={{
+            color: accentColor,
+            transition: "transform 0.3s ease",
+            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+            flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className={styles.accordionBodyWrapper}
+          style={{ borderTop: `2px solid ${accentColor}` }}
+        >
+          <div className={styles.accordionBody}>{children}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Purpose / service-specific sections ───────────────────────────────────
 const VawcSection = ({ appt }) => (
-  <Accordion
+  <DrawerAccordion
+    title="VAWC — Initial Complaint & Details"
+    icon={<span className={styles.vawcDot} />}
+    accentColor="#dc2626"
     defaultOpen={false}
-    titleLeft={
-      <span className={styles.cardHeaderLeft}>
-        <span className={styles.vawcDot} />
-        VAWC — Initial Complaint
-      </span>
-    }
   >
     <ComplaintBox text={appt.initialComplaint} />
-    <div className={styles.docsSection}>
+    <div className={styles.docsSection} style={{ marginTop: 12 }}>
       <div className={styles.docsSectionLabel}>Supporting Documents:</div>
       <div className={styles.docsChipRow}>
         <PdfFileChip
@@ -375,59 +451,63 @@ const VawcSection = ({ appt }) => (
           filename="VAWC_Barangay_Blotter.pdf"
         />
         <PdfFileChip label="Police Report" filename="VAWC_Police_Report.pdf" />
+        <PdfFileChip label="Incident Photos" filename="VAWC_Photos.pdf" />
       </div>
     </div>
-  </Accordion>
+  </DrawerAccordion>
 );
 
 const LegalSection = ({ appt }) => (
-  <Accordion
+  <DrawerAccordion
+    title="Adoption / Legal — Court-Related Assessment"
+    accentColor="#8B4545"
     defaultOpen={false}
-    titleLeft={<span>Adoption / Legal — Initial Complaint</span>}
   >
     <ComplaintBox text={appt.initialComplaint} />
-    <div className={styles.docsSection}>
-      <div className={styles.docsSectionLabel}>Attached Documents:</div>
+    <div className={styles.docsSection} style={{ marginTop: 12 }}>
+      <div className={styles.docsSectionLabel}>Court Documents:</div>
       <div className={styles.docsChipRow}>
+        <PdfFileChip label="Court Order" filename="Court_Order.pdf" />
         <PdfFileChip
-          label="PACO Referral Document"
+          label="PACO Referral"
           filename="PACO_CSWD_Referral_Document.pdf"
         />
         <PdfFileChip
-          label="CSWD Referral Document"
-          filename="PACO_CSWD_Referral_Document.pdf"
+          label="Previous Assessment"
+          filename="Previous_Psych_Report.pdf"
         />
+        <PdfFileChip label="Case Summary" filename="Case_Summary.pdf" />
       </div>
     </div>
-  </Accordion>
+  </DrawerAccordion>
 );
 
 const SchoolSection = ({ appt }) => {
   const docs = appt.schoolDocuments || [];
   if (docs.length === 0) return null;
   return (
-    <Accordion
+    <DrawerAccordion
+      title="School / Academic — Learning Assessment"
+      accentColor="#1e6091"
       defaultOpen={false}
-      titleLeft={<span>School / Academic — Supporting Documents</span>}
     >
       <div className={styles.docsSection}>
-        <div
-          className={styles.docsChipRow}
-          style={{ flexWrap: "wrap", gap: 8 }}
-        >
+        <div className={styles.docsSectionLabel}>Academic Documents:</div>
+        <div className={styles.docsChipRow}>
           {docs.map((doc, i) => (
             <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
           ))}
         </div>
       </div>
-    </Accordion>
+    </DrawerAccordion>
   );
 };
 
 const WorkSection = ({ appt }) => (
-  <Accordion
+  <DrawerAccordion
+    title="Work-Related — Occupational Health Assessment"
+    accentColor="#2d6a4f"
     defaultOpen={false}
-    titleLeft={<span>Work-Related — Reason for Assessment</span>}
   >
     <div>
       <div className={styles.complaintLabel}>
@@ -439,232 +519,123 @@ const WorkSection = ({ appt }) => (
         )}
       </div>
     </div>
-  </Accordion>
+  </DrawerAccordion>
 );
 
 const PreEmploymentSection = ({ appt }) => (
-  <Accordion
-    defaultOpen={true}
-    titleLeft={
-      <span className={styles.cardHeaderLeft}>
-        <Badge
-          style={{
-            background: "#fef3c7",
-            color: "#92400e",
-            border: "1px solid #fde68a",
-          }}
-        >
-          Pre-Employment Assessment
-        </Badge>
-      </span>
-    }
+  <DrawerAccordion
+    title="Pre-Employment Psychological Assessment"
+    accentColor="#92400e"
+    defaultOpen={false}
   >
-    <div className={styles.sessionBox}>
-      <div className={styles.infoRow}>
-        <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-          Name of Employer:
-        </span>
-        <span className={styles.infoValue}>
-          {appt.employerName || (
-            <span className={styles.complaintEmpty}>Not specified</span>
-          )}
-        </span>
-      </div>
-      <div className={styles.infoRow}>
-        <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-          Purpose of Assessment:
-        </span>
-        <span className={styles.infoValue} style={{ lineHeight: 1.6 }}>
-          {appt.purposeOfAssessment || (
-            <span className={styles.complaintEmpty}>Not specified</span>
-          )}
-        </span>
-      </div>
-    </div>
-  </Accordion>
+    <InfoRow
+      label="Employer Name"
+      value={appt.employerName || "Not specified"}
+    />
+    <InfoRow
+      label="Purpose of Assessment"
+      value={appt.purposeOfAssessment || "Not specified"}
+    />
+  </DrawerAccordion>
 );
 
 const ESASection = ({ appt }) => {
-  const isInternational = appt.placeOfTravel === "International";
+  const hasDiagnosis = appt.hasExistingDiagnosis;
   const hasDocs = appt.diagnosisDocuments?.length > 0;
 
   return (
-    <Accordion
-      defaultOpen={true}
-      titleLeft={
-        <span className={styles.cardHeaderLeft}>
-          <Badge
-            style={{
-              background: "#cffafe",
-              color: "#0e7490",
-              border: "1px solid #a5f3fc",
-            }}
-          >
-            Emotional Support Animal (ESA)
-          </Badge>
-        </span>
-      }
+    <DrawerAccordion
+      title="Emotional Support Animal (ESA) Assessment"
+      accentColor="#0e7490"
+      defaultOpen={false}
     >
-      <div className={styles.sessionBox}>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-            Place of Travel:
-          </span>
-          <span className={styles.infoValue}>
-            <Badge
-              style={
-                isInternational
-                  ? {
-                      background: "#dbeafe",
-                      color: "#1d4ed8",
-                      border: "1px solid #bfdbfe",
-                    }
-                  : {
-                      background: "#dcfce7",
-                      color: "#15803d",
-                      border: "1px solid #bbf7d0",
-                    }
-              }
-            >
-              {isInternational ? "🌏" : "🏠"} {appt.placeOfTravel}
-            </Badge>
-          </span>
-        </div>
-
-        {appt.travelDestination && (
-          <div className={styles.infoRow}>
-            <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-              Destination:
-            </span>
-            <span className={styles.infoValue}>{appt.travelDestination}</span>
-          </div>
-        )}
-
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-            Existing Clinical Diagnosis:
-          </span>
-          <span className={styles.infoValue}>
-            <Badge
-              style={
-                appt.hasExistingDiagnosis
-                  ? {
-                      background: "#fef9c3",
-                      color: "#854d0e",
-                      border: "1px solid #fde68a",
-                    }
-                  : {
-                      background: "#f3f4f6",
-                      color: "#6b7280",
-                      border: "1px solid #e5e7eb",
-                    }
-              }
-            >
-              {appt.hasExistingDiagnosis ? "Yes" : "None"}
-            </Badge>
-          </span>
-        </div>
-
-        {appt.hasExistingDiagnosis && appt.existingDiagnosisNote && (
-          <div style={{ marginTop: 8 }}>
-            <div className={styles.complaintLabel}>Diagnosis Notes:</div>
-            <div className={styles.complaintBox}>
-              {appt.existingDiagnosisNote}
-            </div>
-          </div>
-        )}
-
-        {appt.hasExistingDiagnosis && hasDocs && (
-          <div className={styles.docsSection} style={{ marginTop: 12 }}>
-            <div className={styles.docsSectionLabel}>
-              <FiPaperclip size={12} style={{ marginRight: 5 }} />
-              Attached Diagnosis Documents:
-            </div>
-            <div className={styles.docsChipRow}>
-              {appt.diagnosisDocuments.map((doc, i) => (
-                <PdfFileChip
-                  key={i}
-                  label={doc.label}
-                  filename={doc.filename}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!appt.hasExistingDiagnosis && (
-          <div
-            style={{
-              marginTop: 10,
-              padding: "10px 14px",
-              borderRadius: 8,
-              background: "#f9fafb",
-              border: "1px dashed #d1d5db",
-              fontSize: 13,
-              color: "#6b7280",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}
+      <InfoRow
+        label="Place of Travel"
+        value={
+          <Badge
+            style={
+              appt.placeOfTravel === "International"
+                ? {
+                    background: "#dbeafe",
+                    color: "#1d4ed8",
+                    border: "1px solid #bfdbfe",
+                  }
+                : {
+                    background: "#dcfce7",
+                    color: "#15803d",
+                    border: "1px solid #bbf7d0",
+                  }
+            }
           >
-            <FiFile size={14} style={{ flexShrink: 0 }} />
-            No supporting document attached — patient has no existing clinical
-            diagnosis.
+            {appt.placeOfTravel === "International"
+              ? " Abroad / International"
+              : " Local"}
+          </Badge>
+        }
+      />
+
+      {appt.travelDestination && (
+        <InfoRow label="Destination" value={appt.travelDestination} />
+      )}
+
+      <InfoRow
+        label="Existing Clinical Diagnosis"
+        value={
+          <Badge
+            style={
+              hasDiagnosis
+                ? {
+                    background: "#fef9c3",
+                    color: "#854d0e",
+                    border: "1px solid #fde68a",
+                  }
+                : {
+                    background: "#f3f4f6",
+                    color: "#6b7280",
+                    border: "1px solid #e5e7eb",
+                  }
+            }
+          >
+            {hasDiagnosis ? "Yes" : "No"}
+          </Badge>
+        }
+      />
+
+      {hasDiagnosis && appt.existingDiagnosisNote && (
+        <div style={{ marginTop: 8 }}>
+          <div className={styles.complaintLabel}>Diagnosis Notes:</div>
+          <div className={styles.complaintBox}>
+            {appt.existingDiagnosisNote}
           </div>
-        )}
-      </div>
-    </Accordion>
+        </div>
+      )}
+
+      {hasDiagnosis && hasDocs && (
+        <div className={styles.docsSection} style={{ marginTop: 12 }}>
+          <div className={styles.docsSectionLabel}>
+            <FiPaperclip size={12} style={{ marginRight: 5 }} />
+            Medical Records & Letters:
+          </div>
+          <div className={styles.docsChipRow}>
+            {appt.diagnosisDocuments.map((doc, i) => (
+              <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
+            ))}
+          </div>
+        </div>
+      )}
+    </DrawerAccordion>
   );
 };
 
 const InternshipSection = ({ appt }) => (
-  <Accordion
-    defaultOpen={true}
-    titleLeft={
-      <span className={styles.cardHeaderLeft}>
-        <Badge
-          style={{
-            background: "#ede9fe",
-            color: "#5b21b6",
-            border: "1px solid #ddd6fe",
-          }}
-        >
-          Mental Health for Internship
-        </Badge>
-      </span>
-    }
+  <DrawerAccordion
+    title="Mental Health for Internship"
+    accentColor="#5b21b6"
+    defaultOpen={false}
   >
-    <div className={styles.sessionBox}>
-      <div className={styles.infoRow}>
-        <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-          School / University:
-        </span>
-        <span className={styles.infoValue}>
-          {appt.schoolName || (
-            <span className={styles.complaintEmpty}>Not specified</span>
-          )}
-        </span>
-      </div>
-      <div className={styles.infoRow}>
-        <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-          Program / Course:
-        </span>
-        <span className={styles.infoValue}>
-          {appt.program || (
-            <span className={styles.complaintEmpty}>Not specified</span>
-          )}
-        </span>
-      </div>
-      {appt.internshipStartDate && (
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel} style={{ minWidth: 190 }}>
-            Internship Start Date:
-          </span>
-          <span className={styles.infoValue}>{appt.internshipStartDate}</span>
-        </div>
-      )}
-    </div>
-  </Accordion>
+    <InfoRow label="University" value={appt.schoolName || "Not specified"} />
+    <InfoRow label="Program" value={appt.program || "Not specified"} />
+  </DrawerAccordion>
 );
 
 const SESSION_TYPE_COLORS = {
@@ -684,73 +655,54 @@ const AssessmentSessionSection = ({ appt }) => {
     color: "#374151",
   };
   const releaseDate = format(new Date(appt.start), "MMMM dd, yyyy");
-
   return (
-    <Accordion
-      defaultOpen={true}
-      titleLeft={
-        <span className={styles.cardHeaderLeft}>
-          <Badge
-            style={{ backgroundColor: badgeStyle.bg, color: badgeStyle.color }}
-          >
-            {session.sessionType}
-          </Badge>
-        </span>
-      }
+    <DrawerAccordion
+      title={session.sessionType}
+      accentColor={badgeStyle.color}
+      defaultOpen={false}
     >
-      <div className={styles.sessionBox}>
-        <InfoRow minWidth={160} label="Type" value={session.sessionType} />
-        {isCertRelease && (
-          <>
-            <InfoRow minWidth={160} label="Release Date" value={releaseDate} />
-            <div className={styles.certReminderBox}>
-              <span className={styles.certReminderIcon}>⚠️</span>
-              <span className={styles.certReminderText}>
-                The certificate must be claimed <strong>in person</strong> at
-                the clinic. Please bring a valid government-issued ID upon
-                release.
-              </span>
-            </div>
-          </>
-        )}
-      </div>
-    </Accordion>
+      <InfoRow label="Session Type" value={session.sessionType} />
+      <InfoRow label="Expected Duration" value="60-90 minutes" />
+      <InfoRow label="Location" value="Office Room 305, Makati Branch" />
+      {isCertRelease && (
+        <>
+          <InfoRow label="Release Date" value={releaseDate} />
+          <div className={styles.certReminderBox}>
+            <span className={styles.certReminderIcon}>⚠️</span>
+            <span className={styles.certReminderText}>
+              The certificate must be claimed <strong>in person</strong> at the
+              clinic. Please bring a valid government-issued ID upon release.
+            </span>
+          </div>
+        </>
+      )}
+    </DrawerAccordion>
   );
 };
 
 const RescheduleSection = ({ appt }) => (
-  <Accordion
+  <DrawerAccordion
+    title="Reschedule Status"
+    accentColor="#b45309"
     defaultOpen={false}
-    titleLeft={
-      <span className={styles.cardHeaderLeft}>
-        Reschedule Status
-        <span
-          className={styles.rescheduledStatusBadge}
-          style={{ marginLeft: 8 }}
-        >
-          Rescheduled
-        </span>
-      </span>
-    }
   >
-    <div className={styles.rescheduleBox}>
-      <InfoRow
-        minWidth={130}
-        label="New Date"
-        value={format(new Date(appt.rescheduledTo.date), "MMMM dd, yyyy")}
-      />
-      <InfoRow
-        minWidth={130}
-        label="New Time"
-        value={`${toTime12(appt.rescheduledTo.startTime)} – ${toTime12(appt.rescheduledTo.endTime)}`}
-      />
-      <InfoRow
-        minWidth={130}
-        label="Reason"
-        value={appt.rescheduledTo.reason || "Not specified"}
-      />
-    </div>
-  </Accordion>
+    <InfoRow
+      label="Original Date"
+      value="March 5, 2026 | 10:00 AM - 11:00 AM"
+    />
+    <InfoRow
+      label="New Date"
+      value={format(new Date(appt.rescheduledTo.date), "MMMM dd, yyyy")}
+    />
+    <InfoRow
+      label="New Time"
+      value={`${toTime12(appt.rescheduledTo.startTime)} – ${toTime12(appt.rescheduledTo.endTime)}`}
+    />
+    <InfoRow
+      label="Reason for Reschedule"
+      value={appt.rescheduledTo.reason || "Not specified"}
+    />
+  </DrawerAccordion>
 );
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -765,7 +717,7 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
   const isRescheduled = appt.status === "Rescheduled" || isGhost;
   const displayDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const displayDateShort = format(new Date(appt.start), "MM/dd/yyyy");
+  const displayDateShort = format(new Date(appt.start), "MMMM dd, yyyy");
 
   const serviceType = appt.serviceType || appt.visitType || "";
   const isAssessment = isPsychAssessment(serviceType);
@@ -773,13 +725,11 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
   const isIntern = isInternship(serviceType);
   const purpose = isAssessment ? getPurpose(appt) : null;
 
-  const serviceLabel = isAssessment
-    ? "Psychological Assessment and Evaluation"
-    : isEsa
-      ? "Emotional Support Animal (ESA)"
-      : isIntern
-        ? "Mental Health for Internship"
-        : "Counseling / Therapy";
+  // ── CHANGED: use getServiceLabel helper ──
+  const serviceLabel = getServiceLabel(appt);
+
+  // ── CHANGED: use getVisitType helper ──
+  const visitTypeLabel = getVisitType(appt);
 
   const clinicColor = getDotColor(appt);
   const showVawc =
@@ -789,26 +739,34 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
     <>
       <div className={styles.overlay} onClick={onClose}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          <ModalHeader
-            title={
-              <>
-                <span
-                  className={styles.clinicDot}
-                  style={{ backgroundColor: clinicColor }}
-                />
-                {isGhost ? "↪ " : ""}
-                {startTime} — {clinicType}
-                {isGhost && (
-                  <span className={styles.rescheduledBadge}>Rescheduled</span>
-                )}
-              </>
-            }
-            dateLabel={displayDateShort}
-            onClose={onClose}
-          />
+          {/* Header */}
+          <div className={styles.modalHeader}>
+            <h3 className={styles.modalTitle}>
+              <span
+                className={styles.clinicDot}
+                style={{ backgroundColor: clinicColor }}
+              />
+              {isGhost ? "↪ " : ""}
+              {startTime} — {clinicType}
+              {isGhost && (
+                <span className={styles.rescheduledBadge}>Rescheduled</span>
+              )}
+            </h3>
+            <div className={styles.modalHeaderRight}>
+              <span className={styles.dateBadge}>{displayDateShort}</span>
+              <button
+                className={styles.closeBtn}
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <FiX />
+              </button>
+            </div>
+          </div>
 
+          {/* Scrollable body */}
           <div className={styles.scrollBody}>
-            {/* ── Appointment Info card ── */}
+            {/* Appointment Info card */}
             <section className={styles.card}>
               <div className={styles.cardHeader}>
                 {isGhost
@@ -817,41 +775,42 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
               </div>
               <div className={styles.cardBody}>
                 <div className={styles.cardFields}>
-                  <InfoRow label="Name" value={appt.patientName || "—"} />
-                  <InfoRow label="Visit Type" value={appt.visitType || "—"} />
+                  <InfoRow
+                    label="Patient Name"
+                    value={appt.patientName || "—"}
+                  />
 
-                  {/* Type of Service — colored badge */}
                   <div className={styles.infoRow}>
-                    <span
-                      className={styles.infoLabel}
-                      style={{ minWidth: 190 }}
-                    >
-                      Type of Service:
-                    </span>
+                    <span className={styles.infoLabel}>Payment Status:</span>
+                    <span className={styles.paymentPaid}>Paid</span>
+                  </div>
+
+                  {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
+                  <InfoRow label="Visit Type" value={visitTypeLabel} />
+
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Service:</span>
                     <Badge style={serviceTypeInlineStyle(serviceType)}>
                       {serviceLabel}
                     </Badge>
                   </div>
 
-                  {/* Purpose — colored badge */}
                   {isAssessment && purpose && (
                     <div className={styles.infoRow}>
-                      <span
-                        className={styles.infoLabel}
-                        style={{ minWidth: 190 }}
-                      >
-                        Purpose:
-                      </span>
+                      <span className={styles.infoLabel}>Purpose:</span>
                       <Badge style={purposeInlineStyle(purpose)}>
                         {purpose}
                       </Badge>
                     </div>
                   )}
 
-                  <InfoRow
-                    label="Status"
-                    value={isGhost ? "Rescheduled" : appt.status || "—"}
-                  />
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Status:</span>
+                    <StatusBadge
+                      status={isGhost ? "Rescheduled" : appt.status}
+                    />
+                  </div>
+
                   <InfoRow
                     label="Reason for Consultation"
                     value={appt.reason || "Not specified"}
@@ -860,25 +819,13 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
                     label="Appointment Date & Time"
                     value={`${displayDate} | ${startTime} – ${endTime}`}
                   />
+
                   {isGhost && appt.rescheduledTo?.reason && (
                     <InfoRow
                       label="Reason for Reschedule"
                       value={appt.rescheduledTo.reason}
                     />
                   )}
-                </div>
-
-                <div className={styles.paymentWrap}>
-                  <span className={styles.paymentLabel}>Payment:</span>
-                  <span
-                    className={
-                      appt.payment === "Paid"
-                        ? styles.paymentPaid
-                        : styles.paymentUnpaid
-                    }
-                  >
-                    {appt.payment || "—"}
-                  </span>
                 </div>
               </div>
 
@@ -894,7 +841,7 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
               )}
             </section>
 
-            {/* ── Purpose / service-specific sections ── */}
+            {/* Drawer Accordions */}
             {showVawc && <VawcSection appt={appt} />}
             {isAssessment && purpose === PURPOSES.LEGAL && (
               <LegalSection appt={appt} />
@@ -946,14 +893,15 @@ function DayAppointmentsModal({
 
   const selectedDateObj = new Date(selectedDate);
   const formattedDate = format(selectedDateObj, "MMMM dd, yyyy");
+  const formattedDateShort = format(selectedDateObj, "MMMM dd, yyyy");
   const dayAppointments = events.filter((e) =>
     isSameDay(e.start, selectedDateObj),
   );
 
-  // Week / Day view → jump straight to detail
+  // Week/Day view → jump straight to detail
   if (singleEventId && !activeAppt) {
     const target = events.find((e) => e.id === singleEventId);
-    if (target) {
+    if (target)
       return (
         <DetailView
           appt={target}
@@ -962,10 +910,9 @@ function DayAppointmentsModal({
           allEvents={events}
         />
       );
-    }
   }
 
-  // "View More" → show detail
+  // Detail view
   if (activeAppt) {
     return (
       <DetailView
@@ -977,148 +924,131 @@ function DayAppointmentsModal({
     );
   }
 
-  // Month view / "+X more" → full list
+  // List view
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <ModalHeader
-          title="Appointments"
-          dateLabel={formattedDate}
-          onClose={onClose}
-        />
+        {/* Header */}
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>Appointments</h3>
+          <div className={styles.modalHeaderRight}>
+            <span className={styles.dateBadge}>{formattedDateShort}</span>
+            <button
+              className={styles.closeBtn}
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <FiX />
+            </button>
+          </div>
+        </div>
 
+        {/* Scrollable Body */}
         <div className={styles.scrollBody}>
           {dayAppointments.length === 0 ? (
-            <p
-              style={{
-                textAlign: "center",
-                color: "#aaa",
-                fontSize: 14,
-                padding: "40px 0",
-                margin: 0,
-              }}
-            >
-              No appointments scheduled for this day.
-            </p>
-          ) : (
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-                padding: "0 20px",
+                textAlign: "center",
+                color: "#9ca3af",
+                fontSize: 14,
+                padding: "48px 0",
+                fontFamily: "'Poppins', sans-serif",
               }}
             >
-              {dayAppointments.map((appt) => {
-                const isGhost = !!appt.isRescheduledGhost;
-                const startTime = toTime12(toTime24(appt.start));
-                const endTime = toTime12(toTime24(appt.end));
-                const isOnline = appt.title?.toLowerCase().includes("online");
-                const clinicType = isOnline
-                  ? "Online Clinic"
-                  : "Physical Clinic";
-                const cardDate = format(new Date(appt.start), "MMMM dd, yyyy");
+              <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.3 }}>
+                📅
+              </div>
+              <p style={{ margin: 0 }}>
+                No appointments scheduled for this day.
+              </p>
+            </div>
+          ) : (
+            dayAppointments.map((appt) => {
+              const isGhost = !!appt.isRescheduledGhost;
+              const startTime = toTime12(toTime24(appt.start));
+              const endTime = toTime12(toTime24(appt.end));
+              const isOnline = appt.title?.toLowerCase().includes("online");
+              const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
+              const cardDate = format(new Date(appt.start), "MMMM dd, yyyy");
 
-                const svc = appt.serviceType || appt.visitType || "";
-                const isAssessment = isPsychAssessment(svc);
-                const isEsa = isESA(svc);
-                const isIntern = isInternship(svc);
-                const purpose = isAssessment ? getPurpose(appt) : null;
-                const dotColor = getDotColor(appt);
+              const svc = appt.serviceType || appt.visitType || "";
+              const isAssessment = isPsychAssessment(svc);
+              const isEsa = isESA(svc);
+              const isIntern = isInternship(svc);
+              const purpose = isAssessment ? getPurpose(appt) : null;
+              const dotColor = getDotColor(appt);
 
-                const serviceLabel = isAssessment
-                  ? "Psychological Assessment and Evaluation"
-                  : isEsa
-                    ? "Emotional Support Animal (ESA)"
-                    : isIntern
-                      ? "Mental Health for Internship"
-                      : "Counseling / Therapy";
+              // ── CHANGED: use getServiceLabel helper ──
+              const serviceLabel = getServiceLabel(appt);
 
-                const displayPurpose =
-                  purpose === PURPOSES.VAWC
-                    ? isFemalePatient(appt)
-                      ? purpose
-                      : null
-                    : purpose;
+              // ── CHANGED: use getVisitType helper ──
+              const visitTypeLabel = getVisitType(appt);
 
-                return (
-                  <div key={appt.id} className={styles.card}>
-                    <div className={styles.cardHeader}>
-                      <span className={styles.cardHeaderLeft}>
-                        <span
-                          className={styles.clinicDot}
-                          style={{ backgroundColor: dotColor }}
-                        />
-                        {isGhost
-                          ? "Rescheduled Appointment"
-                          : "Appointment Information"}
-                      </span>
-                      <span className={styles.badgeGroup}>
-                        {/* Purpose badge — colored */}
-                        {displayPurpose && (
-                          <Badge
-                            style={{
-                              ...purposeInlineStyle(displayPurpose),
-                              fontSize: 11,
-                              padding: "3px 10px",
-                            }}
-                          >
-                            {displayPurpose}
-                          </Badge>
-                        )}
-                        {/* Service type badge for ESA / Internship */}
-                        {!displayPurpose && (isEsa || isIntern) && (
-                          <Badge
-                            style={{
-                              ...serviceTypeInlineStyle(svc),
-                              fontSize: 11,
-                              padding: "3px 10px",
-                            }}
-                          >
-                            {isEsa ? "ESA" : "Internship"}
-                          </Badge>
-                        )}
-                        {isGhost && (
-                          <span className={styles.newScheduleBadge}>
-                            New Schedule
-                          </span>
-                        )}
-                      </span>
-                    </div>
+              const displayPurpose =
+                purpose === PURPOSES.VAWC
+                  ? isFemalePatient(appt)
+                    ? purpose
+                    : null
+                  : purpose;
 
-                    <div
-                      className={styles.cardFields}
-                      style={{ padding: "16px 20px" }}
-                    >
+              return (
+                <div key={appt.id} className={styles.card}>
+                  <div className={styles.cardHeader}>
+                    <span className={styles.cardHeaderLeft}>
+                      <span
+                        className={styles.clinicDot}
+                        style={{ backgroundColor: dotColor }}
+                      />
+                      {isGhost
+                        ? "Rescheduled Appointment"
+                        : "Appointment Information"}
+                    </span>
+                    <span className={styles.badgeGroup}>
+                      {displayPurpose && (
+                        <Badge
+                          style={{
+                            ...purposeInlineStyle(displayPurpose),
+                            fontSize: 11,
+                            padding: "2px 10px",
+                          }}
+                        >
+                          {displayPurpose}
+                        </Badge>
+                      )}
+                      {!displayPurpose && (isEsa || isIntern) && (
+                        <Badge
+                          style={{
+                            ...serviceTypeInlineStyle(svc),
+                            fontSize: 11,
+                            padding: "2px 10px",
+                          }}
+                        >
+                          {isEsa ? "ESA" : "Internship"}
+                        </Badge>
+                      )}
+                      {isGhost && (
+                        <span className={styles.newScheduleBadge}>
+                          New Schedule
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardFields}>
                       <InfoRow
-                        minWidth={180}
-                        label="Name"
+                        label="Patient Name"
                         value={appt.patientName || "—"}
                       />
+                      <InfoRow label="Date of Appointment" value={cardDate} />
                       <InfoRow
-                        minWidth={180}
-                        label="Date of Appointment"
-                        value={cardDate}
-                      />
-                      <InfoRow
-                        minWidth={180}
                         label="Time"
                         value={`${startTime} – ${endTime}`}
                       />
-                      <InfoRow
-                        minWidth={180}
-                        label="Clinic Type"
-                        value={clinicType}
-                      />
-
-                      {/* Type of Service — colored badge */}
+                      {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
+                      <InfoRow label="Visit Type" value={visitTypeLabel} />
                       <div className={styles.infoRow}>
-                        <span
-                          className={styles.infoLabel}
-                          style={{ minWidth: 180 }}
-                        >
-                          Type of Service:
-                        </span>
+                        <span className={styles.infoLabel}>Service:</span>
                         <Badge
                           style={{
                             ...serviceTypeInlineStyle(svc),
@@ -1128,16 +1058,9 @@ function DayAppointmentsModal({
                           {serviceLabel}
                         </Badge>
                       </div>
-
-                      {/* Purpose — colored badge */}
                       {displayPurpose && (
                         <div className={styles.infoRow}>
-                          <span
-                            className={styles.infoLabel}
-                            style={{ minWidth: 180 }}
-                          >
-                            Purpose:
-                          </span>
+                          <span className={styles.infoLabel}>Purpose:</span>
                           <Badge
                             style={{
                               ...purposeInlineStyle(displayPurpose),
@@ -1148,34 +1071,30 @@ function DayAppointmentsModal({
                           </Badge>
                         </div>
                       )}
-
                       <InfoRow
-                        minWidth={180}
-                        label="Reason of Consultation"
+                        label="Reason for Consultation"
                         value={appt.reason || "Not specified"}
                       />
-                      <InfoRow
-                        minWidth={180}
-                        label="Status"
-                        value={isGhost ? "Rescheduled" : appt.status || "—"}
-                      />
-                    </div>
-
-                    <div
-                      className={styles.cardFooter}
-                      style={{ display: "flex", justifyContent: "flex-end" }}
-                    >
-                      <button
-                        className={styles.btnPurple}
-                        onClick={() => setActiveAppt({ appt, isGhost })}
-                      >
-                        View More
-                      </button>
+                      <div className={styles.infoRow}>
+                        <span className={styles.infoLabel}>Status:</span>
+                        <StatusBadge
+                          status={isGhost ? "Rescheduled" : appt.status}
+                        />
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className={styles.cardFooter}>
+                    <button
+                      className={styles.btnPurple}
+                      onClick={() => setActiveAppt({ appt, isGhost })}
+                    >
+                      View
+                    </button>
+                  </div>
+                </div>
+              );
+            })
           )}
         </div>
       </div>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
 import styles from "../DoctorStyle/Modal.module.css";
 
-function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
+function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
     firstName: doctorData?.firstName || "",
     lastName: doctorData?.lastName || "",

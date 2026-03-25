@@ -12,17 +12,21 @@ import {
   FaEnvelope,
   FaLock,
 } from "react-icons/fa";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 function Registration() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     dob: "",
     sex: "",
+    middleInitial: "",
     contactNo: "",
     email: "",
     password: "",
@@ -38,18 +42,19 @@ function Registration() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
+  // Frontend validation (keep as-is for instant feedback)
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.middleInitial.trim())
+      newErrors.middleInitial = "Middle Initials is Required";
     if (!formData.dob) newErrors.dob = "Date of birth is required";
     if (!formData.sex) newErrors.sex = "Sex is required";
     if (!formData.contactNo.trim())
@@ -64,17 +69,98 @@ function Registration() {
       newErrors.confirmPassword = "Passwords do not match";
     if (!formData.agreeTerms)
       newErrors.agreeTerms = "You must agree to the terms";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log("Form submitted:", formData);
-      alert("Registration successful!");
-      navigate("/");
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/register",
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          middleInitial: formData.middleInitial,
+          address: formData.address,
+          dob: formData.dob,
+          sex: formData.sex,
+          contactNo: formData.contactNo,
+          email: formData.email,
+          password: formData.password,
+          password_confirmation: formData.confirmPassword,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const data = response.data;
+
+      if (data.success) {
+        // Save token and user info to localStorage
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("role", data.data.user.role);
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+
+        toast.success("Registration Successful!", {
+          duration: 1500,
+          style: {
+            background: "#E2F7E3",
+            border: "1px solid #91C793",
+            color: "#2E7D32",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            textAlign: "center",
+            maxWidth: "320px",
+            borderRadius: "10px",
+            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+          },
+          iconTheme: {
+            primary: "#2E7D32",
+            secondary: "#E2F7E3",
+          },
+        });
+
+        // All self-registered users are Clients
+        setTimeout(() => navigate("/client/home"), 1500);
+      }
+    } catch (err) {
+      if (err.response) {
+        if (err.response.status === 422) {
+          // Map Laravel validation errors back to form fields
+          const laravelErrors = err.response.data.errors || {};
+          const mapped = {};
+
+          if (laravelErrors.firstName)
+            mapped.firstName = laravelErrors.firstName[0];
+          if (laravelErrors.lastName)
+            mapped.lastName = laravelErrors.lastName[0];
+          if (laravelErrors.dob) mapped.dob = laravelErrors.dob[0];
+          if (laravelErrors.sex) mapped.sex = laravelErrors.sex[0];
+          if (laravelErrors.contactNo)
+            mapped.contactNo = laravelErrors.contactNo[0];
+          if (laravelErrors.email) mapped.email = laravelErrors.email[0];
+          if (laravelErrors.password)
+            mapped.password = laravelErrors.password[0];
+
+          setErrors(mapped);
+        } else {
+          toast.error(err.response.data?.message || "Registration failed.");
+        }
+      } else {
+        toast.error("Server error. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,7 +177,7 @@ function Registration() {
           boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
         }}
       >
-        {/* Left Panel - Hidden on screens smaller than lg */}
+        {/* Left Panel */}
         <Col
           lg={6}
           className="d-none d-lg-flex left-panel align-items-start justify-content-center p-5"
@@ -115,7 +201,7 @@ function Registration() {
           </div>
         </Col>
 
-        {/* Right Panel - Full width on mobile, half on lg+ */}
+        {/* Right Panel */}
         <Col
           xs={12}
           lg={6}
@@ -127,7 +213,6 @@ function Registration() {
             style={{ maxWidth: "500px" }}
           >
             <Card.Body className="p-3 p-sm-4 p-md-5">
-              {/* Logo and Title */}
               <div className="text-center mb-4">
                 <Image
                   src={logo_registration}
@@ -178,6 +263,27 @@ function Registration() {
                     />
                     <Form.Control.Feedback type="invalid">
                       {errors.lastName}
+                    </Form.Control.Feedback>
+                  </div>
+                </Form.Group>
+
+                {/* Middle Initial */}
+                <Form.Group className="mb-3">
+                  <div className="input-icon-wrapper">
+                    <FaUser className="input-icon-left" />
+                    <Form.Control
+                      type="text"
+                      name="middleInitial"
+                      placeholder="Middle Initial"
+                      value={formData.middleInitial}
+                      onChange={handleChange}
+                      isInvalid={!!errors.middleInitial}
+                      className="input-with-icon"
+                      size="sm"
+                      maxLength={1}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.middleInitial}
                     </Form.Control.Feedback>
                   </div>
                 </Form.Group>
@@ -346,8 +452,9 @@ function Registration() {
                   variant="none"
                   type="submit"
                   className="submit-btn w-100 mb-3 fw-bold"
+                  disabled={loading}
                 >
-                  REGISTER
+                  {loading ? "Registering..." : "REGISTER"}
                 </Button>
 
                 {/* Login Link */}

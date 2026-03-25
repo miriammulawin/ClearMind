@@ -9,7 +9,7 @@ import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import DayAppointmentsModal from "./components/DayAppointmentsModal";
 import CreateAppointmentModal from "./components/CreateAppointmentModal";
-import { calendarEvents } from "./data/appointmentsData";
+import { calendarEvents } from "./data/AppointmentsData";
 
 import styles from "./DoctorStyle/DoctorAppointment.module.css";
 

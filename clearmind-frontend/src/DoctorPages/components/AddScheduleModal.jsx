@@ -315,61 +315,17 @@ function AddScheduleModal({ isOpen, onClose, savedSchedule, onSave }) {
         </div>
         {/* /body */}
 
-          {/* ── Footer ── */}
-          <div
-            style={{
-              ...S.footer,
-              ...(isMobile
-                ? { padding: "10px 14px", borderRadius: 0, flexWrap: "wrap" }
-                : {}),
-            }}
-          >
-            <button
-              onClick={onClose}
-              onMouseEnter={() => setHFooter("cancel")}
-              onMouseLeave={() => setHFooter(null)}
-              style={{
-                ...S.btn,
-                ...(isMobile ? { flex: 1 } : {}),
-                background: hFooter === "cancel" ? PURPLE_LIGHT : "#fff",
-                color: PURPLE,
-                border: `1.5px solid #c9b8f0`,
-                padding: "10px 22px",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-                boxShadow: "none",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              onMouseEnter={() => setHFooter("save")}
-              onMouseLeave={() => setHFooter(null)}
-              style={{
-                ...S.btn,
-                ...(isMobile ? { flex: 1 } : {}),
-                background: hFooter === "save" ? PURPLE_DARK : PURPLE,
-                color: "#fff",
-                border: `2px solid ${hFooter === "save" ? PURPLE_DARK : PURPLE}`,
-                padding: "10px 26px",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                whiteSpace: "nowrap",
-                boxShadow: "0 4px 14px rgba(77,34,124,0.3)",
-              }}
-            >
-              Save Schedule
-            </button>
-          </div>
+        {/* ── Footer ── */}
+        <div className={styles.footer}>
+          <button className={styles.btnCancel} onClick={onClose}>
+            Cancel
+          </button>
+          <button className={styles.btnSave} onClick={handleSave}>
+            Save Schedule
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

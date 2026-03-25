@@ -16,10 +16,9 @@
 }
 
 .pageTitle {
- margin-bottom: 20px;
-    font-size: 24px;
-    color: #4e237c;
-    font-weight: 800;
+
+  margin: 0; font-size: clamp(20px, 3vw, 28px);
+          font-weight: 800; color: #4D227C;
 }
 
 .headerActions {

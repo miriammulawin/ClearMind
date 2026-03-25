@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { RiDashboardFill } from "react-icons/ri";
@@ -7,12 +7,10 @@ import { FaClinicMedical, FaMoneyCheck } from "react-icons/fa";
 import { BsPersonLinesFill } from "react-icons/bs";
 import { MdManageAccounts } from "react-icons/md";
 import { BiSolidUserCircle } from "react-icons/bi";
-
-import "../index.css";
+import styles from "./AdminStyle/AdminSideBar.module.css";
 import logo from "../assets/CMPS_Logo.png";
 
 function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
-  // ── Persist collapsed state in localStorage so it survives remounts on navigation ──
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebarCollapsed") === "true";
   });
@@ -27,6 +25,18 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 965) {
+        setCollapsed(true);
+        localStorage.setItem("sidebarCollapsed", "true");
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/admin/dashboard" },
     {
@@ -35,7 +45,11 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
       path: "/admin/appointment",
     },
     { name: "Patients", icon: <BsPersonLinesFill />, path: "/admin/patients" },
-    { name: "Clinic", icon: <FaClinicMedical />, path: "/admin/clinic" },
+    {
+      name: "Clinic & Services",
+      icon: <FaClinicMedical />,
+      path: "/admin/clinic",
+    },
     { name: "Billing", icon: <FaMoneyCheck />, path: "/admin/billing" },
     {
       name: "Manage Account",
@@ -49,31 +63,35 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
     e.stopPropagation();
     setCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem("sidebarCollapsed", String(next)); // persist
+      localStorage.setItem("sidebarCollapsed", String(next));
       return next;
     });
   };
 
   const handleMenuClick = (item) => {
-    navigate(item.path); // never touch collapsed
+    navigate(item.path);
   };
 
   return (
     <>
-      <div className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Logo" className="sidebar-logo" />
-            <FiMenu className="menu-icon" onClick={toggleCollapsed} />
+      <div
+        className={`${styles.sidebarContainer} ${collapsed ? styles.collapsed : ""}`}
+      >
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <img src={logo} alt="Logo" className={styles.sidebarLogo} />
+            <FiMenu className={styles.menuIcon} onClick={toggleCollapsed} />
           </div>
 
-          <div className="profile-section">
-            <div className="profile-pic"></div>
-            <div className="profile-info">
-              <h5 className="profile-name">Admin101</h5>
-              <p className="profile-contact">admin@gmail.com · 09123456767</p>
+          <div className={styles.profileSection}>
+            <div className={styles.profilePic}></div>
+            <div className={styles.profileInfo}>
+              <h5 className={styles.profileName}>Admin101</h5>
+              <p className={styles.profileContact}>
+                admin@gmail.com · 09123456767
+              </p>
               <FiEdit
-                className="edit-icon"
+                className={styles.editIcon}
                 onClick={(e) => {
                   e.stopPropagation();
                   navigate("/admin/profile");
@@ -83,11 +101,11 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
             </div>
           </div>
 
-          <div className="sidebar-menu">
+          <div className={styles.sidebarMenu}>
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`menu-item ${location.pathname === item.path ? "active" : ""}`}
+                className={`${styles.menuItem} ${location.pathname === item.path ? styles.menuItemActive : ""}`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
@@ -103,8 +121,8 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
                   setTooltip((prev) => ({ ...prev, visible: false }))
                 }
               >
-                <span className="menu-icon-left">{item.icon}</span>
-                <span className="menu-text">{item.name}</span>
+                <span className={styles.menuIconLeft}>{item.icon}</span>
+                <span className={styles.menuText}>{item.name}</span>
               </div>
             ))}
           </div>
@@ -113,20 +131,10 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
 
       {tooltip.visible && (
         <div
+          className={styles.tooltipOverlay}
           style={{
-            position: "fixed",
             left: tooltip.x,
             top: tooltip.y,
-            transform: "translateY(-50%)",
-            background: "#4e237c",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "6px",
-            fontSize: "0.85rem",
-            whiteSpace: "nowrap",
-            zIndex: 9999,
-            boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
-            pointerEvents: "none",
           }}
         >
           {tooltip.text}

@@ -1,130 +1,243 @@
 import { useState } from "react";
-import DoctorSideBar from "./components/DoctorSideBar";
-import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorMessages.module.css";
+import DoctorSidebar from "./components/DoctorSideBar";
+import styles from "./DoctorStyle/DoctorMessages.module.css";
 import { FiSearch, FiPaperclip, FiSend } from "react-icons/fi";
+
+const chats = [
+  {
+    name: "Liezel Paciente",
+    initials: "LP",
+    email: "pacienteliezel@gmail.com",
+    phone: "09123 456791",
+    last: "You: goodmorning",
+    date: "Jan 20",
+    unread: true,
+  },
+  {
+    name: "Ara Christina Ceres",
+    initials: "AC",
+    email: "ara.ceres@gmail.com",
+    phone: "09181 234567",
+    last: "You: Thank you po!",
+    date: "Jan 19",
+    unread: false,
+  },
+  {
+    name: "Kevin Ramos",
+    initials: "KR",
+    email: "kevin.ramos@gmail.com",
+    phone: "09221 234567",
+    last: "Kevin: Okay po.",
+    date: "Jan 18",
+    unread: true,
+  },
+  {
+    name: "Maria Santos",
+    initials: "MS",
+    email: "maria.santos@gmail.com",
+    phone: "09191 234567",
+    last: "You: Noted, salamat!",
+    date: "Jan 17",
+    unread: false,
+  },
+  {
+    name: "Sofia Dela Cruz",
+    initials: "SD",
+    email: "sofia.delacruz@gmail.com",
+    phone: "09301 234567",
+    last: "Sofia: When po ba?",
+    date: "Jan 16",
+    unread: true,
+  },
+  {
+    name: "John Doe",
+    initials: "JD",
+    email: "john.doe@gmail.com",
+    phone: "09201 234567",
+    last: "You: Good morning!",
+    date: "Jan 15",
+    unread: false,
+  },
+  {
+    name: "Ana Reyes",
+    initials: "AR",
+    email: "ana.reyes@gmail.com",
+    phone: "09301 234567",
+    last: "Ana: Thank you!",
+    date: "Jan 14",
+    unread: false,
+  },
+  {
+    name: "Carlo Mendoza",
+    initials: "CM",
+    email: "carlo.mendoza@gmail.com",
+    phone: "09251 234567",
+    last: "You: Sure, noted po.",
+    date: "Jan 13",
+    unread: false,
+  },
+];
+
+const messages = [
+  { day: "JAN 19" },
+  { from: "patient", text: "Good morning po! Pwede po bang magtanong?" },
+  { from: "admin", text: "Good morning! Of course, how can I help you?" },
+  { from: "patient", text: "May appointment po ba bukas?" },
+  { from: "admin", text: "Let me check for you. Please hold on for a moment." },
+  { day: "JAN 20" },
+  { time: "8:14 am" },
+  { from: "patient", text: "goodmorning" },
+  {
+    from: "admin",
+    text: "Good morning!",
+  },
+  { time: "6:25 pm" },
+  {
+    from: "patient",
+    text: "goodmorning!",
+    seen: true,
+  },
+];
 
 function DoctorMessages() {
   const [activeMenu] = useState("Messages");
   const [selectedChat, setSelectedChat] = useState(0);
   const [showList, setShowList] = useState(true);
+  const [message, setMessage] = useState("");
 
-  const chats = new Array(8).fill({
-    name: "Liezel Paciente",
-    email: "pacienteliezl@gmail.com",
-    phone: "09123 456791",
-    last: "You: goodmorning",
-    date: "January 20, 2026",
-  });
+  const selected = chats[selectedChat];
 
-  const messages = [
-    { from: "patient", text: "goodmorning" },
-    {
-      from: "admin",
-      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
-    },
-    { day: "JAN 20" },
-    {
-      from: "patient",
-      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
-    },
-    {
-      from: "patient",
-      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
-    },
-    { time: "6:25 am" },
-    {
-      from: "patient",
-      text: "goodmorning!, how's your day? eat your lunch, goodbye.",
-      seen: true,
-    },
-  ];
+  const handleSelect = (i) => {
+    setSelectedChat(i);
+    if (window.innerWidth < 768) setShowList(false);
+  };
 
   return (
     <div className="doctor-layout">
-      <DoctorSideBar activeMenu={activeMenu} />
-
+      <DoctorSidebar activeMenu={activeMenu} />
       <div className="doctor-main">
-        <DoctorTopNavbar activeMenu={activeMenu} />
+      
 
         <div
-          className={`doctor-content msg-wrapper ${showList ? "show-list" : ""}`}
+          className={`${styles.msgWrapper} ${showList ? styles.showList : ""}`}
         >
-          {/* Left panel — chat list */}
-          <div className="msg-left">
-            <select className="msg-filter">
-              <option>Show All</option>
-            </select>
+          {/* ══ LEFT PANEL ══ */}
+          <div className={styles.msgLeft}>
+            <div className={styles.msgLeftTop}>
+              <h5 className={styles.msgLeftTitle}>Messages</h5>
 
-            <div className="msg-search">
-              <FiSearch />
-              <input placeholder="Search Existing Conversation" />
+              <div className={styles.msgSearch}>
+                <FiSearch />
+                <input placeholder="Search conversations…" />
+              </div>
+
+              <select className={styles.msgFilter}>
+                <option>Show All</option>
+                <option>Unread</option>
+                <option>Patients</option>
+                <option>Doctors</option>
+              </select>
             </div>
 
-            <div className="msg-list">
+            <div className={styles.msgList}>
               {chats.map((c, i) => (
                 <div
                   key={i}
-                  className={`msg-item ${selectedChat === i ? "active" : ""}`}
-                  onClick={() => {
-                    setSelectedChat(i);
-                    if (window.innerWidth < 768) setShowList(false);
-                  }}
+                  className={`${styles.msgItem} ${selectedChat === i ? styles.active : ""}`}
+                  onClick={() => handleSelect(i)}
                 >
-                  <div className="avatar">LP</div>
-                  <div className="msg-info">
+                  <div className={styles.avatar}>{c.initials}</div>
+                  <div className={styles.msgItemInfo}>
                     <h6>{c.name}</h6>
                     <p>{c.last}</p>
                   </div>
-                  <span className="msg-date">{c.date}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-end",
+                      gap: 6,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span className={styles.msgDate}>{c.date}</span>
+                    {c.unread && <span className={styles.unreadDot} />}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right panel — chat window */}
-          <div className="msg-right">
-            <div className="msg-header">
-              <button className="back-btn" onClick={() => setShowList(true)}>
+          {/* ══ RIGHT PANEL ══ */}
+          <div className={styles.msgRight}>
+            {/* Header */}
+            <div className={styles.msgHeader}>
+              <button
+                className={styles.backBtn}
+                onClick={() => setShowList(true)}
+              >
                 ←
               </button>
-              <div className="avatar large">LP</div>
-              <div>
-                <h5>Liezel Paciente</h5>
-                <p>pacienteliezl@gmail.com · 09123 456791</p>
+
+              <div className={styles.avatarWrapper}>
+                <div className={`${styles.avatar} ${styles.avatarLg}`}>
+                  {selected.initials}
+                </div>
+                <span className={styles.onlineDot} />
+              </div>
+
+              <div className={styles.msgHeaderInfo}>
+                <h5>{selected.name}</h5>
+                <p>
+                  {selected.email} · {selected.phone}
+                </p>
               </div>
             </div>
 
-            <div className="msg-body">
+            {/* Messages */}
+            <div className={styles.msgBody}>
               {messages.map((m, i) => {
                 if (m.day)
                   return (
-                    <div key={i} className="msg-day">
+                    <div key={i} className={styles.msgDay}>
                       {m.day}
                     </div>
                   );
                 if (m.time)
                   return (
-                    <div key={i} className="msg-time">
+                    <div key={i} className={styles.msgTime}>
                       {m.time}
                     </div>
                   );
                 return (
                   <div
                     key={i}
-                    className={`bubble ${m.from === "admin" ? "admin" : "patient"}`}
+                    className={`${styles.bubble} ${m.from === "admin" ? styles.bubbleAdmin : styles.bubblePatient}`}
                   >
                     {m.text}
-                    {m.seen && <div className="seen">seen</div>}
+                    {m.seen && <div className={styles.seen}>seen ✓</div>}
                   </div>
                 );
               })}
             </div>
 
-            <div className="msg-input">
-              <FiPaperclip className="attach" />
-              <input placeholder="Type a message..." />
-              <FiSend className="send" />
+            {/* Input */}
+            <div className={styles.msgInputBar}>
+              <button className={styles.iconBtn} title="Attach file">
+                <FiPaperclip />
+              </button>
+              <input
+                className={styles.msgInputField}
+                placeholder="Type a message…"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setMessage("");
+                }}
+              />
+              <button className={styles.sendBtn} title="Send message">
+                <FiSend />
+              </button>
             </div>
           </div>
         </div>

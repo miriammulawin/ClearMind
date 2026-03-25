@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import styles from "./DoctorStyle/DoctorDashboard.module.css";
-import { FaClinicMedical, FaChevronLeft, FaChevronRight, FaBullhorn } from "react-icons/fa";
+
+import {
+  FaClinicMedical,
+  FaChevronLeft,
+  FaChevronRight,
+  FaBullhorn,
+} from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
 import AccountSetupModal from "./components/SetUpAccountModal";
 
@@ -89,10 +95,38 @@ function DoctorDashboard() {
   });
 
   const patientsData = [
-    { name: "Liezel Paciente", gender: "Female", date: "January 20, 2026", time: "2:00 pm", type: "Follow Up", status: "Scheduled" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Completed" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Scheduled" },
-    { name: "Ara Christina Ceres", gender: "Female", date: "January 15, 2026", time: "9:00 am", type: "New Concern", status: "Cancelled" },
+    {
+      name: "Liezel Paciente",
+      gender: "Female",
+      date: "January 20, 2026",
+      time: "2:00 pm",
+      type: "Follow Up",
+      status: "Scheduled",
+    },
+    {
+      name: "Ara Christina Ceres",
+      gender: "Female",
+      date: "January 15, 2026",
+      time: "9:00 am",
+      type: "New Concern",
+      status: "Completed",
+    },
+    {
+      name: "Ara Christina Ceres",
+      gender: "Female",
+      date: "January 15, 2026",
+      time: "9:00 am",
+      type: "New Concern",
+      status: "Scheduled",
+    },
+    {
+      name: "Ara Christina Ceres",
+      gender: "Female",
+      date: "January 15, 2026",
+      time: "9:00 am",
+      type: "New Concern",
+      status: "Cancelled",
+    },
   ];
 
   const navigateWeek = (direction) => {
@@ -108,22 +142,41 @@ function DoctorDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Scheduled": return "#1E3A8A";
-      case "Completed": return "#16A34A";
-      case "Cancelled": return "#DC2626";
-      default: return "#000";
+      case "Scheduled":
+        return "#1E3A8A";
+      case "Completed":
+        return "#16A34A";
+      case "Cancelled":
+        return "#DC2626";
+      default:
+        return "#000";
     }
   };
 
   const barData = {
-    labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
-    datasets: [{
-      label: "Monthly Patients",
-      data: [10, 8, 6, 5, 4, 7, 9, 11, 6, 8, 5, 12],
-      backgroundColor: "#4D227C",
-      borderRadius: 6,
-      barThickness: 35,
-    }],
+    labels: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    datasets: [
+      {
+        label: "Monthly Patients",
+        data: [10, 8, 6, 5, 4, 7, 9, 11, 6, 8, 5, 12],
+        backgroundColor: "#4D227C",
+        borderRadius: 6,
+        barThickness: 35,
+      },
+    ],
   };
 
   const barOptions = {
@@ -140,24 +193,38 @@ function DoctorDashboard() {
       },
     },
     scales: {
-      x: { ticks: { color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
-      y: { beginAtZero: true, ticks: { stepSize: 1, color: "#574a65", font: { family: "Poppins, sans-serif", size: 12 } } },
+      x: {
+        ticks: {
+          color: "#574a65",
+          font: { family: "Poppins, sans-serif", size: 12 },
+        },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+          color: "#574a65",
+          font: { family: "Poppins, sans-serif", size: 12 },
+        },
+      },
     },
   };
 
   const pieData = {
     labels: ["Completed", "Cancelled", "Scheduled"],
-    datasets: [{
-      label: "Appointment Status",
-      data: [
-        patientsData.filter((p) => p.status === "Completed").length,
-        patientsData.filter((p) => p.status === "Cancelled").length,
-        patientsData.filter((p) => p.status === "Scheduled").length,
-      ],
-      backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de"],
-      borderColor: "rgb(255, 255, 255)",
-      borderWidth: 1,
-    }],
+    datasets: [
+      {
+        label: "Appointment Status",
+        data: [
+          patientsData.filter((p) => p.status === "Completed").length,
+          patientsData.filter((p) => p.status === "Cancelled").length,
+          patientsData.filter((p) => p.status === "Scheduled").length,
+        ],
+        backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de"],
+        borderColor: "rgb(255, 255, 255)",
+        borderWidth: 1,
+      },
+    ],
   };
 
   const pieOptions = {
@@ -173,7 +240,11 @@ function DoctorDashboard() {
           boxHeight: 14,
           padding: 10,
           color: "#4E237C",
-          font: { family: "Poppins, sans-serif", size: window.innerWidth < 768 ? 12 : 16, weight: "500" },
+          font: {
+            family: "Poppins, sans-serif",
+            size: window.innerWidth < 768 ? 12 : 16,
+            weight: "500",
+          },
           usePointStyle: true,
         },
       },
@@ -188,7 +259,12 @@ function DoctorDashboard() {
       },
     },
     layout: {
-      padding: { top: 10, bottom: 10, left: 10, right: window.innerWidth < 768 ? 10 : 60 },
+      padding: {
+        top: 10,
+        bottom: 10,
+        left: 10,
+        right: window.innerWidth < 768 ? 10 : 60,
+      },
     },
     cutout: "0%",
   };
@@ -201,43 +277,50 @@ function DoctorDashboard() {
         <DoctorTopNavbar activeMenu={activeMenu} />
 
         <div className="doctor-content">
-          <div className={styles["container-fluid"]}>
-
-            {/* ── Announcements (admin style) ── */}
+          <div className={styles.containerFluid}>
+            {/* ── Announcements ── */}
             <div className="row mb-4">
               <div className="col-12">
-                <div className={`${styles["dashboard-card"]} ${styles["announcement-card"]}`}>
-                  <div className={styles["card-header"]}>
-                    <h5 className={styles["announcement-title"]}>
-                      <FaBullhorn className={styles["announce-icon"]} />
+                <div
+                  className={`${styles.dashboardCard} ${styles.announcementCard}`}
+                >
+                  <div className={styles.cardHeader}>
+                    <h5 className={styles.announcementTitle}>
+                      <FaBullhorn className={styles.announceIcon} />
                       Announcements
                     </h5>
                   </div>
                   <hr />
                   {adminAnnouncements.length === 0 ? (
-                    <div className={styles["no-announce"]}>No announcements yet.</div>
+                    <div className={styles.noAnnounce}>
+                      No announcements yet.
+                    </div>
                   ) : (
-                    <div className={styles["announce-list"]}>
+                    <div className={styles.announceList}>
                       {adminAnnouncements.map((ann) => (
                         <div
                           key={ann.id}
-                          className={`${styles["announce-item"]} ${
+                          className={`${styles.announceItem} ${
                             ann.priority === "high"
-                              ? styles["announce-high"]
-                              : styles["announce-normal"]
+                              ? styles.announceHigh
+                              : styles.announceNormal
                           }`}
                         >
-                          <div className={styles["announce-left"]}>
-                            <div className={styles["announce-item-header"]}>
+                          <div className={styles.announceLeft}>
+                            <div className={styles.announceItemHeader}>
                               {ann.priority === "high" && (
-                                <span className={styles["priority-badge"]}>Urgent</span>
+                                <span className={styles.priorityBadge}>
+                                  Urgent
+                                </span>
                               )}
-                              <strong className={styles["announce-item-title"]}>
+                              <strong className={styles.announceItemTitle}>
                                 {ann.title}
                               </strong>
                             </div>
-                            <p className={styles["announce-message"]}>{ann.message}</p>
-                            <small className={styles["announce-date"]}>
+                            <p className={styles.announceMessage}>
+                              {ann.message}
+                            </p>
+                            <small className={styles.announceDate}>
                               Posted: {ann.postedDate}
                             </small>
                           </div>
@@ -252,25 +335,28 @@ function DoctorDashboard() {
             {/* Today's Appointment + Calendar */}
             <div className="row g-4">
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Today's Appointment</h5>
-                    <div className={styles["card-date"]}>
+                    <div className={styles.cardDate}>
                       {formattedDate} <span>1</span>
                     </div>
+             
                   </div>
+                  
                   <hr />
-                  <div className={styles["card-body"]}>
-                    <div className={styles["appointment-items"]}>
-                      <div className={styles["appointment-icon-text"]}>
-                        <IoVideocam className={styles["appointment-icon"]} />
+                  <div className={styles.cardBody}>
+                    <div className={styles.appointmentItems}>
+                    
+                      <div className={styles.appointmentIconText}>
+                        <IoVideocam className={styles.appointmentIcon} />
                         <strong>Online Clinic</strong>
                       </div>
                       <p>1 Appointment</p>
                     </div>
-                    <div className={styles["appointment-items"]}>
-                      <div className={styles["appointment-icon-text"]}>
-                        <FaClinicMedical className={styles["appointment-icon"]} />
+                    <div className={styles.appointmentItems}>
+                      <div className={styles.appointmentIconText}>
+                        <FaClinicMedical className={styles.appointmentIcon} />
                         <strong>Physical Clinic</strong>
                       </div>
                       <p>0 Appointment</p>
@@ -280,59 +366,97 @@ function DoctorDashboard() {
               </div>
 
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Calendar</h5>
-                    <div className={styles["week-navigation"]}>
-                      <button className={styles["week-nav-btn"]} onClick={() => navigateWeek(-1)}>
+                    <div className={styles.weekNavigation}>
+                      <button
+                        className={styles.weekNavBtn}
+                        onClick={() => navigateWeek(-1)}
+                      >
                         <FaChevronLeft />
                       </button>
-                      <span className={styles["week-range"]}>
-                        {currentWeekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                      <span className={styles.weekRange}>
+                        {currentWeekStart.toLocaleDateString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })}
                       </span>
-                      <button className={styles["week-nav-btn"]} onClick={() => navigateWeek(1)}>
+                      <button
+                        className={styles.weekNavBtn}
+                        onClick={() => navigateWeek(1)}
+                      >
                         <FaChevronRight />
                       </button>
                     </div>
                   </div>
                   <hr />
-                  <div className={styles["card-body"]}>
-                    <div className={styles["calendar-grid"]}>
-                      <div className={styles["calendar-header"]}>
-                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                          <div key={day} className={styles["calendar-day-label"]}>{day}</div>
-                        ))}
+                  <div className={styles.cardBody}>
+                    <div className={styles.calendarGrid}>
+                      <div className={styles.calendarHeader}>
+                        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(
+                          (day) => (
+                            <div key={day} className={styles.calendarDayLabel}>
+                              {day}
+                            </div>
+                          ),
+                        )}
                       </div>
-                      <div className={styles["calendar-dates"]}>
+                      <div className={styles.calendarDates}>
                         {(() => {
                           const dates = [];
-                          const firstDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
-                          const lastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
+                          const firstDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth(),
+                            1,
+                          );
+                          const lastDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth() + 1,
+                            0,
+                          );
                           const startDay = firstDay.getDay();
                           const daysInMonth = lastDay.getDate();
-                          const prevMonthLastDay = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 0).getDate();
+                          const prevMonthLastDay = new Date(
+                            currentWeekStart.getFullYear(),
+                            currentWeekStart.getMonth(),
+                            0,
+                          ).getDate();
 
                           for (let i = startDay - 1; i >= 0; i--) {
                             dates.push(
-                              <div key={`prev-${i}`} className={`${styles["calendar-date"]} ${styles["other-month"]}`}>
+                              <div
+                                key={`prev-${i}`}
+                                className={`${styles.calendarDate} ${styles.otherMonth}`}
+                              >
                                 {prevMonthLastDay - i}
-                              </div>
+                              </div>,
                             );
                           }
                           for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), day);
+                            const date = new Date(
+                              currentWeekStart.getFullYear(),
+                              currentWeekStart.getMonth(),
+                              day,
+                            );
                             dates.push(
-                              <div key={day} className={`${styles["calendar-date"]} ${isToday(date) ? styles["today"] : ""}`}>
+                              <div
+                                key={day}
+                                className={`${styles.calendarDate} ${isToday(date) ? styles.today : ""}`}
+                              >
                                 {day}
-                              </div>
+                              </div>,
                             );
                           }
                           const remainingCells = 42 - dates.length;
                           for (let day = 1; day <= remainingCells; day++) {
                             dates.push(
-                              <div key={`next-${day}`} className={`${styles["calendar-date"]} ${styles["other-month"]}`}>
+                              <div
+                                key={`next-${day}`}
+                                className={`${styles.calendarDate} ${styles.otherMonth}`}
+                              >
                                 {day}
-                              </div>
+                              </div>,
                             );
                           }
                           return dates;
@@ -347,16 +471,18 @@ function DoctorDashboard() {
             {/* Patients Table */}
             <div className="row mt-4">
               <div className="col-12">
-                <div className={styles["dashboard-card"]}>
-                  <div className={styles["card-header"]}>
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
                     <h5>Total's Patients</h5>
-                    <div className={styles["card-date"]}>
+                    <div className={styles.cardDate}>
                       <span>{patientsData.length}</span>
                     </div>
                   </div>
                   <hr />
-                  <div className={`${styles["card-body"]} ${styles["table-responsive"]}`}>
-                    <table className={styles["patients-table"]}>
+                  <div
+                    className={`${styles.cardBody} ${styles.tableResponsive}`}
+                  >
+                    <table className={styles.patientsTable}>
                       <thead>
                         <tr>
                           <th>Name</th>
@@ -375,17 +501,23 @@ function DoctorDashboard() {
                             <td>{patient.date}</td>
                             <td>{patient.time}</td>
                             <td>{patient.type}</td>
-                            <td style={{ color: getStatusColor(patient.status) }}>{patient.status}</td>
+                            <td
+                              style={{ color: getStatusColor(patient.status) }}
+                            >
+                              {patient.status}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  <div className={styles["table-pagination"]}>
+                  <div className={styles.tablePagination}>
                     <span>Page 1 of 5</span>
-                    <div className={styles["pagination-buttons"]}>
+                    <div className={styles.paginationButtons}>
                       <button>{"< Previous"}</button>
-                      {[1, 2, 3, 4, 5].map((n) => <button key={n}>{n}</button>)}
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button key={n}>{n}</button>
+                      ))}
                       <button>{"Next >"}</button>
                     </div>
                   </div>
@@ -396,7 +528,7 @@ function DoctorDashboard() {
             {/* Charts */}
             <div className="row mt-4">
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
+                <div className={styles.dashboardCard}>
                   <h5>Monthly Patients</h5>
                   <div style={{ overflowX: "auto" }}>
                     <div style={{ minWidth: "900px", height: "300px" }}>
@@ -406,15 +538,14 @@ function DoctorDashboard() {
                 </div>
               </div>
               <div className="col-md-6">
-                <div className={styles["dashboard-card"]}>
+                <div className={styles.dashboardCard}>
                   <h5>Appointment Status</h5>
-                  <div className={styles["pie-chart-container"]}>
+                  <div className={styles.pieChartContainer}>
                     <Pie data={pieData} options={pieOptions} />
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

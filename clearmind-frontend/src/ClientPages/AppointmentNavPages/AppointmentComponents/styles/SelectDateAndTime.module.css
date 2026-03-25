@@ -1,0 +1,349 @@
+/* SelectDateAndTime.module.css
+   Mobile-first · rem units · clamp() for fluid scaling
+   Base: 16px = 1rem
+   Purple #5B2C91 · No inline field errors (parent modal handles them)
+*/
+
+/* ─── Section wrapper ───────────────────────────────────────── */
+.section {
+  margin-bottom: clamp(1rem, 4vw, 1.5rem);
+}
+
+.sectionTitle {
+  font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.required { color: #c0392b; }
+
+.sessionNote {
+  font-size: clamp(0.625rem, 2vw, 0.75rem);
+  font-weight: 400;
+  color: #9b8ab0;
+  font-style: italic;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SAME-DAY TOAST
+   Fixed center of screen · Slides in from slightly above
+───────────────────────────────────────────────────────────── */
+.toast {
+    position: fixed;
+    bottom: calc(clamp(3.5rem, 10vw, 5rem) + 1rem); /* clears the sticky footer */
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(92vw, 23.75rem); /* 380px */
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    background: #fff;
+    border-radius: 0.75rem;
+    border-left: 0.3125rem solid #e83434;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.16);
+    padding: 0.875rem 0.875rem 1.25rem;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -46%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+.toastIconWrap {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 50%;
+  background: #ffe8e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toastIcon { font-size: 1.0625rem; color: #ba4242; }
+
+.toastContent { flex: 1; min-width: 0; }
+
+.toastTitle {
+  font-size: clamp(0.75rem, 2.5vw, 0.8125rem);
+  font-weight: 700;
+  color: #ba4242;
+  margin: 0 0 0.125rem;
+  line-height: 1.3;
+}
+
+.toastDesc {
+  font-size: clamp(0.6875rem, 2.2vw, 0.75rem);
+  color: #ba4242;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.toastClose {
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  color: #ba4242;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.toastClose:hover { color: #1a1a1a; }
+
+/* Progress bar drains 100% → 0% over 4s */
+.toastProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 0.1875rem;
+  background: #e83434;
+  border-radius: 0 0 0 0.75rem;
+  animation: toastBar 4s linear forwards;
+}
+
+@keyframes toastBar {
+  from { width: 100%; }
+  to   { width: 0%;   }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CALENDAR
+   · Solid purple header
+   · Circular nav arrows
+   · Available = bold purple
+   · Today = purple ring outline
+   · Selected = solid purple fill
+───────────────────────────────────────────────────────────── */
+.calCard {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow: 0 0.125rem 1rem rgba(91, 44, 145, 0.10);
+}
+
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #5B2C91;
+  padding: 0.8125rem 1rem;
+}
+
+.calArrowBtn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 0.09375rem solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.calArrowBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.2); }
+.calArrowBtn:disabled             { opacity: 0.35; cursor: not-allowed; }
+
+.calMonthTitle {
+  font-size: clamp(0.875rem, 3.5vw, 1.0625rem);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+/* 7-column grid */
+.calBody {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0.75rem 0.625rem 1rem;
+  gap: 0.25rem 0.125rem;
+}
+
+/* Day name headers — SU MO TU... */
+.calDayName {
+  text-align: center;
+  font-size: clamp(0.5625rem, 1.8vw, 0.6875rem);
+  font-weight: 700;
+  color: #b8a9d4;
+  padding: 0.25rem 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calEmpty { /* spacer — intentionally empty */ }
+
+/* Base day cell */
+.calCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: clamp(0.75rem, 2.8vw, 0.875rem);
+  font-weight: 400;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  cursor: default;
+  transition: all 0.15s ease;
+  color: #d0c8e0;
+  min-width: 0;
+  width: 100%;
+  max-width: 2.5rem;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Past / unavailable */
+.calCellDisabled {
+  color: #d0c8e0;
+  cursor: not-allowed;
+}
+
+/* Available — bold purple */
+.calCellAvail {
+  color: #5B2C91;
+  font-weight: 700;
+  cursor: pointer;
+}
+.calCellAvail:hover { background: #ede8f7; }
+
+/* Today — purple ring outline */
+.calCellToday {
+  color: #5B2C91;
+  font-weight: 700;
+  cursor: pointer;
+  border: 0.125rem solid #5B2C91;
+  background: transparent;
+}
+.calCellToday:hover { background: #ede8f7; }
+
+/* Selected — solid purple fill */
+.calCellSelected {
+  background: #5B2C91 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0.125rem 0.625rem rgba(91, 44, 145, 0.35);
+}
+
+/* ─── No-slots warning ──────────────────────────────────────── */
+.fieldWarning {
+  font-size: clamp(0.6875rem, 2.2vw, 0.75rem);
+  color: #7a5000;
+  background: #fff8e6;
+  border: 0.0625rem solid #e8a234;
+  border-radius: 0.4375rem;
+  padding: 0.4375rem 0.75rem;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TIME DROPDOWN
+   · Input-like trigger + animated chevron
+   · Flat white list, closes on outside click
+───────────────────────────────────────────────────────────── */
+.timeDropdownWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.timeDropdownTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(0.625rem, 2.5vw, 0.8125rem) clamp(0.75rem, 3vw, 1rem);
+  border: 0.09375rem solid #ddd0f0;
+  border-radius: 0.625rem;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: clamp(0.75rem, 2.8vw, 0.875rem);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.timeDropdownTrigger:hover,
+.timeDropdownTriggerOpen     { border-color: #5B2C91; box-shadow: 0 0 0 0.1875rem rgba(91, 44, 145, 0.08); }
+.timeDropdownTriggerSelected { border-color: #c8b0e8; }
+
+.timeDropdownPlaceholder { color: #b8a9d4; }
+.timeDropdownValue       { color: #1a1a1a; font-weight: 600; }
+
+.timeDropdownIcon {
+  font-size: 1.25rem;
+  color: #9b8ab0;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.timeDropdownIconOpen { transform: rotate(180deg); }
+
+/* Dropdown panel */
+.timeDropdownList {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 0.09375rem solid #ddd0f0;
+  border-radius: 0.625rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(91, 44, 145, 0.12);
+  z-index: 50;
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  animation: dropFadeIn 0.15s ease;
+}
+
+@keyframes dropFadeIn {
+  from { opacity: 0; transform: translateY(-0.25rem); }
+  to   { opacity: 1; transform: translateY(0);        }
+}
+
+/* Slot row */
+.timeDropdownItem {
+  width: 100%;
+  display: block;
+  text-align: left;
+  padding: clamp(0.625rem, 2.5vw, 0.8125rem) clamp(0.75rem, 3vw, 1rem);
+  font-family: inherit;
+  font-size: clamp(0.75rem, 2.8vw, 0.875rem);
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-bottom: 0.0625rem solid #f4f0fa;
+}
+.timeDropdownItem:last-child  { border-bottom: none; }
+.timeDropdownItem:hover       { background: #f8f4ff; }
+.timeDropdownItemSelected     { background: #f3eeff !important; color: #5B2C91 !important; font-weight: 700; }
+
+/* No slots message */
+.timeDropdownEmpty {
+  padding: clamp(0.625rem, 2.5vw, 0.8125rem) clamp(0.75rem, 3vw, 1rem);
+  font-size: clamp(0.75rem, 2.8vw, 0.8125rem);
+  color: #9b8ab0;
+  text-align: center;
+  font-style: italic;
+  list-style: none;
+}
+
+/* Confirmed session range below dropdown */
+.selectedTimeRange {
+  font-size: clamp(0.6875rem, 2.2vw, 0.75rem);
+  color: #718096;
+  margin: 0.5rem 0 0;
+  line-height: 1.5;
+}
+.selectedTimeRange strong { color: #5B2C91; }

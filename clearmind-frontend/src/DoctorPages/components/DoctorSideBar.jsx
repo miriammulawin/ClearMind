@@ -1,14 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { FaCalendarDays } from "react-icons/fa6";
 import { FaMoneyCheck } from "react-icons/fa";
-import { BsPersonLinesFill } from "react-icons/bs";
+import { BsPersonLinesFill, BsCalendarCheckFill } from "react-icons/bs";
 import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
-import { BsCalendarCheckFill } from "react-icons/bs";
-
-import "../../index.css";
+import styles from "../../AdminPages/AdminStyle/AdminSideBar.module.css";
 import logo from "../../assets/CMPS_Logo.png";
 
 function DoctorSideBar() {
@@ -25,6 +23,19 @@ function DoctorSideBar() {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ── Auto-collapse on small screens ──
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 965) {
+        setCollapsed(true);
+        localStorage.setItem("doctorSidebarCollapsed", "true");
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const menus = [
     { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
@@ -61,29 +72,37 @@ function DoctorSideBar() {
 
   return (
     <>
-      <div className={`sidebar-container ${collapsed ? "collapsed" : ""}`}>
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <img src={logo} alt="Logo" className="sidebar-logo" />
-            <FiMenu className="menu-icon" onClick={toggleCollapsed} />
+      <div
+        className={`${styles.sidebarContainer} ${collapsed ? styles.collapsed : ""}`}
+      >
+        <div className={styles.sidebar}>
+          <div className={styles.sidebarHeader}>
+            <img src={logo} alt="Logo" className={styles.sidebarLogo} />
+            <FiMenu className={styles.menuIcon} onClick={toggleCollapsed} />
           </div>
 
-          <div className="profile-section">
-            <div className="profile-pic"></div>
-            <div className="profile-info">
-              <h5 className="profile-name">Jinky C. Malabanan</h5>
-              <p className="profile-contact">PRC License No.: PSY-0123456</p>
-              <FiEdit className="edit-icon" />
+          <div className={styles.profileSection}>
+            <div className={styles.profilePic}></div>
+            <div className={styles.profileInfo}>
+              <h5 className={styles.profileName}>Jinky C. Malabanan</h5>
+              <p className={styles.profileContact}>
+                PRC License No.: PSY-0123456
+              </p>
+              <FiEdit
+                className={styles.editIcon}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/doctor/profile");
+                }}
+              />
             </div>
           </div>
 
-          <div className="sidebar-menu">
+          <div className={styles.sidebarMenu}>
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`menu-item ${
-                  location.pathname === item.path ? "active" : ""
-                }`}
+                className={`${styles.menuItem} ${location.pathname === item.path ? styles.menuItemActive : ""}`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
@@ -99,8 +118,8 @@ function DoctorSideBar() {
                   setTooltip((prev) => ({ ...prev, visible: false }))
                 }
               >
-                <span className="menu-icon-left">{item.icon}</span>
-                <span className="menu-text">{item.name}</span>
+                <span className={styles.menuIconLeft}>{item.icon}</span>
+                <span className={styles.menuText}>{item.name}</span>
               </div>
             ))}
           </div>
@@ -109,20 +128,10 @@ function DoctorSideBar() {
 
       {tooltip.visible && (
         <div
+          className={styles.tooltipOverlay}
           style={{
-            position: "fixed",
             left: tooltip.x,
             top: tooltip.y,
-            transform: "translateY(-50%)",
-            background: "#4e237c",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "6px",
-            fontSize: "0.85rem",
-            whiteSpace: "nowrap",
-            zIndex: 9999,
-            boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
-            pointerEvents: "none",
           }}
         >
           {tooltip.text}

@@ -43,21 +43,21 @@ function ClinicalNotesSection() {
     {
       key: "intake",
       label: "Medical Intake",
-      icon: <FiClipboard size={15} />,
+      icon: <FiClipboard size={14} />,
       color: "#4D227C",
       light: "#f0e8ff",
     },
     {
       key: "progress",
       label: "Progress Note",
-      icon: <FiActivity size={15} />,
+      icon: <FiActivity size={14} />,
       color: "#1d6fa4",
       light: "#e8f4ff",
     },
     {
       key: "recommendation",
       label: "Recommendation",
-      icon: <FiFileText size={15} />,
+      icon: <FiFileText size={14} />,
       color: "#15803d",
       light: "#e8faf0",
     },
@@ -91,6 +91,7 @@ function ClinicalNotesSection() {
     setFormValue(entry.content);
     setShowAddModal(true);
   };
+
   const handleSaveEdit = () => {
     if (!formValue.trim()) return;
     setNotes((prev) => ({
@@ -101,16 +102,19 @@ function ClinicalNotesSection() {
     }));
     closeForm();
   };
+
   const handleDelete = (id) =>
     setNotes((prev) => ({
       ...prev,
       [activeTab]: prev[activeTab].filter((e) => e.id !== id),
     }));
+
   const openAdd = () => {
     setEditingEntry(null);
     setFormValue("");
     setShowAddModal(true);
   };
+
   const closeForm = () => {
     setShowAddModal(false);
     setEditingEntry(null);
@@ -118,98 +122,371 @@ function ClinicalNotesSection() {
   };
 
   return (
-    <div className="clinical-notes-section">
-      {/* Tab Bar */}
-      {/* Tab Bar */}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        /* ── Tab Bar ── */
+        .cn-tabs {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+        .cn-tab-btn {
+          flex: 1;
+          min-width: clamp(80px, 20vw, 120px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: clamp(6px, 1.2vw, 8px) clamp(8px, 1.5vw, 12px);
+          border-radius: 10px;
+          border: 1.5px solid #e2d5f5;
+          background: #faf7ff;
+          color: #777;
+          font-size: clamp(11px, 1.4vw, 12.5px);
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s;
+          font-family: 'Poppins', sans-serif;
+        }
+        .cn-tab-btn:hover {
+          border-color: #9b6bbf;
+          color: #4D227C;
+        }
+        .cn-tab-count {
+          padding: 1px 8px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'Poppins', sans-serif;
+        }
+        .cn-add-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: clamp(7px, 1.2vw, 8px) clamp(12px, 2vw, 16px);
+          border-radius: 10px;
+          border: none;
+          color: #fff;
+          font-size: clamp(11px, 1.4vw, 13px);
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: filter 0.15s, transform 0.1s;
+          font-family: 'Poppins', sans-serif;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+        .cn-add-btn:hover {
+          filter: brightness(1.1);
+        }
+        .cn-add-btn:active {
+          transform: translateY(1px);
+        }
+
+        /* ── Entries Container ── */
+        .cn-entries {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-height: 340px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding-right: 4px;
+        }
+        .cn-entries::-webkit-scrollbar { width: 5px; }
+        .cn-entries::-webkit-scrollbar-track { background: #f0eaf8; border-radius: 10px; }
+        .cn-entries::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
+        .cn-entries { scrollbar-color: #4D227C #f0eaf8; scrollbar-width: thin; }
+
+        /* ── Entry Card ── */
+        .cn-entry-card {
+          border-radius: 12px;
+          border: 1px solid #ede5f7;
+          border-left-width: 4px;
+          padding: 14px 16px;
+          background: #fdfcff;
+          flex-shrink: 0;
+          box-shadow: 0 1px 6px rgba(77,34,124,0.05);
+        }
+        .cn-entry-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .cn-entry-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 7px;
+          align-items: center;
+        }
+        .cn-entry-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: 'Poppins', sans-serif;
+        }
+        .cn-entry-date,
+        .cn-entry-author {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          color: #9ca3af;
+          font-family: 'Poppins', sans-serif;
+        }
+        .cn-entry-actions {
+          display: flex;
+          gap: 5px;
+          flex-shrink: 0;
+        }
+        .cn-action-btn {
+          padding: 5px 7px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          transition: background 0.14s;
+        }
+        .cn-edit-btn   { background: #f0e8ff; color: #4D227C; }
+        .cn-edit-btn:hover   { background: #e0d4f5; }
+        .cn-delete-btn { background: #fff0f0; color: #e53e3e; }
+        .cn-delete-btn:hover { background: #ffe0e0; }
+
+        .cn-entry-content {
+          font-size: 13px;
+          color: #374151;
+          line-height: 1.7;
+          margin: 0;
+          white-space: pre-wrap;
+          font-family: 'Poppins', sans-serif;
+        }
+
+        /* ── Empty State ── */
+        .cn-empty {
+          text-align: center;
+          padding: 32px 20px;
+          color: #bbb;
+          border: 1.5px dashed #e0d4f5;
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+        }
+        .cn-empty p { margin: 0; font-size: 13px; font-family: 'Poppins', sans-serif; }
+
+        /* ── Add/Edit sub-modal ── */
+        .cn-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.60);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 12000;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+        .cn-modal {
+          background: #fff;
+          border-radius: 16px;
+          width: 100%;
+          max-width: 520px;
+          box-shadow: 0 24px 64px rgba(77,34,124,0.25);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          animation: cnModalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes cnModalIn {
+          from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cn-modal-header {
+          padding: 18px 22px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .cn-modal-header-title {
+          margin: 0;
+          color: #fff;
+          font-size: 16px;
+          font-weight: 700;
+          font-family: 'Poppins', sans-serif;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .cn-modal-close {
+          background: rgba(255,255,255,0.18);
+          border: none;
+          color: #fff;
+          border-radius: 8px;
+          width: 32px;
+          height: 32px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s;
+        }
+        .cn-modal-close:hover { background: rgba(255,255,255,0.30); }
+        .cn-modal-body {
+          padding: 20px 24px;
+          background: #f5f0fb;
+        }
+        .cn-form-label {
+          display: block;
+          font-size: 11px;
+          font-weight: 700;
+          color: #4D227C;
+          text-transform: uppercase;
+          letter-spacing: 0.6px;
+          margin-bottom: 8px;
+          font-family: 'Poppins', sans-serif;
+        }
+        .cn-textarea {
+          width: 100%;
+          min-height: 140px;
+          padding: 12px 14px;
+          border: 1.5px solid #e2d5f5;
+          border-radius: 10px;
+          font-size: 13.5px;
+          color: #333;
+          line-height: 1.6;
+          resize: vertical;
+          box-sizing: border-box;
+          outline: none;
+          font-family: 'Poppins', sans-serif;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          background: #fff;
+        }
+        .cn-textarea:focus {
+          border-color: #4D227C;
+          box-shadow: 0 0 0 3px rgba(77,34,124,0.1);
+        }
+        .cn-modal-footer {
+          padding: 14px 22px;
+          border-top: 2px solid #ede5f7;
+          background: #fff;
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+        }
+        .cn-cancel-btn {
+          padding: 9px 20px;
+          border-radius: 10px;
+          border: 1.5px solid #e2d5f5;
+          background: #f0ebf7;
+          color: #4D227C;
+          font-weight: 600;
+          font-size: 13px;
+          cursor: pointer;
+          font-family: 'Poppins', sans-serif;
+          transition: background 0.2s, color 0.2s;
+        }
+        .cn-cancel-btn:hover { background: #4D227C; color: #fff; }
+        .cn-save-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 9px 20px;
+          border-radius: 10px;
+          border: none;
+          color: #fff;
+          font-weight: 700;
+          font-size: 13px;
+          cursor: pointer;
+          font-family: 'Poppins', sans-serif;
+          transition: filter 0.15s, transform 0.1s;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+        .cn-save-btn:hover { filter: brightness(1.1); }
+        .cn-save-btn:active { transform: translateY(1px); }
+
+        @media (max-width: 480px) {
+          .cn-tabs { flex-direction: column; }
+          .cn-tab-btn { flex: none; width: 100%; }
+          .cn-add-btn { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 360px) {
+          .cn-tab-btn span:not(.cn-tab-count) { display: none; }
+        }
+      `}</style>
+
+      {/* Add button — above tabs, left-aligned */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 14,
+          justifyContent: "flex-start",
+          marginBottom: 10,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            gap: 8,
-          }}
-        >
-          {tabConfig.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1.5px solid #e0d4f5",
-                background: activeTab === tab.key ? tab.color : "#faf7ff",
-                color: activeTab === tab.key ? "#fff" : "#666",
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-
-              <span
-                style={{
-                  padding: "1px 7px",
-                  borderRadius: 10,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background:
-                    activeTab === tab.key
-                      ? "rgba(255,255,255,0.25)"
-                      : tab.light,
-                  color: activeTab === tab.key ? "#fff" : tab.color,
-                }}
-              >
-                {notes[tab.key].length}
-              </span>
-            </button>
-          ))}
-        </div>
-
         <button
+          className="cn-add-btn"
+          style={{ background: currentTab.color }}
           onClick={openAdd}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 14px",
-            borderRadius: 8,
-            border: "none",
-            background: currentTab.color,
-            color: "#fff",
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
         >
           <FiPlus size={14} /> Add {currentTab.label}
         </button>
       </div>
 
+      {/* Tab Bar */}
+      <div className="cn-tabs" style={{ marginBottom: 14 }}>
+        {tabConfig.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="cn-tab-btn"
+              style={
+                isActive
+                  ? {
+                      background: tab.color,
+                      color: "#fff",
+                      borderColor: tab.color,
+                    }
+                  : {}
+              }
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              <span
+                className="cn-tab-count"
+                style={{
+                  background: isActive ? "rgba(255,255,255,0.25)" : tab.light,
+                  color: isActive ? "#fff" : tab.color,
+                }}
+              >
+                {notes[tab.key].length}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Entries */}
-      <div className="clinical-entries">
+      <div className="cn-entries">
         {notes[activeTab].length === 0 ? (
-          <div className="clinical-empty">
-            <span style={{ fontSize: 34, opacity: 0.22 }}>📋</span>
+          <div className="cn-empty">
+            <span style={{ fontSize: 36, opacity: 0.25 }}>📋</span>
             <p>No {currentTab.label} entries yet.</p>
             <button
-              className="clinical-add-btn"
+              className="cn-add-btn"
               style={{ background: currentTab.color }}
               onClick={openAdd}
             >
@@ -220,13 +497,13 @@ function ClinicalNotesSection() {
           notes[activeTab].map((entry, index) => (
             <div
               key={entry.id}
-              className="clinical-entry-card"
+              className="cn-entry-card"
               style={{ borderLeftColor: currentTab.color }}
             >
-              <div className="clinical-entry-header">
-                <div className="clinical-entry-meta">
+              <div className="cn-entry-header">
+                <div className="cn-entry-meta">
                   <span
-                    className="clinical-entry-badge"
+                    className="cn-entry-badge"
                     style={{
                       background: currentTab.light,
                       color: currentTab.color,
@@ -235,23 +512,23 @@ function ClinicalNotesSection() {
                     {currentTab.icon} {currentTab.label} #
                     {notes[activeTab].length - index}
                   </span>
-                  <span className="clinical-entry-date">
+                  <span className="cn-entry-date">
                     <FiCalendar size={11} /> {entry.date}
                   </span>
-                  <span className="clinical-entry-author">
+                  <span className="cn-entry-author">
                     <FiUser size={11} /> {entry.author}
                   </span>
                 </div>
-                <div className="clinical-entry-actions">
+                <div className="cn-entry-actions">
                   <button
-                    className="clinical-action-btn clinical-edit-btn"
+                    className="cn-action-btn cn-edit-btn"
                     onClick={() => handleEdit(entry)}
                     title="Edit"
                   >
                     <FiEdit3 size={13} />
                   </button>
                   <button
-                    className="clinical-action-btn clinical-delete-btn"
+                    className="cn-action-btn cn-delete-btn"
                     onClick={() => handleDelete(entry.id)}
                     title="Delete"
                   >
@@ -259,55 +536,36 @@ function ClinicalNotesSection() {
                   </button>
                 </div>
               </div>
-              <p className="clinical-entry-content">{entry.content}</p>
+              <p className="cn-entry-content">{entry.content}</p>
             </div>
           ))
         )}
       </div>
 
-      {/* Add/Edit sub-modal */}
+      {/* Add / Edit sub-modal */}
       {showAddModal && (
-        <div className="clinical-modal-overlay" onClick={closeForm}>
-          <div className="clinical-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="cn-modal-overlay" onClick={closeForm}>
+          <div className="cn-modal" onClick={(e) => e.stopPropagation()}>
             <div
-              className="clinical-modal-header"
+              className="cn-modal-header"
               style={{ background: currentTab.color }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h3 className="cn-modal-header-title">
                 {currentTab.icon}
-                <h3
-                  style={{
-                    margin: 0,
-                    color: "#fff",
-                    fontSize: 15,
-                    fontWeight: 700,
-                  }}
-                >
-                  {editingEntry ? "Edit" : "Add"} {currentTab.label}
-                </h3>
-              </div>
+                {editingEntry ? "Edit" : "Add"} {currentTab.label}
+              </h3>
               <button
+                className="cn-modal-close"
                 onClick={closeForm}
-                style={{
-                  background: "rgba(255,255,255,0.18)",
-                  border: "none",
-                  color: "#fff",
-                  borderRadius: 6,
-                  padding: "5px 7px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                aria-label="Close"
               >
                 <FiX size={16} />
               </button>
             </div>
-            <div className="clinical-modal-body">
-              <label className="clinical-form-label">
-                {currentTab.label} Entry
-              </label>
+            <div className="cn-modal-body">
+              <label className="cn-form-label">{currentTab.label} Entry</label>
               <textarea
-                className="clinical-textarea"
+                className="cn-textarea"
                 placeholder={`Write your ${currentTab.label.toLowerCase()} notes here…`}
                 value={formValue}
                 onChange={(e) => setFormValue(e.target.value)}
@@ -315,12 +573,12 @@ function ClinicalNotesSection() {
                 autoFocus
               />
             </div>
-            <div className="clinical-modal-footer">
-              <button className="clinical-cancel-btn" onClick={closeForm}>
+            <div className="cn-modal-footer">
+              <button className="cn-cancel-btn" onClick={closeForm}>
                 Cancel
               </button>
               <button
-                className="clinical-save-btn"
+                className="cn-save-btn"
                 style={{ background: currentTab.color }}
                 onClick={editingEntry ? handleSaveEdit : handleAdd}
               >
@@ -331,14 +589,13 @@ function ClinicalNotesSection() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────────
    CompleteAppointmentModal
-   — Uses DayAppointmentsModal.module.css for identical design
-   Props: isOpen, onClose, appt, onConfirm
+   ✅ Fully matches CreateAppointmentModal design language
 ───────────────────────────────────────────────────────────────── */
 function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   if (!isOpen || !appt) return null;
@@ -348,7 +605,7 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   const startTime = toTime12(appt.start);
   const endTime = toTime12(appt.end);
   const apptDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const apptDateShort = format(new Date(appt.start), "MM/dd/yyyy");
+  const apptDateShort = format(new Date(appt.start), "MMMM dd, yyyy");
 
   const handleConfirm = () => {
     onConfirm?.();
@@ -358,217 +615,139 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   return (
     <>
       <style>{`
-        /* ── Clinical notes styles (only needed inside this modal) ── */
-        .clinical-notes-section { margin: 0; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-        .clinical-tabs-bar {
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+        /* ── CAM Footer ── */
+        .cam-footer {
+          flex-shrink: 0;
+          border-top: 2px solid #ede5f7;
+          padding: 16px 24px;
+          background: #fff;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 10px;
+          border-radius: 0 0 16px 16px;
+          font-family: 'Poppins', sans-serif;
         }
-        .clinical-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-        .clinical-tab-btn {
-          display: flex; align-items: center; gap: 6px;
-          padding: 7px 13px; border-radius: 8px;
-          border: 1.5px solid #e0d4f5; background: #faf7ff;
-          color: #666; font-size: 12.5px; font-weight: 600;
-          cursor: pointer; transition: all 0.15s; font-family: inherit;
+        .cam-cancel-btn {
+          background: #f0ebf7;
+          color: #4D227C;
+          border: 2px solid #c9b8f0;
+          padding: 11px 22px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: 'Poppins', sans-serif;
+          cursor: pointer;
+          transition: background 0.2s, color 0.2s, border-color 0.2s;
         }
-        .clinical-tab-btn:hover { border-color: #9b6bbf; color: #4D227C; }
-        .clinical-tab-count {
-          padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700;
+        .cam-cancel-btn:hover {
+          background: #4D227C;
+          color: #fff;
+          border-color: #4D227C;
         }
-        .clinical-add-btn {
-          display: flex; align-items: center; gap: 5px;
-          padding: 7px 14px; border-radius: 8px; border: none;
-          color: #fff; font-size: 13px; font-weight: 600;
-          cursor: pointer; transition: filter 0.15s; font-family: inherit; white-space: nowrap;
-        }
-        .clinical-add-btn:hover { filter: brightness(1.1); }
-
-        .clinical-entries { display: flex; flex-direction: column; gap: 10px; }
-        .clinical-entry-card {
-          border-radius: 10px; border: 1px solid #e5e7eb;
-          border-left-width: 4px; padding: 12px 14px; background: #fdfcff;
-        }
-        .clinical-entry-header {
-          display: flex; align-items: flex-start;
-          justify-content: space-between; gap: 8px; margin-bottom: 8px;
-        }
-        .clinical-entry-meta { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
-        .clinical-entry-badge {
-          display: inline-flex; align-items: center; gap: 5px;
-          padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700;
-        }
-        .clinical-entry-date,
-        .clinical-entry-author {
-          display: flex; align-items: center; gap: 4px; font-size: 11px; color: #9ca3af;
-        }
-        .clinical-entry-actions { display: flex; gap: 5px; flex-shrink: 0; }
-        .clinical-action-btn {
-          padding: 5px 6px; border-radius: 6px; border: none;
-          cursor: pointer; display: flex; align-items: center; transition: background 0.14s;
-        }
-        .clinical-edit-btn   { background: #f0e8ff; color: #4D227C; }
-        .clinical-edit-btn:hover   { background: #e0d4f5; }
-        .clinical-delete-btn { background: #fff0f0; color: #e53e3e; }
-        .clinical-delete-btn:hover { background: #ffe0e0; }
-        .clinical-entry-content {
-          font-size: 13px; color: #374151; line-height: 1.7; margin: 0; white-space: pre-wrap;
-        }
-        .clinical-empty {
-          text-align: center; padding: 30px 20px; color: #aaa;
-          border: 1.5px dashed #e0d4f5; border-radius: 10px;
-          display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
-        .clinical-empty p { margin: 0; font-size: 13px; }
-
-        /* sub-modal — z above parent (11000) */
-        .clinical-modal-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.60);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 12000; padding: 20px; box-sizing: border-box;
-        }
-        .clinical-modal {
-          background: #fff; border-radius: 12px; width: 100%; max-width: 500px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.22);
-          overflow: hidden; display: flex; flex-direction: column;
-        }
-        .clinical-modal-header {
-          padding: 15px 18px;
-          display: flex; align-items: center; justify-content: space-between;
-        }
-        .clinical-modal-body { padding: 18px 20px; }
-        .clinical-form-label {
-          display: block; font-size: 11.5px; font-weight: 700; color: #555;
-          text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
-        }
-        .clinical-textarea {
-          width: 100%; min-height: 130px; padding: 10px 12px;
-          border: 1.5px solid #ddd; border-radius: 8px;
-          font-size: 13.5px; color: #333; line-height: 1.6;
-          resize: vertical; box-sizing: border-box; outline: none;
-          font-family: inherit; transition: border-color 0.18s;
-        }
-        .clinical-textarea:focus { border-color: #9b6bbf; }
-        .clinical-modal-footer {
-          padding: 12px 18px; border-top: 1px solid #f0f0f0;
-          display: flex; justify-content: flex-end; gap: 8px;
-        }
-        .clinical-cancel-btn {
-          padding: 8px 18px; border-radius: 8px; border: 1.5px solid #ddd;
-          background: #fff; color: #555; font-weight: 600; font-size: 13px;
-          cursor: pointer; font-family: inherit;
-        }
-        .clinical-save-btn {
-          display: flex; align-items: center; gap: 6px;
-          padding: 8px 18px; border-radius: 8px; border: none;
-          color: #fff; font-weight: 700; font-size: 13px;
-          cursor: pointer; font-family: inherit; transition: filter 0.15s;
-        }
-        .clinical-save-btn:hover { filter: brightness(1.1); }
-
-        /* confirm button in footer */
         .cam-confirm-btn {
-          display: flex; align-items: center; gap: 6px;
-          padding: 9px 22px; border-radius: 8px; border: none;
-          background: #15803d; color: #fff; font-weight: 700; font-size: 13px;
-          cursor: pointer; font-family: inherit; transition: background 0.18s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 11px 26px;
+          border-radius: 10px;
+          border: 2px solid #15803d;
+          background: #15803d;
+          color: #fff;
+          font-weight: 700;
+          font-size: 14px;
+          cursor: pointer;
+          font-family: 'Poppins', sans-serif;
+          transition: background 0.2s, color 0.2s;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          box-shadow: 0 4px 14px rgba(21,128,61,0.3);
         }
-        .cam-confirm-btn:hover { background: #166534; }
+        .cam-confirm-btn:hover {
+          background: #fff;
+          color: #15803d;
+        }
+        .cam-confirm-btn:active { transform: translateY(1px); }
+
+        @media (max-width: 768px) {
+          .cam-footer {
+            padding: 14px 16px;
+            border-radius: 0 0 12px 12px;
+            flex-direction: column-reverse;
+            gap: 8px;
+          }
+          .cam-cancel-btn,
+          .cam-confirm-btn {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+          }
+        }
       `}</style>
 
-      {/* ── Overlay — same as DayAppointmentsModal ── */}
+      {/* Overlay — matches DayAppointmentsModal */}
       <div className={styles.overlay} onClick={onClose}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-          {/* ── Header — matches DayAppointmentsModal header exactly ── */}
+          {/* Header — purple, Poppins, matches CreateAppointmentModal exactly */}
           <div className={styles.modalHeader}>
             <h3 className={styles.modalTitle}>Add Clinical Notes</h3>
             <div className={styles.modalHeaderRight}>
               <span className={styles.dateBadge}>{apptDateShort}</span>
-              <button className={styles.closeBtn} onClick={onClose}>
+              <button
+                className={styles.closeBtn}
+                onClick={onClose}
+                aria-label="Close"
+              >
                 <FiX />
               </button>
             </div>
           </div>
 
-          {/* ── Scroll body ── */}
+          {/* Scrollable body — purple #f5f0fb bg */}
           <div className={styles.scrollBody}>
-            {/* Appointment info card — same card style as DayAppointmentsModal */}
+            {/* ── Appointment info card ── */}
             <section className={styles.card}>
               <div className={styles.cardHeader}>Appointment Information</div>
               <div className={styles.cardBody}>
                 <div className={styles.cardFields}>
                   <div className={styles.infoRow}>
-                    <span
-                      className={styles.infoLabel}
-                      style={{ minWidth: 190 }}
-                    >
-                      Name:
-                    </span>
+                    <span className={styles.infoLabel}>Patient Name:</span>
                     <span className={styles.infoValue}>
                       {appt.patientName || "—"}
                     </span>
                   </div>
                   <div className={styles.infoRow}>
-                    <span
-                      className={styles.infoLabel}
-                      style={{ minWidth: 190 }}
-                    >
-                      Appointment Date:
-                    </span>
+                    <span className={styles.infoLabel}>Appointment Date:</span>
                     <span className={styles.infoValue}>
                       {apptDate} | {startTime} – {endTime}
                     </span>
                   </div>
                   <div className={styles.infoRow}>
-                    <span
-                      className={styles.infoLabel}
-                      style={{ minWidth: 190 }}
-                    >
-                      Clinic:
-                    </span>
+                    <span className={styles.infoLabel}>Clinic:</span>
                     <span className={styles.infoValue}>{clinicType}</span>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Clinical notes section */}
-            <section className={styles.card} style={{ padding: "16px 20px" }}>
-              <ClinicalNotesSection />
+            {/* ── Clinical Notes card ── */}
+            <section className={styles.card}>
+              <div className={styles.cardHeader}>Clinical Notes</div>
+              <div style={{ padding: "16px 20px" }}>
+                <ClinicalNotesSection />
+              </div>
             </section>
           </div>
 
-          {/* ── Footer ── */}
-          <div
-            className={styles.cardFooter}
-            style={{
-              padding: "14px 20px",
-              borderTop: "1px solid #ede7f6",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 10,
-              background: "#faf7ff",
-            }}
-          >
-            <button
-              onClick={onClose}
-              style={{
-                padding: "9px 20px",
-                borderRadius: 8,
-                border: "1.5px solid #ddd",
-                background: "#fff",
-                color: "#555",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
+          {/* Footer — matches CreateAppointmentModal footer */}
+          <div className="cam-footer">
+            <button className="cam-cancel-btn" onClick={onClose}>
               Cancel
             </button>
             <button className="cam-confirm-btn" onClick={handleConfirm}>
-              <FiCheck size={14} /> Mark as Completed
+              <FiCheck size={15} /> Mark as Completed
             </button>
           </div>
         </div>

@@ -1,52 +1,62 @@
-.admin-content .row {
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/* ── Layout ── */
+.containerFluid {
   background-color: white;
+  font-family: "Poppins", sans-serif;
 }
 
-.dashboard-card hr {
-  margin-top: -17px;
-}
-
-.dashboard-card {
-  background: rgba(78, 35, 124, 0.06);
+/* ── Dashboard Card ── */
+.dashboardCard {
+  background: rgb(255, 255, 255);
   border-radius: 14px;
-  padding: 1.2rem 1.5rem;
+  padding: 1.5rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
   border: 1px solid #e0d4ff;
   height: 100%;
-  margin-top: 12px;
 }
 
-.dashboard-card h5 {
-  font-weight: bolder;
+.dashboardCard h5 {
+  font-weight: 700;
   color: #2e104e;
-  margin: 0;
+  margin: 0 0 1rem 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.card-header {
+.dashboardCard hr {
+  margin-top: -17px;
+}
+
+/* ── Card Header ── */
+.cardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #eee;
   padding-bottom: 0.6rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.card-header h5 {
-  font-weight: bolder;
+.cardHeader h5 {
+  font-weight: 700;
   color: #2e104e;
   margin: 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.card-date {
+.cardDate {
   font-size: 0.85rem;
   color: #888;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-family: "Poppins", sans-serif;
 }
 
-.card-date span {
-  background: #4d227c;
+.cardDate span {
+  background: #4D227C;
   color: #fff;
   font-size: 0.75rem;
   padding: 2px 7px;
@@ -54,109 +64,97 @@
   font-weight: bold;
 }
 
-.card-body {
+/* ── Card Body ── */
+.cardBody {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.consult-item {
+/* ── Appointment Items ── */
+.appointmentItems {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.consult-item p {
+.appointmentItems p {
+  color: #555555a8;
   margin: 0;
-  font-size: 0.85rem;
-  color: #555;
+  font-family: "Poppins", sans-serif;
 }
 
-.verify-btn {
-  background: #6f2dbd;
-  color: #fff;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.verify-btn:hover {
-  background: #5a23a3;
-}
-
-.appointment-icon-text {
+.appointmentIconText {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 1.2rem;
-  color: #4d227c;
+  color: #4D227C;
+  font-family: "Poppins", sans-serif;
 }
 
-.appointment-items p {
-  color: #555555a8;
-}
-
-.appointment-icon {
+.appointmentIcon {
   font-size: 1.5rem;
-  color: #4d227c;
+  color: #4D227C;
 }
 
-.container-fluid {
-  background-color: white;
-}
-
-.patients-table {
+/* ── Patients Table ── */
+.patientsTable {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
 }
 
-.patients-table th,
-.patients-table td {
+.patientsTable th,
+.patientsTable td {
   padding: 0.8rem 1rem;
   text-align: left;
   border-bottom: 1px solid #e0d4ff;
 }
 
-.patients-table th {
-  color: #4d227c;
+.patientsTable th {
+  color: #4D227C;
   font-weight: 600;
 }
 
-.patients-table td {
+.patientsTable td {
   color: #4d4952;
 }
 
-.table-responsive {
+.tableResponsive {
   overflow-x: auto;
 }
 
-.table-pagination {
+/* ── Table Pagination ── */
+.tablePagination {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 1rem;
   font-size: 0.85rem;
   color: #888;
+  font-family: "Poppins", sans-serif;
 }
 
-.pagination-buttons button {
+.paginationButtons button {
   background: #f0e6ff;
   border: none;
   margin: 0 2px;
   padding: 3px 8px;
   border-radius: 4px;
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: background 0.2s, color 0.2s;
 }
 
-.pagination-buttons button:hover {
-  background: #4d227c;
+.paginationButtons button:hover {
+  background: #4D227C;
   color: #fff;
 }
 
-.pie-chart-container {
+/* ── Pie Chart ── */
+.pieChartContainer {
   position: relative;
   height: 300px;
   display: flex;
@@ -164,35 +162,34 @@
   justify-content: center;
 }
 
-/* ══════════════════════════════════════════════
-   ANNOUNCEMENTS — Admin Style
-══════════════════════════════════════════════ */
-.announcement-card {
-  /* inherits dashboard-card */
+/* ── Announcements ── */
+.announcementCard {
+  /* inherits dashboardCard */
 }
 
-.announcement-title {
+.announcementTitle {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 700;
   color: #2e104e;
   margin: 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-icon {
-  color: #4d227c;
+.announceIcon {
+  color: #4D227C;
   font-size: 1.1rem;
 }
 
-.announce-list {
+.announceList {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 4px;
 }
 
-.announce-item {
+.announceItem {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -201,38 +198,37 @@
   gap: 12px;
   border: 1px solid #e0d4ff;
   background: #faf7ff;
-  transition:
-    box-shadow 0.2s,
-    transform 0.2s;
+  transition: box-shadow 0.2s;
 }
 
-.announce-item:hover {
+.announceItem:hover {
   box-shadow: 0 4px 14px rgba(77, 34, 124, 0.1);
-  transform: translateY(-2px);
 }
 
-.announce-high {
-  border-left: 4px solid #dc2626;
+.announceHigh {
+  border-left: 4px solid #DC2626;
   background: #fff8f8;
 }
 
-.announce-normal {
-  border-left: 4px solid #4d227c;
+.announceNormal {
+  border-left: 4px solid #4D227C;
 }
 
-.announce-left {
+.announceLeft {
   flex: 1;
+  min-width: 0;
 }
 
-.announce-item-header {
+.announceItemHeader {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
-.priority-badge {
-  background: #dc2626;
+.priorityBadge {
+  background: #DC2626;
   color: #fff;
   font-size: 0.7rem;
   padding: 2px 8px;
@@ -240,138 +236,104 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-item-title {
+.announceItemTitle {
   font-size: 0.95rem;
   color: #2e104e;
   font-weight: 600;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-message {
+.announceMessage {
   font-size: 0.85rem;
   color: #555;
   margin: 0 0 6px 0;
   line-height: 1.5;
+  font-family: "Poppins", sans-serif;
 }
 
-.announce-date {
+.announceDate {
   font-size: 0.75rem;
   color: #aaa;
+  font-family: "Poppins", sans-serif;
 }
 
-.no-announce {
+.noAnnounce {
   text-align: center;
   color: #bbb;
   padding: 20px 0;
   font-size: 0.9rem;
+  font-family: "Poppins", sans-serif;
 }
 
-/* ══════════════════════════════════════════════
-   AVAILABILITY / SCHEDULE
-══════════════════════════════════════════════ */
-.availability-count {
-  background: linear-gradient(135deg, #4e237c 0%, #6b3a9e 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(78, 35, 124, 0.2);
-}
-
-.day-schedules {
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 180px;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.day-schedules::-webkit-scrollbar {
-  width: 4px;
-}
-.day-schedules::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-.day-schedules::-webkit-scrollbar-thumb {
-  background: #4e237c;
-  border-radius: 10px;
-}
-.day-schedules::-webkit-scrollbar-thumb:hover {
-  background: #3a1a5e;
-}
-
-/* ══════════════════════════════════════════════
-   WEEK NAVIGATION
-══════════════════════════════════════════════ */
-.week-navigation {
+/* ── Week Navigation ── */
+.weekNavigation {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.week-nav-btn {
+.weekNavBtn {
   background: #4e237c;
   color: white;
   border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 13px;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
-.week-nav-btn:hover {
+.weekNavBtn:hover {
   background: #3a1a5e;
   transform: scale(1.05);
 }
 
-.week-range {
+.weekRange {
   font-size: 0.9rem;
   color: #4e237c;
   font-weight: 600;
   padding: 0 8px;
+  white-space: nowrap;
+  font-family: "Poppins", sans-serif;
 }
 
-/* ══════════════════════════════════════════════
-   CALENDAR
-══════════════════════════════════════════════ */
-.calendar-grid {
+/* ── Calendar ── */
+.calendarGrid {
   padding: 4px;
 }
 
-.calendar-header {
+.calendarHeader {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   margin-bottom: 6px;
 }
 
-.calendar-day-label {
+.calendarDayLabel {
   text-align: center;
   font-size: 0.6rem;
   font-weight: 600;
   color: #888;
   padding: 4px 0;
+  font-family: "Poppins", sans-serif;
 }
 
-.calendar-dates {
+.calendarDates {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
   grid-auto-rows: minmax(28px, auto);
 }
 
-.calendar-date {
+.calendarDate {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -383,101 +345,94 @@
   padding: 6px;
   min-height: 28px;
   height: 28px;
+  font-family: "Poppins", sans-serif;
 }
 
-.calendar-date:hover {
+.calendarDate:hover {
   background: #f0e6ff;
 }
-.calendar-date.other-month {
+
+.otherMonth {
   color: #ccc;
 }
-.calendar-date.today {
+
+.today {
   background: #4e237c;
   color: white;
   font-weight: 600;
 }
 
-/* ══════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════ */
+/* ── Responsive ── */
 @media (max-width: 992px) {
-  .dashboard-card {
+  .dashboardCard {
     margin-top: 8px;
   }
-  .card-header h5 {
+
+  .cardHeader h5 {
     font-size: 1.05rem;
+    
   }
-  .pie-chart-container {
+
+  .pieChartContainer {
     height: 260px;
   }
-  .appointment-items {
+
+  .appointmentItems {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
-  }
-}
-
-@media (max-width: 768px) {
-  .calendar-day-label {
-    font-size: 0.55rem;
-  }
-  .calendar-date {
-    font-size: 0.65rem;
-    min-height: 24px;
-    height: 24px;
-    padding: 4px;
-  }
-  .announce-item {
-    flex-direction: column;
   }
 }
 
 @media (max-width: 576px) {
-  .admin-content {
-    padding: 0.8rem;
-  }
-  .dashboard-card {
+  .dashboardCard {
     padding: 1rem;
   }
-  .card-header {
+
+  .cardHeader {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
   }
-  .card-header h5 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2e104e;
-  }
-  .appointment-icon-text {
+
+  .cardHeader h5 {
     font-size: 1rem;
   }
-  .appointment-icon {
+
+  .appointmentIconText {
+    font-size: 1rem;
+  }
+
+  .appointmentIcon {
     font-size: 1.2rem;
   }
-  .patients-table {
+
+  .patientsTable {
     font-size: 0.8rem;
   }
-  .patients-table th,
-  .patients-table td {
+
+  .patientsTable th,
+  .patientsTable td {
     padding: 0.5rem;
     white-space: nowrap;
   }
-  .table-pagination {
+
+  .tablePagination {
     flex-direction: column;
     gap: 8px;
   }
-  .pie-chart-container {
+
+  .pieChartContainer {
     height: 240px;
+  }
+
+  .announceItem {
+    flex-direction: column;
   }
 }
 
 @media (max-width: 400px) {
-  .verify-btn {
-    width: 100%;
-    text-align: center;
-  }
-  .pagination-buttons {
+  .paginationButtons {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
