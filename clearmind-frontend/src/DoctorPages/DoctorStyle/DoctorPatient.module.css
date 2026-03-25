@@ -1,10 +1,19 @@
-.patient-tabs {
+/* ─── Patient Tabs & Filter Row ─────────────────────── */
+.patientTabsRow {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.patient-tabs button {
+.patientTabs {
+  display: flex;
+  gap: 10px;
+}
+
+.patientTabs button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -18,7 +27,7 @@
   font-size: 14px;
 }
 
-.patient-tabs button span {
+.patientTabs button span {
   background: #6a49a9;
   color: #fff;
   font-size: 12px;
@@ -26,70 +35,112 @@
   border-radius: 6px;
 }
 
-.patient-tabs button.tab-active {
-  background: #6a49a9;
-  color: #fff;
-  border: none;
+.tabActive {
+  background: #6a49a9 !important;
+  color: #fff !important;
+  border: none !important;
 }
 
-.patient-tabs button.tab-active span {
-  background: #fff;
-  color: #6a49a9;
+.tabActive span {
+  background: #fff !important;
+  color: #6a49a9 !important;
 }
 
-.tab-badge-pending {
+.tabBadgePending {
   background: #dc2626 !important;
   color: #fff !important;
 }
 
-.patient-table-wrapper {
+/* ─── Filter Dropdown ────────────────────────────────── */
+.patientFilterDropdown {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f6f1fb;
+  border: 1px solid #e5d6f5;
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: #6a49a9;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.patientFilterDropdown select {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #6a49a9;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ─── Patient Type Badges ────────────────────────────── */
+.patientTypeBadge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.badgeNew {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badgeExisting {
+  background: #ede9f6;
+  color: #4d227c;
+  border: 1px solid #d8ccf0;
+}
+
+/* ─── Table ──────────────────────────────────────────── */
+.patientTableWrapper {
   border: 1px solid #eadcf7;
   border-radius: 12px;
   overflow: hidden;
 }
 
-.patient-table {
+.patientTable {
   width: 100%;
   border-collapse: collapse;
 }
 
-.patient-table th,
-.patient-table td {
+.patientTable th,
+.patientTable td {
   padding: 14px 12px;
   font-size: 14px;
   text-align: center;
 }
 
-.patient-table th {
+.patientTable th {
   background: #faf7fd;
   color: #6a49a9;
   font-weight: 600;
 }
 
-.patient-table tr:not(:last-child) td {
+.patientTable tr:not(:last-child) td {
   border-bottom: 1px solid #eee;
 }
 
-.patient-table-wrapper td {
+.patientTableWrapper td {
   color: #4d4952;
 }
 
+/* ─── Status Text ────────────────────────────────────── */
 .status {
   font-size: 13px;
   font-weight: 500;
 }
 
-.status.scheduled {
-  color: #005892;
-}
-.status.completed {
-  color: #22c55e;
-}
-.status.cancelled {
-  color: #ef4444;
-}
+.scheduled { color: #005892; }
+.completed { color: #22c55e; }
+.cancelled { color: #ef4444; }
 
-.patient-table td button {
+/* ─── Table Action Buttons ───────────────────────────── */
+.patientTable td button {
   height: 32px;
   width: 90px;
   border-radius: 8px;
@@ -103,65 +154,78 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.btn-view {
+.btnView {
   background: #7341a8;
   color: #fff;
-  border-color: #7341a8;
+  border: 1px solid #7341a8 !important;
+  border-radius: 8px;
+  height: 32px;
+  width: 90px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.btn-view:hover {
+.btnView:hover {
   background: #ffffff;
   color: #7341a8;
-  border-color: #7341a8;
 }
 
-.btn-confirm {
+.btnConfirm {
   background: #4a965b;
   color: #fff;
-  border-color: #4a965b;
+  border: 1px solid #4a965b !important;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.btn-confirm:hover:not(:disabled) {
+.btnConfirm:hover:not(:disabled) {
   background: #fff;
   color: #4a965b;
-  border-color: #4a965b;
 }
 
-.btn-confirm:disabled {
+.btnConfirm:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  border-color: #4a965b;
 }
 
-.btn-completed {
+.btnCompleted {
   border-radius: 8px;
 }
 
-.btn-completed:not(:disabled) {
+.btnCompleted:not(:disabled) {
   background: #005892;
   color: white;
   cursor: pointer;
   border-color: #005892;
 }
 
-.btn-completed:not(:disabled):hover {
+.btnCompleted:not(:disabled):hover {
   background: white;
   color: #005892;
   border-color: #005892;
 }
 
-.btn-completed:disabled {
+.btnCompleted:disabled {
   background-color: #c5b8d8;
   color: #ffffff;
   cursor: not-allowed;
   border-color: #c5b8d8;
 }
 
+/* ─── Pagination ─────────────────────────────────────── */
 .pagination {
   display: flex;
   justify-content: center;
@@ -179,10 +243,10 @@
   font-size: 13px;
 }
 
-.pagination button.page-active {
-  background: #6a49a9;
-  color: #fff;
-  border: none;
+.pageActive {
+  background: #6a49a9 !important;
+  color: #fff !important;
+  border: none !important;
 }
 
 .pagination button:disabled {
@@ -190,26 +254,15 @@
   cursor: not-allowed;
 }
 
-.page-info {
+.pageInfo {
   margin-top: 6px;
   font-size: 12px;
   text-align: center;
   color: #6b7280;
 }
 
-.date-original {
-  color: #888;
-  font-size: 0.85rem;
-  text-decoration: line-through;
-}
-
-.date-requested {
-  color: #2e104e;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.patient-modal-overlay {
+/* ─── Modal Overlay & Container ──────────────────────── */
+.patientModalOverlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
@@ -221,7 +274,7 @@
   box-sizing: border-box;
 }
 
-.patient-modal-lg {
+.patientModalLg {
   width: 100%;
   max-width: 780px;
   max-height: 92vh;
@@ -237,22 +290,13 @@
   box-sizing: border-box;
 }
 
-.reschedule-modal {
-  max-width: 780px;
-}
-
 @keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.modal-header {
+/* ─── Modal Header ───────────────────────────────────── */
+.modalHeader {
   background: #4d227c;
   padding: 18px 28px;
   display: flex;
@@ -265,7 +309,7 @@
   min-width: 0;
 }
 
-.modal-header h2 {
+.modalHeader h2 {
   color: #ffffff;
   font-size: 18px;
   font-weight: 700;
@@ -277,7 +321,7 @@
   min-width: 0;
 }
 
-.modal-profile-header {
+.modalProfileHeader {
   background: #4d227c;
   border-radius: 20px 20px 0 0;
   flex-shrink: 0;
@@ -285,37 +329,20 @@
   position: relative;
 }
 
-.modal-profile-row {
+.modalProfileRow {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 24px 24px 22px 24px;
 }
 
-.profile-close-btn {
+.profileCloseBtn {
   position: absolute;
   top: 14px;
   right: 16px;
 }
 
-.modal-header-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.modal-date {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 30px;
-  white-space: nowrap;
-}
-
-.close-btn {
+.closeBtn {
   background: transparent;
   border: none !important;
   cursor: pointer;
@@ -332,63 +359,108 @@
   padding: 0;
 }
 
-.close-btn:hover {
+.closeBtn:hover {
   background: rgba(255, 255, 255, 0.35) !important;
 }
 
-.modal-body {
+/* ─── Modal Body ─────────────────────────────────────── */
+.modalBody {
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0;
   flex: 1;
   box-sizing: border-box;
   background: #f4f0fa;
   padding: 20px 10px 10px 10px;
 }
 
-.modal-content-card {
+.modalContentCard {
   background: #ffffff;
   border-radius: 20px;
   padding: 24px 28px;
-  box-shadow: none;
   box-sizing: border-box;
   width: 100%;
   border-bottom: 6px solid #f4f0fa;
 }
 
-.modal-content-card:last-child {
+.modalContentCard:last-child {
   border-bottom: none;
 }
 
-.modal-section-title {
+.modalSectionTitle {
   color: #4d227c;
   font-size: 17px;
   font-weight: 800;
   margin: 0 0 16px 0;
-  padding-bottom: 0;
-  border-bottom: none;
 }
 
-.modal-info-row {
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #333;
+.modalContentCard .modalSectionTitle {
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #e5d6f5;
+  margin-bottom: 18px;
 }
 
-.modal-info-row strong {
-  color: #222;
+/* ─── Modal Two-Column Grid ──────────────────────────── */
+.modalTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
 }
 
-.modal-col-divider {
-  width: 1px;
-  background: #e5d6f5;
-  align-self: stretch;
+.modalInfoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.modalInfoItem:last-child {
+  margin-bottom: 0;
+}
+
+.modalInfoIcon {
+  width: 39px;
+  height: 39px;
+  background: #f0e8ff;
+  border-radius: 8px;
+  color: #7341a8;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
-.modal-footer {
+.modalInfoLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.modalInfoValue {
+  display: block;
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+/* ─── Status Badge ───────────────────────────────────── */
+.statusBadge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 2px;
+}
+
+/* ─── Modal Footer ───────────────────────────────────── */
+.modalFooter {
   background: #f4f0fa;
-  border-top: none;
   padding: 16px 28px;
   display: flex;
   justify-content: flex-end;
@@ -396,46 +468,8 @@
   flex-shrink: 0;
 }
 
-.modal-footer .btn-completed {
-  width: auto;
-  height: auto;
-  padding: 8px 20px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-footer .btn-confirm {
-  background: #4a965b;
-  color: #fff;
-  border: 1px solid #4a965b;
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  width: auto;
-  height: auto;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-.modal-footer .btn-confirm:hover:not(:disabled) {
-  background: #fff;
-  color: #4a965b;
-}
-
-.modal-footer .btn-confirm:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.btn-decline {
+/* ─── Decline Button ─────────────────────────────────── */
+.btnDecline {
   background: #fff0f0;
   color: #dc2626;
   border: 1px solid #f5c6c6;
@@ -450,259 +484,11 @@
   transition: background 0.2s;
 }
 
-.btn-decline:hover:not(:disabled) {
-  background: #ffe0e0;
-}
-.btn-decline:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.btnDecline:hover:not(:disabled) { background: #ffe0e0; }
+.btnDecline:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.reschedule-compare {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: nowrap;
-  margin-top: 10px;
-}
-
-.reschedule-box {
-  flex: 1;
-  min-width: 0;
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-sizing: border-box;
-}
-
-.reschedule-box small {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.reschedule-box.original {
-  background: #f3f3f3;
-  border: 1px solid #ddd;
-  color: #888;
-}
-
-.reschedule-box.original small {
-  color: #aaa;
-}
-
-.reschedule-box.requested {
-  background: #f0e8ff;
-  border: 1px solid #c9a8f0;
-  color: #2e104e;
-}
-
-.reschedule-box.requested small {
-  color: #4d227c;
-}
-
-.rs-date {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  margin: 4px 0 0;
-  flex-wrap: wrap;
-}
-
-.rs-time {
-  font-size: 0.82rem;
-  margin: 2px 0 0;
-  opacity: 0.8;
-}
-
-.reschedule-arrow {
-  font-size: 1.4rem;
-  color: #4d227c;
-  font-weight: 900;
-  flex-shrink: 0;
-}
-
-.reschedule-reason {
-  background: #faf7ff;
-  border: 1px solid #e0d4ff;
-  border-left: 4px solid #4d227c;
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: 0.88rem;
-  color: #444;
-  line-height: 1.6;
-  margin-top: 8px;
-}
-
-.reschedule-reason p {
-  margin: 0;
-}
-
-@media (max-width: 640px) {
-  .reschedule-compare {
-    flex-wrap: wrap;
-    flex-direction: column;
-  }
-
-  .reschedule-arrow {
-    transform: rotate(90deg);
-    align-self: center;
-  }
-
-  .modal-col-divider {
-    display: none;
-  }
-  .modal-body {
-    padding: 14px;
-  }
-  .modal-content-card {
-    padding: 14px;
-  }
-  .modal-header {
-    padding: 14px 16px;
-  }
-  .modal-footer {
-    padding: 12px 16px;
-  }
-}
-
-.patient-profile-banner {
-  display: none;
-}
-
-.patient-profile-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.patient-profile-name {
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0 0 3px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.patient-profile-contact {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
-  font-weight: 500;
-  margin: 0 0 8px 0;
-  display: flex;
-  align-items: center;
-}
-
-.patient-profile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.profile-meta-chip {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.btn-view-profile {
-  display: inline-flex;
-  align-items: center;
-  background: #ffffff;
-  color: #4d227c;
-  border: none;
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition:
-    background 0.2s,
-    transform 0.15s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.btn-view-profile:hover {
-  background: #f0e8ff;
-  transform: translateY(-1px);
-}
-
-.modal-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
-}
-
-.modal-detail-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.modal-info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.modal-info-item:last-child {
-  margin-bottom: 0;
-}
-
-.modal-info-icon {
-  width: 39px;
-  height: 39px;
-  background: #f0e8ff;
-  border-radius: 8px;
-  color: #7341a8;
-  font-size: 17px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.modal-info-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 2px;
-}
-
-.modal-info-value {
-  display: block;
-  font-size: 14px;
-  color: #1f2937;
-  font-weight: 500;
-}
-
-.status-badge {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 20px;
-  margin-top: 2px;
-}
-
-.payment-collapse-toggle {
+/* ─── Payment Collapse ───────────────────────────────── */
+.paymentCollapseToggle {
   width: 100%;
   display: flex;
   align-items: center;
@@ -711,17 +497,9 @@
   border: none;
   cursor: pointer;
   padding: 0;
-  margin-bottom: 0;
 }
 
-.payment-collapse-toggle .modal-section-title {
-  margin: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-  font-size: 17px;
-}
-
-.payment-toggle-icon {
+.paymentToggleIcon {
   display: flex;
   align-items: center;
   color: #7341a8;
@@ -734,46 +512,35 @@
   transition: background 0.2s;
 }
 
-.payment-collapse-toggle:hover .payment-toggle-icon {
+.paymentCollapseToggle:hover .paymentToggleIcon {
   background: #e5d6f5;
 }
 
-.payment-collapse-body {
+.paymentCollapseBody {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1.5px solid #e5d6f5;
   animation: fadeSlideIn 0.2s ease;
 }
 
-.modal-content-card .modal-section-title {
-  padding-bottom: 14px;
-  border-bottom: 1.5px solid #e5d6f5;
-  margin-bottom: 18px;
-}
-
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.payment-layout {
+/* ─── Payment Layout ─────────────────────────────────── */
+.paymentLayout {
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
 }
 
-.payment-fields {
+.paymentFields {
   flex: 1;
   min-width: 160px;
 }
 
-.payment-proof {
+.paymentProof {
   flex: 1;
   min-width: 160px;
   display: flex;
@@ -781,7 +548,7 @@
   gap: 6px;
 }
 
-.payment-proof-label {
+.paymentProofLabel {
   font-size: 11px;
   font-weight: 600;
   color: #9ca3af;
@@ -789,7 +556,7 @@
   letter-spacing: 0.4px;
 }
 
-.payment-proof-img {
+.paymentProofImg {
   width: 100%;
   border-radius: 10px;
   object-fit: cover;
@@ -799,151 +566,73 @@
   transition: transform 0.2s;
 }
 
-.payment-proof-img:hover {
-  transform: scale(1.01);
+.paymentProofImg:hover { transform: scale(1.01); }
+
+/* ─── Patient Profile Header (Modal) ─────────────────── */
+.patientProfileInfo {
+  flex: 1;
+  min-width: 0;
 }
 
-.modal-footer .btn-completed {
-  width: auto !important;
-  padding: 9px 20px !important;
-  font-size: 14px !important;
+.patientProfileName {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@media (max-width: 640px) {
-  .modal-two-col {
-    grid-template-columns: 1fr;
-  }
-  .patient-profile-banner {
-    flex-wrap: wrap;
-  }
-  .btn-view-profile {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-.patient-profile-container {
-  padding: 30px;
-}
-
-.patient-back-btn {
-  background: #4d227c;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: 0.3s;
-}
-
-.patient-back-btn:hover {
-  background: #3a1760;
-}
-
-.patient-profile-card {
-  background: #fff;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
-}
-
-.patient-profile-layout {
-  display: flex;
-  gap: 50px;
-  align-items: flex-start;
-}
-
-.patient-avatar-large {
-  width: 250px;
-  height: 250px;
-  border-radius: 20px;
-  background: #f4f4f4;
-  border: 4px solid #4d227c;
+.patientProfileContact {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  color: #4d227c;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
-.patient-avatar-large img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.patientProfileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.patient-details-section {
-  flex: 1;
-}
-
-.patient-profile-title {
-  margin-bottom: 25px;
-  color: #4d227c;
-}
-
-@media (max-width: 768px) {
-  .patient-profile-layout {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .patient-avatar-large {
-    width: 200px;
-    height: 200px;
-  }
-
-  .patient-details-section {
-    width: 100%;
-  }
-}
-
-.appointment-history-card {
-  margin-top: 40px;
-  background: #fff;
-  padding: 30px;
-  border-radius: 20px;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
-}
-
-.appointment-history-title {
-  margin-bottom: 20px;
-  color: #4d227c;
-}
-
-.no-appointments {
-  color: #777;
-}
-
-.appointment-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.appointment-table th {
-  text-align: left;
-  padding: 12px;
-  background: #f4f2fa;
-  color: #4d227c;
-  font-weight: 600;
-}
-
-.appointment-table td {
-  padding: 12px;
-  border-bottom: 1px solid #eee;
-}
-
-.appointment-table tr:hover {
-  background: #faf9ff;
-}
-
-.status-badge {
+.profileMetaChip {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
   font-size: 12px;
   font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.btn-view-history {
+/* ─── Buttons ────────────────────────────────────────── */
+.btnViewProfile {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  color: #4d227c;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btnViewProfile:hover {
+  background: #f0e8ff;
+  transform: translateY(-1px);
+}
+
+.btnViewHistory {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -959,21 +648,212 @@
   letter-spacing: 0.02em;
   box-shadow: 0 4px 14px rgba(115, 65, 168, 0.35);
   transition: all 0.22s ease;
-  position: relative;
-  overflow: hidden;
 }
 
-.btn-view-history:hover {
+.btnViewHistory:hover {
   background: #3a1860;
   box-shadow: 0 6px 20px rgba(115, 65, 168, 0.5);
   transform: translateY(-2px);
 }
 
-.btn-view-history:active {
+.btnViewHistory:active {
   transform: translateY(0px);
   box-shadow: 0 3px 10px rgba(115, 65, 168, 0.3);
 }
 
-.btn-view-history svg {
+/* ─── Patient Profile Page ───────────────────────────── */
+.patientProfileContainer {
+  padding: 30px;
+}
+
+.patientBackBtn {
+  background: #4d227c;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.3s;
+}
+
+.patientBackBtn:hover { background: #3a1760; }
+
+.patientProfileCard {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+}
+
+.patientProfileLayout {
+  display: flex;
+  gap: 50px;
+  align-items: flex-start;
+}
+
+.patientAvatarLarge {
+  width: 250px;
+  height: 250px;
+  border-radius: 20px;
+  background: #f4f4f4;
+  border: 4px solid #4d227c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #4d227c;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
+}
+
+.patientAvatarLarge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.patientDetailsSection { flex: 1; }
+
+.patientProfileTitle {
+  margin-bottom: 25px;
+  color: #4d227c;
+}
+
+/* ─── Appointment History Card ───────────────────────── */
+.appointmentHistoryCard {
+  margin-top: 40px;
+  background: #fff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+}
+
+.appointmentHistoryTitle {
+  margin-bottom: 20px;
+  color: #4d227c;
+}
+
+.appointmentTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.appointmentTable th {
+  text-align: left;
+  padding: 12px;
+  background: #f4f2fa;
+  color: #4d227c;
+  font-weight: 600;
+}
+
+.appointmentTable td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.appointmentTable tr:hover { background: #faf9ff; }
+
+/* ─── Reschedule ─────────────────────────────────────── */
+.rescheduleCompare {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  margin-top: 10px;
+}
+
+.rescheduleBox {
+  flex: 1;
+  min-width: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.rescheduleBox small {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rescheduleBoxOriginal {
+  background: #f3f3f3;
+  border: 1px solid #ddd;
+  color: #888;
+}
+
+.rescheduleBoxOriginal small { color: #aaa; }
+
+.rescheduleBoxRequested {
+  background: #f0e8ff;
+  border: 1px solid #c9a8f0;
+  color: #2e104e;
+}
+
+.rescheduleBoxRequested small { color: #4d227c; }
+
+.rescheduleArrow {
+  font-size: 1.4rem;
+  color: #4d227c;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.rescheduleReason {
+  background: #faf7ff;
+  border: 1px solid #e0d4ff;
+  border-left: 4px solid #4d227c;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.rescheduleReason p { margin: 0; }
+
+/* ─── Responsive ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .patientProfileLayout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .patientAvatarLarge {
+    width: 200px;
+    height: 200px;
+  }
+
+  .patientDetailsSection { width: 100%; }
+}
+
+@media (max-width: 640px) {
+  .rescheduleCompare {
+    flex-wrap: wrap;
+    flex-direction: column;
+  }
+
+  .rescheduleArrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+
+  .modalBody { padding: 14px; }
+  .modalContentCard { padding: 14px; }
+  .modalHeader { padding: 14px 16px; }
+  .modalFooter { padding: 12px 16px; }
+  .modalTwoCol { grid-template-columns: 1fr; }
+
+  .btnViewProfile {
+    width: 100%;
+    justify-content: center;
+  }
 }

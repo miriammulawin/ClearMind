@@ -31,6 +31,7 @@ const isSameDay = (d1, d2) => {
     a.getDate() === b.getDate()
   );
 };
+const cleanReferenceNumber = (ref) => ref?.replace(/-rescheduled$/i, "");
 
 // ── Service type detectors ─────────────────────────────────────────────────
 const isPsychAssessment = (serviceType) =>
@@ -76,6 +77,30 @@ const getServiceLabel = (appt) => {
     return "Psychological Assessment and Evaluation";
   }
   return "Psychotherapy and Counseling";
+};
+
+const generateReferenceNumber = (appt) => {
+  const date = new Date(appt.start);
+
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+
+  // Determine prefix
+  const serviceLabel = getServiceLabel(appt);
+
+  let prefix = "PAC"; // default
+  if (serviceLabel === "Psychological Assessment and Evaluation") {
+    prefix = "PAE";
+  }
+
+  // Unique 4-digit (based on ID or fallback random)
+  const sequence = String(appt.id || Math.floor(Math.random() * 9999)).padStart(
+    4,
+    "0",
+  );
+
+  return `${prefix}-${yyyy}-${mm}-${dd}-${sequence}`;
 };
 
 // ── Inline badge styles ────────────────────────────────────────────────────
@@ -769,9 +794,16 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
             {/* Appointment Info card */}
             <section className={styles.card}>
               <div className={styles.cardHeader}>
-                {isGhost
-                  ? "Rescheduled Appointment Information"
-                  : "Appointment Information"}
+                <span className={styles.cardHeaderLeft}>
+                  {isGhost
+                    ? "Rescheduled Appointment Information"
+                    : "Appointment Information"}
+                </span>
+                <span className={styles.referenceNumber}>
+                  {cleanReferenceNumber(
+                    appt.referenceNumber || generateReferenceNumber(appt),
+                  )}
+                </span>
               </div>
               <div className={styles.cardBody}>
                 <div className={styles.cardFields}>
@@ -993,7 +1025,9 @@ function DayAppointmentsModal({
 
               return (
                 <div key={appt.id} className={styles.card}>
+                  {/* ── HEADER ───────────────────────── */}
                   <div className={styles.cardHeader}>
+                    {/* LEFT: Title */}
                     <span className={styles.cardHeaderLeft}>
                       <span
                         className={styles.clinicDot}
@@ -1003,6 +1037,8 @@ function DayAppointmentsModal({
                         ? "Rescheduled Appointment"
                         : "Appointment Information"}
                     </span>
+
+                    {/* RIGHT: Badges + Reference Number */}
                     <span className={styles.badgeGroup}>
                       {displayPurpose && (
                         <Badge
@@ -1015,6 +1051,7 @@ function DayAppointmentsModal({
                           {displayPurpose}
                         </Badge>
                       )}
+
                       {!displayPurpose && (isEsa || isIntern) && (
                         <Badge
                           style={{
@@ -1026,27 +1063,32 @@ function DayAppointmentsModal({
                           {isEsa ? "ESA" : "Internship"}
                         </Badge>
                       )}
-                      {isGhost && (
-                        <span className={styles.newScheduleBadge}>
-                          New Schedule
-                        </span>
-                      )}
+
+                      <span className={styles.referenceNumber}>
+                        {cleanReferenceNumber(
+                          appt.referenceNumber || generateReferenceNumber(appt),
+                        )}
+                      </span>
                     </span>
                   </div>
 
+                  {/* ── BODY ───────────────────────── */}
                   <div className={styles.cardBody}>
                     <div className={styles.cardFields}>
                       <InfoRow
                         label="Patient Name"
                         value={appt.patientName || "—"}
                       />
+
                       <InfoRow label="Date of Appointment" value={cardDate} />
+
                       <InfoRow
                         label="Time"
                         value={`${startTime} – ${endTime}`}
                       />
-                      {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
+
                       <InfoRow label="Visit Type" value={visitTypeLabel} />
+
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Service:</span>
                         <Badge
@@ -1058,6 +1100,7 @@ function DayAppointmentsModal({
                           {serviceLabel}
                         </Badge>
                       </div>
+
                       {displayPurpose && (
                         <div className={styles.infoRow}>
                           <span className={styles.infoLabel}>Purpose:</span>
@@ -1071,10 +1114,12 @@ function DayAppointmentsModal({
                           </Badge>
                         </div>
                       )}
+
                       <InfoRow
                         label="Reason for Consultation"
                         value={appt.reason || "Not specified"}
                       />
+
                       <div className={styles.infoRow}>
                         <span className={styles.infoLabel}>Status:</span>
                         <StatusBadge
@@ -1084,6 +1129,7 @@ function DayAppointmentsModal({
                     </div>
                   </div>
 
+                  {/* ── FOOTER ───────────────────────── */}
                   <div className={styles.cardFooter}>
                     <button
                       className={styles.btnPurple}
