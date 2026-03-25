@@ -347,7 +347,7 @@ function CreateAppointmentModal({
                   disabled
                   readOnly
                   value={computedAge !== "" ? `${computedAge} years old` : ""}
-                  placeholder="Age (auto-computed)"
+                  placeholder="Age"
                 />
               </div>
 

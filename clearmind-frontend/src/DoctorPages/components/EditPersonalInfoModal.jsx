@@ -68,14 +68,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   };
 
   const prevImage = (field, setIndex, currentIndex) =>
-    setIndex(
-      currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1,
-    );
+    setIndex(currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1);
 
   const nextImage = (field, setIndex, currentIndex) =>
-    setIndex(
-      currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1,
-    );
+    setIndex(currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1);
 
   const handleSave = () => {
     onSave && onSave(formData);
@@ -109,10 +105,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </button>
           </div>
         ))}
-        <button
-          onClick={() => handleAddItem(field)}
-          className={styles["add-btn"]}
-        >
+        <button onClick={() => handleAddItem(field)} className={styles["add-btn"]}>
           <FiPlus /> Add
         </button>
       </div>
@@ -150,19 +143,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               <input
                 type="file"
                 hidden
-                onChange={(e) =>
-                  handleImageChange(field, index, e.target.files[0])
-                }
+                onChange={(e) => handleImageChange(field, index, e.target.files[0])}
               />
             </label>
             <button
               className={`${styles["carousel-btn"]} ${styles["delete"]}`}
-              style={{
-                bottom: "10px",
-                right: "10px",
-                top: "auto",
-                transform: "none",
-              }}
+              style={{ bottom: "10px", right: "10px", top: "auto", transform: "none" }}
               onClick={() => handleRemoveImage(field, index, setIndex)}
             >
               <FiTrash2 />
@@ -182,10 +168,8 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
 
   return (
     <div className={styles["profile-modal-overlay"]} onClick={onClose}>
-      <div
-        className={styles["profile-modal-lg"]}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={styles["profile-modal-lg"]} onClick={(e) => e.stopPropagation()}>
+
         {/* HEADER */}
         <div className={styles["modal-header"]}>
           <h2>Edit Personal Information</h2>
@@ -196,6 +180,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
 
         {/* BODY */}
         <div className={styles["modal-body"]}>
+
           {/* Personal Information section */}
           <div className={styles["modal-section"]}>
             <h4>Personal Information</h4>
@@ -241,9 +226,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 <input
                   className={styles["modal-input"]}
                   value={formData.contactNumber}
-                  onChange={(e) =>
-                    handleChange("contactNumber", e.target.value)
-                  }
+                  onChange={(e) => handleChange("contactNumber", e.target.value)}
                 />
               </div>
               <div className={styles["input-group"]}>
@@ -291,12 +274,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </div>
           </div>
 
-          {renderCarousel(
-            "boardCertImages",
-            boardIndex,
-            setBoardIndex,
-            "Board Certifications",
-          )}
+          {renderCarousel("boardCertImages", boardIndex, setBoardIndex, "Board Certifications")}
           {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
           {renderDynamicField("subspecialty", "Subspecialty")}
           {renderDynamicField("services", "Services")}
