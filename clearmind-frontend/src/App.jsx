@@ -10,6 +10,7 @@ import ClientAppointment from "./ClientPages/ClientAppointment";
 import ServicesTab from "./ClientPages/AppointmentNavPages/ServicesTab";
 import PendingTab from "./ClientPages/AppointmentNavPages/PendingTab";
 import ScheduleTab from "./ClientPages/AppointmentNavPages/ScheduleTab";
+import SessionsTab from "./ClientPages/AppointmentNavPages/SessionsTab";
 import HistoryTab from "./ClientPages/AppointmentNavPages/HistoryTab";
 import ClientMessages from "./ClientPages/ClientMessages";
 import ClientProfile from "./ClientPages/ClientProfile";
@@ -26,46 +27,49 @@ import PAaESetAppointmentForm from "./ClientPages/AppointmentNavPages/PAaEAssesm
 function App() {
   return (
     <>
-    <Toaster position="top-center" /> 
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Registration />} />
-        <Route path="/create/accounts"element={<CreateAccounts/>} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/client/home" element={<ClientHome />} />
+      <Toaster position="top-center" /> 
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Registration />} />
+          <Route path="/create/accounts" element={<CreateAccounts />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/client/home" element={<ClientHome />} />
 
-        <Route path="/client/appointment" element={<ClientAppointment />}>
-          <Route index element={<Navigate to="services" replace />} />
-          <Route path="services" element={<ServicesTab />} />
-          
-          <Route path="psychotherapy-and-counseling" element={<PACAppointment />}>
-            <Route path="set-appointment-form" element={<PACSetAppointmentForm />} />
-          </Route>
-          
-          <Route path="psychological-assessment" element={<PAEAppointment />}>
-            <Route path="set-appointment-form" element={<PAaESetAppointmentForm />} />
-          </Route>
-          
-          <Route path="pending" element={<PendingTab />} />
-          <Route path="upcoming" element={<ScheduleTab />} />
-          <Route path="history" element={<HistoryTab />} />
-          <Route path="upcoming/:id" element={<AppointmentDetails />} />
-          <Route path="details/:id" element={<AppointmentDetails />} />
-        </Route>
-        <Route path="/client/messages" element={<ClientMessages />} />
-        <Route path="/client/profile" element={<ClientProfile />} />
-        
-        {/* New Routes for Profile Menu Items */}
-        <Route path="/client/help" element={<Help />} />
-        <Route path="/client/terms-and-conditions" element={<TermsAndConditions />} />
-        <Route path="/client/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/client/about" element={<About />} />
+          <Route path="/client/appointment" element={<ClientAppointment />}>
+            <Route index element={<Navigate to="services" replace />} />
+            <Route path="services" element={<ServicesTab />} />
 
-      </Routes>
-    </Router>
+            <Route path="psychotherapy-and-counseling" element={<PACAppointment />}>
+              <Route path="set-appointment-form" element={<PACSetAppointmentForm />} />
+            </Route>
+
+            <Route path="psychological-assessment" element={<PAEAppointment />}>
+              <Route path="set-appointment-form" element={<PAaESetAppointmentForm />} />
+            </Route>
+
+            <Route path="pending"   element={<PendingTab />} />
+            <Route path="upcoming"  element={<ScheduleTab />} />
+            <Route path="sessions"  element={<SessionsTab />} />
+            <Route path="history"   element={<HistoryTab />} />
+          </Route>
+
+          {/* ── Appointment Details — outside ClientAppointment so the tab nav is hidden ── */}
+          <Route path="/client/appointment/upcoming/:id" element={<AppointmentDetails />} />
+          <Route path="/client/appointment/history/:id"  element={<AppointmentDetails />} />
+          <Route path="/client/appointment/details/:id"  element={<AppointmentDetails />} />
+
+          <Route path="/client/messages" element={<ClientMessages />} />
+          <Route path="/client/profile"  element={<ClientProfile />} />
+
+          <Route path="/client/help"                element={<Help />} />
+          <Route path="/client/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/client/privacy-policy"       element={<PrivacyPolicy />} />
+          <Route path="/client/about"                element={<About />} />
+        </Routes>
+      </Router>
     </>
-    
   );
 }
+
 export default App;

@@ -4,6 +4,7 @@ export const MOCK_APPOINTMENTS = [
   // ── PENDING ──────────────────────────────────────────────────────────────
   {
     id: 1,
+    referenceNumber: 'PAC-0001-2026-03-02',
     time: '9:00 A.M.',
     date: 'March 2, 2026',
     serviceType: 'Psychotherapy and Counseling',
@@ -22,6 +23,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 4,
+    referenceNumber: 'PAC-0004-2026-01-29',
     time: '2:00 P.M.',
     date: 'January 29, 2026',
     serviceType: 'Follow-up Consultation',
@@ -42,6 +44,7 @@ export const MOCK_APPOINTMENTS = [
   // ── CONFIRMED ─────────────────────────────────────────────────────────────
   {
     id: 2,
+    referenceNumber: 'PAE-0002-2026-03-02',
     time: '10:00 A.M.',
     date: 'March 2, 2026',
     serviceType: 'Psychiatric Assessment',
@@ -60,6 +63,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 5,
+    referenceNumber: 'PAC-0005-2026-02-01',
     time: '3:00 P.M.',
     date: 'February 1, 2026',
     serviceType: 'Initial Consultation',
@@ -78,6 +82,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 6,
+    referenceNumber: 'PAC-0006-2026-02-21',
     time: '3:00 P.M.',
     date: 'February 21, 2026',
     serviceType: 'Initial Consultation',
@@ -96,6 +101,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 7,
+    referenceNumber: 'PAC-0007-2026-02-22',
     time: '3:00 P.M.',
     date: 'February 22, 2026',
     serviceType: 'Initial Consultation',
@@ -116,6 +122,7 @@ export const MOCK_APPOINTMENTS = [
   // ── RESCHEDULED ───────────────────────────────────────────────────────────
   {
     id: 3,
+    referenceNumber: 'PAE-0003-2026-03-02',
     time: '11:00 A.M.',
     date: 'March 2, 2026',
     serviceType: 'Mental Health Certification',
@@ -136,6 +143,7 @@ export const MOCK_APPOINTMENTS = [
   // ── COMPLETED ─────────────────────────────────────────────────────────────
   {
     id: 8,
+    referenceNumber: 'PAC-0008-2026-01-29',
     time: '9:00 A.M.',
     date: 'January 29, 2026',
     serviceType: 'Follow-up Consultation',
@@ -154,6 +162,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 9,
+    referenceNumber: 'PAE-0009-2026-02-01',
     time: '2:00 P.M.',
     date: 'February 1, 2026',
     serviceType: 'Mental Health Certification',
@@ -172,6 +181,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 10,
+    referenceNumber: 'PAE-0010-2025-12-15',
     time: '11:00 A.M.',
     date: 'December 15, 2025',
     serviceType: 'Psychiatric Assessment',
@@ -192,6 +202,7 @@ export const MOCK_APPOINTMENTS = [
   // ── CANCELLED ─────────────────────────────────────────────────────────────
   {
     id: 11,
+    referenceNumber: 'PAE-0011-2026-01-27',
     time: '10:00 A.M.',
     date: 'January 27, 2026',
     serviceType: 'Psychiatric Assessment',
@@ -210,6 +221,7 @@ export const MOCK_APPOINTMENTS = [
   },
   {
     id: 12,
+    referenceNumber: 'PAE-0012-2026-01-25',
     time: '3:00 P.M.',
     date: 'January 25, 2026',
     serviceType: 'Psychiatric Assessment',

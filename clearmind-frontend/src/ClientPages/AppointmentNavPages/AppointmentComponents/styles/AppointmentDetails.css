@@ -1,24 +1,50 @@
-/* AppointmentDetails.css — matches PaymentForm summaryCard design */
+/* AppointmentDetails.css */
 
+/* ── Page wrapper ── */
+.ad-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Purple back-button bar ── */
+.ad-back-row {
+  display: flex;
+  align-items: center;
+  padding: clamp(0.45rem, 1.5vw, 0.7rem) clamp(1rem, 4vw, 2rem);
+  background-color: #5B2C91;
+  flex-shrink: 0;
+}
+
+.ad-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: clamp(0.78rem, 2vw, 0.9rem);
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.2px;
+  transition: opacity 0.2s;
+}
+.ad-back-btn:hover {
+  opacity: 0.75;
+}
+
+/* ── Scrollable content area ── */
+.ad-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Inner container ── */
 .ad-container {
   max-width: 500px;
   margin: 0 auto;
-}
-
-/* ── Back button ── */
-.ad-back-btn {
-  color: #6B46C1;
-  text-decoration: none;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  font-size: 14px;
-}
-.ad-back-btn:hover {
-  color: #553C9A;
-  text-decoration: none;
 }
 
 /* ── Header row (title + badge) ── */
@@ -26,14 +52,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #E9D5FF;
-  border: 2px solid #6B46C1;
+  background-color: #5B2C91;
+  border: 2px solid #5B2C91;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
   padding: 14px 20px;
 }
 .ad-header-title {
-  color: #6B46C1;
+  color: #fff;
   font-weight: 700;
   font-size: 17px;
   letter-spacing: 0.3px;
@@ -49,8 +75,10 @@
 .badge.bg-warning  { background-color: #fff5b5 !important; color: #7a7a00 !important; }
 .badge.bg-info     { background-color: #a8bffd !important; color: #1a3a8f !important; }
 .badge.bg-orange   { background-color: #FFCE99 !important; color: #7a4000 !important; }
+.badge.bg-success  { background-color: #bbf7d0 !important; color: #166534 !important; }
+.badge.bg-danger   { background-color: #fecaca !important; color: #991b1b !important; }
 
-/* ── Summary card — mirrors PaymentForm .summaryCard ── */
+/* ── Summary card ── */
 .ad-summary-card {
   background: #fff;
   border: 1.5px solid #c4aee8;
@@ -69,7 +97,7 @@
   gap: 5px;
 }
 
-/* ── Section title — same as summaryGroupTitle ── */
+/* ── Section title ── */
 .ad-group-title {
   font-size: 11px;
   font-weight: 700;
@@ -79,7 +107,7 @@
   margin-bottom: 4px;
 }
 
-/* ── Row — same as summaryRow ── */
+/* ── Row ── */
 .ad-row {
   display: flex;
   flex-wrap: wrap;
@@ -88,27 +116,27 @@
   line-height: 1.5;
 }
 
-/* ── Key — same as summaryKey ── */
+/* ── Key ── */
 .ad-key {
   color: #4b5563;
   font-weight: 500;
   white-space: nowrap;
 }
 
-/* ── Value — same as summaryVal ── */
+/* ── Value ── */
 .ad-val {
   color: #5B2C91;
   font-weight: 600;
 }
 
-/* ── Divider — same as summaryDivider ── */
+/* ── Divider ── */
 .ad-divider {
   height: 1px;
   background: #e9e0f8;
   margin: 8px 0;
 }
 
-/* ── Reason text — same as summaryReason ── */
+/* ── Reason text ── */
 .ad-reason {
   font-size: 13px;
   color: #3d2b5e;

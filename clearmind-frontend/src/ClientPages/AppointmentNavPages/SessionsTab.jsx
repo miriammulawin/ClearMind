@@ -3,34 +3,38 @@ import { Container, Dropdown, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaFilter, FaSort } from 'react-icons/fa';
 import MOCK_APPOINTMENTS from '../../MockData/MockAppointment';
-import AppointmentCard from './AppointmentComponents/AppointmentCard';
-import styles from './styles/HistoryTab.module.css';
+import SessionCard from './AppointmentComponents/SessionCard';
+import styles from './styles/SessionsTab.module.css';
 
-const HistoryTab = () => {
+const SessionsTab = () => {
   const navigate = useNavigate();
 
-  const [selectedStatus, setSelectedStatus] = useState('Completed');
-  const [sortOrder, setSortOrder] = useState('Newest First');
+  const [selectedStatus, setSelectedStatus] = useState('All');
+  const [sortOrder, setSortOrder]           = useState('Newest First');
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate]           = useState('');
+  const [endDate, setEndDate]               = useState('');
 
-  const statusOptions = ['Completed', 'Cancelled'];
-  const sortOptions = ['Newest First', 'Oldest First'];
+  const statusOptions = ['All', 'Pending', 'Confirmed', 'Rescheduled', 'Completed', 'Cancelled'];
+  const sortOptions   = ['Newest First', 'Oldest First'];
 
   const getEmptyMessage = (status) => {
     const messages = {
-      Completed: 'You have no completed appointments.',
-      Cancelled: 'You have no cancelled appointments.',
+      All:         'You have no sessions yet.',
+      Pending:     'You have no pending sessions.',
+      Confirmed:   'You have no confirmed sessions.',
+      Rescheduled: 'You have no rescheduled sessions.',
+      Completed:   'You have no completed sessions.',
+      Cancelled:   'You have no cancelled sessions.',
     };
-    return messages[status] || 'You have no appointment history.';
+    return messages[status] || 'You have no sessions.';
   };
 
   const handleViewDetails = (appointmentId) => {
-  navigate(`/client/appointment/history/${appointmentId}`, {
-    state: { from: 'history' }
-  });
-  };  
+    navigate(`/client/appointment/sessions/${appointmentId}`, {
+      state: { from: 'sessions' },
+    });
+  };
 
   const handleClearDates = () => {
     setStartDate('');
@@ -38,14 +42,16 @@ const HistoryTab = () => {
   };
 
   const filteredAndSorted = MOCK_APPOINTMENTS
-    .filter((apt) => apt.status === selectedStatus)
+    .filter((apt) =>
+      selectedStatus === 'All' ? true : apt.status === selectedStatus
+    )
     .filter((apt) => {
       if (!startDate && !endDate) return true;
       const aptDate = new Date(apt.date);
-      const from = startDate ? new Date(startDate) : null;
-      const to = endDate ? new Date(endDate) : null;
+      const from    = startDate ? new Date(startDate) : null;
+      const to      = endDate   ? new Date(endDate)   : null;
       if (from && aptDate < from) return false;
-      if (to && aptDate > to) return false;
+      if (to   && aptDate > to)   return false;
       return true;
     })
     .sort((a, b) => {
@@ -55,16 +61,18 @@ const HistoryTab = () => {
     });
 
   return (
-    <Container className={`py-4 ${styles.historyContainer}`}>
-      {/* Header */}
-      <div className={styles.headerSection}>
-        <h5 className={styles.titleHistory}>APPOINTMENT HISTORY</h5>
+    <Container className={`py-4 ${styles.sessionsContainer}`}>
 
-        {/* Filters Row */}
+      {/* ── Header ── */}
+      <div className={styles.headerSection}>
+        <h5 className={styles.titleSessions}>MY SESSIONS</h5>
+
+        {/* ── Filters Row ── */}
         <div className={styles.filtersGroup}>
+
           {/* Status Dropdown */}
-          <Dropdown className={styles.statusDropdownHistory}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-history-status">
+          <Dropdown className={styles.statusDropdownSessions}>
+            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-status">
               {selectedStatus}
             </Dropdown.Toggle>
             <Dropdown.Menu>
@@ -81,8 +89,8 @@ const HistoryTab = () => {
           </Dropdown>
 
           {/* Sort Dropdown */}
-          <Dropdown className={styles.sortDropdownHistory}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-history-sort">
+          <Dropdown className={styles.sortDropdownSessions}>
+            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-sort">
               <FaSort className="me-1" />
               {sortOrder}
             </Dropdown.Toggle>
@@ -109,7 +117,7 @@ const HistoryTab = () => {
           </Button>
         </div>
 
-        {/* Date Range Filter */}
+        {/* ── Date Range Filter Panel ── */}
         {showDateFilter && (
           <div className={styles.dateRangeFilter}>
             <Row className="g-2 align-items-end">
@@ -141,16 +149,16 @@ const HistoryTab = () => {
         )}
       </div>
 
-      {/* Appointments List */}
-      <div className={styles.appointmentsHistoryList}>
+      {/* ── Sessions List ── */}
+      <div className={styles.sessionsListWrapper}>
         {filteredAndSorted.length === 0 ? (
-          <div className={styles.noHistory}>
-            <FaCalendarTimes className={styles.calendarIconHistory} />
+          <div className={styles.noSessions}>
+            <FaCalendarTimes className={styles.calendarIconSessions} />
             <p>{getEmptyMessage(selectedStatus)}</p>
           </div>
         ) : (
           filteredAndSorted.map((appointment) => (
-            <AppointmentCard
+            <SessionCard
               key={appointment.id}
               appointment={appointment}
               onViewDetails={handleViewDetails}
@@ -158,8 +166,9 @@ const HistoryTab = () => {
           ))
         )}
       </div>
+
     </Container>
   );
 };
 
-export default HistoryTab;
+export default SessionsTab;
