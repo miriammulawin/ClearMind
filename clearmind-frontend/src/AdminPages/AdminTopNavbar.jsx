@@ -4,7 +4,7 @@ import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import axios from "axios";
+import axiosClient from "../axiosClient";
 
 import styles from "./AdminStyle/AdminTopNavbar.module.css";
 import "./AdminStyle/NotificationModal.css";
@@ -73,11 +73,10 @@ function AdminTopNavbar({ activeMenu }) {
       });
 
       if (result.isConfirmed) {
-        await axios.post(
-          "http://localhost/ClearMind/clearmind-backend/logout.php",
-          {},
-          { withCredentials: true },
-        );
+        await axiosClient.post("/logout");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("user");
 
         Swal.fire({
           icon: "success",
@@ -93,12 +92,12 @@ function AdminTopNavbar({ activeMenu }) {
         }, 1500);
       }
     } catch (error) {
-      console.error("Logout failed:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Logout failed",
-        text: "Please try again later.",
-      });
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+
+    console.error("Logout failed:", error);
+    navigate("/");
     }
   };
 

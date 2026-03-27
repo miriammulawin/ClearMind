@@ -9,6 +9,7 @@ import { Toaster } from "react-hot-toast";
 
 import Login from "./Login";
 import Registration from "./Registration";
+import ProtectedRoute from "./ProtectedRoute";
 
 import DoctorDashboard from "./DoctorPages/DoctorDashboard";
 import DoctorAppointment from "./DoctorPages/DoctorAppointment";
@@ -53,39 +54,169 @@ function App() {
       <Toaster position="top-center" />
       <Router>
         <Routes>
+          {/* ── Public ─────────────────────────────────────── */}
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<Registration />} />
-          <Route path="/create/accounts" element={<CreateAccounts />} />
 
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/manage/account" element={<ManageAccounts />} />
-          <Route path="/admin/profile" element={<AdminProfile />} />
-          <Route path="/admin/messages" element={<AdminMessages />} />
-          <Route path="/admin/clinic" element={<AdminClinic />} />
-          <Route path="/admin/patients" element={<AdminPatient />} />
-          <Route path="/admin/appointment" element={<AdminAppointment />} />
-          <Route path="/admin/billing" element={<AdminBilling />} />
+          {/* ── Admin Routes ────────────────────────────────── */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create/accounts"
+            element={
+              <ProtectedRoute role="Admin">
+                <CreateAccounts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage/account"
+            element={
+              <ProtectedRoute role="Admin">
+                <ManageAccounts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/messages"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminMessages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/clinic"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminClinic />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/patients"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminPatient />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/appointment"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminAppointment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/billing"
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminBilling />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/admin/patient-profile/:id"
-            element={<AdminPatientProfile />}
+            element={
+              <ProtectedRoute role="Admin">
+                <AdminPatientProfile />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-          <Route path="/doctor/appointment" element={<DoctorAppointment />} />
-          <Route path="/doctor/patient" element={<DoctorPatient />} />
-          <Route path="/doctor/profile" element={<DoctorProfile />} />
-          <Route path="/doctor/messages" element={<DoctorMessages />} />
+
+          {/* ── Doctor Routes ────────────────────────────────── */}
+          <Route
+            path="/doctor/dashboard"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/appointment"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorAppointment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/patient"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorPatient />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/profile"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor/messages"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorMessages />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/doctor/patient-profile/:id"
-            element={<DoctorPatientProfile />}
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorPatientProfile />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/doctor/schedule" element={<DoctorSchedule />} />
+          <Route
+            path="/doctor/schedule"
+            element={
+              <ProtectedRoute role="Doctor">
+                <DoctorSchedule />
+              </ProtectedRoute>
+            }
+          />
 
-          <Route path="/client/home" element={<ClientHome />} />
-
-          <Route path="/client/appointment" element={<ClientAppointment />}>
+          {/* ── Client Routes ────────────────────────────────── */}
+          <Route
+            path="/client/home"
+            element={
+              <ProtectedRoute role="Client">
+                <ClientHome />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/appointment"
+            element={
+              <ProtectedRoute role="Client">
+                <ClientAppointment />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="services" replace />} />
             <Route path="services" element={<ServicesTab />} />
-
             <Route
               path="psychotherapy-and-counseling"
               element={<PACAppointment />}
@@ -95,34 +226,73 @@ function App() {
                 element={<PACSetAppointmentForm />}
               />
             </Route>
-
             <Route path="psychological-assessment" element={<PAEAppointment />}>
               <Route
                 path="set-appointment-form"
                 element={<PAaESetAppointmentForm />}
               />
             </Route>
-
             <Route path="pending" element={<PendingTab />} />
             <Route path="upcoming" element={<ScheduleTab />} />
             <Route path="history" element={<HistoryTab />} />
             <Route path="upcoming/:id" element={<AppointmentDetails />} />
             <Route path="details/:id" element={<AppointmentDetails />} />
           </Route>
-          <Route path="/client/messages" element={<ClientMessages />} />
-          <Route path="/client/profile" element={<ClientProfile />} />
-
-          {/* New Routes for Profile Menu Items */}
-          <Route path="/client/help" element={<Help />} />
+          <Route
+            path="/client/messages"
+            element={
+              <ProtectedRoute role="Client">
+                <ClientMessages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/profile"
+            element={
+              <ProtectedRoute role="Client">
+                <ClientProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/help"
+            element={
+              <ProtectedRoute role="Client">
+                <Help />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/client/terms-and-conditions"
-            element={<TermsAndConditions />}
+            element={
+              <ProtectedRoute role="Client">
+                <TermsAndConditions />
+              </ProtectedRoute>
+            }
           />
-          <Route path="/client/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/client/about" element={<About />} />
+          <Route
+            path="/client/privacy-policy"
+            element={
+              <ProtectedRoute role="Client">
+                <PrivacyPolicy />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client/about"
+            element={
+              <ProtectedRoute role="Client">
+                <About />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ── Catch-all ───────────────────────────────────── */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </>
   );
 }
+
 export default App;

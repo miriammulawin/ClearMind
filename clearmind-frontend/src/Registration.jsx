@@ -12,9 +12,8 @@ import {
   FaEnvelope,
   FaLock,
 } from "react-icons/fa";
-import axios from "axios";
+import axiosClient from "./axiosClient";
 import toast from "react-hot-toast";
-
 
 function Registration() {
   const navigate = useNavigate();
@@ -48,22 +47,26 @@ function Registration() {
     }
   };
 
-  // Frontend validation (keep as-is for instant feedback)
   const validateForm = () => {
     const newErrors = {};
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.lastName.trim())
+      newErrors.lastName = "Last name is required";
     if (!formData.middleInitial.trim())
-      newErrors.middleInitial = "Middle Initials is Required";
-    if (!formData.dob) newErrors.dob = "Date of birth is required";
-    if (!formData.sex) newErrors.sex = "Sex is required";
+      newErrors.middleInitial = "Middle Initial is required";
+    if (!formData.dob)
+      newErrors.dob = "Date of birth is required";
+    if (!formData.sex)
+      newErrors.sex = "Sex is required";
     if (!formData.contactNo.trim())
       newErrors.contactNo = "Contact number is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!formData.email.trim())
+      newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = "Invalid email format";
-    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.password)
+      newErrors.password = "Password is required";
     else if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
     if (formData.password !== formData.confirmPassword)
@@ -76,83 +79,63 @@ function Registration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/register",
-        {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          middleInitial: formData.middleInitial,
-          address: formData.address,
-          dob: formData.dob,
-          sex: formData.sex,
-          contactNo: formData.contactNo,
-          email: formData.email,
-          password: formData.password,
-          password_confirmation: formData.confirmPassword,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        },
-      );
+      const response = await axiosClient.post("/register", {
+        firstName:             formData.firstName,
+        lastName:              formData.lastName,
+        middleInitial:         formData.middleInitial,
+        dob:                   formData.dob,
+        sex:                   formData.sex,
+        contactNo:             formData.contactNo,
+        email:                 formData.email,
+        password:              formData.password,
+        password_confirmation: formData.confirmPassword,
+        address:               formData.address ?? null,
+      });
 
       const data = response.data;
 
       if (data.success) {
-        // Save token and user info to localStorage
+        // Save token and user info
         localStorage.setItem("token", data.data.token);
-        localStorage.setItem("role", data.data.user.role);
-        localStorage.setItem("user", JSON.stringify(data.data.user));
+        localStorage.setItem("role",  data.data.user.role);
+        localStorage.setItem("user",  JSON.stringify(data.data.user));
 
         toast.success("Registration Successful!", {
           duration: 1500,
           style: {
-            background: "#E2F7E3",
-            border: "1px solid #91C793",
-            color: "#2E7D32",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            textAlign: "center",
-            maxWidth: "320px",
+            background:   "#E2F7E3",
+            border:       "1px solid #91C793",
+            color:        "#2E7D32",
+            fontWeight:   600,
+            fontSize:     "0.95rem",
+            textAlign:    "center",
+            maxWidth:     "320px",
             borderRadius: "10px",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+            boxShadow:    "0 3px 10px rgba(0, 0, 0, 0.15)",
           },
-          iconTheme: {
-            primary: "#2E7D32",
-            secondary: "#E2F7E3",
-          },
+          iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
 
-        // All self-registered users are Clients
         setTimeout(() => navigate("/client/home"), 1500);
       }
     } catch (err) {
       if (err.response) {
         if (err.response.status === 422) {
-          // Map Laravel validation errors back to form fields
+          // Map Laravel validation errors to form fields
           const laravelErrors = err.response.data.errors || {};
           const mapped = {};
-
-          if (laravelErrors.firstName)
-            mapped.firstName = laravelErrors.firstName[0];
-          if (laravelErrors.lastName)
-            mapped.lastName = laravelErrors.lastName[0];
-          if (laravelErrors.dob) mapped.dob = laravelErrors.dob[0];
-          if (laravelErrors.sex) mapped.sex = laravelErrors.sex[0];
-          if (laravelErrors.contactNo)
-            mapped.contactNo = laravelErrors.contactNo[0];
-          if (laravelErrors.email) mapped.email = laravelErrors.email[0];
-          if (laravelErrors.password)
-            mapped.password = laravelErrors.password[0];
-
+          if (laravelErrors.firstName)     mapped.firstName     = laravelErrors.firstName[0];
+          if (laravelErrors.lastName)      mapped.lastName      = laravelErrors.lastName[0];
+          if (laravelErrors.middleInitial) mapped.middleInitial = laravelErrors.middleInitial[0];
+          if (laravelErrors.dob)           mapped.dob           = laravelErrors.dob[0];
+          if (laravelErrors.sex)           mapped.sex           = laravelErrors.sex[0];
+          if (laravelErrors.contactNo)     mapped.contactNo     = laravelErrors.contactNo[0];
+          if (laravelErrors.email)         mapped.email         = laravelErrors.email[0];
+          if (laravelErrors.password)      mapped.password      = laravelErrors.password[0];
           setErrors(mapped);
         } else {
           toast.error(err.response.data?.message || "Registration failed.");
@@ -170,12 +153,12 @@ function Registration() {
       <Row
         className="w-100 g-0 mx-auto"
         style={{
-          maxWidth: "1400px",
-          background: "white",
+          maxWidth:     "1400px",
+          background:   "white",
           borderRadius: "25px",
-          border: "3px solid #a276d0",
-          overflow: "hidden",
-          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
+          border:       "3px solid #a276d0",
+          overflow:     "hidden",
+          boxShadow:    "0 10px 30px rgba(0, 0, 0, 0.1)",
         }}
       >
         {/* Left Panel */}
@@ -209,10 +192,7 @@ function Registration() {
           className="d-flex align-items-center justify-content-center p-3 p-md-4 p-lg-5"
           style={{ background: "rgba(255, 255, 255, 0.72)" }}
         >
-          <Card
-            className="registration-card w-100"
-            style={{ maxWidth: "500px" }}
-          >
+          <Card className="registration-card w-100" style={{ maxWidth: "500px" }}>
             <Card.Body className="p-3 p-sm-4 p-md-5">
               <div className="text-center mb-4">
                 <Image
@@ -275,7 +255,7 @@ function Registration() {
                     <Form.Control
                       type="text"
                       name="middleInitial"
-                      placeholder="Middle Initial"
+                      placeholder="Middle Initial *"
                       value={formData.middleInitial}
                       onChange={handleChange}
                       isInvalid={!!errors.middleInitial}
@@ -411,9 +391,7 @@ function Registration() {
                       size="sm"
                     />
                     <span
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="input-icon-right"
                     >
                       {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
@@ -448,7 +426,7 @@ function Registration() {
                   </Form.Control.Feedback>
                 </Form.Group>
 
-                {/* Submit Button */}
+                {/* Submit */}
                 <Button
                   variant="none"
                   type="submit"
@@ -464,7 +442,7 @@ function Registration() {
                   <button
                     type="button"
                     className="link-button"
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate("/")}
                   >
                     Log In
                   </button>

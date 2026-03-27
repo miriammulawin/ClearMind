@@ -7,89 +7,76 @@ import {
   Form,
   Button,
   Image,
-  Alert,
 } from "react-bootstrap";
 import logo_login from "./assets/CMPS_Logo.png";
 import { FaEye, FaEyeSlash, FaLock } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosClient from "./axiosClient";
 import toast from "react-hot-toast";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]               = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-  const [error, setError] = useState("");
+  const [agreed, setAgreed]             = useState(false);
+  const [error, setError]               = useState("");
   const navigate = useNavigate();
 
   const showError = (message) => {
     setError(message);
-    setTimeout(() => {
-      setError("");
-    }, 3000);
+    setTimeout(() => setError(""), 3000);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate empty fields
     if (!email.trim() || !password.trim()) {
       showError("Please enter both email and password");
       return;
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       showError("Please enter a valid email address");
       return;
     }
 
-    // Validate terms agreement
     if (!agreed) {
       showError("You must agree to the Terms & Conditions");
       return;
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost/ClearMind/clearmind-backend/login.php",
-        { email, password },
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
+      const response = await axiosClient.post("/login", { email, password });
       const data = response.data;
 
       if (data.success) {
-        toast.success("Login Successful !", {
+        // Save to localStorage
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("role",  data.data.role);
+        localStorage.setItem("user",  JSON.stringify(data.data.user));
+
+        toast.success("Login Successful!", {
           duration: 1500,
           style: {
-            background: "#E2F7E3",
-            border: "1px solid #91C793",
-            color: "#2E7D32",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            textAlign: "center",
-            maxWidth: "320px",
+            background:   "#E2F7E3",
+            border:       "1px solid #91C793",
+            color:        "#2E7D32",
+            fontWeight:   600,
+            fontSize:     "0.95rem",
+            textAlign:    "center",
+            maxWidth:     "320px",
             borderRadius: "10px",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+            boxShadow:    "0 3px 10px rgba(0, 0, 0, 0.15)",
           },
-          iconTheme: {
-            primary: "#2E7D32",
-            secondary: "#E2F7E3",
-          },
+          iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
+
         setTimeout(() => {
-          switch (data.role) {
+          switch (data.data.role) {
             case "Admin":
               navigate("/admin/dashboard");
               break;
@@ -103,12 +90,10 @@ function Login() {
               navigate("/");
           }
         }, 1500);
-      } else {
-        showError(data.message || "Login failed.");
       }
-    } catch (error) {
-      if (error.response) {
-        showError(error.response.data?.message || "Login failed.");
+    } catch (err) {
+      if (err.response) {
+        showError(err.response.data?.message || "Login failed.");
       } else {
         showError("Server error. Please try again later.");
       }
@@ -136,7 +121,7 @@ function Login() {
                   </p>
                 </Col>
               </Row>
-              {/* REMOVE noValidate ATTRIBUTE TO DISABLE HTML5 VALIDATION */}
+
               <Form onSubmit={handleLogin} className="login-form" noValidate>
                 <Form.Group className="mb-3" controlId="email">
                   <Form.Label className="form-label-custom">
@@ -151,7 +136,6 @@ function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       autoComplete="email"
                       className="input-field"
-                      // REMOVED: required attribute
                     />
                   </div>
                 </Form.Group>
@@ -169,7 +153,6 @@ function Login() {
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
                       className="input-field"
-                      // REMOVED: required attribute
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -179,9 +162,7 @@ function Login() {
                       onKeyPress={(e) =>
                         e.key === "Enter" && setShowPassword(!showPassword)
                       }
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <FaEye /> : <FaEyeSlash />}
                     </span>
@@ -194,7 +175,7 @@ function Login() {
                     label={
                       <>
                         I agree to the{" "}
-                        <a className="terms-link" href="/terms">
+                        <a className="terms-link" href="/client/terms-and-conditions">
                           Terms & Conditions
                         </a>{" "}
                         <span className="text-danger">*</span>
@@ -203,19 +184,16 @@ function Login() {
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
                     className="terms-checkbox"
-                    // REMOVED: required attribute
                   />
                 </Form.Group>
+
                 {error && (
                   <Row className="mb-2">
-                    {" "}
                     <Col>
-                      {" "}
                       <small className="text-danger d-block text-center">
-                        {" "}
-                        {error}{" "}
-                      </small>{" "}
-                    </Col>{" "}
+                        {error}
+                      </small>
+                    </Col>
                   </Row>
                 )}
 
