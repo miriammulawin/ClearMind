@@ -204,6 +204,7 @@ function AdminAppointment() {
         onClose={() => setShowModal(false)}
         onAdd={handleAddEvent}
         showReceipt={true}
+        showAssignedDoctor={true}
       />
     </div>
   );

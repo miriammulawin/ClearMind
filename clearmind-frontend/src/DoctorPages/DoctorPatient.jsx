@@ -24,6 +24,7 @@ import {
 import { FaCalendarAlt } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
+import CompleteAppointmentModal from "./components/CompleteAppointmentModal";
 
 const AvatarPlaceholder = ({ name, size = 80 }) => {
   const initials = name
@@ -72,7 +73,8 @@ function DoctorPatient() {
   const [zoomImage, setZoomImage] = useState(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [patientTypeFilter, setPatientTypeFilter] = useState("all");
-  const [progressionDraft, setProgressionDraft] = useState("");
+  const [showClinicalModal, setShowClinicalModal] = useState(false);
+  const [clinicalModalPatient, setClinicalModalPatient] = useState(null);
   const navigate = useNavigate();
 
   const [patientList, setPatientList] = useState([
@@ -93,7 +95,7 @@ function DoctorPatient() {
       totalVisits: 5,
       progressionNote: {
         assessment:
-          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed.",
+          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed. Patient appears fatigued and stressed. Advised adequate rest, hydration, and stress management techniques. Follow-up recommended in 2 weeks or sooner if symptoms worsen.",
       },
     },
     {
@@ -113,7 +115,7 @@ function DoctorPatient() {
       totalVisits: 2,
       progressionNote: {
         assessment:
-          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. Diagnosed with contact dermatitis, likely allergic in origin.",
+          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin. Topical hydrocortisone 1% cream prescribed for application twice daily for 7 days. Patient advised to avoid potential allergens and irritants. Allergy patch testing recommended if no improvement within 7 days. Follow-up in 1 week.",
       },
     },
     {
@@ -149,17 +151,19 @@ function DoctorPatient() {
       totalVisits: 3,
       progressionNote: {
         assessment:
-          "Follow-up for hypertension. Blood pressure: 128/82 mmHg. Medication compliance confirmed. No changes to regimen. Next check-up in 1 month.",
+          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg — within acceptable range and showing marked improvement from last visit. Patient is fully compliant with amlodipine 5mg once daily. No changes to current medication regimen. Advised to continue home blood pressure monitoring and maintain low-sodium diet. Next check-up in 1 month.",
       },
     },
   ]);
 
+  const [progressionDraft, setProgressionDraft] = useState("");
   const rowsPerPage = 4;
 
   const filteredList =
     patientTypeFilter === "all"
       ? patientList
       : patientList.filter((p) => p.patientType === patientTypeFilter);
+
   const totalPages = Math.ceil(filteredList.length / rowsPerPage);
   const displayedData = filteredList.slice(
     (currentPage - 1) * rowsPerPage,
@@ -172,6 +176,7 @@ function DoctorPatient() {
     setShowModal(true);
     setPaymentOpen(false);
   };
+
   const handleFilterChange = (e) => {
     setPatientTypeFilter(e.target.value);
     setCurrentPage(1);
@@ -197,30 +202,41 @@ function DoctorPatient() {
     setProgressionDraft("");
   };
 
-  const getStatusBadgeStyle = (s) =>
-    ({
-      completed: {
-        background: "#dcfce7",
-        color: "#16a34a",
-        border: "1px solid #bbf7d0",
-      },
-      scheduled: {
-        background: "#dbeafe",
-        color: "#1d4ed8",
-        border: "1px solid #bfdbfe",
-      },
-      cancelled: {
-        background: "#fee2e2",
-        color: "#dc2626",
-        border: "1px solid #fecaca",
-      },
-    })[s?.toLowerCase()] || {
-      background: "#f3f4f6",
-      color: "#6b7280",
-      border: "1px solid #e5e7eb",
-    };
+  const handleOpenClinical = (row) => {
+    setClinicalModalPatient(row);
+    setShowClinicalModal(true);
+  };
 
-  const getModeBadge = (mode) => ({
+  const getStatusBadgeStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return {
+          background: "#dcfce7",
+          color: "#16a34a",
+          border: "1px solid #bbf7d0",
+        };
+      case "scheduled":
+        return {
+          background: "#dbeafe",
+          color: "#1d4ed8",
+          border: "1px solid #bfdbfe",
+        };
+      case "cancelled":
+        return {
+          background: "#fee2e2",
+          color: "#dc2626",
+          border: "1px solid #fecaca",
+        };
+      default:
+        return {
+          background: "#f3f4f6",
+          color: "#6b7280",
+          border: "1px solid #e5e7eb",
+        };
+    }
+  };
+
+  const getConsultationModeBadge = (mode) => ({
     display: "inline-flex",
     alignItems: "center",
     gap: "5px",
@@ -233,54 +249,21 @@ function DoctorPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
-  const CardHeader = ({ icon, title, badge }) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
-        marginBottom: "16px",
-        paddingBottom: "12px",
-        borderBottom: "1px solid #ede9f6",
-      }}
-    >
-      <div className={styles.cardSectionIcon}>{icon}</div>
-      <h4 className={styles.cardSectionTitle}>{title}</h4>
-      {badge && (
-        <span
-          style={{
-            marginLeft: "auto",
-            fontSize: "11px",
-            fontWeight: 600,
-            color: "#1d4ed8",
-            background: "#dbeafe",
-            border: "1px solid #bfdbfe",
-            borderRadius: "20px",
-            padding: "3px 10px",
-          }}
-        >
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-
   return (
     <div className="doctor-layout">
       <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="doctor-main">
         <DoctorTopNavbar activeMenu={activeMenu} />
-
-        <div className={`doctor-content ${styles.patientPage}`}>
-          <div className={styles.patientCard}>
-            {/* ── Tabs + Filter ── */}
+        <div className="doctor-content" style={{ padding: "20px" }}>
+          <div className="patient-card">
+            {/* ── Tab + Filter Row ── */}
             <div className={styles.patientTabsRow}>
               <div className={styles.patientTabs}>
-                <button className={`${styles.tabBtn} ${styles.tabActive}`}>
+                <button className={styles.tabActive}>
                   Total's Patients <span>{patientList.length}</span>
                 </button>
               </div>
-              <div className={styles.filterDropdown}>
+              <div className={styles.patientFilterDropdown}>
                 <FiFilter size={13} />
                 <select value={patientTypeFilter} onChange={handleFilterChange}>
                   <option value="all">All Patients</option>
@@ -291,7 +274,7 @@ function DoctorPatient() {
             </div>
 
             {/* ── Table ── */}
-            <div className={styles.tableWrapper}>
+            <div className={styles.patientTableWrapper}>
               <table className={styles.patientTable}>
                 <thead>
                   <tr>
@@ -307,7 +290,15 @@ function DoctorPatient() {
                 <tbody>
                   {displayedData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyRow}>
+                      <td
+                        colSpan={7}
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#aaa",
+                          fontStyle: "italic",
+                        }}
+                      >
                         No{" "}
                         {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
                         records found.
@@ -329,7 +320,7 @@ function DoctorPatient() {
                         <td>{row.address}</td>
                         <td>
                           <span
-                            className={`${styles.statusText} ${styles[`status${row.status}`]}`}
+                            className={`${styles.status} ${styles[row.status.toLowerCase()]}`}
                           >
                             {row.status}
                           </span>
@@ -340,6 +331,38 @@ function DoctorPatient() {
                             onClick={() => handleView(row)}
                           >
                             View
+                          </button>
+                          <button
+                            className={styles.btnConfirm}
+                            style={{
+                              height: 32,
+                              width: "auto",
+                              padding: "0 14px",
+                              fontSize: 12,
+                              borderRadius: 8,
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              cursor:
+                                row.status === "Completed"
+                                  ? "not-allowed"
+                                  : "pointer",
+                              border: "1px solid #4a965b",
+                              background:
+                                row.status === "Completed"
+                                  ? "#a8d5b5"
+                                  : "#4a965b",
+                              color: "#fff",
+                              opacity: row.status === "Completed" ? 0.55 : 1,
+                            }}
+                            disabled={row.status === "Completed"}
+                            onClick={() =>
+                              row.status !== "Completed" &&
+                              handleOpenClinical(row)
+                            }
+                          >
+                            Complete
                           </button>
                         </td>
                       </tr>
@@ -380,19 +403,22 @@ function DoctorPatient() {
         </div>
       </div>
 
-      {/* ════════════════════════════
+      {/* ══════════════════════════════════════
           VIEW MODAL
-      ════════════════════════════ */}
+      ══════════════════════════════════════ */}
       {showModal && selectedPatient && (
         <div
-          className={styles.modalOverlay}
+          className={styles.patientModalOverlay}
           onClick={() => setShowModal(false)}
         >
-          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.patientModalLg}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className={styles.modalProfileHeader}>
               <button
-                className={styles.closeBtn}
+                className={`${styles.closeBtn} ${styles.profileCloseBtn}`}
                 onClick={() => setShowModal(false)}
               >
                 <FiX />
@@ -409,17 +435,17 @@ function DoctorPatient() {
                   </p>
                   <div className={styles.patientProfileMeta}>
                     {selectedPatient.age && (
-                      <span className={styles.metaChip}>
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.age} yrs
                       </span>
                     )}
                     {selectedPatient.gender && (
-                      <span className={styles.metaChip}>
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.gender}
                       </span>
                     )}
                     {selectedPatient.totalVisits && (
-                      <span className={styles.metaChip}>
+                      <span className={styles.profileMetaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
@@ -439,7 +465,8 @@ function DoctorPatient() {
                     })
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} />
+                  View Profile
                 </button>
               </div>
             </div>
@@ -448,53 +475,84 @@ function DoctorPatient() {
             <div className={styles.modalBody}>
               {/* Appointment Details */}
               <div
-                className={styles.modalCard}
+                className={styles.modalContentCard}
                 style={{ marginBottom: "12px" }}
               >
-                <CardHeader
-                  icon={<FaCalendarAlt size={13} color="#fff" />}
-                  title="Appointment Details"
-                />
-                <div className={styles.twoCol}>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "16px",
+                    paddingBottom: "12px",
+                    borderBottom: "1px solid #ede9f6",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "8px",
+                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FaCalendarAlt size={13} color="#fff" />
+                  </div>
+                  <h4
+                    style={{
+                      margin: 0,
+                      fontSize: "17px",
+                      fontWeight: 800,
+                      color: "#3b1f6e",
+                    }}
+                  >
+                    Appointment Details
+                  </h4>
+                </div>
+                <div className={styles.modalTwoCol}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Date</span>
-                      <span className={styles.infoValue}>
+                      <span className={styles.modalInfoLabel}>Date</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.date}
                       </span>
                     </div>
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClock />
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Time</span>
-                      <span className={styles.infoValue}>
+                      <span className={styles.modalInfoLabel}>Time</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.time}
                       </span>
                     </div>
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Visit Type</span>
-                      <span className={styles.infoValue}>
+                      <span className={styles.modalInfoLabel}>Visit Type</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.type}
                       </span>
                     </div>
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Status</span>
+                      <span className={styles.modalInfoLabel}>Status</span>
                       <span
                         className={styles.statusBadge}
                         style={getStatusBadgeStyle(selectedPatient.status)}
@@ -503,8 +561,8 @@ function DoctorPatient() {
                       </span>
                     </div>
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       {selectedPatient.patientType === "Existing Patient" ? (
                         <FiUserCheck />
                       ) : (
@@ -512,14 +570,16 @@ function DoctorPatient() {
                       )}
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Patient Type</span>
-                      <span className={styles.infoValue}>
+                      <span className={styles.modalInfoLabel}>
+                        Patient Type
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {selectedPatient.patientType}
                       </span>
                     </div>
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       {selectedPatient.consultationMode === "Virtual" ? (
                         <FiMonitor />
                       ) : (
@@ -527,9 +587,11 @@ function DoctorPatient() {
                       )}
                     </div>
                     <div>
-                      <span className={styles.infoLabel}>Mode</span>
+                      <span className={styles.modalInfoLabel}>Mode</span>
                       <span
-                        style={getModeBadge(selectedPatient.consultationMode)}
+                        style={getConsultationModeBadge(
+                          selectedPatient.consultationMode,
+                        )}
                       >
                         {selectedPatient.consultationMode === "Virtual" ? (
                           <FiMonitor size={11} />
@@ -543,65 +605,137 @@ function DoctorPatient() {
                 </div>
               </div>
 
-              {/* Progression Note — completed: read-only */}
+              {/* Progression Note */}
               {selectedPatient.status === "Completed" &&
-                selectedPatient.progressionNote && (
-                  <div
-                    className={styles.modalCard}
-                    style={{ marginBottom: "12px" }}
-                  >
-                    <CardHeader
-                      icon={<FiActivity size={14} color="#fff" />}
-                      title="Progression Note"
-                    />
-                    <div
-                      style={{
-                        background: "#faf7ff",
-                        border: "1px solid #ede9f6",
-                        borderRadius: "10px",
-                        padding: "16px 18px",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          color: "#7341A8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                          marginBottom: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FiFileText size={12} /> Assessment
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "13.5px",
-                          color: "#374151",
-                          margin: 0,
-                          lineHeight: "1.75",
-                        }}
-                      >
-                        {selectedPatient.progressionNote.assessment}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              {/* Progression Note — scheduled: editable draft */}
-              {selectedPatient.status !== "Completed" && (
+              selectedPatient.progressionNote ? (
                 <div
-                  className={styles.modalCard}
+                  className={styles.modalContentCard}
                   style={{ marginBottom: "12px" }}
                 >
-                  <CardHeader
-                    icon={<FiEdit3 size={14} color="#fff" />}
-                    title="Progression Note"
-                    badge="Draft"
-                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid #ede9f6",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <FiActivity size={14} color="#fff" />
+                    </div>
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: "17px",
+                        fontWeight: 800,
+                        color: "#3b1f6e",
+                      }}
+                    >
+                      Progression Note
+                    </h4>
+                  </div>
+                  <div
+                    style={{
+                      background: "#faf7ff",
+                      border: "1px solid #ede9f6",
+                      borderRadius: "10px",
+                      padding: "16px 18px",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: "10px",
+                        fontWeight: 700,
+                        color: "#7341A8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <FiFileText size={12} /> Assessment
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "13.5px",
+                        color: "#374151",
+                        margin: 0,
+                        lineHeight: "1.75",
+                      }}
+                    >
+                      {selectedPatient.progressionNote.assessment}
+                    </p>
+                  </div>
+                </div>
+              ) : selectedPatient.status !== "Completed" ? (
+                <div
+                  className={styles.modalContentCard}
+                  style={{ marginBottom: "12px" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "14px",
+                      paddingBottom: "12px",
+                      borderBottom: "1px solid #ede9f6",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <FiEdit3 size={14} color="#fff" />
+                    </div>
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: "17px",
+                        fontWeight: 800,
+                        color: "#3b1f6e",
+                      }}
+                    >
+                      Progression Note
+                    </h4>
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#1d4ed8",
+                        background: "#dbeafe",
+                        border: "1px solid #bfdbfe",
+                        borderRadius: "20px",
+                        padding: "3px 10px",
+                      }}
+                    >
+                      Draft
+                    </span>
+                  </div>
                   <div
                     style={{
                       background: "#faf7ff",
@@ -635,34 +769,27 @@ function DoctorPatient() {
                         fontSize: "13.5px",
                         color: "#374151",
                         lineHeight: "1.75",
-                        border: "2px solid #e5d6f5",
-                        borderRadius: "10px",
+                        border: "1px solid #d8ccf0",
+                        borderRadius: "8px",
                         padding: "10px 12px",
                         resize: "vertical",
                         outline: "none",
                         background: "#fff",
                         fontFamily: "inherit",
                         boxSizing: "border-box",
-                        transition: "border-color 0.2s, box-shadow 0.2s",
+                        transition: "border-color 0.2s",
                       }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#4D227C";
-                        e.target.style.boxShadow =
-                          "0 0 0 3px rgba(77,34,124,0.1)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#e5d6f5";
-                        e.target.style.boxShadow = "none";
-                      }}
+                      onFocus={(e) => (e.target.style.borderColor = "#7341A8")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d8ccf0")}
                     />
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Payment Details */}
-              <div className={styles.modalCard}>
+              <div className={styles.modalContentCard}>
                 <button
-                  className={styles.paymentToggle}
+                  className={styles.paymentCollapseToggle}
                   onClick={() => setPaymentOpen(!paymentOpen)}
                 >
                   <span
@@ -672,10 +799,24 @@ function DoctorPatient() {
                       gap: "8px",
                     }}
                   >
-                    <div className={styles.cardSectionIcon}>
+                    <div
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        background: "linear-gradient(135deg, #7341A8, #4D227C)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
                       <FiFileText size={13} color="#fff" />
                     </div>
-                    <span className={styles.paymentToggleTitle}>
+                    <span
+                      className={styles.modalSectionTitle}
+                      style={{ margin: 0, padding: 0, border: "none" }}
+                    >
                       Payment Details
                     </span>
                   </span>
@@ -694,12 +835,12 @@ function DoctorPatient() {
                   <div className={styles.paymentCollapseBody}>
                     <div className={styles.paymentLayout}>
                       <div className={styles.paymentFields}>
-                        <div className={styles.infoItem}>
-                          <div className={styles.infoIcon}>
+                        <div className={styles.modalInfoItem}>
+                          <div className={styles.modalInfoIcon}>
                             <FiFileText />
                           </div>
                           <div>
-                            <span className={styles.infoLabel}>
+                            <span className={styles.modalInfoLabel}>
                               Payment Status
                             </span>
                             <span
@@ -708,6 +849,10 @@ function DoctorPatient() {
                                 background: "#dcfce7",
                                 color: "#16a34a",
                                 border: "1px solid #bbf7d0",
+                                padding: "3px 10px",
+                                borderRadius: "20px",
+                                fontSize: "12px",
+                                fontWeight: 700,
                               }}
                             >
                               Paid
@@ -742,15 +887,30 @@ function DoctorPatient() {
                   })
                 }
               >
-                <FiFileText style={{ marginRight: "6px" }} /> View History
+                <FiFileText style={{ marginRight: "6px" }} />
+                View History
               </button>
               {selectedPatient.status !== "Completed" && (
                 <button
-                  className={styles.btnFooterConfirm}
+                  className={styles.btnConfirm}
+                  style={{
+                    padding: "10px 28px",
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    borderRadius: "10px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    height: "auto",
+                    width: "auto",
+                    opacity: progressionDraft.trim() ? 1 : 0.5,
+                    cursor: progressionDraft.trim() ? "pointer" : "not-allowed",
+                  }}
                   disabled={!progressionDraft.trim()}
                   onClick={handleMarkComplete}
                 >
-                  <FiCheck size={15} /> Mark as Complete
+                  <FiCheck size={15} />
+                  Mark as Complete
                 </button>
               )}
             </div>
@@ -760,11 +920,66 @@ function DoctorPatient() {
 
       {/* Zoom image */}
       {zoomImage && (
-        <div className={styles.zoomOverlay} onClick={() => setZoomImage(null)}>
-          <div onClick={(e) => e.stopPropagation()}>
-            <img src={zoomImage} alt="Zoomed" className={styles.zoomImg} />
+        <div
+          className={styles.patientModalOverlay}
+          onClick={() => setZoomImage(null)}
+          style={{ cursor: "zoom-out" }}
+        >
+          <div
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={zoomImage}
+              alt="Zoomed Payment Proof"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "90vh",
+                objectFit: "contain",
+                borderRadius: "12px",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+              }}
+            />
           </div>
         </div>
+      )}
+
+      {/* Clinical Notes Modal */}
+      {showClinicalModal && clinicalModalPatient && (
+        <CompleteAppointmentModal
+          isOpen={showClinicalModal}
+          onClose={() => {
+            setShowClinicalModal(false);
+            setClinicalModalPatient(null);
+          }}
+          appt={{
+            patientName: clinicalModalPatient.name,
+            start: new Date(
+              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
+            ),
+            end: new Date(
+              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
+            ),
+            title:
+              clinicalModalPatient.consultationMode === "Virtual"
+                ? "Online Clinic"
+                : "Physical Clinic",
+          }}
+          onConfirm={() => {
+            const updated = patientList.map((p) =>
+              p.id === clinicalModalPatient.id
+                ? { ...p, status: "Completed" }
+                : p,
+            );
+            setPatientList(updated);
+          }}
+        />
       )}
     </div>
   );

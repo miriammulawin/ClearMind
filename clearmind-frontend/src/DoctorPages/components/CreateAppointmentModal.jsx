@@ -26,6 +26,44 @@ const PATIENT_LIST = [
   { id: 8, firstName: "Jose", lastName: "Villanueva", mi: "P" },
 ];
 
+const DOCTOR_LIST = [
+  {
+    id: 1,
+    firstName: "Dr. Maria",
+    lastName: "Santos",
+    mi: "C",
+    specialty: "Psychotherapy",
+  },
+  {
+    id: 2,
+    firstName: "Dr. Juan",
+    lastName: "dela Cruz",
+    mi: "R",
+    specialty: "Assessment",
+  },
+  {
+    id: 3,
+    firstName: "Dr. Ana",
+    lastName: "Reyes",
+    mi: "L",
+    specialty: "Counseling",
+  },
+  {
+    id: 4,
+    firstName: "Dr. Carlo",
+    lastName: "Mendoza",
+    mi: "B",
+    specialty: "Therapy",
+  },
+  {
+    id: 5,
+    firstName: "Dr. Lucia",
+    lastName: "Garcia",
+    mi: "T",
+    specialty: "Assessment",
+  },
+];
+
 const SERVICES = [
   {
     id: "0",
@@ -75,16 +113,16 @@ const PAE_SERVICES = [
 ];
 
 /* ─────────────────────────────────────────────────────────────────
-   PatientDropdown
+   Dropdown Component (reusable for Patient & Doctor)
 ───────────────────────────────────────────────────────────────── */
-function PatientDropdown({ onSelect }) {
+function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const ref = useRef(null);
 
-  const filtered = PATIENT_LIST.filter((p) =>
-    `${p.firstName} ${p.mi}. ${p.lastName}`
+  const filtered = items.filter((item) =>
+    `${item.firstName} ${item.mi}. ${item.lastName}`
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
@@ -97,11 +135,11 @@ function PatientDropdown({ onSelect }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSelect = (patient) => {
-    setSelected(patient);
+  const handleSelect = (item) => {
+    setSelected(item);
     setQuery("");
     setOpen(false);
-    if (onSelect) onSelect(patient);
+    if (onSelect) onSelect(item);
   };
 
   const displayName = selected
@@ -128,6 +166,22 @@ function PatientDropdown({ onSelect }) {
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      {label && (
+        <label
+          style={{
+            fontSize: "11px",
+            fontWeight: "700",
+            color: "#4D227C",
+            textTransform: "uppercase",
+            letterSpacing: "0.7px",
+            marginBottom: "8px",
+            display: "block",
+            fontFamily: "inherit",
+          }}
+        >
+          {label}
+        </label>
+      )}
       <div onClick={() => setOpen((o) => !o)} style={triggerStyle}>
         <span
           style={{
@@ -136,7 +190,7 @@ function PatientDropdown({ onSelect }) {
             whiteSpace: "nowrap",
           }}
         >
-          {displayName || "Select Patient Name"}
+          {displayName || placeholder}
         </span>
         <FiChevronDown
           style={{
@@ -179,7 +233,7 @@ function PatientDropdown({ onSelect }) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search patient…"
+              placeholder={`Search ${label?.toLowerCase() || "items"}…`}
               style={{
                 border: "none",
                 outline: "none",
@@ -201,15 +255,15 @@ function PatientDropdown({ onSelect }) {
                   textAlign: "center",
                 }}
               >
-                No patients found
+                No items found
               </div>
             ) : (
-              filtered.map((p) => {
-                const isActive = selected?.id === p.id;
+              filtered.map((item) => {
+                const isActive = selected?.id === item.id;
                 return (
                   <div
-                    key={p.id}
-                    onClick={() => handleSelect(p)}
+                    key={item.id}
+                    onClick={() => handleSelect(item)}
                     style={{
                       padding: "10px 16px",
                       fontSize: "13px",
@@ -246,12 +300,25 @@ function PatientDropdown({ onSelect }) {
                         flexShrink: 0,
                       }}
                     >
-                      {p.firstName[0]}
-                      {p.lastName[0]}
+                      {item.firstName[0]}
+                      {item.lastName[0]}
                     </div>
-                    <span style={{ lineHeight: 1.3 }}>
-                      {p.firstName} {p.mi}. {p.lastName}
-                    </span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ lineHeight: 1.3 }}>
+                        {item.firstName} {item.mi}. {item.lastName}
+                      </span>
+                      {item.specialty && (
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "#999",
+                            marginTop: "2px",
+                          }}
+                        >
+                          {item.specialty}
+                        </div>
+                      )}
+                    </div>
                     {isActive && (
                       <span
                         style={{
@@ -275,9 +342,29 @@ function PatientDropdown({ onSelect }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   ServiceCard — matches screenshot design exactly
+   PatientDropdown (for backward compatibility)
 ───────────────────────────────────────────────────────────────── */
-function ServiceCard({ service, selected, onClick, accent = "#4D227C" }) {
+function PatientDropdown({ onSelect }) {
+  return (
+    <CustomDropdown
+      placeholder="Select Patient Name"
+      items={PATIENT_LIST}
+      onSelect={onSelect}
+      label=""
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ServiceCard — with integrated subtitle for selected purpose
+───────────────────────────────────────────────────────────────── */
+function ServiceCard({
+  service,
+  selected,
+  onClick,
+  accent = "#4D227C",
+  subtitle = null,
+}) {
   const isSelected = selected === service.id;
   return (
     <div
@@ -290,7 +377,7 @@ function ServiceCard({ service, selected, onClick, accent = "#4D227C" }) {
         background: isSelected ? "#f5f0fb" : "#fff",
         transition: "all 0.15s",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         gap: "14px",
         position: "relative",
       }}
@@ -306,21 +393,43 @@ function ServiceCard({ service, selected, onClick, accent = "#4D227C" }) {
           background: "#fff",
           transition: "all 0.15s",
           boxSizing: "border-box",
+          marginTop: "2px",
         }}
       />
 
-      {/* Title only */}
-      <span
+      {/* Title and Subtitle */}
+      <div
         style={{
-          fontSize: "13.5px",
-          fontWeight: "400",
-          color: "#555",
-          fontFamily: "inherit",
           flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: "6px",
         }}
       >
-        {service.title}
-      </span>
+        <span
+          style={{
+            fontSize: "13.5px",
+            fontWeight: "400",
+            color: "#555",
+            fontFamily: "inherit",
+          }}
+        >
+          {service.title}
+        </span>
+        {/* Subtitle: Selected purpose */}
+        {subtitle && (
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: "600",
+              color: "#1d6fa4",
+              fontFamily: "inherit",
+            }}
+          >
+            ✓ {subtitle}
+          </span>
+        )}
+      </div>
 
       {/* Check badge — only when selected */}
       {isSelected && (
@@ -334,6 +443,7 @@ function ServiceCard({ service, selected, onClick, accent = "#4D227C" }) {
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
+            marginTop: "2px",
           }}
         >
           <FiCheck size={12} color="#fff" />
@@ -351,6 +461,7 @@ function CreateAppointmentModal({
   onClose,
   onAdd,
   showReceipt = false,
+  showAssignedDoctor = false,
 }) {
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -359,13 +470,21 @@ function CreateAppointmentModal({
     endTime: "",
   });
   const [dob, setDob] = useState("");
-  const [selectedService, setSelectedService] = useState(null); // "0" | "1"
-  const [selectedPAE, setSelectedPAE] = useState(null); // PAE sub id
-  const [showPAEPanel, setShowPAEPanel] = useState(false); // collapse after selection
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedPAE, setSelectedPAE] = useState(null);
+  const [showPAEPanel, setShowPAEPanel] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [receiptFile, setReceiptFile] = useState(null);
   const receiptInputRef = useRef(null);
 
   const isPAE = selectedService === "1";
+
+  /* Get the title of selected PAE purpose */
+  const getSelectedPAETitle = () => {
+    if (!selectedPAE) return null;
+    const pae = PAE_SERVICES.find((p) => p.id === selectedPAE);
+    return pae?.title || null;
+  };
 
   /* Auto-compute age */
   const computedAge = (() => {
@@ -395,13 +514,14 @@ function CreateAppointmentModal({
       setSelectedPAE(null);
       setShowPAEPanel(false);
     } else {
-      setShowPAEPanel(true); // open panel when PAE selected
+      setShowPAEPanel(true);
     }
   };
 
+  /* When PAE purpose selected, close panel and show subtitle */
   const handlePAESelect = (id) => {
     setSelectedPAE(id);
-    setShowPAEPanel(false); // close panel after selection
+    setShowPAEPanel(false); // Close panel after selection
   };
 
   const handleAdd = () => {
@@ -416,13 +536,20 @@ function CreateAppointmentModal({
     }
     const start = new Date(`${newEvent.date}T${newEvent.startTime}`);
     const end = new Date(`${newEvent.date}T${newEvent.endTime}`);
-    onAdd({ title: newEvent.title, start, end, allDay: false });
+    onAdd({
+      title: newEvent.title,
+      start,
+      end,
+      allDay: false,
+      assignedDoctor: selectedDoctor,
+    });
     onClose();
     setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
     setDob("");
     setSelectedService(null);
     setSelectedPAE(null);
     setShowPAEPanel(false);
+    setSelectedDoctor(null);
     setReceiptFile(null);
   };
 
@@ -718,17 +845,23 @@ function CreateAppointmentModal({
               <p className="tos-label">Type of Service</p>
               <div className="tos-cards">
                 {SERVICES.map((svc) => (
-                  <ServiceCard
-                    key={svc.id}
-                    service={svc}
-                    selected={selectedService}
-                    onClick={handleServiceSelect}
-                    accent="#4D227C"
-                  />
+                  <div key={svc.id}>
+                    <ServiceCard
+                      service={svc}
+                      selected={selectedService}
+                      onClick={handleServiceSelect}
+                      accent="#4D227C"
+                      subtitle={
+                        svc.id === "1" && selectedPAE
+                          ? getSelectedPAETitle()
+                          : null
+                      }
+                    />
+                  </div>
                 ))}
               </div>
 
-              {/* ── PAE Purpose sub-panel (animated slide-in) ── */}
+              {/* ── PAE Purpose sub-panel (opens when PAE selected, closes after selection) ── */}
               {isPAE && showPAEPanel && (
                 <div className="tos-pae-panel">
                   <p className="tos-pae-header">
@@ -745,6 +878,19 @@ function CreateAppointmentModal({
                       />
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Assigned Doctor Dropdown (only in admin) */}
+              {showAssignedDoctor && (
+                <div className={styles.fieldRow}>
+                  <br></br>
+                  <CustomDropdown
+                    placeholder="Select Assigned Doctor"
+                    items={DOCTOR_LIST}
+                    onSelect={setSelectedDoctor}
+                    label="Assigned Doctor"
+                  />
                 </div>
               )}
             </div>

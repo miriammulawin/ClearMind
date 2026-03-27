@@ -1,8 +1,8 @@
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
-import DoctorSidebar from "./components/DoctorSideBar";
+import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import "./DoctorStyle/DoctorPatient.module.css";
+import styles from "./DoctorStyle/DoctorPatient.module.css";
 import {
   FiArrowLeft,
   FiUser,
@@ -27,6 +27,9 @@ import {
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
 
+/* ════════════════════════════════════════════
+   ClinicalNotesSection
+════════════════════════════════════════════ */
 function ClinicalNotesSection() {
   const [activeTab, setActiveTab] = useState("intake");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -128,12 +131,11 @@ function ClinicalNotesSection() {
     setShowAddModal(false);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id) =>
     setNotes((prev) => ({
       ...prev,
       [activeTab]: prev[activeTab].filter((e) => e.id !== id),
     }));
-  };
 
   const openAdd = () => {
     setEditingEntry(null);
@@ -141,15 +143,21 @@ function ClinicalNotesSection() {
     setShowAddModal(true);
   };
 
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditingEntry(null);
+    setFormValue("");
+  };
+
   return (
-    <div className="clinical-notes-section">
+    <div className={styles.clinicalSection}>
       {/* ── Tab Bar ── */}
-      <div className="clinical-tabs-bar">
-        <div className="clinical-tabs">
+      <div className={styles.clinicalTabsBar}>
+        <div className={styles.clinicalTabs}>
           {tabConfig.map((tab) => (
             <button
               key={tab.key}
-              className={`clinical-tab-btn ${activeTab === tab.key ? "clinical-tab-active" : ""}`}
+              className={`${styles.clinicalTabBtn} ${activeTab === tab.key ? styles.clinicalTabActive : ""}`}
               style={
                 activeTab === tab.key
                   ? {
@@ -164,7 +172,7 @@ function ClinicalNotesSection() {
               {tab.icon}
               <span>{tab.label}</span>
               <span
-                className="clinical-tab-count"
+                className={styles.clinicalTabCount}
                 style={
                   activeTab === tab.key
                     ? { background: "rgba(255,255,255,0.25)", color: "#fff" }
@@ -177,23 +185,22 @@ function ClinicalNotesSection() {
           ))}
         </div>
         <button
-          className="clinical-add-btn"
+          className={styles.clinicalAddBtn}
           style={{ background: currentTab.color }}
           onClick={openAdd}
         >
-          <FiPlus size={14} />
-          Add {currentTab.label}
+          <FiPlus size={14} /> Add {currentTab.label}
         </button>
       </div>
 
-      {/* ── Entries List ── */}
-      <div className="clinical-entries">
+      {/* ── Entries ── */}
+      <div className={styles.clinicalEntries}>
         {notes[activeTab].length === 0 ? (
-          <div className="clinical-empty">
+          <div className={styles.clinicalEmpty}>
             <span style={{ fontSize: "36px", opacity: 0.25 }}>📋</span>
             <p>No {currentTab.label} entries yet.</p>
             <button
-              className="clinical-add-btn"
+              className={styles.clinicalAddBtn}
               style={{ background: currentTab.color }}
               onClick={openAdd}
             >
@@ -204,38 +211,38 @@ function ClinicalNotesSection() {
           notes[activeTab].map((entry, index) => (
             <div
               key={entry.id}
-              className="clinical-entry-card"
+              className={styles.clinicalEntryCard}
               style={{ borderLeftColor: currentTab.color }}
             >
-              <div className="clinical-entry-header">
-                <div className="clinical-entry-meta">
+              <div className={styles.clinicalEntryHeader}>
+                <div className={styles.clinicalEntryMeta}>
                   <span
-                    className="clinical-entry-badge"
+                    className={styles.clinicalEntryBadge}
                     style={{
                       background: currentTab.light,
                       color: currentTab.color,
                     }}
                   >
-                    {currentTab.icon}
-                    {currentTab.label} #{notes[activeTab].length - index}
+                    {currentTab.icon} {currentTab.label} #
+                    {notes[activeTab].length - index}
                   </span>
-                  <span className="clinical-entry-date">
+                  <span className={styles.clinicalEntryDate}>
                     <FiCalendar size={11} /> {entry.date}
                   </span>
-                  <span className="clinical-entry-author">
+                  <span className={styles.clinicalEntryAuthor}>
                     <FiUser size={11} /> {entry.author}
                   </span>
                 </div>
-                <div className="clinical-entry-actions">
+                <div className={styles.clinicalEntryActions}>
                   <button
-                    className="clinical-action-btn clinical-edit-btn"
+                    className={`${styles.clinicalActionBtn} ${styles.clinicalEditBtn}`}
                     onClick={() => handleEdit(entry)}
                     title="Edit"
                   >
                     <FiEdit3 size={13} />
                   </button>
                   <button
-                    className="clinical-action-btn clinical-delete-btn"
+                    className={`${styles.clinicalActionBtn} ${styles.clinicalDeleteBtn}`}
                     onClick={() => handleDelete(entry.id)}
                     title="Delete"
                   >
@@ -243,7 +250,7 @@ function ClinicalNotesSection() {
                   </button>
                 </div>
               </div>
-              <p className="clinical-entry-content">{entry.content}</p>
+              <p className={styles.clinicalEntryContent}>{entry.content}</p>
             </div>
           ))
         )}
@@ -251,47 +258,34 @@ function ClinicalNotesSection() {
 
       {/* ── Add / Edit Modal ── */}
       {showAddModal && (
-        <div
-          className="clinical-modal-overlay"
-          onClick={() => {
-            setShowAddModal(false);
-            setEditingEntry(null);
-            setFormValue("");
-          }}
-        >
-          <div className="clinical-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
+        <div className={styles.clinicalModalOverlay} onClick={closeModal}>
+          <div
+            className={styles.clinicalModal}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div
-              className="clinical-modal-header"
+              className={styles.clinicalModalHeader}
               style={{ background: currentTab.color }}
             >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
+              <div className={styles.clinicalModalHeaderLeft}>
                 {currentTab.icon}
                 <h3>
                   {editingEntry ? "Edit" : "Add"} {currentTab.label}
                 </h3>
               </div>
               <button
-                className="doctor-close-btn"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingEntry(null);
-                  setFormValue("");
-                }}
+                className={styles.clinicalModalCloseBtn}
+                onClick={closeModal}
               >
                 <FiX />
               </button>
             </div>
-
-            {/* Body */}
-            <div className="clinical-modal-body">
-              <label className="clinical-form-label">
+            <div className={styles.clinicalModalBody}>
+              <label className={styles.clinicalFormLabel}>
                 {currentTab.label} Entry
               </label>
               <textarea
-                className="clinical-textarea"
+                className={styles.clinicalTextarea}
                 placeholder={`Write your ${currentTab.label.toLowerCase()} notes here…`}
                 value={formValue}
                 onChange={(e) => setFormValue(e.target.value)}
@@ -299,25 +293,16 @@ function ClinicalNotesSection() {
                 autoFocus
               />
             </div>
-
-            {/* Footer */}
-            <div className="clinical-modal-footer">
-              <button
-                className="clinical-cancel-btn"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingEntry(null);
-                  setFormValue("");
-                }}
-              >
+            <div className={styles.clinicalModalFooter}>
+              <button className={styles.clinicalCancelBtn} onClick={closeModal}>
                 Cancel
               </button>
               <button
-                className="clinical-save-btn"
+                className={styles.clinicalSaveBtn}
                 style={{ background: currentTab.color }}
                 onClick={editingEntry ? handleSaveEdit : handleAdd}
               >
-                <FiCheck size={14} />
+                <FiCheck size={14} />{" "}
                 {editingEntry ? "Save Changes" : "Add Entry"}
               </button>
             </div>
@@ -328,17 +313,18 @@ function ClinicalNotesSection() {
   );
 }
 
-/* ══════════════════════════════════════
-   Main AdminPatientProfile Component
-══════════════════════════════════════ */
+/* ════════════════════════════════════════════
+   DoctorPatientProfile
+════════════════════════════════════════════ */
 function DoctorPatientProfile() {
   const { state } = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [activeMenu, setActiveMenu] = useState("Patients");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const patient = state?.patient;
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [zoomImage, setZoomImage] = useState(null);
+
+  const patient = state?.patient;
 
   if (!patient) {
     return (
@@ -427,20 +413,24 @@ function DoctorPatientProfile() {
 
   return (
     <div className="doctor-layout">
-      <DoctorSidebar activeMenu="Patients" />
+      <DoctorSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="doctor-main">
-        <DoctorTopNavbar activeMenu="Patients" />
+        <DoctorTopNavbar activeMenu={activeMenu} />
 
-        <div className="doctor-content patient-profile-container">
-          <button onClick={() => navigate(-1)} className="patient-back-btn">
+        <div className={`doctor-content ${styles.patientProfileContainer}`}>
+          <button
+            onClick={() => navigate(-1)}
+            className={styles.patientBackBtn}
+          >
             <FiArrowLeft style={{ marginRight: "6px" }} />
             Back
           </button>
 
           {/* ── PATIENT INFO CARD ── */}
-          <div className="patient-profile-card">
-            <div className="patient-profile-layout">
-              <div className="patient-avatar-large">
+          <div className={styles.patientProfileCard}>
+            <div className={styles.patientProfileLayout}>
+              {/* Avatar */}
+              <div className={styles.patientAvatarLarge}>
                 {patient.profileImage ? (
                   <img src={patient.profileImage} alt="Profile" />
                 ) : (
@@ -448,9 +438,11 @@ function DoctorPatientProfile() {
                 )}
               </div>
 
-              <div className="patient-details-section">
-                <h2 className="patient-profile-title">{patient.name}</h2>
+              {/* Details */}
+              <div className={styles.patientDetailsSection}>
+                <h2 className={styles.patientProfileTitle}>{patient.name}</h2>
 
+                {/* Personal Information */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -464,45 +456,54 @@ function DoctorPatientProfile() {
                 >
                   Personal Information
                 </p>
-                <div className="modal-two-col" style={{ marginBottom: "20px" }}>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div
+                  className={styles.modalTwoCol}
+                  style={{ marginBottom: "20px" }}
+                >
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Age</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Age</span>
+                      <span className={styles.modalInfoValue}>
                         {patient.age} yrs
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Date of Birth</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>
+                        Date of Birth
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {patient.dateOfBirth || "January 15, 1997"}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUsers />
                     </div>
                     <div>
-                      <span className="modal-info-label">Sex</span>
-                      <span className="modal-info-value">{patient.gender}</span>
+                      <span className={styles.modalInfoLabel}>Sex</span>
+                      <span className={styles.modalInfoValue}>
+                        {patient.gender}
+                      </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiHeart />
                     </div>
                     <div>
-                      <span className="modal-info-label">Civil Status</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>
+                        Civil Status
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {patient.civilStatus || "Single"}
                       </span>
                     </div>
@@ -516,6 +517,7 @@ function DoctorPatientProfile() {
                   }}
                 />
 
+                {/* Contact Information */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -529,39 +531,42 @@ function DoctorPatientProfile() {
                 >
                   Contact Information
                 </p>
-                <div className="modal-two-col" style={{ marginBottom: "20px" }}>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div
+                  className={styles.modalTwoCol}
+                  style={{ marginBottom: "20px" }}
+                >
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiPhone />
                     </div>
                     <div>
-                      <span className="modal-info-label">Contact</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Contact</span>
+                      <span className={styles.modalInfoValue}>
                         {patient.contact}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiMail />
                     </div>
                     <div>
-                      <span className="modal-info-label">Email</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Email</span>
+                      <span className={styles.modalInfoValue}>
                         {patient.email || "—"}
                       </span>
                     </div>
                   </div>
                   <div
-                    className="modal-info-item"
+                    className={styles.modalInfoItem}
                     style={{ gridColumn: "1 / -1" }}
                   >
-                    <div className="modal-info-icon">
+                    <div className={styles.modalInfoIcon}>
                       <FiMapPin />
                     </div>
                     <div>
-                      <span className="modal-info-label">Address</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Address</span>
+                      <span className={styles.modalInfoValue}>
                         {patient.address || "—"}
                       </span>
                     </div>
@@ -575,6 +580,7 @@ function DoctorPatientProfile() {
                   }}
                 />
 
+                {/* Patient Details */}
                 <p
                   style={{
                     fontSize: "12px",
@@ -588,25 +594,29 @@ function DoctorPatientProfile() {
                 >
                   Patient Details
                 </p>
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div className={styles.modalTwoCol}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClipboard />
                     </div>
                     <div>
-                      <span className="modal-info-label">Patient Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>
+                        Patient Type
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {patient.patientType || "—"}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClipboard />
                     </div>
                     <div>
-                      <span className="modal-info-label">Total Visits</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>
+                        Total Visits
+                      </span>
+                      <span className={styles.modalInfoValue}>
                         {patient.totalVisits}
                       </span>
                     </div>
@@ -616,11 +626,15 @@ function DoctorPatientProfile() {
             </div>
           </div>
 
+          {/* ── CLINICAL NOTES ── */}
           <ClinicalNotesSection />
 
-          <div className="appointment-history-card">
-            <h3 className="appointment-history-title">Appointment History</h3>
-            <table className="appointment-table">
+          {/* ── APPOINTMENT HISTORY CARD ── */}
+          <div className={styles.appointmentHistoryCard}>
+            <h3 className={styles.appointmentHistoryTitle}>
+              Appointment History
+            </h3>
+            <table className={styles.appointmentTable}>
               <thead>
                 <tr>
                   <th>Date & Time</th>
@@ -641,21 +655,22 @@ function DoctorPatientProfile() {
                       <br />
                       <small style={{ color: "#9ca3af" }}>{appt.time}</small>
                     </td>
-                    <td>{appt.psychiatrist}</td>
+                    <td style={{ color: "#2e104e" }}>{appt.psychiatrist}</td>
                     <td
                       style={{
                         maxWidth: "200px",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
+                        color: "#2e104e",
                       }}
                     >
                       {appt.reason}
                     </td>
-                    <td>{appt.type}</td>
+                    <td style={{ color: "#2e104e" }}>{appt.type}</td>
                     <td>
                       <span
-                        className="status-badge"
+                        className={styles.statusBadge}
                         style={{
                           ...getStatusBadgeStyle(appt.status),
                           padding: "4px 10px",
@@ -669,13 +684,16 @@ function DoctorPatientProfile() {
                     </td>
                     <td>
                       <button
-                        className="btn-view"
+                        className={styles.btnView}
                         style={{
                           width: "70px",
                           height: "30px",
                           fontSize: "12px",
                         }}
-                        onClick={() => setSelectedAppointment(appt)}
+                        onClick={() => {
+                          setSelectedAppointment(appt);
+                          setPaymentOpen(false);
+                        }}
                       >
                         View
                       </button>
@@ -688,36 +706,42 @@ function DoctorPatientProfile() {
         </div>
       </div>
 
+      {/* ══════════════════════════════════════
+          APPOINTMENT DETAIL MODAL
+      ══════════════════════════════════════ */}
       {selectedAppointment && (
         <div
-          className="patient-modal-overlay"
+          className={styles.patientModalOverlay}
           onClick={() => setSelectedAppointment(null)}
         >
           <div
-            className="patient-modal-lg"
+            className={styles.patientModalLg}
             style={{ maxWidth: "560px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-profile-header">
+            {/* Header */}
+            <div className={styles.modalProfileHeader}>
               <button
-                className="close-btn profile-close-btn"
+                className={`${styles.closeBtn} ${styles.profileCloseBtn}`}
                 onClick={() => setSelectedAppointment(null)}
               >
                 <FiX />
               </button>
-              <div className="modal-profile-row">
-                <div className="patient-profile-info">
-                  <h3 className="patient-profile-name">Appointment Details</h3>
-                  <p className="patient-profile-contact">{patient.name}</p>
-                  <div className="patient-profile-meta">
-                    <span className="profile-meta-chip">
+              <div className={styles.modalProfileRow}>
+                <div className={styles.patientProfileInfo}>
+                  <h3 className={styles.patientProfileName}>
+                    Appointment Details
+                  </h3>
+                  <p className={styles.patientProfileContact}>{patient.name}</p>
+                  <div className={styles.patientProfileMeta}>
+                    <span className={styles.profileMetaChip}>
                       {selectedAppointment.date}
                     </span>
-                    <span className="profile-meta-chip">
+                    <span className={styles.profileMetaChip}>
                       {selectedAppointment.time}
                     </span>
                     <span
-                      className="profile-meta-chip"
+                      className={styles.profileMetaChip}
                       style={{
                         border: "1px solid rgba(255,255,255,0.4)",
                         background: "rgba(255,255,255,0.2)",
@@ -731,9 +755,10 @@ function DoctorPatientProfile() {
               </div>
             </div>
 
-            <div className="modal-body">
+            <div className={styles.modalBody}>
+              {/* Appointment Info */}
               <div
-                className="modal-content-card"
+                className={styles.modalContentCard}
                 style={{ marginBottom: "12px" }}
               >
                 <div
@@ -771,48 +796,48 @@ function DoctorPatientProfile() {
                     Appointment Info
                   </h4>
                 </div>
-                <div className="modal-two-col">
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                <div className={styles.modalTwoCol}>
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiCalendar />
                     </div>
                     <div>
-                      <span className="modal-info-label">Date</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Date</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedAppointment.date}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClock />
                     </div>
                     <div>
-                      <span className="modal-info-label">Time</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Time</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedAppointment.time}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiClipboard />
                     </div>
                     <div>
-                      <span className="modal-info-label">Visit Type</span>
-                      <span className="modal-info-value">
+                      <span className={styles.modalInfoLabel}>Visit Type</span>
+                      <span className={styles.modalInfoValue}>
                         {selectedAppointment.type}
                       </span>
                     </div>
                   </div>
-                  <div className="modal-info-item">
-                    <div className="modal-info-icon">
+                  <div className={styles.modalInfoItem}>
+                    <div className={styles.modalInfoIcon}>
                       <FiUser />
                     </div>
                     <div>
-                      <span className="modal-info-label">Status</span>
+                      <span className={styles.modalInfoLabel}>Status</span>
                       <span
-                        className="status-badge"
+                        className={styles.statusBadge}
                         style={{
                           ...getStatusBadgeStyle(selectedAppointment.status),
                           marginTop: "2px",
@@ -824,6 +849,7 @@ function DoctorPatientProfile() {
                   </div>
                 </div>
 
+                {/* Assigned Doctor */}
                 <div
                   style={{
                     marginTop: "16px",
@@ -835,13 +861,10 @@ function DoctorPatientProfile() {
                     style={{
                       fontSize: "11px",
                       fontWeight: 700,
-                      color: "#9b7ec8",
+                      color: "#3b1f6e",
                       textTransform: "uppercase",
                       letterSpacing: "0.07em",
                       marginBottom: "10px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
                     }}
                   >
                     Assigned Doctor
@@ -899,9 +922,13 @@ function DoctorPatientProfile() {
                 </div>
               </div>
 
+              {/* Progression Notes */}
               {selectedAppointment.status === "Completed" &&
                 selectedAppointment.notes && (
-                  <div className="modal-content-card">
+                  <div
+                    className={styles.modalContentCard}
+                    style={{ marginBottom: "12px" }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -960,12 +987,10 @@ function DoctorPatientProfile() {
                   </div>
                 )}
 
-              <div
-                className="modal-content-card"
-                style={{ marginBottom: "12px" }}
-              >
+              {/* Payment Details */}
+              <div className={styles.modalContentCard}>
                 <button
-                  className="payment-collapse-toggle"
+                  className={styles.paymentCollapseToggle}
                   onClick={() => setPaymentOpen(!paymentOpen)}
                 >
                   <span
@@ -990,13 +1015,13 @@ function DoctorPatientProfile() {
                       <FiFileText size={13} color="#fff" />
                     </div>
                     <span
-                      className="modal-section-title"
+                      className={styles.modalSectionTitle}
                       style={{ margin: 0, padding: 0, border: "none" }}
                     >
                       Payment Details
                     </span>
                   </span>
-                  <span className="payment-toggle-icon">
+                  <span className={styles.paymentToggleIcon}>
                     {paymentOpen ? (
                       <FiChevronUp size={18} />
                     ) : (
@@ -1007,74 +1032,102 @@ function DoctorPatientProfile() {
                     </span>
                   </span>
                 </button>
+
                 {paymentOpen && (
-                  <div className="payment-collapse-body">
-                    <div className="payment-layout">
-                      <div className="payment-fields">
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            ₱
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Paid Amount
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            #
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Reference No.
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                        <div className="modal-info-item">
-                          <div
-                            className="modal-info-icon"
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            PAY
-                          </div>
-                          <div>
-                            <span className="modal-info-label">
-                              Payment Option
-                            </span>
-                            <span className="modal-info-value">—</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="payment-proof">
-                        <span className="payment-proof-label">
-                          Payment Proof
-                        </span>
+                  <div className={styles.paymentCollapseBody}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "14px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#9b7ec8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                        }}
+                      >
+                        Payment Status
+                      </span>
+                      <span
+                        style={{
+                          background: "#dcfce7",
+                          color: "#16a34a",
+                          border: "1px solid #bbf7d0",
+                          padding: "3px 12px",
+                          borderRadius: "20px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Paid
+                      </span>
+                    </div>
+                    <p
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#9b7ec8",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Payment Proof
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "12px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "110px",
+                          flexShrink: 0,
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          border: "2px solid #d8ccf0",
+                          boxShadow: "0 2px 8px rgba(77,34,124,0.12)",
+                        }}
+                      >
                         <img
                           src={samplePayment}
-                          alt="Payment Proof"
-                          className="payment-proof-img"
-                          onClick={() => setZoomImage(samplePayment)}
+                          alt="Payment Proof Thumbnail"
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            objectFit: "cover",
+                            objectPosition: "top",
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          border: "1.5px solid #d8ccf0",
+                          boxShadow: "0 4px 16px rgba(77,34,124,0.13)",
+                          background: "#faf7ff",
+                          maxHeight: "320px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        <img
+                          src={samplePayment}
+                          alt="Payment Proof Full"
+                          style={{
+                            width: "100%",
+                            display: "block",
+                            objectFit: "contain",
+                          }}
                         />
                       </div>
                     </div>
@@ -1083,7 +1136,8 @@ function DoctorPatientProfile() {
               </div>
             </div>
 
-            <div className="modal-footer">
+            {/* Footer */}
+            <div className={styles.modalFooter}>
               <button
                 style={{
                   padding: "10px 24px",
