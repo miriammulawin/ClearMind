@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import toast from "react-hot-toast";
 
+
 function Registration() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
