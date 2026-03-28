@@ -1,78 +1,56 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Row, Col, Form, Button, Image } from "react-bootstrap";
-import "./Registration.css";
-import logo_registration from "./assets/CMPS_Logo.png";
-import {
-  FaEye,
-  FaEyeSlash,
-  FaUser,
-  FaCalendarAlt,
-  FaPhone,
-  FaEnvelope,
-  FaLock,
-} from "react-icons/fa";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { FiChevronDown } from "react-icons/fi";
+import styles from "./Registration.module.css";
+import logo_login from "./assets/CMPS_Logo.png";
 import axiosClient from "./axiosClient";
 import toast from "react-hot-toast";
 
-function Registration() {
+function Register() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
+  const [agreed, setAgreed]             = useState(false);
+  const [pronounOther, setPronounOther] = useState("");
+  const [loading, setLoading]           = useState(false);
+  const [errors, setErrors]             = useState({});
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    dob: "",
-    sex: "",
-    middleInitial: "",
-    contactNo: "",
-    email: "",
-    password: "",
+  const [form, setForm] = useState({
+    firstName:       "",
+    lastName:        "",
+    middleInitial:   "",
+    dob:             "",
+    sex:             "",
+    genderIdentity:  "",
+    preferredPronoun:"",
+    contact:         "",
+    email:           "",
+    password:        "",
     confirmPassword: "",
-    agreeTerms: false,
   });
 
-  const [errors, setErrors] = useState({});
-
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.firstName.trim())
-      newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim())
-      newErrors.lastName = "Last name is required";
-    if (!formData.middleInitial.trim())
-      newErrors.middleInitial = "Middle Initial is required";
-    if (!formData.dob)
-      newErrors.dob = "Date of birth is required";
-    if (!formData.sex)
-      newErrors.sex = "Sex is required";
-    if (!formData.contactNo.trim())
-      newErrors.contactNo = "Contact number is required";
-    if (!formData.email.trim())
-      newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Invalid email format";
-    if (!formData.password)
-      newErrors.password = "Password is required";
-    else if (formData.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
-    if (formData.password !== formData.confirmPassword)
+    if (!form.firstName.trim())     newErrors.firstName     = "First name is required";
+    if (!form.lastName.trim())      newErrors.lastName      = "Last name is required";
+    if (!form.middleInitial.trim()) newErrors.middleInitial = "Middle initial is required";
+    if (!form.dob)                  newErrors.dob           = "Date of birth is required";
+    if (!form.sex)                  newErrors.sex           = "Sex is required";
+    if (!form.contact.trim())       newErrors.contact       = "Contact number is required";
+    if (!form.email.trim())         newErrors.email         = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email format";
+    if (!form.password)             newErrors.password      = "Password is required";
+    else if (form.password.length < 6) newErrors.password   = "Password must be at least 6 characters";
+    if (form.password !== form.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
-    if (!formData.agreeTerms)
-      newErrors.agreeTerms = "You must agree to the terms";
+    if (!agreed) newErrors.agreeTerms = "You must agree to the terms";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -84,22 +62,22 @@ function Registration() {
 
     try {
       const response = await axiosClient.post("/register", {
-        firstName:             formData.firstName,
-        lastName:              formData.lastName,
-        middleInitial:         formData.middleInitial,
-        dob:                   formData.dob,
-        sex:                   formData.sex,
-        contactNo:             formData.contactNo,
-        email:                 formData.email,
-        password:              formData.password,
-        password_confirmation: formData.confirmPassword,
-        address:               formData.address ?? null,
+        firstName:             form.firstName,
+        lastName:              form.lastName,
+        middleInitial:         form.middleInitial,
+        dob:                   form.dob,
+        sex:                   form.sex,
+        genderIdentity:        form.genderIdentity,
+        preferredPronoun:      form.preferredPronoun === "other" ? pronounOther : form.preferredPronoun,
+        contactNo:             form.contact,
+        email:                 form.email,
+        password:              form.password,
+        password_confirmation: form.confirmPassword,
       });
 
       const data = response.data;
 
       if (data.success) {
-        // Save token and user info
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("role",  data.data.user.role);
         localStorage.setItem("user",  JSON.stringify(data.data.user));
@@ -107,15 +85,10 @@ function Registration() {
         toast.success("Registration Successful!", {
           duration: 1500,
           style: {
-            background:   "#E2F7E3",
-            border:       "1px solid #91C793",
-            color:        "#2E7D32",
-            fontWeight:   600,
-            fontSize:     "0.95rem",
-            textAlign:    "center",
-            maxWidth:     "320px",
-            borderRadius: "10px",
-            boxShadow:    "0 3px 10px rgba(0, 0, 0, 0.15)",
+            background: "#E2F7E3", border: "1px solid #91C793",
+            color: "#2E7D32", fontWeight: 600, fontSize: "0.95rem",
+            textAlign: "center", maxWidth: "320px",
+            borderRadius: "10px", boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
           },
           iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
@@ -125,7 +98,6 @@ function Registration() {
     } catch (err) {
       if (err.response) {
         if (err.response.status === 422) {
-          // Map Laravel validation errors to form fields
           const laravelErrors = err.response.data.errors || {};
           const mapped = {};
           if (laravelErrors.firstName)     mapped.firstName     = laravelErrors.firstName[0];
@@ -133,7 +105,7 @@ function Registration() {
           if (laravelErrors.middleInitial) mapped.middleInitial = laravelErrors.middleInitial[0];
           if (laravelErrors.dob)           mapped.dob           = laravelErrors.dob[0];
           if (laravelErrors.sex)           mapped.sex           = laravelErrors.sex[0];
-          if (laravelErrors.contactNo)     mapped.contactNo     = laravelErrors.contactNo[0];
+          if (laravelErrors.contactNo)     mapped.contact       = laravelErrors.contactNo[0];
           if (laravelErrors.email)         mapped.email         = laravelErrors.email[0];
           if (laravelErrors.password)      mapped.password      = laravelErrors.password[0];
           setErrors(mapped);
@@ -148,312 +120,247 @@ function Registration() {
     }
   };
 
+  /* ── small helper: field error message ── */
+  const ErrMsg = ({ field }) =>
+    errors[field] ? <div className={styles.errMsg}>{errors[field]}</div> : null;
+
   return (
-    <div className="registration-container vh-100 d-flex justify-content-center align-items-center p-2">
-      <Row
-        className="w-100 g-0 mx-auto"
-        style={{
-          maxWidth:     "1400px",
-          background:   "white",
-          borderRadius: "25px",
-          border:       "3px solid #a276d0",
-          overflow:     "hidden",
-          boxShadow:    "0 10px 30px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        {/* Left Panel */}
-        <Col
-          lg={6}
-          className="d-none d-lg-flex left-panel align-items-start justify-content-center p-5"
-          style={{ minHeight: "600px" }}
-        >
-          <div className="px-4 pt-5">
-            <h2
-              className="mb-3 fw-bold"
-              style={{ fontSize: "30px", lineHeight: "1.3", marginTop: "80px" }}
-            >
-              Welcome To ClearMind Psychological Services
-            </h2>
-            <p
-              className="lead"
-              style={{ fontSize: "20px", lineHeight: "1.6", opacity: "0.95" }}
-            >
-              Register to begin your journey toward emotional wellness and a
-              clearer mind. We are here to support you with compassionate,
-              professional care in a safe and secure environment.
+    <div className={styles.page}>
+      <div className={styles.card}>
+
+        {/* ── LEFT PANEL ── */}
+        <div className={styles.leftPanel}>
+          <div className={styles.leftOverlay} />
+          <div className={styles.leftContent}>
+            <span className={styles.tagline}>● Mental Wellness Care</span>
+            <h1 className={styles.heroTitle}>
+              Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
+              Psychological Services
+            </h1>
+            <p className={styles.heroDesc}>
+              Begin your journey toward emotional wellness and a clearer mind.
+              We provide compassionate, professional care in a safe and
+              confidential environment.
             </p>
           </div>
-        </Col>
+        </div>
 
-        {/* Right Panel */}
-        <Col
-          xs={12}
-          lg={6}
-          className="d-flex align-items-center justify-content-center p-3 p-md-4 p-lg-5"
-          style={{ background: "rgba(255, 255, 255, 0.72)" }}
-        >
-          <Card className="registration-card w-100" style={{ maxWidth: "500px" }}>
-            <Card.Body className="p-3 p-sm-4 p-md-5">
-              <div className="text-center mb-4">
-                <Image
-                  src={logo_registration}
-                  alt="ClearMind Logo"
-                  fluid
-                  className="mb-4"
-                  style={{ maxWidth: "200px" }}
+        {/* ── RIGHT PANEL ── */}
+        <div className={styles.rightPanel}>
+
+          {/* Logo */}
+          <div className="text-center mb-2">
+            <img src={logo_login} alt="ClearMind Logo" className={styles.logo} />
+          </div>
+
+          <p className={styles.formSubtitle}>Fill in your details to get started</p>
+
+          <form onSubmit={handleSubmit} noValidate>
+
+            {/* ── Personal Information ── */}
+            <p className={styles.sectionLabel}>Personal Information</p>
+
+            {/* First & Last Name */}
+            <div className="row g-2 mb-2">
+              <div className="col-6">
+                <input type="text" name="firstName"
+                  className={`form-control ${styles.input} ${errors.firstName ? styles.inputError : ""}`}
+                  placeholder="First Name *"
+                  value={form.firstName} onChange={handleChange} required
                 />
-                <h3 className="form-title mb-4" style={{ fontSize: "24px" }}>
-                  REGISTRATION
-                </h3>
+                <ErrMsg field="firstName" />
               </div>
+              <div className="col-6">
+                <input type="text" name="lastName"
+                  className={`form-control ${styles.input} ${errors.lastName ? styles.inputError : ""}`}
+                  placeholder="Last Name *"
+                  value={form.lastName} onChange={handleChange} required
+                />
+                <ErrMsg field="lastName" />
+              </div>
+            </div>
 
-              <Form onSubmit={handleSubmit} noValidate>
-                {/* First Name */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaUser className="input-icon-left" />
-                    <Form.Control
-                      type="text"
-                      name="firstName"
-                      placeholder="First Name *"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      isInvalid={!!errors.firstName}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.firstName}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
+            {/* Middle Initial */}
+            <div className="mb-2">
+              <input type="text" name="middleInitial"
+                className={`form-control ${styles.input} ${errors.middleInitial ? styles.inputError : ""}`}
+                placeholder="Middle Initial *"
+                value={form.middleInitial} onChange={handleChange} maxLength={1}
+              />
+              <ErrMsg field="middleInitial" />
+            </div>
 
-                {/* Last Name */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaUser className="input-icon-left" />
-                    <Form.Control
-                      type="text"
-                      name="lastName"
-                      placeholder="Last Name *"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      isInvalid={!!errors.lastName}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.lastName}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Middle Initial */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaUser className="input-icon-left" />
-                    <Form.Control
-                      type="text"
-                      name="middleInitial"
-                      placeholder="Middle Initial *"
-                      value={formData.middleInitial}
-                      onChange={handleChange}
-                      isInvalid={!!errors.middleInitial}
-                      className="input-with-icon"
-                      size="sm"
-                      maxLength={1}
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.middleInitial}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Date of Birth */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaCalendarAlt className="input-icon-left" />
-                    <Form.Control
-                      type="date"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={handleChange}
-                      isInvalid={!!errors.dob}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.dob}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Sex */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaUser className="input-icon-left" />
-                    <Form.Select
-                      name="sex"
-                      value={formData.sex}
-                      onChange={handleChange}
-                      isInvalid={!!errors.sex}
-                      className="input-with-icon"
-                      size="sm"
-                    >
-                      <option value="">Sex *</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.sex}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Contact Number */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaPhone className="input-icon-left" />
-                    <Form.Control
-                      type="tel"
-                      name="contactNo"
-                      placeholder="Contact No. *"
-                      value={formData.contactNo}
-                      onChange={handleChange}
-                      isInvalid={!!errors.contactNo}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.contactNo}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Email */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaEnvelope className="input-icon-left" />
-                    <Form.Control
-                      type="email"
-                      name="email"
-                      placeholder="Email *"
-                      value={formData.email}
-                      onChange={handleChange}
-                      isInvalid={!!errors.email}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.email}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Password */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaLock className="input-icon-left" />
-                    <Form.Control
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      placeholder="Password *"
-                      value={formData.password}
-                      onChange={handleChange}
-                      isInvalid={!!errors.password}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <span
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="input-icon-right"
-                    >
-                      {showPassword ? <FaEye /> : <FaEyeSlash />}
-                    </span>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.password}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Confirm Password */}
-                <Form.Group className="mb-3">
-                  <div className="input-icon-wrapper">
-                    <FaLock className="input-icon-left" />
-                    <Form.Control
-                      type={showConfirmPassword ? "text" : "password"}
-                      name="confirmPassword"
-                      placeholder="Confirm Password *"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      isInvalid={!!errors.confirmPassword}
-                      className="input-with-icon"
-                      size="sm"
-                    />
-                    <span
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="input-icon-right"
-                    >
-                      {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
-                    </span>
-                    <Form.Control.Feedback type="invalid">
-                      {errors.confirmPassword}
-                    </Form.Control.Feedback>
-                  </div>
-                </Form.Group>
-
-                {/* Terms and Conditions */}
-                <Form.Group className="mb-3 custom-checkbox">
-                  <Form.Check
-                    type="checkbox"
-                    name="agreeTerms"
-                    id="terms"
-                    checked={formData.agreeTerms}
-                    onChange={handleChange}
-                    isInvalid={!!errors.agreeTerms}
-                    label={
-                      <>
-                        I agree to the{" "}
-                        <a href="#" className="terms-link">
-                          Terms and Conditions
-                        </a>{" "}
-                        <span className="text-danger">*</span>
-                      </>
-                    }
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.agreeTerms}
-                  </Form.Control.Feedback>
-                </Form.Group>
-
-                {/* Submit */}
-                <Button
-                  variant="none"
-                  type="submit"
-                  className="submit-btn w-100 mb-3 fw-bold"
-                  disabled={loading}
-                >
-                  {loading ? "Registering..." : "REGISTER"}
-                </Button>
-
-                {/* Login Link */}
-                <p className="text-center m-0 small">
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    className="link-button"
-                    onClick={() => navigate("/")}
+            {/* DOB & Sex */}
+            <div className="row g-2 mb-2">
+              <div className="col-6">
+                <input type="date" name="dob"
+                  className={`form-control ${styles.input} ${errors.dob ? styles.inputError : ""}`}
+                  value={form.dob} onChange={handleChange} required
+                />
+                <ErrMsg field="dob" />
+              </div>
+              <div className="col-6">
+                <div className={styles.selectWrap}>
+                  <select name="sex"
+                    className={`form-select ${styles.input} ${styles.select} ${errors.sex ? styles.inputError : ""}`}
+                    value={form.sex} onChange={handleChange} required
                   >
-                    Log In
-                  </button>
-                </p>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                    <option value="" disabled>Sex *</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <FiChevronDown className={styles.selectArrow} />
+                </div>
+                <ErrMsg field="sex" />
+              </div>
+            </div>
+
+            {/* Gender Identity */}
+            <div className="mb-2">
+              <div className={styles.selectWrap}>
+                <select name="genderIdentity"
+                  className={`form-select ${styles.input} ${styles.select}`}
+                  value={form.genderIdentity} onChange={handleChange}
+                >
+                  <option value="" disabled>Gender Identity</option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="transgender">Transgender</option>
+                  <option value="trans_woman">Trans Woman</option>
+                  <option value="trans_man">Trans Man</option>
+                  <option value="non_binary">Non-Binary</option>
+                  <option value="genderqueer">Genderqueer</option>
+                  <option value="gender_fluid">Gender Fluid</option>
+                  <option value="agender">Agender</option>
+                  <option value="bigender">Bigender</option>
+                  <option value="two_spirit">Two-Spirit</option>
+                  <option value="intersex">Intersex</option>
+                  <option value="pangender">Pangender</option>
+                  <option value="prefer_not">Prefer Not to Say</option>
+                </select>
+                <FiChevronDown className={styles.selectArrow} />
+              </div>
+            </div>
+
+            {/* Preferred Pronoun/s */}
+            <div className="mb-2">
+              <div className={styles.selectWrap}>
+                <select name="preferredPronoun"
+                  className={`form-select ${styles.input} ${styles.select}`}
+                  value={form.preferredPronoun} onChange={handleChange}
+                >
+                  <option value="" disabled>Preferred Pronoun/s</option>
+                  <option value="he_him">He/Him</option>
+                  <option value="she_her">She/Her</option>
+                  <option value="they_them">They/Them</option>
+                  <option value="other">Other (specify)</option>
+                </select>
+                <FiChevronDown className={styles.selectArrow} />
+              </div>
+            </div>
+
+            {/* Other pronoun — shows only when "Other" is selected */}
+            {form.preferredPronoun === "other" && (
+              <div className="mb-2">
+                <input type="text"
+                  className={`form-control ${styles.input}`}
+                  placeholder="Please specify your pronoun/s *"
+                  value={pronounOther}
+                  onChange={(e) => setPronounOther(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {/* ── Contact Information ── */}
+            <p className={styles.sectionLabel}>Contact Information</p>
+
+            <div className="mb-2">
+              <input type="tel" name="contact"
+                className={`form-control ${styles.input} ${errors.contact ? styles.inputError : ""}`}
+                placeholder="Contact No. *"
+                value={form.contact} onChange={handleChange} required
+              />
+              <ErrMsg field="contact" />
+            </div>
+
+            <div className="mb-2">
+              <input type="email" name="email"
+                className={`form-control ${styles.input} ${errors.email ? styles.inputError : ""}`}
+                placeholder="Email Address *"
+                value={form.email} onChange={handleChange} required
+              />
+              <ErrMsg field="email" />
+            </div>
+
+            {/* ── Security ── */}
+            <p className={styles.sectionLabel}>Security</p>
+
+            {/* Password */}
+            <div className={`${styles.pwWrap} mb-2`}>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                className={`form-control ${styles.input} ${styles.pwInput} ${errors.password ? styles.inputError : ""}`}
+                placeholder="Password *"
+                value={form.password} onChange={handleChange} required
+              />
+              <button type="button" className={styles.eyeBtn}
+                onClick={() => setShowPassword((p) => !p)} tabIndex={-1}>
+                {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+              </button>
+            </div>
+            <ErrMsg field="password" />
+
+            {/* Confirm Password */}
+            <div className={`${styles.pwWrap} mb-2`}>
+              <input
+                type={showConfirm ? "text" : "password"}
+                name="confirmPassword"
+                className={`form-control ${styles.input} ${styles.pwInput} ${errors.confirmPassword ? styles.inputError : ""}`}
+                placeholder="Confirm Password *"
+                value={form.confirmPassword} onChange={handleChange} required
+              />
+              <button type="button" className={styles.eyeBtn}
+                onClick={() => setShowConfirm((p) => !p)} tabIndex={-1}>
+                {showConfirm ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+              </button>
+            </div>
+            <ErrMsg field="confirmPassword" />
+
+            {/* ── Terms ── */}
+            <div className="form-check mb-3 mt-2">
+              <input type="checkbox" id="terms"
+                className={`form-check-input ${styles.checkbox}`}
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                required
+              />
+              <label htmlFor="terms" className={`form-check-label ${styles.checkLabel}`}>
+                I agree to the{" "}
+                <span className={styles.termsLink}>Terms and Conditions</span> *
+              </label>
+              {errors.agreeTerms && <div className={styles.errMsg}>{errors.agreeTerms}</div>}
+            </div>
+
+            <button type="submit" disabled={loading}
+              className={`btn w-100 ${styles.submitBtn}`}>
+              {loading ? "Registering..." : "REGISTER"}
+            </button>
+
+            <p className={`text-center mt-2 mb-0 ${styles.loginLink}`}>
+              Already have an account?{" "}
+              <span className={styles.loginLinkBold} onClick={() => navigate("/")}>
+                Log In
+              </span>
+            </p>
+
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default Registration;
+export default Register;
