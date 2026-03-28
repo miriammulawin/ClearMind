@@ -8,7 +8,7 @@ use App\Http\Controllers\AdminPatientController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminCreateAccountController;
 use App\Http\Controllers\DoctorAppointmentController;
-use App\Http\Controllers\AnnouncementController; // ← ADD THIS IMPORT
+use App\Http\Controllers\AnnouncementController; 
 
 // ── Public Routes ──────────────────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
