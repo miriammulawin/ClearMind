@@ -71,6 +71,46 @@
   gap: 14px;
 }
 
+/* ── Stat Text ── */
+.statText {
+  color: #555555;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.statText strong {
+  color: #4d227c;
+  font-size: 1.3rem;
+}
+
+/* ── No Data / Empty State ── */
+.noData {
+  color: #999;
+  text-align: center;
+  margin: 0;
+  padding: 20px 0;
+}
+
+.loadingState {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+}
+
+.loadingState p {
+  margin: 0;
+}
+
+.emptyState {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+}
+
+.emptyState p {
+  margin: 0;
+}
+
 /* ── Appointment Items ── */
 .appointmentItems {
   display: flex;
@@ -109,6 +149,73 @@
   color: #555;
 }
 
+/* ── FILTER SECTION ── */
+.filterSection {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd6ee;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: "Poppins", sans-serif;
+  color: #2e1060;
+  background: #faf8ff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: #b8a8d0;
+}
+
+.searchInput:focus {
+  border-color: #7341a8;
+  box-shadow: 0 0 0 3px rgba(115, 65, 168, 0.1);
+  background: #fff;
+}
+
+.filterSelect {
+  padding: 10px 14px;
+  border: 1.5px solid #ddd6ee;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: "Poppins", sans-serif;
+  color: #2e1060;
+  background: #faf8ff;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
+  appearance: none;
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239b7ec8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 35px;
+}
+
+.filterSelect:hover {
+  border-color: #7341a8;
+}
+
+.filterSelect:focus {
+  border-color: #7341a8;
+  box-shadow: 0 0 0 3px rgba(115, 65, 168, 0.1);
+  background-color: #fff;
+}
+
 /* ── Patients Table ── */
 .patientsTable {
   width: 100%;
@@ -126,10 +233,15 @@
 .patientsTable th {
   color: #4d227c;
   font-weight: 600;
+  background-color: #faf8ff;
 }
 
 .patientsTable td {
   color: #4d4952;
+}
+
+.patientsTable tbody tr:hover {
+  background-color: #faf8ff;
 }
 
 .tableResponsive {
@@ -144,21 +256,44 @@
   margin-top: 1rem;
   font-size: 0.85rem;
   color: #888;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.paginationButtons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .paginationButtons button {
   background: #f0e6ff;
-  border: none;
-  margin: 0 2px;
-  padding: 3px 8px;
-  border-radius: 4px;
+  border: 1px solid #ddd6ee;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
   font-family: "Poppins", sans-serif;
+  font-size: 0.85rem;
+  color: #4d227c;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-.paginationButtons button:hover {
+.paginationButtons button:hover:not(:disabled) {
   background: #4d227c;
   color: #fff;
+  border-color: #4d227c;
+}
+
+.paginationButtons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.activePage {
+  background: #4d227c !important;
+  color: #fff !important;
+  border-color: #4d227c !important;
 }
 
 /* ── Pie Chart ── */
@@ -168,6 +303,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* ── ANNOUNCEMENT SECTION ── */
+.announcementCard {
+  margin-bottom: 0;
 }
 
 .announcementTitle {
@@ -187,20 +327,19 @@
 .btnPostAnnounce {
   background: #4d227c;
   color: #fff;
-  border: none;
+  border: 1px solid #3a1860;
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 15px;
+  font-size: 13px;
   font-family: "Poppins", sans-serif;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   white-space: nowrap;
-  margin-top: -10px;
-  border: 1px solid #3a1860;
+  font-weight: 600;
 }
 
 .btnPostAnnounce:hover {
-  background: #ffffff;
+  background: #fff;
   color: #3a1860;
   border: 1px solid #3a1860;
 }
@@ -281,6 +420,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .annBtn {
@@ -289,9 +429,10 @@
   padding: 6px 8px;
   cursor: pointer;
   font-size: 0.82rem;
-  transition:
-    background 0.2s,
-    transform 0.1s;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .annBtn:active {
@@ -323,7 +464,7 @@
   font-size: 0.9rem;
 }
 
-/* ── View Button (matching patient table) ── */
+/* ── View Button ── */
 .btnView {
   height: 32px;
   width: 90px;
@@ -339,18 +480,16 @@
   border: 1px solid #7341a8;
   background: #7341a8;
   color: #fff;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: all 0.2s ease;
   font-family: "Poppins", sans-serif;
 }
 
 .btnView:hover {
-  background: #ffffff;
+  background: #fff;
   color: #7341a8;
 }
 
-/* ── Announcement Modal ── */
+/* ── MODAL STYLES ── */
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -633,10 +772,9 @@
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
+  transition: all 0.2s;
 }
+
 .btnCancel:hover {
   background: #4d227c;
   color: #fff;
@@ -644,7 +782,7 @@
 }
 
 .btnSave {
- display: inline-flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -657,22 +795,17 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-
-  transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s,
-    transform 0.15s;
+  transition: all 0.2s;
 }
 
 .btnSave:hover {
- background: #fff;
+  background: #fff;
   color: #4d227c;
   border-color: #4d227c;
   transform: translateY(-1px);
 }
 
-/* ── Responsive ── */
+/* ── RESPONSIVE DESIGN ── */
 @media (max-width: 992px) {
   .dashboardCard {
     margin-top: 8px;
@@ -690,6 +823,43 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+  }
+
+  .filterSection {
+    flex-direction: column;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .filterSelect {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .filterSection {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .searchInput {
+    width: 100%;
+  }
+
+  .filterSelect {
+    width: 100%;
+  }
+
+  .tablePagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .paginationButtons {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -721,7 +891,7 @@
   }
 
   .patientsTable {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
   }
 
   .patientsTable th,
@@ -733,6 +903,12 @@
   .tablePagination {
     flex-direction: column;
     gap: 8px;
+    font-size: 0.75rem;
+  }
+
+  .paginationButtons button {
+    padding: 4px 8px;
+    font-size: 0.75rem;
   }
 
   .pieChartContainer {
@@ -742,6 +918,7 @@
   .btnPostAnnounce {
     font-size: 0.75rem;
     padding: 5px 10px;
+    width: 100%;
   }
 
   .announceItem {
@@ -751,6 +928,7 @@
   .announceActions {
     flex-direction: row;
     justify-content: flex-end;
+    width: 100%;
   }
 
   .priorityGroup {
@@ -760,12 +938,38 @@
   .modalLg {
     max-width: 95vw;
   }
+
+  .searchInput {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .filterSelect {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }
 
 @media (max-width: 400px) {
   .paginationButtons {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 3px;
+    justify-content: center;
+  }
+
+  .paginationButtons button {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    min-width: 30px;
+  }
+
+  .cardDate {
+    font-size: 0.75rem;
+  }
+
+  .cardDate span {
+    padding: 1px 5px;
+    font-size: 0.65rem;
   }
 }

@@ -5,6 +5,8 @@ import styles from "./AdminStyle/AdminDashboard.module.css";
 import { FaClinicMedical, FaBullhorn, FaTrash, FaEdit } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
 import { FiX, FiMessageSquare, FiFlag } from "react-icons/fi";
+import axiosClient from "../axiosClient";
+import toast from "react-hot-toast";
 
 import {
   Chart as ChartJS,
@@ -33,6 +35,23 @@ ChartJS.register(
 function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
+
+  // ── Patient Data ──
+  const [patients, setPatients] = useState([]);
+  const [totalPatients, setTotalPatients] = useState(0);
+  const [activePatients, setActivePatients] = useState(0);
+  const [inactivePatients, setInactivePatients] = useState(0);
+  const [monthlyData, setMonthlyData] = useState(Array(12).fill(0)); // ← NEW
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [patientsPerPage] = useState(10);
+
+  // ── Search & Filter ──
+  const [searchTerm, setSearchTerm] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  // ── Announcements ──
   const [announcements, setAnnouncements] = useState([
     {
       id: 1,
@@ -59,6 +78,55 @@ function AdminDashboard() {
     priority: "normal",
   });
 
+  // ── Fetch Patients Data ──
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosClient.get("/admin/patients", {
+        params: {
+          role: "Client",
+        },
+      });
+
+      if (response.data.success) {
+        const allPatients = response.data.data || [];
+        setPatients(allPatients);
+        setTotalPatients(allPatients.length);
+
+        const active = allPatients.filter((p) => p.is_active).length;
+        const inactive = allPatients.length - active;
+        setActivePatients(active);
+        setInactivePatients(inactive);
+
+        // ── NEW: Compute monthly registration counts for current year ──
+        const currentYear = new Date().getFullYear();
+        const counts = Array(12).fill(0);
+        allPatients.forEach((p) => {
+          if (p.created_at) {
+            const d = new Date(p.created_at);
+            if (d.getFullYear() === currentYear) {
+              counts[d.getMonth()]++;
+            }
+          }
+        });
+        setMonthlyData(counts);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      toast.error("Failed to load patients data");
+      setPatients([]);
+      setTotalPatients(0);
+      setMonthlyData(Array(12).fill(0));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Time Update ──
   useEffect(() => {
     const timer = setInterval(() => setToday(new Date()), 60000);
     return () => clearInterval(timer);
@@ -70,6 +138,31 @@ function AdminDashboard() {
     year: "numeric",
   });
 
+  // ── Filter and Search Logic ──
+  const filteredPatients = patients.filter((patient) => {
+    const matchesSearch =
+      patient.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      patient.contactNo?.includes(searchTerm);
+
+    const matchesGender = !genderFilter || patient.sex === genderFilter;
+
+    const matchesStatus =
+      !statusFilter ||
+      (statusFilter === "active" && patient.is_active) ||
+      (statusFilter === "inactive" && !patient.is_active);
+
+    return matchesSearch && matchesGender && matchesStatus;
+  });
+
+  // ── Pagination Logic ──
+  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
+  const startIndex = (currentPage - 1) * patientsPerPage;
+  const endIndex = startIndex + patientsPerPage;
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
+
+  // ── Announcement Functions ──
   const openAddModal = () => {
     setForm({ title: "", message: "", priority: "normal" });
     setEditingId(null);
@@ -105,54 +198,20 @@ function AdminDashboard() {
   const handleDelete = (id) =>
     setAnnouncements((prev) => prev.filter((a) => a.id !== id));
 
-  const patientsData = [
-    {
-      name: "Liezel Paciente",
-      gender: "Female",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Scheduled",
-    },
-    {
-      name: "Ara Christina Ceres",
-      gender: "Female",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Completed",
-    },
-    {
-      name: "Ara Christina Ceres",
-      gender: "Female",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Scheduled",
-    },
-    {
-      name: "Ara Christina Ceres",
-      gender: "Female",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Cancelled",
-    },
-  ];
-
+  // ── Helper Functions ──
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Scheduled":
-        return "#1E3A8A";
-      case "Completed":
-        return "#16A34A";
-      case "Cancelled":
-        return "#DC2626";
-      default:
-        return "#000";
-    }
+    if (status === true || status === "Scheduled") return "#1E3A8A";
+    if (status === "Completed") return "#16A34A";
+    if (status === "Cancelled") return "#DC2626";
+    return "#808080";
   };
 
+  const getStatusLabel = (isActive) => {
+    return isActive ? "Active" : "Inactive";
+  };
+
+  // ── Chart Data ──
+  // ← UPDATED: uses dynamic monthlyData state instead of hardcoded values
   const barData = {
     labels: [
       "Jan",
@@ -171,7 +230,7 @@ function AdminDashboard() {
     datasets: [
       {
         label: "Monthly Patients",
-        data: [10, 8, 6, 5, 4, 7, 9, 11, 6, 8, 5, 12],
+        data: monthlyData,
         backgroundColor: "#4D227C",
         borderRadius: 6,
         barThickness: 35,
@@ -189,7 +248,7 @@ function AdminDashboard() {
         anchor: "center",
         align: "center",
         font: { family: "Poppins, sans-serif", size: 10, weight: "100" },
-        formatter: (v) => v,
+        formatter: (v) => (v > 0 ? v : ""), // ← hide "0" labels on empty bars
       },
     },
     scales: {
@@ -211,16 +270,12 @@ function AdminDashboard() {
   };
 
   const pieData = {
-    labels: ["Completed", "Cancelled", "Pending"],
+    labels: ["Active", "Inactive"],
     datasets: [
       {
-        label: "Appointment Status",
-        data: [
-          patientsData.filter((p) => p.status === "Completed").length,
-          patientsData.filter((p) => p.status === "Cancelled").length,
-          patientsData.filter((p) => p.status === "Scheduled").length,
-        ],
-        backgroundColor: ["#52a1ec", "#EF5350", "#d1a4de"],
+        label: "Patient Status",
+        data: [activePatients, inactivePatients],
+        backgroundColor: ["#52a1ec", "#EF5350"],
         borderColor: "rgb(255,255,255)",
         borderWidth: 1,
       },
@@ -309,7 +364,7 @@ function AdminDashboard() {
                       className={styles.btnPostAnnounce}
                       onClick={openAddModal}
                     >
-                     + Create Announcement
+                      + Create Announcement
                     </button>
                   </div>
                   <hr />
@@ -322,7 +377,11 @@ function AdminDashboard() {
                       {announcements.map((ann) => (
                         <div
                           key={ann.id}
-                          className={`${styles.announceItem} ${ann.priority === "high" ? styles.announceHigh : styles.announceNormal}`}
+                          className={`${styles.announceItem} ${
+                            ann.priority === "high"
+                              ? styles.announceHigh
+                              : styles.announceNormal
+                          }`}
                         >
                           <div className={styles.announceLeft}>
                             <div className={styles.announceItemHeader}>
@@ -365,13 +424,34 @@ function AdminDashboard() {
                 </div>
               </div>
 
+              {/* ── Statistics Cards ── */}
+              <div className="col-md-4">
+                <div className={styles.dashboardCard}>
+                  <div className={styles.cardHeader}>
+                    <h5>Total Patients</h5>
+                    <div className={styles.cardDate}>
+                      <span>{totalPatients}</span>
+                    </div>
+                  </div>
+                  <hr />
+                  <div className={styles.cardBody}>
+                    <p className={styles.statText}>
+                      <strong>{activePatients}</strong> Active
+                    </p>
+                    <p className={styles.statText}>
+                      <strong>{inactivePatients}</strong> Inactive
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* ── Today's Appointment ── */}
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
                     <h5>Today's Appointment</h5>
                     <div className={styles.cardDate}>
-                      {formattedDate} <span>1</span>
+                      {formattedDate} <span>0</span>
                     </div>
                   </div>
                   <hr />
@@ -381,7 +461,7 @@ function AdminDashboard() {
                         <IoVideocam className={styles.appointmentIcon} />
                         <strong>Online Clinic</strong>
                       </div>
-                      <p>1 Appointment</p>
+                      <p>0 Appointment</p>
                     </div>
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
@@ -395,26 +475,18 @@ function AdminDashboard() {
               </div>
 
               {/* ── Consultation Request ── */}
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
                     <h5>Consultation Request</h5>
                     <div className={styles.cardDate}>
-                      {formattedDate} <span>1</span>
+                      {formattedDate} <span>0</span>
                     </div>
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
                     <div className={styles.consultItem}>
-                      <div>
-                        <p>
-                          <strong>Name:</strong> Liezel Paciente
-                        </p>
-                        <p>
-                          <strong>Time:</strong> 2:00 PM
-                        </p>
-                      </div>
-                      <button className={styles.btnView}>View</button>
+                      <p className={styles.noData}>No requests</p>
                     </div>
                   </div>
                 </div>
@@ -426,54 +498,172 @@ function AdminDashboard() {
               <div className="col-12">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
-                    <h5>Total's Patients</h5>
+                    <h5>All Patients</h5>
                     <div className={styles.cardDate}>
-                      <span>{patientsData.length}</span>
+                      <span>{totalPatients}</span>
                     </div>
                   </div>
                   <hr />
+
+                  {/* ── Search and Filter ── */}
+                  <div className={styles.filterSection}>
+                    <input
+                      type="text"
+                      className={styles.searchInput}
+                      placeholder="Search by name, email, or phone..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    />
+
+                    <select
+                      className={styles.filterSelect}
+                      value={genderFilter}
+                      onChange={(e) => {
+                        setGenderFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value="">All Sexes</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+
+                    <select
+                      className={styles.filterSelect}
+                      value={statusFilter}
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value="">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  {/* ── Table ── */}
                   <div
                     className={`${styles.cardBody} ${styles.tableResponsive}`}
                   >
-                    <table className={styles.patientsTable}>
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Gender</th>
-                          <th>Date of Appointment</th>
-                          <th>Time</th>
-                          <th>Visit Type</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {patientsData.map((patient, index) => (
-                          <tr key={index}>
-                            <td>{patient.name}</td>
-                            <td>{patient.gender}</td>
-                            <td>{patient.date}</td>
-                            <td>{patient.time}</td>
-                            <td>{patient.type}</td>
-                            <td
-                              style={{ color: getStatusColor(patient.status) }}
-                            >
-                              {patient.status}
-                            </td>
+                    {loading ? (
+                      <div className={styles.loadingState}>
+                        <p>Loading patients data...</p>
+                      </div>
+                    ) : paginatedPatients.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        <p>
+                          {filteredPatients.length === 0
+                            ? "No patients found matching your filters"
+                            : "No data to display"}
+                        </p>
+                      </div>
+                    ) : (
+                      <table className={styles.patientsTable}>
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Sex</th>
+                            <th>Gender Identity</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {paginatedPatients.map((patient) => (
+                            <tr key={patient.id}>
+                              <td>
+                                <strong>
+                                  {patient.firstName} {patient.lastName}
+                                </strong>
+                              </td>
+                              <td>
+                                {patient.sex
+                                  ? patient.sex.charAt(0).toUpperCase() +
+                                    patient.sex.slice(1)
+                                  : "-"}
+                              </td>
+                              <td>
+                                {patient.genderIdentity
+                                  ? patient.genderIdentity
+                                      .split("_")
+                                      .map(
+                                        (word) =>
+                                          word.charAt(0).toUpperCase() +
+                                          word.slice(1),
+                                      )
+                                      .join(" ")
+                                  : "-"}
+                              </td>
+                              <td>{patient.email}</td>
+                              <td>{patient.contactNo}</td>
+                              <td
+                                style={{
+                                  color: getStatusColor(patient.is_active),
+                                  fontWeight: "bold",
+                                }}
+                              >
+                                {getStatusLabel(patient.is_active)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
-                  <div className={styles.tablePagination}>
-                    <span>Page 1 of 5</span>
-                    <div className={styles.paginationButtons}>
-                      <button>{"< Previous"}</button>
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button key={n}>{n}</button>
-                      ))}
-                      <button>{"Next >"}</button>
+
+                  {/* ── Pagination ── */}
+                  {!loading && totalPages > 1 && (
+                    <div className={styles.tablePagination}>
+                      <span>
+                        Page {currentPage} of {totalPages} (
+                        {filteredPatients.length} results)
+                      </span>
+                      <div className={styles.paginationButtons}>
+                        <button
+                          onClick={() =>
+                            setCurrentPage(Math.max(1, currentPage - 1))
+                          }
+                          disabled={currentPage === 1}
+                        >
+                          {"< Previous"}
+                        </button>
+                        {Array.from({ length: Math.min(5, totalPages) }).map(
+                          (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={
+                                  currentPage === pageNum
+                                    ? styles.activePage
+                                    : ""
+                                }
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          },
+                        )}
+                        <button
+                          onClick={() =>
+                            setCurrentPage(
+                              Math.min(totalPages, currentPage + 1),
+                            )
+                          }
+                          disabled={currentPage === totalPages}
+                        >
+                          {"Next >"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -492,7 +682,7 @@ function AdminDashboard() {
               </div>
               <div className="col-md-6">
                 <div className={styles.dashboardCard}>
-                  <h5>Appointment Status</h5>
+                  <h5>Patient Status Distribution</h5>
                   <div className={styles.pieChartContainer}>
                     <Pie data={pieData} options={pieOptions} />
                   </div>
@@ -584,7 +774,9 @@ function AdminDashboard() {
                     {priorityOptions.map((opt) => (
                       <label
                         key={opt.value}
-                        className={`${styles.priorityCard} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                        className={`${styles.priorityCard} ${
+                          form.priority === opt.value ? opt.activeClass : ""
+                        }`}
                       >
                         <input
                           type="radio"
@@ -603,7 +795,9 @@ function AdminDashboard() {
                         />
                         <div>
                           <div
-                            className={`${styles.priorityCardLabel} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                            className={`${styles.priorityCardLabel} ${
+                              form.priority === opt.value ? opt.activeClass : ""
+                            }`}
                           >
                             {opt.label}
                           </div>
@@ -627,7 +821,6 @@ function AdminDashboard() {
                 Cancel
               </button>
               <button className={styles.btnSave} onClick={handleSave}>
-                
                 {editingId ? "Save Changes" : "Post Announcement"}
               </button>
             </div>

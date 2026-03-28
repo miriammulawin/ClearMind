@@ -1,46 +1,49 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 /* ═══════════════════════════════════════
-   PAGE
+   PAGE - FIXED HEIGHT, NO SCROLL
 ═══════════════════════════════════════ */
 .page {
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
   background: #f0eaf8;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(12px, 2vw, 24px) clamp(10px, 2vw, 16px);
+  padding: 0;
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
 }
 
 /* ═══════════════════════════════════════
-   CARD
+   CARD - FULL VIEWPORT FIT
 ═══════════════════════════════════════ */
 .card {
   display: flex;
   width: 100%;
-  max-width: clamp(320px, 90vw, 1000px);
-  min-height: clamp(500px, 80vh, 640px);
-  border-radius: clamp(12px, 2vw, 20px);
+  height: 100%;
+  max-width: 100%;
+  max-height: 100vh;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(77, 34, 124, 0.15);
+  box-shadow: none;
   background: #fff;
-  border: 1.5px solid #d8ccea;
+  border: none;
 }
 
 /* ═══════════════════════════════════════
-   LEFT PANEL
+   LEFT PANEL - HIDDEN ON SMALL SCREENS
 ═══════════════════════════════════════ */
 .leftPanel {
   position: relative;
-  flex: 0 0 42%;
+  flex: 0 0 38%;
   background-image: url("https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=800&q=80");
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: flex-end;
-  padding: clamp(24px, 3vw, 40px) clamp(20px, 3vw, 36px);
+  padding: 40px 36px;
   box-sizing: border-box;
 }
 
@@ -63,21 +66,21 @@
 
 .tagline {
   display: inline-block;
-  font-size: clamp(9px, 1vw, 11px);
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 20px;
-  padding: 5px 14px;
+  padding: 6px 14px;
   margin-bottom: 16px;
   color: #fff;
 }
 
 .heroTitle {
-  font-size: clamp(17px, 2.2vw, 27px);
+  font-size: 24px;
   font-weight: 700;
-  line-height: 1.28;
+  line-height: 1.3;
   margin: 0 0 12px 0;
   color: #fff;
   font-family: "Poppins", sans-serif;
@@ -89,67 +92,118 @@
 }
 
 .heroDesc {
-  font-size: clamp(11px, 1.2vw, 13.5px);
-  line-height: 1.75;
+  font-size: 13px;
+  line-height: 1.6;
   color: rgba(255, 255, 255, 0.82);
   margin: 0;
 }
 
 /* ═══════════════════════════════════════
-   RIGHT PANEL
+   RIGHT PANEL - COMPACT SCROLLABLE FORM
 ═══════════════════════════════════════ */
 .rightPanel {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: clamp(18px, 2.5vw, 28px) clamp(16px, 3vw, 36px)
-    clamp(16px, 2vw, 24px);
+  padding: 5px 32px;
   box-sizing: border-box;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fff;
   font-family: "Poppins", sans-serif;
+  max-height: 100vh;
+}
+
+/* Custom scrollbar */
+.rightPanel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.rightPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rightPanel::-webkit-scrollbar-thumb {
+  background: #ddd6ee;
+  border-radius: 3px;
+}
+
+.rightPanel::-webkit-scrollbar-thumb:hover {
+  background: #c4b5d1;
 }
 
 .logo {
-  max-width: 70%;
+  max-width: 50%;
   height: auto;
   object-fit: contain;
-  border-radius: 14px;
+  border-radius: 10px;
+  margin: 0 auto;
 }
 
 .formSubtitle {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(11px, 1.1vw, 13px);
+  font-size: 12px;
   color: #9b8ab0;
   text-align: center;
-  margin: 0 0 12px 0;
+  margin: 4px 0 12px 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
 }
 
 /* ═══════════════════════════════════════
-   SECTION LABELS
+   FIELDSET & FORM STRUCTURE
 ═══════════════════════════════════════ */
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .sectionLabel {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(11px, 1vw, 12px);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #4a2278;
-  margin: 8px 0 5px 0;
-  text-transform: none;
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase;
 }
 
 /* ═══════════════════════════════════════
-   INPUTS
+   FORM LAYOUT - TWO COLUMNS
+═══════════════════════════════════════ */
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.formCol {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════
+   INPUTS - COMPACT
 ═══════════════════════════════════════ */
 .input {
   font-family: "Poppins", sans-serif !important;
-  font-size: clamp(11px, 1.1vw, 13px) !important;
+  font-size: 12px !important;
   color: #2e1060 !important;
   background: #faf8ff !important;
   border: 1.5px solid #ddd6ee !important;
-  border-radius: 10px !important;
-  height: clamp(38px, 4.5vw, 44px);
-  padding: 0 14px !important;
+  border-radius: 8px !important;
+  height: 36px;
+  padding: 0 12px !important;
   transition:
     border-color 0.18s,
     box-shadow 0.18s !important;
@@ -163,7 +217,7 @@
 
 .input:focus {
   border-color: #7341a8 !important;
-  box-shadow: 0 0 0 3px rgba(115, 65, 168, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(115, 65, 168, 0.1) !important;
   background: #fff !important;
   outline: none !important;
 }
@@ -173,56 +227,58 @@
 }
 
 /* ═══════════════════════════════════════
-   SELECT WRAPPER — custom dropdown arrow
+   SELECT WRAPPER — CUSTOM DROPDOWN
 ═══════════════════════════════════════ */
 .selectWrap {
   position: relative;
   width: 100%;
 }
 
-/* Hide the browser's native arrow */
 .select {
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
-  padding-right: 36px !important; /* room for custom arrow */
+  padding-right: 32px !important;
   cursor: pointer;
 }
 
-/* Custom chevron icon */
 .selectArrow {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
   color: #9b7ec8;
-  font-size: clamp(14px, 1.5vw, 18px);
+  font-size: 16px;
   z-index: 2;
 }
 
 /* ═══════════════════════════════════════
-   PASSWORD WRAPPER
+   PASSWORD WRAPPER - COMPACT
 ═══════════════════════════════════════ */
 .pwWrap {
+  flex-direction: column;
+}
+
+.pwInner {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .pwInput {
-  padding-right: 50px !important;
-  border-radius: 10px !important;
+  padding-right: 40px !important;
 }
 
 .eyeBtn {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  padding: 0;
+  padding: 0 4px;
   cursor: pointer;
   color: #9b7ec8;
   display: flex;
@@ -231,6 +287,8 @@
   line-height: 1;
   z-index: 5;
   transition: color 0.15s;
+  width: 32px;
+  height: 32px;
 }
 
 .eyeBtn:hover {
@@ -238,31 +296,41 @@
 }
 
 /* ═══════════════════════════════════════
-   ERROR MESSAGE
+   ERROR MESSAGE - COMPACT
 ═══════════════════════════════════════ */
 .errMsg {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(10px, 1vw, 11.5px);
+  font-size: 10px;
   color: #e53e3e;
-  margin-top: 3px;
+  margin-top: 2px;
   padding-left: 2px;
 }
 
 /* ═══════════════════════════════════════
-   CHECKBOX + TERMS
+   CHECKBOX & TERMS
 ═══════════════════════════════════════ */
+.checkGroup {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: auto;
+  padding-top: 8px;
+}
+
 .checkbox {
   accent-color: #7341a8;
-  width: 15px !important;
-  height: 15px !important;
+  width: 14px !important;
+  height: 14px !important;
   margin-top: 3px !important;
+  flex-shrink: 0;
 }
 
 .checkLabel {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(11px, 1.1vw, 13px);
+  font-size: 11px;
   color: #4a3060;
   cursor: pointer;
+  line-height: 1.4;
 }
 
 .termsLink {
@@ -273,41 +341,50 @@
 }
 
 /* ═══════════════════════════════════════
-   SUBMIT BUTTON
+   FOOTER - STICKY BOTTOM
 ═══════════════════════════════════════ */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e8e0f0;
+  margin-top: auto;
+}
+
 .submitBtn {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(12px, 1.2vw, 14px);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   background: #5b2d8e;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  height: clamp(42px, 5vw, 48px);
+  border-radius: 8px;
+  height: 40px;
+  width: 100%;
   transition:
     background 0.18s,
     box-shadow 0.18s;
+  padding: 0 !important;
 }
 
 .submitBtn:hover:not(:disabled) {
   background: #4a2278;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(91, 45, 142, 0.35);
+  box-shadow: 0 3px 12px rgba(91, 45, 142, 0.3);
 }
 
 .submitBtn:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
-/* ═══════════════════════════════════════
-   BOTTOM LINK
-═══════════════════════════════════════ */
 .loginLink {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(11px, 1.1vw, 13px);
+  font-size: 11px;
   color: #9b8ab0;
+  text-align: center;
+  margin: 4px 0 0 0;
 }
 
 .loginLinkBold {
@@ -321,34 +398,132 @@
 }
 
 /* ═══════════════════════════════════════
-   RESPONSIVE — tablet (820px and below)
+   TABLET (820px and below)
+   Hide left panel, expand form
 ═══════════════════════════════════════ */
 @media (max-width: 820px) {
   .leftPanel {
-    flex: 0 0 36%;
+    display: none;
   }
+
+  .card {
+    border-radius: 0;
+  }
+
+  .rightPanel {
+    padding: 18px 24px;
+  }
+
+  .input {
+    font-size: 11px !important;
+    height: 34px;
+  }
+
+  .logo {
+    max-width: 70%;
+  }
+
   .heroTitle {
-    font-size: clamp(15px, 2.5vw, 22px);
+    font-size: 20px;
   }
 }
 
 /* ═══════════════════════════════════════
-   RESPONSIVE — mobile (600px and below)
-   Single centered card, left panel hidden
+   MOBILE (600px and below)
+   Full width, mobile optimized
 ═══════════════════════════════════════ */
 @media (max-width: 600px) {
   .page {
-    align-items: flex-start;
+    padding: 0;
   }
+
   .card {
     flex-direction: column;
-    border-radius: 16px;
-    min-height: unset;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
   }
+
   .leftPanel {
     display: none;
   }
+
   .rightPanel {
-    padding: 28px 18px 24px;
+    padding: 16px 18px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .input {
+    font-size: 11px !important;
+    height: 34px;
+    padding: 0 10px !important;
+  }
+
+  .logo {
+    max-width: 60%;
+  }
+
+  .formSubtitle {
+    font-size: 11px;
+    margin: 2px 0 8px 0;
+  }
+
+  .sectionLabel {
+    font-size: 10px;
+  }
+
+  .formRow {
+    gap: 8px;
+  }
+
+  .form {
+    gap: 8px;
+  }
+
+  .fieldset {
+    gap: 6px;
+  }
+
+  .submitBtn {
+    font-size: 12px;
+    height: 38px;
+  }
+
+  .checkLabel {
+    font-size: 10px;
+  }
+
+  .selectArrow {
+    font-size: 14px;
+    right: 8px;
+  }
+
+  .eyeBtn {
+    font-size: 14px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   VERY SMALL MOBILE (400px and below)
+   Extra compact
+═══════════════════════════════════════ */
+@media (max-width: 400px) {
+  .rightPanel {
+    padding: 12px 14px;
+  }
+
+  .logo {
+    max-width: 55%;
+  }
+
+  .input {
+    font-size: 10px !important;
+    height: 32px;
+  }
+
+  .submitBtn {
+    font-size: 11px;
+    height: 36px;
   }
 }

@@ -5,168 +5,251 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
-/**
- * AdminController
- * All routes protected by: auth:sanctum + RoleMiddleware:Admin
- */
 class AdminController extends Controller
 {
-    // ──────────────────────────────────────────────
-    // GET /api/admin/users
-    // List all users (optionally filter by role)
-    // ──────────────────────────────────────────────
-    public function listUsers(Request $request): JsonResponse
+    /**
+     * Get all patients (clients) with optional filters
+     */
+    public function getPatients(Request $request): JsonResponse
     {
-        $query = User::query();
+        try {
+            $query = User::where('role', 'Client');
 
-        if ($request->has('role')) {
-            $query->where('role', $request->role);
-        }
+            // Search filter
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('firstName', 'LIKE', "%{$search}%")
+                        ->orWhere('lastName', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('contactNo', 'LIKE', "%{$search}%");
+                });
+            }
 
-        $users = $query->orderBy('lastName')->get();
+            // Sex filter
+            if ($request->has('sex') && $request->sex) {
+                $query->where('sex', $request->sex);
+            }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $users,
-        ]);
-    }
+            // Gender identity filter
+            if ($request->has('genderIdentity') && $request->genderIdentity) {
+                $query->where('genderIdentity', $request->genderIdentity);
+            }
 
-    // ──────────────────────────────────────────────
-    // GET /api/admin/users/{id}
-    // ──────────────────────────────────────────────
-    public function showUser(int $id): JsonResponse
-    {
-        $user = User::findOrFail($id);
+            // Pronoun filter
+            if ($request->has('preferredPronoun') && $request->preferredPronoun) {
+                $query->where('preferredPronoun', $request->preferredPronoun);
+            }
 
-        return response()->json([
-            'success' => true,
-            'data'    => $user,
-        ]);
-    }
+            // Status filter
+            if ($request->has('status') && $request->status) {
+                if ($request->status === 'active') {
+                    $query->where('is_active', true);
+                } elseif ($request->status === 'inactive') {
+                    $query->where('is_active', false);
+                }
+            }
 
-    // ──────────────────────────────────────────────
-    // POST /api/admin/users
-    // Create Doctor or Admin accounts (Admin only)
-    // ──────────────────────────────────────────────
-    public function createUser(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'firstName'     => 'required|string|max:100',
-            'lastName'      => 'required|string|max:100',
-            'middleInitial' => 'nullable|string|max:5',
-            'dob'           => 'required|date|before:today',
-            'sex'           => 'required|in:male,female',
-            'contactNo'     => 'required|string|max:20',
-            'email'         => 'required|email|unique:users,email',
-            'password'      => ['required', Password::min(6)],
-            'role'          => 'required|in:Admin,Doctor,Client',
-            'address'       => 'nullable|string|max:255',
-        ]);
+            // Sorting
+            $sortBy = $request->input('sortBy', 'created_at');
+            $sortOrder = $request->input('sortOrder', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
 
-        $user = User::create([
-            ...$validated,
-            'password'  => Hash::make($validated['password']),
-            'is_active' => true,
-        ]);
+            // Get all patients (frontend will handle pagination)
+            $patients = $query->get()->map(function ($patient) {
+                return $this->formatPatientData($patient);
+            });
 
-        return response()->json([
-            'success' => true,
-            'message' => "{$user->role} account created successfully.",
-            'data'    => $user,
-        ], 201);
-    }
-
-    // ──────────────────────────────────────────────
-    // PUT /api/admin/users/{id}
-    // ──────────────────────────────────────────────
-    public function updateUser(Request $request, int $id): JsonResponse
-    {
-        $user = User::findOrFail($id);
-
-        $validated = $request->validate([
-            'firstName'     => 'sometimes|string|max:100',
-            'lastName'      => 'sometimes|string|max:100',
-            'middleInitial' => 'sometimes|nullable|string|max:5',
-            'dob'           => 'sometimes|date|before:today',
-            'sex'           => 'sometimes|in:male,female',
-            'contactNo'     => 'sometimes|string|max:20',
-            'email'         => "sometimes|email|unique:users,email,{$id}",
-            'role'          => 'sometimes|in:Admin,Doctor,Client',
-            'address'       => 'sometimes|nullable|string|max:255',
-            'is_active'     => 'sometimes|boolean',
-        ]);
-
-        $user->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User updated successfully.',
-            'data'    => $user->fresh(),
-        ]);
-    }
-
-    // ──────────────────────────────────────────────
-    // PATCH /api/admin/users/{id}/toggle-status
-    // Activate / deactivate a user
-    // ──────────────────────────────────────────────
-    public function toggleStatus(int $id): JsonResponse
-    {
-        $user = User::findOrFail($id);
-        $user->is_active = ! $user->is_active;
-        $user->save();
-
-        $status = $user->is_active ? 'activated' : 'deactivated';
-
-        return response()->json([
-            'success' => true,
-            'message' => "User account {$status}.",
-            'data'    => ['is_active' => $user->is_active],
-        ]);
-    }
-
-    // ──────────────────────────────────────────────
-    // DELETE /api/admin/users/{id}
-    // Soft-delete by deactivating (safe approach)
-    // ──────────────────────────────────────────────
-    public function deleteUser(int $id): JsonResponse
-    {
-        $user = User::findOrFail($id);
-
-        // Prevent deleting yourself
-        if (auth()->id() === $user->id) {
+            return response()->json([
+                'success' => true,
+                'data' => $patients,
+                'count' => $patients->count(),
+                'message' => 'Patients retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'You cannot delete your own account.',
-            ], 403);
+                'message' => 'Error retrieving patients: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $user->update(['is_active' => false]);
-        $user->tokens()->delete(); // revoke sessions
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User deactivated successfully.',
-        ]);
     }
 
-    // ──────────────────────────────────────────────
-    // GET /api/admin/dashboard
-    // Summary counts
-    // ──────────────────────────────────────────────
-    public function dashboard(): JsonResponse
+    /**
+     * Get paginated patients
+     */
+    public function getPaginatedPatients(Request $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                'total_users'   => User::count(),
-                'total_admins'  => User::where('role', User::ROLE_ADMIN)->count(),
-                'total_doctors' => User::where('role', User::ROLE_DOCTOR)->count(),
-                'total_clients' => User::where('role', User::ROLE_CLIENT)->count(),
-                'active_users'  => User::where('is_active', true)->count(),
-            ],
-        ]);
+        try {
+            $perPage = $request->input('perPage', 10);
+            $page = $request->input('page', 1);
+
+            $query = User::where('role', 'Client');
+
+            // Apply filters (same as above)
+            if ($request->has('search') && $request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('firstName', 'LIKE', "%{$search}%")
+                        ->orWhere('lastName', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                        ->orWhere('contactNo', 'LIKE', "%{$search}%");
+                });
+            }
+
+            if ($request->has('sex') && $request->sex) {
+                $query->where('sex', $request->sex);
+            }
+
+            if ($request->has('genderIdentity') && $request->genderIdentity) {
+                $query->where('genderIdentity', $request->genderIdentity);
+            }
+
+            if ($request->has('preferredPronoun') && $request->preferredPronoun) {
+                $query->where('preferredPronoun', $request->preferredPronoun);
+            }
+
+            if ($request->has('status') && $request->status) {
+                if ($request->status === 'active') {
+                    $query->where('is_active', true);
+                } elseif ($request->status === 'inactive') {
+                    $query->where('is_active', false);
+                }
+            }
+
+            // Sorting
+            $sortBy = $request->input('sortBy', 'created_at');
+            $sortOrder = $request->input('sortOrder', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            // Paginate
+            $patients = $query->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'success' => true,
+                'data' => $patients->getCollection()->map(function ($patient) {
+                    return $this->formatPatientData($patient);
+                }),
+                'pagination' => [
+                    'total' => $patients->total(),
+                    'perPage' => $patients->perPage(),
+                    'currentPage' => $patients->currentPage(),
+                    'lastPage' => $patients->lastPage(),
+                    'from' => $patients->firstItem(),
+                    'to' => $patients->lastItem(),
+                ],
+                'message' => 'Paginated patients retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving paginated patients: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get patient statistics
+     */
+    public function getPatientStats(): JsonResponse
+    {
+        try {
+            $totalPatients = User::where('role', 'Client')->count();
+            $activePatients = User::where('role', 'Client')->where('is_active', true)->count();
+            $inactivePatients = User::where('role', 'Client')->where('is_active', false)->count();
+
+            // Gender distribution
+            $genderDistribution = User::where('role', 'Client')
+                ->groupBy('genderIdentity')
+                ->selectRaw('genderIdentity, COUNT(*) as count')
+                ->get()
+                ->keyBy('genderIdentity');
+
+            // Sex distribution
+            $sexDistribution = User::where('role', 'Client')
+                ->groupBy('sex')
+                ->selectRaw('sex, COUNT(*) as count')
+                ->get()
+                ->keyBy('sex');
+
+            // Pronoun distribution
+            $pronounDistribution = User::where('role', 'Client')
+                ->groupBy('preferredPronoun')
+                ->selectRaw('preferredPronoun, COUNT(*) as count')
+                ->get()
+                ->keyBy('preferredPronoun');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'totalPatients' => $totalPatients,
+                    'activePatients' => $activePatients,
+                    'inactivePatients' => $inactivePatients,
+                    'genderDistribution' => $genderDistribution,
+                    'sexDistribution' => $sexDistribution,
+                    'pronounDistribution' => $pronounDistribution,
+                ],
+                'message' => 'Patient statistics retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving patient statistics: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get single patient details
+     */
+    public function getPatient($id): JsonResponse
+    {
+        try {
+            $patient = User::findOrFail($id);
+
+            if ($patient->role !== 'Client') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User is not a patient',
+                ], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->formatPatientData($patient),
+                'message' => 'Patient retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving patient: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Format patient data for response
+     */
+    private function formatPatientData($patient): array
+    {
+        return [
+            'id' => $patient->id,
+            'firstName' => $patient->firstName,
+            'lastName' => $patient->lastName,
+            'middleInitial' => $patient->middleInitial,
+            'fullName' => "{$patient->firstName} {$patient->lastName}",
+            'dob' => $patient->dob,
+            'sex' => $patient->sex,
+            'genderIdentity' => $patient->genderIdentity,
+            'preferredPronoun' => $patient->preferredPronoun,
+            'customPronoun' => $patient->customPronoun,
+            'displayPronoun' => $patient->preferredPronoun === 'other' ? $patient->customPronoun : $patient->preferredPronoun,
+            'contactNo' => $patient->contactNo,
+            'email' => $patient->email,
+            'address' => $patient->address,
+            'is_active' => $patient->is_active,
+            'created_at' => $patient->created_at,
+            'updated_at' => $patient->updated_at,
+        ];
     }
 }

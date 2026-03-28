@@ -16,7 +16,39 @@ return new class extends Migration
             $table->string('lastName', 100);
             $table->string('middleInitial', 5)->nullable();
             $table->date('dob');
-            $table->enum('sex', ['male', 'female']);
+            
+            // Sex (biological) - keep simple
+            $table->enum('sex', ['male', 'female', 'other'])->nullable();
+            
+            // Gender Identity - comprehensive list
+            $table->enum('genderIdentity', [
+                'female',
+                'male',
+                'transgender',
+                'trans_woman',
+                'trans_man',
+                'non_binary',
+                'genderqueer',
+                'gender_fluid',
+                'agender',
+                'bigender',
+                'two_spirit',
+                'intersex',
+                'pangender',
+                'prefer_not'
+            ])->nullable();
+            
+            // Preferred Pronouns
+            $table->enum('preferredPronoun', [
+                'he_him',
+                'she_her',
+                'they_them',
+                'other'
+            ])->nullable();
+            
+            // For custom pronouns (when preferredPronoun = 'other')
+            $table->string('customPronoun', 100)->nullable();
+            
             $table->string('contactNo', 20);
             $table->string('address', 255)->nullable();
 
