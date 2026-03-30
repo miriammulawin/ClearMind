@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Models\Appointment;
+use App\Models\ConsultationRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -9,247 +12,137 @@ use Illuminate\Http\Request;
 class AdminController extends Controller
 {
     /**
-     * Get all patients (clients) with optional filters
+     * GET /admin/dashboard/stats
+     * Returns all stats needed for the admin dashboard in one call.
      */
-    public function getPatients(Request $request): JsonResponse
+    public function stats(): JsonResponse
     {
-        try {
-            $query = User::where('role', 'Client');
+        $today = today();
 
-            // Search filter
-            if ($request->has('search') && $request->search) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('firstName', 'LIKE', "%{$search}%")
-                        ->orWhere('lastName', 'LIKE', "%{$search}%")
-                        ->orWhere('email', 'LIKE', "%{$search}%")
-                        ->orWhere('contactNo', 'LIKE', "%{$search}%");
-                });
+        // ── Patient Stats ──
+        $patients         = User::where('role', User::ROLE_CLIENT)->get();
+        $totalPatients    = $patients->count();
+        $activePatients   = $patients->where('is_active', true)->count();
+        $inactivePatients = $patients->where('is_active', false)->count();
+
+        // Monthly registration counts for current year
+        $currentYear   = $today->year;
+        $monthlyPatients = array_fill(0, 12, 0); // index 0=Jan ... 11=Dec
+        foreach ($patients as $p) {
+            if ($p->created_at && $p->created_at->year === $currentYear) {
+                $monthlyPatients[$p->created_at->month - 1]++;
             }
+        }
 
-            // Sex filter
-            if ($request->has('sex') && $request->sex) {
-                $query->where('sex', $request->sex);
-            }
+        // ── Today's Appointments ──
+        $todayAppointments = Appointment::whereDate('appointment_date', $today)
+            ->whereIn('status', [
+                Appointment::STATUS_PENDING,
+                Appointment::STATUS_CONFIRMED,
+            ])
+            ->with(['patient:id,firstName,lastName', 'doctor:id,firstName,lastName'])
+            ->orderBy('appointment_time')
+            ->get();
 
-            // Gender identity filter
-            if ($request->has('genderIdentity') && $request->genderIdentity) {
-                $query->where('genderIdentity', $request->genderIdentity);
-            }
+        $todayOnline   = $todayAppointments->where('type', Appointment::TYPE_ONLINE)->count();
+        $todayPhysical = $todayAppointments->where('type', Appointment::TYPE_PHYSICAL)->count();
+        $todayTotal    = $todayAppointments->count();
 
-            // Pronoun filter
-            if ($request->has('preferredPronoun') && $request->preferredPronoun) {
-                $query->where('preferredPronoun', $request->preferredPronoun);
-            }
+        // ── Today's Consultation Requests ──
+        $todayRequests = ConsultationRequest::whereDate('created_at', $today)
+            ->where('status', ConsultationRequest::STATUS_PENDING)
+            ->with('patient:id,firstName,lastName')
+            ->orderByRaw("FIELD(urgency, 'emergency', 'high', 'normal', 'low')")
+            ->get();
 
-            // Status filter
-            if ($request->has('status') && $request->status) {
-                if ($request->status === 'active') {
-                    $query->where('is_active', true);
-                } elseif ($request->status === 'inactive') {
-                    $query->where('is_active', false);
-                }
-            }
+        $totalPendingRequests = ConsultationRequest::pending()->count();
 
-            // Sorting
-            $sortBy = $request->input('sortBy', 'created_at');
-            $sortOrder = $request->input('sortOrder', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                // Patients
+                'totalPatients'    => $totalPatients,
+                'activePatients'   => $activePatients,
+                'inactivePatients' => $inactivePatients,
+                'monthlyPatients'  => $monthlyPatients,
 
-            // Get all patients (frontend will handle pagination)
-            $patients = $query->get()->map(function ($patient) {
-                return $this->formatPatientData($patient);
+                // Today's appointments
+                'todayTotal'       => $todayTotal,
+                'todayOnline'      => $todayOnline,
+                'todayPhysical'    => $todayPhysical,
+                'todayAppointments' => $todayAppointments->map(fn($a) => [
+                    'id'               => $a->id,
+                    'patient'          => $a->patient?->firstName . ' ' . $a->patient?->lastName,
+                    'doctor'           => $a->doctor
+                                            ? $a->doctor->firstName . ' ' . $a->doctor->lastName
+                                            : 'Unassigned',
+                    'appointment_date' => $a->appointment_date->toDateString(),
+                    'appointment_time' => $a->appointment_time,
+                    'type'             => $a->type,
+                    'status'           => $a->status,
+                    'reason'           => $a->reason,
+                ]),
+
+                // Consultation requests
+                'totalPendingRequests' => $totalPendingRequests,
+                'todayRequests'        => $todayRequests->map(fn($r) => [
+                    'id'             => $r->id,
+                    'patient'        => $r->patient?->firstName . ' ' . $r->patient?->lastName,
+                    'concern'        => $r->concern,
+                    'urgency'        => $r->urgency,
+                    'type'           => $r->type,
+                    'preferred_date' => $r->preferred_date?->toDateString(),
+                    'preferred_time' => $r->preferred_time,
+                    'status'         => $r->status,
+                    'created_at'     => $r->created_at->toDateTimeString(),
+                ]),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /admin/patients
+     * Returns all patients (Clients) with pagination support.
+     */
+    public function patients(Request $request): JsonResponse
+    {
+        $query = User::where('role', User::ROLE_CLIENT);
+
+        // Search
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('firstName', 'like', "%{$search}%")
+                  ->orWhere('lastName',  'like', "%{$search}%")
+                  ->orWhere('email',     'like', "%{$search}%")
+                  ->orWhere('contactNo', 'like', "%{$search}%");
             });
-
-            return response()->json([
-                'success' => true,
-                'data' => $patients,
-                'count' => $patients->count(),
-                'message' => 'Patients retrieved successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error retrieving patients: ' . $e->getMessage(),
-            ], 500);
         }
-    }
 
-    /**
-     * Get paginated patients
-     */
-    public function getPaginatedPatients(Request $request): JsonResponse
-    {
-        try {
-            $perPage = $request->input('perPage', 10);
-            $page = $request->input('page', 1);
-
-            $query = User::where('role', 'Client');
-
-            // Apply filters (same as above)
-            if ($request->has('search') && $request->search) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('firstName', 'LIKE', "%{$search}%")
-                        ->orWhere('lastName', 'LIKE', "%{$search}%")
-                        ->orWhere('email', 'LIKE', "%{$search}%")
-                        ->orWhere('contactNo', 'LIKE', "%{$search}%");
-                });
-            }
-
-            if ($request->has('sex') && $request->sex) {
-                $query->where('sex', $request->sex);
-            }
-
-            if ($request->has('genderIdentity') && $request->genderIdentity) {
-                $query->where('genderIdentity', $request->genderIdentity);
-            }
-
-            if ($request->has('preferredPronoun') && $request->preferredPronoun) {
-                $query->where('preferredPronoun', $request->preferredPronoun);
-            }
-
-            if ($request->has('status') && $request->status) {
-                if ($request->status === 'active') {
-                    $query->where('is_active', true);
-                } elseif ($request->status === 'inactive') {
-                    $query->where('is_active', false);
-                }
-            }
-
-            // Sorting
-            $sortBy = $request->input('sortBy', 'created_at');
-            $sortOrder = $request->input('sortOrder', 'desc');
-            $query->orderBy($sortBy, $sortOrder);
-
-            // Paginate
-            $patients = $query->paginate($perPage, ['*'], 'page', $page);
-
-            return response()->json([
-                'success' => true,
-                'data' => $patients->getCollection()->map(function ($patient) {
-                    return $this->formatPatientData($patient);
-                }),
-                'pagination' => [
-                    'total' => $patients->total(),
-                    'perPage' => $patients->perPage(),
-                    'currentPage' => $patients->currentPage(),
-                    'lastPage' => $patients->lastPage(),
-                    'from' => $patients->firstItem(),
-                    'to' => $patients->lastItem(),
-                ],
-                'message' => 'Paginated patients retrieved successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error retrieving paginated patients: ' . $e->getMessage(),
-            ], 500);
+        // Filter by sex
+        if ($sex = $request->get('sex')) {
+            $query->where('sex', $sex);
         }
-    }
 
-    /**
-     * Get patient statistics
-     */
-    public function getPatientStats(): JsonResponse
-    {
-        try {
-            $totalPatients = User::where('role', 'Client')->count();
-            $activePatients = User::where('role', 'Client')->where('is_active', true)->count();
-            $inactivePatients = User::where('role', 'Client')->where('is_active', false)->count();
-
-            // Gender distribution
-            $genderDistribution = User::where('role', 'Client')
-                ->groupBy('genderIdentity')
-                ->selectRaw('genderIdentity, COUNT(*) as count')
-                ->get()
-                ->keyBy('genderIdentity');
-
-            // Sex distribution
-            $sexDistribution = User::where('role', 'Client')
-                ->groupBy('sex')
-                ->selectRaw('sex, COUNT(*) as count')
-                ->get()
-                ->keyBy('sex');
-
-            // Pronoun distribution
-            $pronounDistribution = User::where('role', 'Client')
-                ->groupBy('preferredPronoun')
-                ->selectRaw('preferredPronoun, COUNT(*) as count')
-                ->get()
-                ->keyBy('preferredPronoun');
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'totalPatients' => $totalPatients,
-                    'activePatients' => $activePatients,
-                    'inactivePatients' => $inactivePatients,
-                    'genderDistribution' => $genderDistribution,
-                    'sexDistribution' => $sexDistribution,
-                    'pronounDistribution' => $pronounDistribution,
-                ],
-                'message' => 'Patient statistics retrieved successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error retrieving patient statistics: ' . $e->getMessage(),
-            ], 500);
+        // Filter by status
+        if ($request->has('is_active')) {
+            $query->where('is_active', filter_var($request->get('is_active'), FILTER_VALIDATE_BOOLEAN));
         }
-    }
 
-    /**
-     * Get single patient details
-     */
-    public function getPatient($id): JsonResponse
-    {
-        try {
-            $patient = User::findOrFail($id);
+        $patients = $query->orderBy('created_at', 'desc')->get();
 
-            if ($patient->role !== 'Client') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User is not a patient',
-                ], 403);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $this->formatPatientData($patient),
-                'message' => 'Patient retrieved successfully',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error retrieving patient: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Format patient data for response
-     */
-    private function formatPatientData($patient): array
-    {
-        return [
-            'id' => $patient->id,
-            'firstName' => $patient->firstName,
-            'lastName' => $patient->lastName,
-            'middleInitial' => $patient->middleInitial,
-            'fullName' => "{$patient->firstName} {$patient->lastName}",
-            'dob' => $patient->dob,
-            'sex' => $patient->sex,
-            'genderIdentity' => $patient->genderIdentity,
-            'preferredPronoun' => $patient->preferredPronoun,
-            'customPronoun' => $patient->customPronoun,
-            'displayPronoun' => $patient->preferredPronoun === 'other' ? $patient->customPronoun : $patient->preferredPronoun,
-            'contactNo' => $patient->contactNo,
-            'email' => $patient->email,
-            'address' => $patient->address,
-            'is_active' => $patient->is_active,
-            'created_at' => $patient->created_at,
-            'updated_at' => $patient->updated_at,
-        ];
+        return response()->json([
+            'success' => true,
+            'data'    => $patients->map(fn($p) => [
+                'id'             => $p->id,
+                'firstName'      => $p->firstName,
+                'lastName'       => $p->lastName,
+                'sex'            => $p->sex,
+                'genderIdentity' => $p->genderIdentity,
+                'email'          => $p->email,
+                'contactNo'      => $p->contactNo,
+                'is_active'      => $p->is_active,
+                'created_at'     => $p->created_at,
+            ]),
+        ]);
     }
 }

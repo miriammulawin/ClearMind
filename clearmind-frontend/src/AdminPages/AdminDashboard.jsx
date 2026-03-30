@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminDashboard.module.css";
@@ -32,32 +32,55 @@ ChartJS.register(
   ChartDataLabels,
 );
 
+const urgencyColor = {
+  emergency: "#DC2626",
+  high: "#EA580C",
+  normal: "#1E3A8A",
+  low: "#16A34A",
+};
+
+const REFRESH_INTERVAL_MS = 60_000; // auto-refresh every 60 s
+
 function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
 
-  // ── Patient Data ──
-  const [patients, setPatients] = useState([]);
+  // ── Patient Stats (from dashboard/stats) ──
   const [totalPatients, setTotalPatients] = useState(0);
   const [activePatients, setActivePatients] = useState(0);
   const [inactivePatients, setInactivePatients] = useState(0);
-  const [monthlyData, setMonthlyData] = useState(Array(12).fill(0)); // ← NEW
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [patientsPerPage] = useState(10);
+  const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
+
+  // ── Appointment Stats ──
+  const [todayTotal, setTodayTotal] = useState(0);
+  const [todayOnline, setTodayOnline] = useState(0);
+  const [todayPhysical, setTodayPhysical] = useState(0);
+  const [todayAppointments, setTodayAppointments] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
+
+  // ── Consultation Request Stats ──
+  const [totalPendingRequests, setTotalPendingRequests] = useState(0);
+  const [todayRequests, setTodayRequests] = useState([]);
+
+  // ── Patients Table (separate call → /admin/patients) ──
+  const [patients, setPatients] = useState([]);
+  const [tableLoading, setTableLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // ── Search & Filter ──
   const [searchTerm, setSearchTerm] = useState("");
   const [genderFilter, setGenderFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PATIENTS_PER_PAGE = 10;
 
-  // ── Announcements ──
+  // ── Announcements (local state — no backend yet) ──
   const [announcements, setAnnouncements] = useState([
     {
       id: 1,
       title: "Clinic Holiday Schedule",
       message:
-        "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary. Please reschedule your appointments accordingly.",
+        "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary.",
       date: "Feb 20, 2026",
       priority: "high",
     },
@@ -78,59 +101,148 @@ function AdminDashboard() {
     priority: "normal",
   });
 
-  // ── Fetch Patients Data ──
-  useEffect(() => {
-    fetchPatients();
+  // ─────────────────────────────────────────────
+  // DATA FETCHING
+  // ─────────────────────────────────────────────
+
+  // 1️⃣  Dashboard stats  →  GET /admin/dashboard/stats
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const { data } = await axiosClient.get("/admin/dashboard/stats");
+
+      if (!data.success) throw new Error("stats fetch failed");
+
+      const d = data.data;
+
+      // Patients
+      setTotalPatients(d.totalPatients ?? 0);
+      setActivePatients(d.activePatients ?? 0);
+      setInactivePatients(d.inactivePatients ?? 0);
+      setMonthlyData(
+        Array.isArray(d.monthlyPatients) && d.monthlyPatients.length === 12
+          ? d.monthlyPatients
+          : Array(12).fill(0),
+      );
+
+      // Appointments
+      setTodayTotal(d.todayTotal ?? 0);
+      setTodayOnline(d.todayOnline ?? 0);
+      setTodayPhysical(d.todayPhysical ?? 0);
+      setTodayAppointments(
+        Array.isArray(d.todayAppointments) ? d.todayAppointments : [],
+      );
+
+      // Consultation requests
+      setTotalPendingRequests(d.totalPendingRequests ?? 0);
+      setTodayRequests(Array.isArray(d.todayRequests) ? d.todayRequests : []);
+    } catch (err) {
+      console.error("fetchDashboardStats:", err);
+      toast.error("Failed to load dashboard stats");
+    } finally {
+      setStatsLoading(false);
+    }
   }, []);
 
-  const fetchPatients = async () => {
+  // 1B️⃣  Fetch ALL appointments  →  GET /admin/appointments
+  const fetchAppointments = useCallback(async () => {
     try {
-      setLoading(true);
-      const response = await axiosClient.get("/admin/patients", {
-        params: {
-          role: "Client",
-        },
-      });
+      const { data } = await axiosClient.get("/admin/appointments");
 
-      if (response.data.success) {
-        const allPatients = response.data.data || [];
-        setPatients(allPatients);
-        setTotalPatients(allPatients.length);
+      if (!data.success) throw new Error("appointments fetch failed");
 
-        const active = allPatients.filter((p) => p.is_active).length;
-        const inactive = allPatients.length - active;
-        setActivePatients(active);
-        setInactivePatients(inactive);
+      setAllAppointments(Array.isArray(data.data) ? data.data : []);
 
-        // ── NEW: Compute monthly registration counts for current year ──
-        const currentYear = new Date().getFullYear();
-        const counts = Array(12).fill(0);
-        allPatients.forEach((p) => {
-          if (p.created_at) {
-            const d = new Date(p.created_at);
-            if (d.getFullYear() === currentYear) {
-              counts[d.getMonth()]++;
-            }
-          }
-        });
-        setMonthlyData(counts);
-      }
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      toast.error("Failed to load patients data");
-      setPatients([]);
-      setTotalPatients(0);
-      setMonthlyData(Array(12).fill(0));
-    } finally {
-      setLoading(false);
+      // ── Filter today's appointments ──
+      const todayDateStr = today.toISOString().split("T")[0]; // "2026-03-30"
+      const filtered = (Array.isArray(data.data) ? data.data : []).filter(
+        (appt) => appt.appointment_date === todayDateStr,
+      );
+
+      // ── Recalculate today's stats ──
+      const onlineCount = filtered.filter((a) => a.type === "online").length;
+      const physicalCount = filtered.filter(
+        (a) => a.type === "physical",
+      ).length;
+
+      setTodayAppointments(filtered);
+      setTodayTotal(filtered.length);
+      setTodayOnline(onlineCount);
+      setTodayPhysical(physicalCount);
+    } catch (err) {
+      console.error("fetchAppointments:", err);
+      toast.error("Failed to load appointments");
     }
-  };
+  }, [today]);
 
-  // ── Time Update ──
+  // 2️⃣  Patients table  →  GET /admin/patients
+  const fetchPatients = useCallback(async () => {
+    try {
+      setTableLoading(true);
+      const { data } = await axiosClient.get("/admin/patients");
+
+      if (!data.success) throw new Error("patients fetch failed");
+
+      setPatients(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error("fetchPatients:", err);
+      toast.error("Failed to load patients");
+      setPatients([]);
+    } finally {
+      setTableLoading(false);
+    }
+  }, []);
+
+  // Initial load + auto-refresh
   useEffect(() => {
-    const timer = setInterval(() => setToday(new Date()), 60000);
+    fetchDashboardStats();
+    fetchAppointments();
+    fetchPatients();
+
+    const interval = setInterval(() => {
+      fetchDashboardStats();
+      fetchAppointments();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [fetchDashboardStats, fetchAppointments, fetchPatients]);
+
+  // Clock tick
+  useEffect(() => {
+    const timer = setInterval(() => setToday(new Date()), 60_000);
     return () => clearInterval(timer);
   }, []);
+
+  // ─────────────────────────────────────────────
+  // FILTER + PAGINATION
+  // ─────────────────────────────────────────────
+
+  const filteredPatients = patients.filter((p) => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch =
+      p.firstName?.toLowerCase().includes(q) ||
+      p.lastName?.toLowerCase().includes(q) ||
+      p.email?.toLowerCase().includes(q) ||
+      p.contactNo?.includes(searchTerm);
+
+    const matchGender = !genderFilter || p.sex === genderFilter;
+    const matchStatus =
+      !statusFilter ||
+      (statusFilter === "active" && p.is_active) ||
+      (statusFilter === "inactive" && !p.is_active);
+
+    return matchSearch && matchGender && matchStatus;
+  });
+
+  const totalPages = Math.ceil(filteredPatients.length / PATIENTS_PER_PAGE);
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * PATIENTS_PER_PAGE,
+    currentPage * PATIENTS_PER_PAGE,
+  );
+
+  // ─────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────
 
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "short",
@@ -138,37 +250,25 @@ function AdminDashboard() {
     year: "numeric",
   });
 
-  // ── Filter and Search Logic ──
-  const filteredPatients = patients.filter((patient) => {
-    const matchesSearch =
-      patient.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.contactNo?.includes(searchTerm);
+  const formatTime = (timeStr) => {
+    if (!timeStr) return "";
+    const [h, m] = timeStr.split(":");
+    const hour = parseInt(h, 10);
+    return `${hour % 12 === 0 ? 12 : hour % 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
+  };
 
-    const matchesGender = !genderFilter || patient.sex === genderFilter;
+  const getStatusColor = (isActive) => (isActive ? "#1E3A8A" : "#808080");
+  const getStatusLabel = (isActive) => (isActive ? "Active" : "Inactive");
 
-    const matchesStatus =
-      !statusFilter ||
-      (statusFilter === "active" && patient.is_active) ||
-      (statusFilter === "inactive" && !patient.is_active);
+  // ─────────────────────────────────────────────
+  // ANNOUNCEMENTS
+  // ─────────────────────────────────────────────
 
-    return matchesSearch && matchesGender && matchesStatus;
-  });
-
-  // ── Pagination Logic ──
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
-  const startIndex = (currentPage - 1) * patientsPerPage;
-  const endIndex = startIndex + patientsPerPage;
-  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
-
-  // ── Announcement Functions ──
   const openAddModal = () => {
     setForm({ title: "", message: "", priority: "normal" });
     setEditingId(null);
     setShowModal(true);
   };
-
   const openEditModal = (ann) => {
     setForm({ title: ann.title, message: ann.message, priority: ann.priority });
     setEditingId(ann.id);
@@ -198,20 +298,10 @@ function AdminDashboard() {
   const handleDelete = (id) =>
     setAnnouncements((prev) => prev.filter((a) => a.id !== id));
 
-  // ── Helper Functions ──
-  const getStatusColor = (status) => {
-    if (status === true || status === "Scheduled") return "#1E3A8A";
-    if (status === "Completed") return "#16A34A";
-    if (status === "Cancelled") return "#DC2626";
-    return "#808080";
-  };
+  // ─────────────────────────────────────────────
+  // CHART CONFIG
+  // ─────────────────────────────────────────────
 
-  const getStatusLabel = (isActive) => {
-    return isActive ? "Active" : "Inactive";
-  };
-
-  // ── Chart Data ──
-  // ← UPDATED: uses dynamic monthlyData state instead of hardcoded values
   const barData = {
     labels: [
       "Jan",
@@ -248,7 +338,7 @@ function AdminDashboard() {
         anchor: "center",
         align: "center",
         font: { family: "Poppins, sans-serif", size: 10, weight: "100" },
-        formatter: (v) => (v > 0 ? v : ""), // ← hide "0" labels on empty bars
+        formatter: (v) => (v > 0 ? v : ""),
       },
     },
     scales: {
@@ -310,7 +400,7 @@ function AdminDashboard() {
       tooltip: {
         bodyFont: { family: "Poppins, sans-serif" },
         titleFont: { family: "Poppins, sans-serif", weight: "900" },
-        callbacks: { label: (context) => `${context.label}: ${context.raw}` },
+        callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}` },
       },
     },
     layout: {
@@ -341,6 +431,10 @@ function AdminDashboard() {
     },
   ];
 
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
+
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -349,6 +443,13 @@ function AdminDashboard() {
 
         <div className={`admin-content ${styles.adminContent}`}>
           <div className={`container-fluid ${styles.containerFluid}`}>
+            {/* ── Refresh banner while stats load ── */}
+            {statsLoading && (
+              <div className={styles.loadingBanner}>
+                Refreshing dashboard data…
+              </div>
+            )}
+
             <div className="row g-4">
               {/* ── Announcements ── */}
               <div className="col-12">
@@ -377,11 +478,7 @@ function AdminDashboard() {
                       {announcements.map((ann) => (
                         <div
                           key={ann.id}
-                          className={`${styles.announceItem} ${
-                            ann.priority === "high"
-                              ? styles.announceHigh
-                              : styles.announceNormal
-                          }`}
+                          className={`${styles.announceItem} ${ann.priority === "high" ? styles.announceHigh : styles.announceNormal}`}
                         >
                           <div className={styles.announceLeft}>
                             <div className={styles.announceItemHeader}>
@@ -424,7 +521,7 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* ── Statistics Cards ── */}
+              {/* ── Total Patients Card ── */}
               <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
@@ -445,13 +542,13 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* ── Today's Appointment ── */}
+              {/* ── Today's Appointments Card ── */}
               <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
                     <h5>Today's Appointment</h5>
                     <div className={styles.cardDate}>
-                      {formattedDate} <span>0</span>
+                      {formattedDate} <span>{todayTotal}</span>
                     </div>
                   </div>
                   <hr />
@@ -461,33 +558,116 @@ function AdminDashboard() {
                         <IoVideocam className={styles.appointmentIcon} />
                         <strong>Online Clinic</strong>
                       </div>
-                      <p>0 Appointment</p>
+                      <p>
+                        {todayOnline} Appointment{todayOnline !== 1 ? "s" : ""}
+                      </p>
                     </div>
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <FaClinicMedical className={styles.appointmentIcon} />
                         <strong>Physical Clinic</strong>
                       </div>
-                      <p>0 Appointment</p>
+                      <p>
+                        {todayPhysical} Appointment
+                        {todayPhysical !== 1 ? "s" : ""}
+                      </p>
                     </div>
+
+                    {todayAppointments.length > 0 && (
+                      <div className={styles.appointmentMiniList}>
+                        {todayAppointments.slice(0, 3).map((appt) => (
+                          <div
+                            key={appt.id}
+                            className={styles.appointmentMiniItem}
+                          >
+                            <div className={styles.appointmentMiniLeft}>
+                              <span className={styles.appointmentMiniTime}>
+                                {formatTime(appt.appointment_time)}
+                              </span>
+                              <span className={styles.appointmentMiniName}>
+                                {appt.patient}
+                              </span>
+                            </div>
+                            <span
+                              className={styles.appointmentMiniType}
+                              style={{
+                                backgroundColor:
+                                  appt.type === "online"
+                                    ? "#EDE9FE"
+                                    : "#DBEAFE",
+                                color:
+                                  appt.type === "online"
+                                    ? "#4D227C"
+                                    : "#1E3A8A",
+                              }}
+                            >
+                              {appt.type === "online" ? "Online" : "Physical"}
+                            </span>
+                          </div>
+                        ))}
+                        {todayAppointments.length > 3 && (
+                          <p className={styles.appointmentMoreText}>
+                            +{todayAppointments.length - 3} more today
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {todayTotal === 0 && !statsLoading && (
+                      <p className={styles.noData}>No appointments today</p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* ── Consultation Request ── */}
+              {/* ── Consultation Requests Card ── */}
               <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
                     <h5>Consultation Request</h5>
                     <div className={styles.cardDate}>
-                      {formattedDate} <span>0</span>
+                      {formattedDate} <span>{totalPendingRequests}</span>
                     </div>
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
-                    <div className={styles.consultItem}>
-                      <p className={styles.noData}>No requests</p>
-                    </div>
+                    {todayRequests.length === 0 && !statsLoading ? (
+                      <p className={styles.noData}>No new requests today</p>
+                    ) : (
+                      <div className={styles.consultList}>
+                        {todayRequests.slice(0, 4).map((req) => (
+                          <div key={req.id} className={styles.consultItem}>
+                            <div className={styles.consultLeft}>
+                              <span className={styles.consultName}>
+                                {req.patient}
+                              </span>
+                              <span className={styles.consultConcern}>
+                                {req.concern.length > 45
+                                  ? req.concern.slice(0, 45) + "…"
+                                  : req.concern}
+                              </span>
+                            </div>
+                            <span
+                              className={styles.urgencyBadge}
+                              style={{
+                                backgroundColor:
+                                  urgencyColor[req.urgency] + "1A",
+                                color: urgencyColor[req.urgency],
+                                border: `1px solid ${urgencyColor[req.urgency]}40`,
+                              }}
+                            >
+                              {req.urgency.charAt(0).toUpperCase() +
+                                req.urgency.slice(1)}
+                            </span>
+                          </div>
+                        ))}
+                        {todayRequests.length > 4 && (
+                          <p className={styles.appointmentMoreText}>
+                            +{todayRequests.length - 4} more today
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -500,12 +680,10 @@ function AdminDashboard() {
                   <div className={styles.cardHeader}>
                     <h5>All Patients</h5>
                     <div className={styles.cardDate}>
-                      <span>{totalPatients}</span>
+                      <span>{patients.length}</span>
                     </div>
                   </div>
                   <hr />
-
-                  {/* ── Search and Filter ── */}
                   <div className={styles.filterSection}>
                     <input
                       type="text"
@@ -517,7 +695,6 @@ function AdminDashboard() {
                         setCurrentPage(1);
                       }}
                     />
-
                     <select
                       className={styles.filterSelect}
                       value={genderFilter}
@@ -531,7 +708,6 @@ function AdminDashboard() {
                       <option value="female">Female</option>
                       <option value="other">Other</option>
                     </select>
-
                     <select
                       className={styles.filterSelect}
                       value={statusFilter}
@@ -546,13 +722,12 @@ function AdminDashboard() {
                     </select>
                   </div>
 
-                  {/* ── Table ── */}
                   <div
                     className={`${styles.cardBody} ${styles.tableResponsive}`}
                   >
-                    {loading ? (
+                    {tableLoading ? (
                       <div className={styles.loadingState}>
-                        <p>Loading patients data...</p>
+                        <p>Loading patients data…</p>
                       </div>
                     ) : paginatedPatients.length === 0 ? (
                       <div className={styles.emptyState}>
@@ -575,40 +750,40 @@ function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {paginatedPatients.map((patient) => (
-                            <tr key={patient.id}>
+                          {paginatedPatients.map((p) => (
+                            <tr key={p.id}>
                               <td>
                                 <strong>
-                                  {patient.firstName} {patient.lastName}
+                                  {p.firstName} {p.lastName}
                                 </strong>
                               </td>
                               <td>
-                                {patient.sex
-                                  ? patient.sex.charAt(0).toUpperCase() +
-                                    patient.sex.slice(1)
-                                  : "-"}
+                                {p.sex
+                                  ? p.sex.charAt(0).toUpperCase() +
+                                    p.sex.slice(1)
+                                  : "—"}
                               </td>
                               <td>
-                                {patient.genderIdentity
-                                  ? patient.genderIdentity
+                                {p.genderIdentity
+                                  ? p.genderIdentity
                                       .split("_")
                                       .map(
-                                        (word) =>
-                                          word.charAt(0).toUpperCase() +
-                                          word.slice(1),
+                                        (w) =>
+                                          w.charAt(0).toUpperCase() +
+                                          w.slice(1),
                                       )
                                       .join(" ")
-                                  : "-"}
+                                  : "—"}
                               </td>
-                              <td>{patient.email}</td>
-                              <td>{patient.contactNo}</td>
+                              <td>{p.email}</td>
+                              <td>{p.contactNo}</td>
                               <td
                                 style={{
-                                  color: getStatusColor(patient.is_active),
+                                  color: getStatusColor(p.is_active),
                                   fontWeight: "bold",
                                 }}
                               >
-                                {getStatusLabel(patient.is_active)}
+                                {getStatusLabel(p.is_active)}
                               </td>
                             </tr>
                           ))}
@@ -617,8 +792,7 @@ function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* ── Pagination ── */}
-                  {!loading && totalPages > 1 && (
+                  {!tableLoading && totalPages > 1 && (
                     <div className={styles.tablePagination}>
                       <span>
                         Page {currentPage} of {totalPages} (
@@ -634,22 +808,17 @@ function AdminDashboard() {
                           {"< Previous"}
                         </button>
                         {Array.from({ length: Math.min(5, totalPages) }).map(
-                          (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={
-                                  currentPage === pageNum
-                                    ? styles.activePage
-                                    : ""
-                                }
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          },
+                          (_, i) => (
+                            <button
+                              key={i + 1}
+                              onClick={() => setCurrentPage(i + 1)}
+                              className={
+                                currentPage === i + 1 ? styles.activePage : ""
+                              }
+                            >
+                              {i + 1}
+                            </button>
+                          ),
                         )}
                         <button
                           onClick={() =>
@@ -700,7 +869,6 @@ function AdminDashboard() {
           onClick={() => setShowModal(false)}
         >
           <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
-            {/* Purple Header */}
             <div className={styles.modalProfileHeader}>
               <button
                 className={styles.profileCloseBtn}
@@ -721,10 +889,8 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Body */}
             <div className={styles.modalBody}>
               <div className={styles.modalContentCard}>
-                {/* Announcement Details section */}
                 <div className={styles.fieldGroup}>
                   <div className={styles.sectionHeader}>
                     <div className={styles.sectionIconBox}>
@@ -734,7 +900,6 @@ function AdminDashboard() {
                       Announcement Details
                     </h4>
                   </div>
-
                   <label className={styles.fieldLabel}>Title</label>
                   <input
                     type="text"
@@ -746,8 +911,6 @@ function AdminDashboard() {
                     }
                   />
                 </div>
-
-                {/* Message */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Message</label>
                   <textarea
@@ -760,8 +923,6 @@ function AdminDashboard() {
                     rows={4}
                   />
                 </div>
-
-                {/* Priority Level section */}
                 <div>
                   <div className={styles.sectionHeader}>
                     <div className={styles.sectionIconBox}>
@@ -769,14 +930,11 @@ function AdminDashboard() {
                     </div>
                     <h4 className={styles.sectionTitle}>Priority Level</h4>
                   </div>
-
                   <div className={styles.priorityGroup}>
                     {priorityOptions.map((opt) => (
                       <label
                         key={opt.value}
-                        className={`${styles.priorityCard} ${
-                          form.priority === opt.value ? opt.activeClass : ""
-                        }`}
+                        className={`${styles.priorityCard} ${form.priority === opt.value ? opt.activeClass : ""}`}
                       >
                         <input
                           type="radio"
@@ -795,9 +953,7 @@ function AdminDashboard() {
                         />
                         <div>
                           <div
-                            className={`${styles.priorityCardLabel} ${
-                              form.priority === opt.value ? opt.activeClass : ""
-                            }`}
+                            className={`${styles.priorityCardLabel} ${form.priority === opt.value ? opt.activeClass : ""}`}
                           >
                             {opt.label}
                           </div>
@@ -812,7 +968,6 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className={styles.modalFooter}>
               <button
                 className={styles.btnCancel}
