@@ -1,22 +1,18 @@
 // AppointmentComponents/SelectDateandTime.jsx
-//
-// Self-contained Date + Time picker.
-// Used in both ScheduleForm (PAC) and PAaEChooseRPm.
-//
-// Props:
-//   doctorData       — doctor object from MOCK_DOCTORS (needs .availability)
-//   selectedDate     — full dateSlot { date, day, slots } or null
-//   setSelectedDate  — setter — receives full dateSlot object
-//   selectedTime     — string or null  e.g. "4:00 PM"
-//   setSelectedTime  — setter
-//   hideSectionTitle — bool (default false) — hides "Select Date" / "Select Time"
-//                      labels when the parent already provides its own header
-
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
 import { IoMdArrowDropdown } from 'react-icons/io';
 import { TiWarningOutline } from 'react-icons/ti';
+import Holidays from 'date-holidays';
 import styles from './styles/SelectDateAndTime.module.css';
+
+// ─── Holiday Helper ───────────────────────────────────────────────────────────
+const hd = new Holidays('PH');
+
+const getHolidayName = (year, month, day) => {
+  const result = hd.isHoliday(new Date(year, month, day));
+  return result ? result[0].name : null;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const timeToMinutes = (timeStr) => {
@@ -38,7 +34,6 @@ export const getEndTime = (startTime) => {
   return `${displayHours}:${displayMins} ${period}`;
 };
 
-// Returns slots that can start a 1-hour booking (current + next both available)
 const getBookableSlots = (slots = []) =>
   slots.map((slot, index) => {
     if (index === slots.length - 1) return { ...slot, bookable: false };
@@ -80,7 +75,6 @@ const SameDayToast = ({ show, onClose }) => {
 };
 
 // ─── Calendar ─────────────────────────────────────────────────────────────────
-// Passes full dateSlot object { date, day, slots } up via onSelectDate
 const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -88,7 +82,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-  // Map of "March 19, 2026" → full dateSlot object
   const availableMap = useMemo(() => {
     const map = {};
     (availability || []).forEach(d => { map[d.date] = d; });
@@ -109,6 +102,7 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
     else setViewMonth(m => m - 1);
   };
+
   const nextMonth = () => {
     if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
     else setViewMonth(m => m + 1);
@@ -123,7 +117,6 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
     return cells;
   }, [viewYear, viewMonth]);
 
-  // Returns "March 19, 2026" format — must match availability[].date exactly
   const getDateString = (day) =>
     new Date(viewYear, viewMonth, day)
       .toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -140,14 +133,11 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
   };
 
   const isAvailable = (day) => availableDateSet.has(getDateString(day));
-
-  // Compare against selectedDate.date string (not raw Date)
-  const isSelected = (day) => selectedDate?.date === getDateString(day);
+  const isSelected  = (day) => selectedDate?.date === getDateString(day);
 
   const handleDayClick = (day) => {
     if (isToday(day))                           { onTodayClick(); return; }
     if (isStrictPast(day) || !isAvailable(day)) return;
-    // Pass full dateSlot object up — TimeDropdown needs .slots
     onSelectDate(availableMap[getDateString(day)]);
   };
 
@@ -182,17 +172,21 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
         {calendarDays.map((day, i) => {
           if (!day) return <div key={`e-${i}`} className={styles.calEmpty} />;
 
-          const strictPast = isStrictPast(day);
-          const todayCell  = isToday(day);
-          const available  = isAvailable(day);
-          const selected   = isSelected(day);
-          const disabled   = strictPast || (!todayCell && !available);
+          const strictPast  = isStrictPast(day);
+          const todayCell   = isToday(day);
+          const available   = isAvailable(day);
+          const selected    = isSelected(day);
+          const holidayName = getHolidayName(viewYear, viewMonth, day);
+
+          // Holiday dates are always disabled even if somehow in availability
+          const disabled = strictPast || todayCell || !!holidayName || !available;
 
           let cellCls = styles.calCell;
-          if (selected)                      cellCls += ` ${styles.calCellSelected}`;
-          else if (todayCell)                cellCls += ` ${styles.calCellToday}`;
-          else if (available && !strictPast) cellCls += ` ${styles.calCellAvail}`;
-          else                               cellCls += ` ${styles.calCellDisabled}`;
+          if (selected)                       cellCls += ` ${styles.calCellSelected}`;
+          else if (todayCell)                 cellCls += ` ${styles.calCellToday}`;
+          else if (holidayName)               cellCls += ` ${styles.calCellHoliday}`;
+          else if (available && !strictPast)  cellCls += ` ${styles.calCellAvail}`;
+          else                                cellCls += ` ${styles.calCellDisabled}`;
 
           return (
             <button
@@ -201,6 +195,7 @@ const Calendar = ({ availability, selectedDate, onSelectDate, onTodayClick }) =>
               className={cellCls}
               disabled={disabled}
               onClick={() => handleDayClick(day)}
+              title={holidayName ?? undefined}
             >
               {day}
             </button>
@@ -281,13 +276,13 @@ const SelectDateandTime = ({
   setSelectedDate,
   selectedTime,
   setSelectedTime,
-  hideSectionTitle = false,  // ← set true when parent already has its own header
+  hideSectionTitle = false,
 }) => {
   const [sameDayToast, setSameDayToast] = useState(false);
 
   const handleSelectDate = (dateSlot) => {
-    setSelectedDate(dateSlot);  // dateSlot = { date, day, slots }
-    setSelectedTime(null);      // reset time when date changes
+    setSelectedDate(dateSlot);
+    setSelectedTime(null);
   };
 
   const handleTodayClick = () => {
@@ -296,14 +291,12 @@ const SelectDateandTime = ({
     setSelectedTime(null);
   };
 
-  // Build bookable slots from the selected dateSlot's slots array
   const bookableSlots = useMemo(() => {
     const slots = selectedDate?.slots;
     if (!slots || !Array.isArray(slots) || slots.length === 0) return [];
     return getBookableSlots(slots).filter(s => s.bookable);
   }, [selectedDate]);
 
-  // Only warn if we have a date + confirmed slots array exists but all are taken
   const noSlotsWarning =
     selectedDate &&
     Array.isArray(selectedDate?.slots) &&
@@ -314,10 +307,8 @@ const SelectDateandTime = ({
 
   return (
     <>
-      {/* ── Same-Day Toast ── */}
       <SameDayToast show={sameDayToast} onClose={() => setSameDayToast(false)} />
 
-      {/* ── Select Date ── */}
       <div className={styles.section}>
         {!hideSectionTitle && (
           <p className={styles.sectionTitle}>
@@ -339,10 +330,8 @@ const SelectDateandTime = ({
         )}
       </div>
 
-      {/* ── Select Time — only after a valid date with slots ── */}
       {selectedDate && !noSlotsWarning && (
         <div className={styles.section}>
-          {/* Time label always shows — even when hideSectionTitle is true */}
           <p className={styles.sectionTitle}>
             <span className={styles.required}>*</span> Select Time
             <span className={styles.sessionNote}> · 1 hour session</span>

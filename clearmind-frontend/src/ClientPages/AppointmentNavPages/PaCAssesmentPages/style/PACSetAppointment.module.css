@@ -357,7 +357,6 @@
   color: #5B2C91;
   font-weight: 700;
   font-size: clamp(1rem, 4vw, 1.4rem);
-  margin-bottom: 1.5rem;
 }
 
 .backButton {
@@ -1049,3 +1048,187 @@
   color: #aaa;
   font-size: 14px;
 }
+
+/* ─────────────────────────────────────────
+   SPECIALIST TOGGLE
+───────────────────────────────────────── */
+.specialistToggle {
+  display: flex;
+  margin: 0 auto; 
+  border-radius: 25px;
+  overflow: hidden;
+  border: 2px solid #4E237C;
+  width: fit-content;
+  min-height: 38px;
+  align-items: stretch;
+}
+
+.specialistToggleBtn {
+  padding: clamp(6px, 1.5vw, 8px) clamp(16px, 4vw, 24px);
+  font-size: clamp(0.75rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background-color: #c4b0d8;
+  color: white;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease;
+  font-family: inherit;
+   line-height: 1;          
+  display: flex;            
+  align-items: center;     
+  white-space: nowrap;      
+}
+
+.specialistToggleBtn:first-child {
+  border-right: 1px solid #4E237C;
+}
+
+.specialistToggleActive {
+  background-color: #4E237C;
+  color: white;
+}
+
+.specialistToggleBtn:not(.specialistToggleActive):hover {
+  background-color: #a48bc4;
+}
+
+/* ─────────────────────────────────────────
+    Learn More Link 
+───────────────────────────────────────── */
+.specialistLearnMore {
+  font-size: clamp(0.75rem, 2.2vw, 0.82rem);
+  color: #5B2C91;
+  cursor: pointer;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 0.25em;
+}
+
+.specialistLearnMore span {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.specialistLearnMore:hover span {
+  color: #4a2273;
+}
+
+/* ─────────────────────────────────────────
+   Specialist Information Modal
+───────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modalBox {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 12px 40px rgba(91, 44, 145, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #e9e0f8;
+}
+
+.modalTitle {
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  font-weight: 700;
+  color: #3d2b5e;
+  margin: 0;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #9b8ab0;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modalClose:hover {
+  color: #5B2C91;
+}
+
+.modalBody {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modalCard {
+  background: #f8f3ff;
+  border: 1.5px solid #d8c4f5;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.modalCardTitle {
+  font-size: clamp(0.85rem, 2.5vw, 0.92rem);
+  font-weight: 700;
+  color: #4E237C;
+  margin-bottom: 6px;
+}
+
+.modalCardDesc {
+  font-size: clamp(0.75rem, 2.2vw, 0.82rem);
+  color: #495057;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.modalDivider {
+  height: 1px;
+  background: #e9e0f8;
+}
+
+.modalTip {
+  font-size: clamp(0.72rem, 2vw, 0.8rem);
+  color: #5B2C91;
+  background: #ede9fe;
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+.modalConfirmBtn {
+  margin: 0 20px 18px;
+  padding: 10px;
+  background: #5B2C91;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: clamp(0.82rem, 2.2vw, 0.9rem);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+.modalConfirmBtn:hover {
+  background: #4a2273;
+}
+
+
+

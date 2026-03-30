@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image } from 'react-bootstrap';
 import { FaArrowLeft } from 'react-icons/fa';
-import styles from '../style/SetAppointment.module.css';
+import styles from '../style/PACSetAppointment.module.css';
 import logo_login_single from "../../../../../src/assets/CMPS_Img_logo_only.png";
 
 const STEPS = [

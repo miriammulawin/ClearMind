@@ -1,10 +1,79 @@
 // src/MockData/MockDoctors.js
+import Holidays from 'date-holidays';
 
-// ... (keep all helpers and slot templates unchanged) ...
+const hd = new Holidays('PH');
+
+const isPhilippineHoliday = (date) => {
+  const result = hd.isHoliday(date);
+  return result !== false;
+};
+
+// ── Slot Templates ────────────────────────────────────────────────────────────
+
+const createSlots = (times) =>
+  times.map((time) => ({ time, available: true }));
+
+const SLOTS_4PM_7PM       = createSlots(['4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM']);
+const SLOTS_10AM_4PM      = createSlots(['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM']);
+const SLOTS_1PM_7PM       = createSlots(['1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM']);
+const SLOTS_6PM_9PM       = createSlots(['6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM']);
+const SLOTS_3_30PM_7_30PM = createSlots(['3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM']);
+const SLOTS_9AM_12PM      = createSlots(['9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM']);
+const SLOTS_8AM_12PM      = createSlots(['8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM']);
+const SLOTS_1PM_5PM       = createSlots(['1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM']);
+const SLOTS_10AM_2PM      = createSlots(['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM']);
+
+// ── Availability Builder ──────────────────────────────────────────────────────
+
+const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+const buildAvailability = (schedule, weeksAhead = 12) => {
+  const result = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let w = 0; w < weeksAhead; w++) {
+    schedule.forEach(({ days, slots }) => {
+      days.forEach((dayName) => {
+        const dayIndex = DAY_ORDER.indexOf(dayName);
+        if (dayIndex === -1) return;
+
+        // Start from tomorrow
+        const date = new Date(today);
+        date.setDate(today.getDate() + 1);
+
+        // Advance to the correct weekday
+        while (date.getDay() !== dayIndex) {
+          date.setDate(date.getDate() + 1);
+        }
+
+        // Add w full weeks for subsequent occurrences
+        date.setDate(date.getDate() + w * 7);
+
+        // ✅ Skip Philippine holidays
+        if (isPhilippineHoliday(date)) return;
+
+        const dateStr = date.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        });
+
+        result.push({
+          date: dateStr,
+          day: dayName,
+          slots: slots.map((s) => ({ ...s })),
+        });
+      });
+    });
+  }
+
+  return result;
+};
+
+// ── Doctors ───────────────────────────────────────────────────────────────────
 
 export const MOCK_DOCTORS = [
-  // ─── Psychologists ────────────────────────────────────────────────────────
-
   {
     id: 1,
     name: "Almie Buco",
@@ -59,7 +128,7 @@ export const MOCK_DOCTORS = [
   },
   {
     id: 3,
-    name: "C. Malabanan",
+    name: "Jinky C. Malabanan",
     title: "Executive Director",
     credentials: "RPsy, RPm, CHRA",
     avatar: null,
@@ -110,9 +179,6 @@ export const MOCK_DOCTORS = [
       ], 12);
     },
   },
-
-  // ─── Psychiatrist ─────────────────────────────────────────────────────────
-
   {
     id: 5,
     name: "Aevon Mustapha",
@@ -139,9 +205,6 @@ export const MOCK_DOCTORS = [
       ], 12);
     },
   },
-
-  // ─── Psychometricians ─────────────────────────────────────────────────────
-
   {
     id: 6,
     name: "Leera Nae Guevarra",
@@ -240,16 +303,12 @@ export const CONSULTATION_FEES = {
   },
 };
 
-export const getDoctorById = (id) => {
-  return MOCK_DOCTORS.find(doctor => doctor.id === parseInt(id));
-};
+export const getDoctorById = (id) =>
+  MOCK_DOCTORS.find((doctor) => doctor.id === parseInt(id));
 
-export const getAvailableDoctors = () => {
-  return MOCK_DOCTORS.filter(doctor =>
-    doctor.availability.some(avail =>
-      avail.slots.some(slot => slot.available)
-    )
+export const getAvailableDoctors = () =>
+  MOCK_DOCTORS.filter((doctor) =>
+    doctor.availability.some((avail) => avail.slots.some((slot) => slot.available))
   );
-};
 
 export default MOCK_DOCTORS;
