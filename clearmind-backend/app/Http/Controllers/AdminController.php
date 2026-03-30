@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\Appointment;
 use App\Models\ConsultationRequest;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -13,136 +12,265 @@ class AdminController extends Controller
 {
     /**
      * GET /admin/dashboard/stats
-     * Returns all stats needed for the admin dashboard in one call.
+     * Returns comprehensive dashboard statistics
      */
-    public function stats(): JsonResponse
+    public function stats(Request $request): JsonResponse
     {
-        $today = today();
-
-        // ── Patient Stats ──
-        $patients         = User::where('role', User::ROLE_CLIENT)->get();
-        $totalPatients    = $patients->count();
-        $activePatients   = $patients->where('is_active', true)->count();
-        $inactivePatients = $patients->where('is_active', false)->count();
-
-        // Monthly registration counts for current year
-        $currentYear   = $today->year;
-        $monthlyPatients = array_fill(0, 12, 0); // index 0=Jan ... 11=Dec
-        foreach ($patients as $p) {
-            if ($p->created_at && $p->created_at->year === $currentYear) {
-                $monthlyPatients[$p->created_at->month - 1]++;
-            }
+        // ── Verify user is admin ──
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
         }
 
-        // ── Today's Appointments ──
-        $todayAppointments = Appointment::whereDate('appointment_date', $today)
-            ->whereIn('status', [
-                Appointment::STATUS_PENDING,
-                Appointment::STATUS_CONFIRMED,
-            ])
-            ->with(['patient:id,firstName,lastName', 'doctor:id,firstName,lastName'])
-            ->orderBy('appointment_time')
-            ->get();
+        try {
+            // ── Patient Stats ──
+            $totalPatients = User::where('role', User::ROLE_CLIENT)->count();
+            $activePatients = User::where('role', User::ROLE_CLIENT)
+                                  ->where('is_active', true)
+                                  ->count();
+            $inactivePatients = User::where('role', User::ROLE_CLIENT)
+                                    ->where('is_active', false)
+                                    ->count();
 
-        $todayOnline   = $todayAppointments->where('type', Appointment::TYPE_ONLINE)->count();
-        $todayPhysical = $todayAppointments->where('type', Appointment::TYPE_PHYSICAL)->count();
-        $todayTotal    = $todayAppointments->count();
+            // ── Monthly patients (last 12 months) ──
+            $monthlyPatients = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $month = now()->subMonths($i);
+                $count = User::where('role', User::ROLE_CLIENT)
+                            ->whereYear('created_at', $month->year)
+                            ->whereMonth('created_at', $month->month)
+                            ->count();
+                $monthlyPatients[] = $count;
+            }
 
-        // ── Today's Consultation Requests ──
-        $todayRequests = ConsultationRequest::whereDate('created_at', $today)
-            ->where('status', ConsultationRequest::STATUS_PENDING)
-            ->with('patient:id,firstName,lastName')
-            ->orderByRaw("FIELD(urgency, 'emergency', 'high', 'normal', 'low')")
-            ->get();
+            // ── Today's Appointments ──
+            $today = now()->toDateString();
+            $todayAppointments = Appointment::whereDate('appointment_date', $today)
+                                           ->with(['patient:id,firstName,lastName,email,contactNo', 'doctor:id,firstName,lastName'])
+                                           ->get()
+                                           ->map(fn($a) => [
+                                               'id'                  => $a->id,
+                                               'patient_id'          => $a->patient_id,
+                                               'patient'             => $a->patient ? "{$a->patient->firstName} {$a->patient->lastName}" : null,
+                                               'patient_email'       => $a->patient?->email,
+                                               'patient_contact'     => $a->patient?->contactNo,
+                                               'doctor_id'           => $a->doctor_id,
+                                               'doctor'              => $a->doctor ? "Dr. {$a->doctor->firstName} {$a->doctor->lastName}" : 'Unassigned',
+                                               'appointment_date'    => $a->appointment_date?->toDateString(),
+                                               'appointment_time'    => $a->appointment_time,
+                                               'type'                => $a->type,
+                                               'status'              => $a->status,
+                                               'reason'              => $a->reason,
+                                           ]);
 
-        $totalPendingRequests = ConsultationRequest::pending()->count();
+            $todayTotal = $todayAppointments->count();
+            $todayOnline = $todayAppointments->where('type', 'online')->count();
+            $todayPhysical = $todayAppointments->where('type', 'physical')->count();
 
-        return response()->json([
-            'success' => true,
-            'data'    => [
-                // Patients
-                'totalPatients'    => $totalPatients,
-                'activePatients'   => $activePatients,
-                'inactivePatients' => $inactivePatients,
-                'monthlyPatients'  => $monthlyPatients,
+            // ── Today's Consultation Requests ──
+            $todayRequests = ConsultationRequest::whereDate('created_at', $today)
+                                               ->with('patient:id,firstName,lastName')
+                                               ->get()
+                                               ->map(fn($r) => [
+                                                   'id'       => $r->id,
+                                                   'patient'  => $r->patient ? "{$r->patient->firstName} {$r->patient->lastName}" : null,
+                                                   'concern'  => $r->concern,
+                                                   'urgency'  => $r->urgency,
+                                               ]);
 
-                // Today's appointments
-                'todayTotal'       => $todayTotal,
-                'todayOnline'      => $todayOnline,
-                'todayPhysical'    => $todayPhysical,
-                'todayAppointments' => $todayAppointments->map(fn($a) => [
-                    'id'               => $a->id,
-                    'patient'          => $a->patient?->firstName . ' ' . $a->patient?->lastName,
-                    'doctor'           => $a->doctor
-                                            ? $a->doctor->firstName . ' ' . $a->doctor->lastName
-                                            : 'Unassigned',
-                    'appointment_date' => $a->appointment_date->toDateString(),
-                    'appointment_time' => $a->appointment_time,
-                    'type'             => $a->type,
-                    'status'           => $a->status,
-                    'reason'           => $a->reason,
-                ]),
+            $totalPendingRequests = ConsultationRequest::where('status', 'pending')->count();
 
-                // Consultation requests
-                'totalPendingRequests' => $totalPendingRequests,
-                'todayRequests'        => $todayRequests->map(fn($r) => [
-                    'id'             => $r->id,
-                    'patient'        => $r->patient?->firstName . ' ' . $r->patient?->lastName,
-                    'concern'        => $r->concern,
-                    'urgency'        => $r->urgency,
-                    'type'           => $r->type,
-                    'preferred_date' => $r->preferred_date?->toDateString(),
-                    'preferred_time' => $r->preferred_time,
-                    'status'         => $r->status,
-                    'created_at'     => $r->created_at->toDateTimeString(),
-                ]),
-            ],
-        ]);
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'totalPatients'         => $totalPatients,
+                    'activePatients'        => $activePatients,
+                    'inactivePatients'      => $inactivePatients,
+                    'monthlyPatients'       => $monthlyPatients,
+                    'todayTotal'            => $todayTotal,
+                    'todayOnline'           => $todayOnline,
+                    'todayPhysical'         => $todayPhysical,
+                    'todayAppointments'     => $todayAppointments->toArray(),
+                    'totalPendingRequests'  => $totalPendingRequests,
+                    'todayRequests'         => $todayRequests->toArray(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController@stats error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch dashboard stats.',
+            ], 500);
+        }
     }
 
     /**
      * GET /admin/patients
-     * Returns all patients (Clients) with pagination support.
+     * Returns all patients with basic info
      */
-    public function patients(Request $request): JsonResponse
+    public function getPatients(Request $request): JsonResponse
     {
-        $query = User::where('role', User::ROLE_CLIENT);
-
-        // Search
-        if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('firstName', 'like', "%{$search}%")
-                  ->orWhere('lastName',  'like', "%{$search}%")
-                  ->orWhere('email',     'like', "%{$search}%")
-                  ->orWhere('contactNo', 'like', "%{$search}%");
-            });
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
         }
 
-        // Filter by sex
-        if ($sex = $request->get('sex')) {
-            $query->where('sex', $sex);
+        try {
+            $patients = User::where('role', User::ROLE_CLIENT)
+                           ->select([
+                               'id', 'firstName', 'lastName', 'email', 'contactNo',
+                               'dob', 'sex', 'genderIdentity', 'address', 'is_active', 'created_at'
+                           ])
+                           ->orderBy('created_at', 'desc')
+                           ->get();
+
+            return response()->json([
+                'success' => true,
+                'data'    => $patients,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController@getPatients error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch patients.',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /admin/patients/paginated
+     * Returns paginated patients
+     */
+    public function getPaginatedPatients(Request $request): JsonResponse
+    {
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
         }
 
-        // Filter by status
-        if ($request->has('is_active')) {
-            $query->where('is_active', filter_var($request->get('is_active'), FILTER_VALIDATE_BOOLEAN));
+        $perPage = $request->get('per_page', 15);
+        $page = $request->get('page', 1);
+
+        try {
+            $patients = User::where('role', User::ROLE_CLIENT)
+                           ->select([
+                               'id', 'firstName', 'lastName', 'email', 'contactNo',
+                               'dob', 'sex', 'genderIdentity', 'address', 'is_active', 'created_at'
+                           ])
+                           ->orderBy('created_at', 'desc')
+                           ->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $patients->items(),
+                'meta'    => [
+                    'total'        => $patients->total(),
+                    'per_page'     => $patients->perPage(),
+                    'current_page' => $patients->currentPage(),
+                    'last_page'    => $patients->lastPage(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController@getPaginatedPatients error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch paginated patients.',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /admin/patients/stats
+     * Returns patient statistics
+     */
+    public function getPatientStats(Request $request): JsonResponse
+    {
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
         }
 
-        $patients = $query->orderBy('created_at', 'desc')->get();
+        try {
+            $totalPatients = User::where('role', User::ROLE_CLIENT)->count();
+            $activePatients = User::where('role', User::ROLE_CLIENT)
+                                  ->where('is_active', true)
+                                  ->count();
+            $inactivePatients = User::where('role', User::ROLE_CLIENT)
+                                    ->where('is_active', false)
+                                    ->count();
 
-        return response()->json([
-            'success' => true,
-            'data'    => $patients->map(fn($p) => [
-                'id'             => $p->id,
-                'firstName'      => $p->firstName,
-                'lastName'       => $p->lastName,
-                'sex'            => $p->sex,
-                'genderIdentity' => $p->genderIdentity,
-                'email'          => $p->email,
-                'contactNo'      => $p->contactNo,
-                'is_active'      => $p->is_active,
-                'created_at'     => $p->created_at,
-            ]),
-        ]);
+            $maleCount = User::where('role', User::ROLE_CLIENT)
+                            ->where('sex', 'male')
+                            ->count();
+            $femaleCount = User::where('role', User::ROLE_CLIENT)
+                              ->where('sex', 'female')
+                              ->count();
+            $otherCount = User::where('role', User::ROLE_CLIENT)
+                             ->where('sex', 'other')
+                             ->count();
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'totalPatients'     => $totalPatients,
+                    'activePatients'    => $activePatients,
+                    'inactivePatients'  => $inactivePatients,
+                    'maleCount'         => $maleCount,
+                    'femaleCount'       => $femaleCount,
+                    'otherCount'        => $otherCount,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController@getPatientStats error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch patient stats.',
+            ], 500);
+        }
+    }
+
+    /**
+     * GET /admin/patients/{id}
+     * Returns a single patient with details
+     */
+    public function getPatient(Request $request, int $id): JsonResponse
+    {
+        if ($request->user()->role !== User::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Admin access required.',
+            ], 403);
+        }
+
+        try {
+            $patient = User::where('role', User::ROLE_CLIENT)
+                          ->find($id);
+
+            if (!$patient) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Patient not found.',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $patient,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('AdminController@getPatient error:', ['message' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch patient.',
+            ], 500);
+        }
     }
 }

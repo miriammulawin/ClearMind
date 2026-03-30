@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Patient-facing: submit a consultation request
     Route::post('consultation-requests', [ConsultationRequestController::class, 'store']);
 
-    // ── Admin Routes ──
+    // ── Admin Routes (with admin role check in controller) ──
     Route::prefix('admin')->group(function () {
 
         // Dashboard stats
