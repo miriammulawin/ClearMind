@@ -2,9 +2,21 @@ import React, { useState } from 'react';
 import { Container, Dropdown, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaFilter, FaSort } from 'react-icons/fa';
-import MOCK_APPOINTMENTS from '../../MockData/MockAppointment';
+import { MOCK_APPOINTMENTS } from '../../MockData/MockAppointment';
 import SessionCard from './AppointmentComponents/SessionCard';
 import styles from './styles/SessionsTab.module.css';
+
+const PREFIX_LABEL = {
+  PAC: 'Psychotherapy & Counseling',
+  PAE: 'Psychological Assessment & Evaluation',
+};
+
+const getPrefix = (referenceNumber) => {
+  if (!referenceNumber) return 'OTHER';
+  if (referenceNumber.startsWith('PAC')) return 'PAC';
+  if (referenceNumber.startsWith('PAE')) return 'PAE';
+  return 'OTHER';
+};
 
 const SessionsTab = () => {
   const navigate = useNavigate();
@@ -41,7 +53,9 @@ const SessionsTab = () => {
     setEndDate('');
   };
 
+  // ── Step 1: filter & sort — only program appointments ──────────────────
   const filteredAndSorted = MOCK_APPOINTMENTS
+    .filter((apt) => !!apt.programId)  // exclude standalones
     .filter((apt) =>
       selectedStatus === 'All' ? true : apt.status === selectedStatus
     )
@@ -54,11 +68,24 @@ const SessionsTab = () => {
       if (to   && aptDate > to)   return false;
       return true;
     })
-    .sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return sortOrder === 'Newest First' ? dateB - dateA : dateA - dateB;
-    });
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // ── Step 2: group by programId ─────────────────────────────────────────
+  const grouped = filteredAndSorted.reduce((acc, apt) => {
+    const key = apt.programId;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(apt);
+    return acc;
+  }, {});
+
+  // ── Step 3: order groups by sortOrder ──────────────────────────────────
+  const groupEntries = Object.entries(grouped).sort(([, aptsA], [, aptsB]) => {
+    const latestA = new Date(aptsA[aptsA.length - 1].date);
+    const latestB = new Date(aptsB[aptsB.length - 1].date);
+    return sortOrder === 'Newest First'
+      ? latestB - latestA
+      : latestA - latestB;
+  });
 
   return (
     <Container className={`py-4 ${styles.sessionsContainer}`}>
@@ -151,19 +178,24 @@ const SessionsTab = () => {
 
       {/* ── Sessions List ── */}
       <div className={styles.sessionsListWrapper}>
-        {filteredAndSorted.length === 0 ? (
+        {groupEntries.length === 0 ? (
           <div className={styles.noSessions}>
             <FaCalendarTimes className={styles.calendarIconSessions} />
             <p>{getEmptyMessage(selectedStatus)}</p>
           </div>
         ) : (
-          filteredAndSorted.map((appointment) => (
-            <SessionCard
-              key={appointment.id}
-              appointment={appointment}
-              onViewDetails={handleViewDetails}
-            />
-          ))
+          groupEntries.map(([programId, apts]) => {
+            const prefix = getPrefix(apts[0].referenceNumber);
+            return (
+              <SessionCard
+                key={programId}
+                prefix={prefix}
+                groupLabel={PREFIX_LABEL[prefix] || prefix}
+                appointments={apts}
+                onViewDetails={handleViewDetails}
+              />
+            );
+          })
         )}
       </div>
 

@@ -21,13 +21,11 @@
   background-color: #f3eeff;
   padding: 12px 16px;
 }
-
 .titleBlock {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
-
 .prefixTag {
   display: inline-flex;
   align-items: center;
@@ -43,28 +41,35 @@
   margin-top: 2px;
   flex-shrink: 0;
 }
-
 .serviceTitle {
   font-size: 14px;
   font-weight: 700;
   color: #3d2b5e;
   line-height: 1.3;
 }
-
-.serviceSubtitle {
-  font-size: 11px;
-  font-weight: 500;
-  color: #9b8ab0;
-  margin-top: 2px;
+.subServiceLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B46C1;
+  margin-top: 3px;
 }
 
-.statusBadge {
+/* Header right — chip(s) stacked */
+.headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.journeyChip {
   font-size: 11px;
-  font-weight: 600;
-  padding: 4px 12px;
+  font-weight: 700;
+  background-color: #ede9fe;
+  color: #5B2C91;
+  padding: 4px 10px;
   border-radius: 20px;
   white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* ── Divider ── */
@@ -76,51 +81,144 @@
 /* ── Card Body ── */
 .cardBody {
   padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
 }
 
+/* ── Section Label ── */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9b8ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 10px 0;
+}
+
+/* ── Session Row ── */
+.sessionRow {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e9e0f8;
+}
+.sessionRow:last-child {
+  border-bottom: none;
+}
+
+/* Session number bubble */
+.sessionNumBubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  min-width: 40px;
+  padding-top: 2px;
+}
+.sessionNum {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #6B46C1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sessionPhase {
+  font-size: 9px;
+  font-weight: 600;
+  color: #9b8ab0;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Session info block */
+.sessionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sessionRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.phaseLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3d2b5e;
+}
+
+/* Info rows */
 .infoRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 6px;
+  font-size: 12px;
 }
-
 .infoIcon {
   color: #9b8ab0;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
-  width: 14px;
+  width: 13px;
 }
-
 .infoLabel {
   color: #4b5563;
   font-weight: 500;
   white-space: nowrap;
 }
-
 .infoValue {
   color: #5B2C91;
   font-weight: 600;
 }
 
-/* ── Card Footer ── */
-.cardFooter {
-  padding: 10px 16px;
-  border-top: 1px solid #e9e0f8;
+/* ── Doctor Change Notice ── */
+.doctorChangeNotice {
+  font-size: 11px;
+  font-weight: 600;
+  color: #854d0e;
+  background-color: #fef9c3;
+  border-left: 3px solid #d97706;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+
+/* ── Decline / On Hold Notice ── */
+.declineNotice {
+  font-size: 11px;
+  font-weight: 600;
+  color: #991b1b;
+  background-color: #fee2e2;
+  border-left: 3px solid #dc2626;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+.declineNote {
+  font-weight: 400;
+  color: #7f1d1d;
+}
+
+/* Row footer */
+.rowFooter {
+  margin-top: 6px;
   display: flex;
   justify-content: flex-end;
 }
-
 .viewDetailsBtn {
   background: transparent;
   color: #6B46C1;
   border: 2px solid #6B46C1;
   border-radius: 8px;
-  padding: 6px 24px;
-  font-size: 13px;
+  padding: 5px 20px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -131,13 +229,39 @@
   color: #fff;
 }
 
+/* ── View More button ── */
+.viewMoreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: #f3eeff;
+  border: none;
+  border-top: 1px solid #e9e0f8;
+  color: #6B46C1;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-family: inherit;
+}
+.viewMoreBtn:hover {
+  background: #ebe0ff;
+}
+.chevron {
+  font-size: 11px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  .cardHeader {
+  .sessionRowHeader {
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 4px;
   }
-  .statusBadge {
-    align-self: flex-start;
+  .headerRight {
+    align-items: flex-end;
   }
 }
