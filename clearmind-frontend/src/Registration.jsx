@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEye, FiEyeOff } from "react-icons/fi";
-import { FiChevronDown } from "react-icons/fi";
+import {
+  FiEye,
+  FiEyeOff,
+  FiChevronDown,
+  FiUser,
+  FiPhone,
+  FiLock,
+} from "react-icons/fi";
 import styles from "./Registration.module.css";
 import logo_login from "./assets/CMPS_Logo.png";
 import axiosClient from "./axiosClient";
 import toast from "react-hot-toast";
+import TermsModal from "./components/TermsModal";
 
 function Register() {
   const navigate = useNavigate();
@@ -15,6 +22,7 @@ function Register() {
   const [pronounOther, setPronounOther] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showTerms, setShowTerms] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -40,8 +48,7 @@ function Register() {
     const newErrors = {};
     if (!form.firstName.trim()) newErrors.firstName = "First name is required";
     if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!form.middleInitial.trim())
-      newErrors.middleInitial = "Middle initial is required";
+    if (!form.middleInitial.trim()) newErrors.middleInitial = "Required";
     if (!form.dob) newErrors.dob = "Date of birth is required";
     if (!form.sex) newErrors.sex = "Sex is required";
     if (!form.contact.trim()) newErrors.contact = "Contact number is required";
@@ -50,7 +57,7 @@ function Register() {
       newErrors.email = "Invalid email format";
     if (!form.password) newErrors.password = "Password is required";
     else if (form.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = "Minimum 6 characters";
     if (form.password !== form.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
     if (!agreed) newErrors.agreeTerms = "You must agree to the terms";
@@ -62,7 +69,6 @@ function Register() {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-
     try {
       const response = await axiosClient.post("/register", {
         firstName: form.firstName,
@@ -80,7 +86,6 @@ function Register() {
       });
 
       const data = response.data;
-
       if (data.success) {
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("role", data.data.user.role);
@@ -101,7 +106,6 @@ function Register() {
           },
           iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
-
         setTimeout(() => navigate("/login"), 1500);
       }
     } catch (err) {
@@ -134,141 +138,171 @@ function Register() {
     }
   };
 
-  /* ── small helper: field error message ── */
   const ErrMsg = ({ field }) =>
     errors[field] ? <div className={styles.errMsg}>{errors[field]}</div> : null;
 
+  const SelectField = ({
+    name,
+    placeholder,
+    value,
+    onChange,
+    hasError,
+    children,
+  }) => (
+    <div className={styles.selectWrap}>
+      <select
+        name={name}
+        className={`form-select ${styles.input} ${styles.select} ${hasError ? styles.inputError : ""}`}
+        value={value}
+        onChange={onChange}
+      >
+        <option value="" disabled>
+          {placeholder}
+        </option>
+        {children}
+      </select>
+      <span className={styles.selectArrow}>
+        <FiChevronDown size={14} />
+      </span>
+    </div>
+  );
+
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        {/* ── LEFT PANEL ── */}
-        <div className={styles.leftPanel}>
-          <div className={styles.leftOverlay} />
-          <div className={styles.leftContent}>
-            <span className={styles.tagline}>● Mental Wellness Care</span>
-            <h1 className={styles.heroTitle}>
-              Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
-              Psychological Services
-            </h1>
-            <p className={styles.heroDesc}>
-              Begin your journey toward emotional wellness and a clearer mind.
-              We provide compassionate, professional care in a safe and
-              confidential environment.
-            </p>
+    <>
+      {/* ── TERMS MODAL ── */}
+      <TermsModal
+        isOpen={showTerms}
+        onClose={() => setShowTerms(false)}
+        onAccept={() => {
+          setAgreed(true);
+          if (errors.agreeTerms)
+            setErrors((prev) => ({ ...prev, agreeTerms: "" }));
+        }}
+      />
+
+      <div className={styles.page}>
+        <div className={styles.card}>
+          {/* ── LEFT PANEL ── */}
+          <div className={styles.leftPanel}>
+            <div className={styles.leftOverlay} />
+            <div className={styles.leftContent}>
+              <span className={styles.tagline}>
+                <span className={styles.taglineDot} />
+                Mental Wellness Care
+              </span>
+              <h1 className={styles.heroTitle}>
+                Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
+                Psychological Services
+              </h1>
+              <div className={styles.heroDivider} />
+              <p className={styles.heroDesc}>
+                Begin your journey toward emotional wellness and a clearer mind.
+                We provide compassionate, professional care in a safe and
+                confidential environment.
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className={styles.rightPanel}>
-          {/* Logo */}
-          <div className="text-center mb-1">
-            <img
-              src={logo_login}
-              alt="ClearMind Logo"
-              className={styles.logo}
-            />
-          </div>
+          {/* ── RIGHT PANEL ── */}
+          <div className={styles.rightPanel}>
+            <div className={styles.header}>
+              <img
+                src={logo_login}
+                alt="ClearMind Logo"
+                className={styles.logo}
+              />
+              <p className={styles.formSubtitle}>
+                Fill in your details to get started
+              </p>
+            </div>
 
-          <p className={styles.formSubtitle}>
-            Fill in your details to get started
-          </p>
-
-          <form onSubmit={handleSubmit} noValidate className={styles.form}>
-            {/* ── Personal Information ── */}
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.sectionLabel}>
-                Personal Information
-              </legend>
-
-              {/* First & Last Name */}
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <input
-                    type="text"
-                    name="firstName"
-                    className={`form-control ${styles.input} ${errors.firstName ? styles.inputError : ""}`}
-                    placeholder="First Name *"
-                    value={form.firstName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <ErrMsg field="firstName" />
+            <form onSubmit={handleSubmit} noValidate className={styles.form}>
+              {/* ── PERSONAL INFORMATION ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionIcon}>
+                    <FiUser size={11} />
+                  </span>
+                  <span className={styles.sectionLabel}>
+                    Personal Information
+                  </span>
                 </div>
-                <div className={styles.formCol}>
-                  <input
-                    type="text"
-                    name="lastName"
-                    className={`form-control ${styles.input} ${errors.lastName ? styles.inputError : ""}`}
-                    placeholder="Last Name *"
-                    value={form.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <ErrMsg field="lastName" />
-                </div>
-              </div>
 
-              {/* Middle Initial & DOB */}
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <input
-                    type="text"
-                    name="middleInitial"
-                    className={`form-control ${styles.input} ${errors.middleInitial ? styles.inputError : ""}`}
-                    placeholder="Middle Initial *"
-                    value={form.middleInitial}
-                    onChange={handleChange}
-                    maxLength={1}
-                    required
-                  />
-                  <ErrMsg field="middleInitial" />
+                <div className={styles.formGrid} style={{ marginBottom: 10 }}>
+                  <div className={styles.formCol}>
+                    <input
+                      type="text"
+                      name="firstName"
+                      className={`form-control ${styles.input} ${errors.firstName ? styles.inputError : ""}`}
+                      placeholder="First Name *"
+                      value={form.firstName}
+                      onChange={handleChange}
+                    />
+                    <ErrMsg field="firstName" />
+                  </div>
+                  <div className={styles.formCol}>
+                    <input
+                      type="text"
+                      name="lastName"
+                      className={`form-control ${styles.input} ${errors.lastName ? styles.inputError : ""}`}
+                      placeholder="Last Name *"
+                      value={form.lastName}
+                      onChange={handleChange}
+                    />
+                    <ErrMsg field="lastName" />
+                  </div>
                 </div>
-                <div className={styles.formCol}>
-                  <input
-                    type="date"
-                    name="dob"
-                    className={`form-control ${styles.input} ${errors.dob ? styles.inputError : ""}`}
-                    value={form.dob}
-                    onChange={handleChange}
-                    required
-                  />
-                  <ErrMsg field="dob" />
-                </div>
-              </div>
 
-              {/* Sex & Gender Identity */}
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <div className={styles.selectWrap}>
-                    <select
+                <div
+                  className={styles.formGrid}
+                  style={{ gridTemplateColumns: "1fr 2fr", marginBottom: 10 }}
+                >
+                  <div className={styles.formCol}>
+                    <input
+                      type="text"
+                      name="middleInitial"
+                      className={`form-control ${styles.input} ${errors.middleInitial ? styles.inputError : ""}`}
+                      placeholder="M.I. *"
+                      value={form.middleInitial}
+                      onChange={handleChange}
+                      maxLength={1}
+                    />
+                    <ErrMsg field="middleInitial" />
+                  </div>
+                  <div className={styles.formCol}>
+                    <input
+                      type="date"
+                      name="dob"
+                      className={`form-control ${styles.input} ${errors.dob ? styles.inputError : ""}`}
+                      value={form.dob}
+                      onChange={handleChange}
+                    />
+                    <ErrMsg field="dob" />
+                  </div>
+                </div>
+
+                <div className={styles.formGrid} style={{ marginBottom: 10 }}>
+                  <div className={styles.formCol}>
+                    <SelectField
                       name="sex"
-                      className={`form-select ${styles.input} ${styles.select} ${errors.sex ? styles.inputError : ""}`}
+                      placeholder="Sex *"
                       value={form.sex}
                       onChange={handleChange}
-                      required
+                      hasError={!!errors.sex}
                     >
-                      <option value="" disabled>
-                        Sex *
-                      </option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
                       <option value="other">Other</option>
-                    </select>
-                    <FiChevronDown className={styles.selectArrow} />
+                    </SelectField>
+                    <ErrMsg field="sex" />
                   </div>
-                  <ErrMsg field="sex" />
-                </div>
-                <div className={styles.formCol}>
-                  <div className={styles.selectWrap}>
-                    <select
+                  <div className={styles.formCol}>
+                    <SelectField
                       name="genderIdentity"
-                      className={`form-select ${styles.input} ${styles.select}`}
+                      placeholder="Gender Identity"
                       value={form.genderIdentity}
                       onChange={handleChange}
                     >
-                      <option value="" disabled>
-                        Gender Identity
-                      </option>
                       <option value="female">Female</option>
                       <option value="male">Male</option>
                       <option value="transgender">Transgender</option>
@@ -283,191 +317,195 @@ function Register() {
                       <option value="intersex">Intersex</option>
                       <option value="pangender">Pangender</option>
                       <option value="prefer_not">Prefer Not to Say</option>
-                    </select>
-                    <FiChevronDown className={styles.selectArrow} />
+                    </SelectField>
                   </div>
                 </div>
-              </div>
 
-              {/* Preferred Pronouns & Custom */}
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <div className={styles.selectWrap}>
-                    <select
+                <div className={styles.formGrid}>
+                  <div className={styles.formCol}>
+                    <SelectField
                       name="preferredPronoun"
-                      className={`form-select ${styles.input} ${styles.select}`}
+                      placeholder="Preferred Pronoun/s"
                       value={form.preferredPronoun}
                       onChange={handleChange}
                     >
-                      <option value="" disabled>
-                        Preferred Pronoun/s
-                      </option>
                       <option value="he_him">He/Him</option>
                       <option value="she_her">She/Her</option>
                       <option value="they_them">They/Them</option>
                       <option value="other">Other (specify)</option>
-                    </select>
-                    <FiChevronDown className={styles.selectArrow} />
+                    </SelectField>
                   </div>
+                  {form.preferredPronoun === "other" && (
+                    <div className={styles.formCol}>
+                      <input
+                        type="text"
+                        className={`form-control ${styles.input}`}
+                        placeholder="Specify pronoun/s *"
+                        value={pronounOther}
+                        onChange={(e) => setPronounOther(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
-                {form.preferredPronoun === "other" && (
+              </div>
+
+              {/* ── CONTACT INFORMATION ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionIcon}>
+                    <FiPhone size={11} />
+                  </span>
+                  <span className={styles.sectionLabel}>
+                    Contact Information
+                  </span>
+                </div>
+                <div className={styles.formGrid}>
                   <div className={styles.formCol}>
                     <input
-                      type="text"
-                      className={`form-control ${styles.input}`}
-                      placeholder="Specify pronoun/s *"
-                      value={pronounOther}
-                      onChange={(e) => setPronounOther(e.target.value)}
-                      required
+                      type="tel"
+                      name="contact"
+                      className={`form-control ${styles.input} ${errors.contact ? styles.inputError : ""}`}
+                      placeholder="Contact No. *"
+                      value={form.contact}
+                      onChange={handleChange}
                     />
+                    <ErrMsg field="contact" />
                   </div>
+                  <div className={styles.formCol}>
+                    <input
+                      type="email"
+                      name="email"
+                      className={`form-control ${styles.input} ${errors.email ? styles.inputError : ""}`}
+                      placeholder="Email Address *"
+                      value={form.email}
+                      onChange={handleChange}
+                    />
+                    <ErrMsg field="email" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECURITY ── */}
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionIcon}>
+                    <FiLock size={11} />
+                  </span>
+                  <span className={styles.sectionLabel}>Security</span>
+                </div>
+                <div className={styles.formGrid}>
+                  <div className={styles.formCol}>
+                    <div className={styles.pwInner}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        className={`form-control ${styles.input} ${styles.pwInput} ${errors.password ? styles.inputError : ""}`}
+                        placeholder="Password *"
+                        value={form.password}
+                        onChange={handleChange}
+                      />
+                      <button
+                        type="button"
+                        className={styles.eyeBtn}
+                        onClick={() => setShowPassword((p) => !p)}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <FiEye size={16} />
+                        ) : (
+                          <FiEyeOff size={16} />
+                        )}
+                      </button>
+                    </div>
+                    <ErrMsg field="password" />
+                  </div>
+                  <div className={styles.formCol}>
+                    <div className={styles.pwInner}>
+                      <input
+                        type={showConfirm ? "text" : "password"}
+                        name="confirmPassword"
+                        className={`form-control ${styles.input} ${styles.pwInput} ${errors.confirmPassword ? styles.inputError : ""}`}
+                        placeholder="Confirm Password *"
+                        value={form.confirmPassword}
+                        onChange={handleChange}
+                      />
+                      <button
+                        type="button"
+                        className={styles.eyeBtn}
+                        onClick={() => setShowConfirm((p) => !p)}
+                        tabIndex={-1}
+                      >
+                        {showConfirm ? (
+                          <FiEye size={16} />
+                        ) : (
+                          <FiEyeOff size={16} />
+                        )}
+                      </button>
+                    </div>
+                    <ErrMsg field="confirmPassword" />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── FOOTER ── */}
+              <div className={styles.footer}>
+                <div className={styles.checkGroup}>
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    className={`form-check-input ${styles.checkbox}`}
+                    checked={agreed}
+                    onChange={(e) => {
+                      setAgreed(e.target.checked);
+                      if (errors.agreeTerms)
+                        setErrors((prev) => ({ ...prev, agreeTerms: "" }));
+                    }}
+                  />
+                  <label
+                    htmlFor="terms"
+                    className={`form-check-label ${styles.checkLabel}`}
+                  >
+                    I agree to the{" "}
+                    <span
+                      className={styles.termsLink}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowTerms(true);
+                      }}
+                    >
+                      Terms and Conditions
+                    </span>{" "}
+                    *
+                  </label>
+                </div>
+                {errors.agreeTerms && (
+                  <div className={styles.errMsg}>{errors.agreeTerms}</div>
                 )}
-              </div>
-            </fieldset>
 
-            {/* ── Contact Information ── */}
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.sectionLabel}>
-                Contact Information
-              </legend>
-
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <input
-                    type="tel"
-                    name="contact"
-                    className={`form-control ${styles.input} ${errors.contact ? styles.inputError : ""}`}
-                    placeholder="Contact No. *"
-                    value={form.contact}
-                    onChange={handleChange}
-                    required
-                  />
-                  <ErrMsg field="contact" />
-                </div>
-                <div className={styles.formCol}>
-                  <input
-                    type="email"
-                    name="email"
-                    className={`form-control ${styles.input} ${errors.email ? styles.inputError : ""}`}
-                    placeholder="Email Address *"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                  />
-                  <ErrMsg field="email" />
-                </div>
-              </div>
-            </fieldset>
-
-            {/* ── Security ── */}
-            <fieldset className={styles.fieldset}>
-              <legend className={styles.sectionLabel}>Security</legend>
-
-              {/* Password */}
-              <div className={`${styles.pwWrap} ${styles.formRow}`}>
-                <div className={styles.formCol}>
-                  <div className={styles.pwInner}>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      className={`form-control ${styles.input} ${styles.pwInput} ${errors.password ? styles.inputError : ""}`}
-                      placeholder="Password *"
-                      value={form.password}
-                      onChange={handleChange}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className={styles.eyeBtn}
-                      onClick={() => setShowPassword((p) => !p)}
-                      tabIndex={-1}
-                    >
-                      {showPassword ? (
-                        <FiEye size={18} />
-                      ) : (
-                        <FiEyeOff size={18} />
-                      )}
-                    </button>
-                  </div>
-                  <ErrMsg field="password" />
-                </div>
-
-                {/* Confirm Password */}
-                <div className={styles.formCol}>
-                  <div className={styles.pwInner}>
-                    <input
-                      type={showConfirm ? "text" : "password"}
-                      name="confirmPassword"
-                      className={`form-control ${styles.input} ${styles.pwInput} ${errors.confirmPassword ? styles.inputError : ""}`}
-                      placeholder="Confirm Password *"
-                      value={form.confirmPassword}
-                      onChange={handleChange}
-                      required
-                    />
-                    <button
-                      type="button"
-                      className={styles.eyeBtn}
-                      onClick={() => setShowConfirm((p) => !p)}
-                      tabIndex={-1}
-                    >
-                      {showConfirm ? (
-                        <FiEye size={18} />
-                      ) : (
-                        <FiEyeOff size={18} />
-                      )}
-                    </button>
-                  </div>
-                  <ErrMsg field="confirmPassword" />
-                </div>
-              </div>
-            </fieldset>
-
-            {/* ── Terms & Submit ── */}
-            <div className={styles.footer}>
-              <div className={styles.checkGroup}>
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className={`form-check-input ${styles.checkbox}`}
-                  checked={agreed}
-                  onChange={(e) => setAgreed(e.target.checked)}
-                  required
-                />
-                <label
-                  htmlFor="terms"
-                  className={`form-check-label ${styles.checkLabel}`}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`btn ${styles.submitBtn}`}
                 >
-                  I agree to the{" "}
-                  <span className={styles.termsLink}>Terms and Conditions</span>{" "}
-                  *
-                </label>
+                  {loading && <span className={styles.spinner} />}
+                  {loading ? "Registering..." : "Create Account"}
+                </button>
+
+                <p className={styles.loginLink}>
+                  Already have an account?{" "}
+                  <span
+                    className={styles.loginLinkBold}
+                    onClick={() => navigate("/")}
+                  >
+                    Log In
+                  </span>
+                </p>
               </div>
-              {errors.agreeTerms && (
-                <div className={styles.errMsg}>{errors.agreeTerms}</div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className={`btn ${styles.submitBtn}`}
-              >
-                {loading ? "Registering..." : "REGISTER"}
-              </button>
-
-              <p className={styles.loginLink}>
-                Already have an account?{" "}
-                <span
-                  className={styles.loginLinkBold}
-                  onClick={() => navigate("/")}
-                >
-                  Log In
-                </span>
-              </p>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
