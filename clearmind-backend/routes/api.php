@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ConsultationRequestController;
+use App\Http\Controllers\AnnouncementController;
 
 // ── Public Auth Routes ──
 Route::post('/register', [AuthController::class, 'register']);
@@ -38,5 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Consultation Requests CRUD (admin manages all verbs except POST /store — handled above)
         Route::apiResource('consultation-requests', ConsultationRequestController::class)
              ->except(['store']);
+
+            //  Announcements CRUD
+        Route::apiResource('announcements', AnnouncementController::class);
     });
 });

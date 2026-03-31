@@ -39,30 +39,33 @@ const urgencyColor = {
   low: "#16A34A",
 };
 
-const REFRESH_INTERVAL_MS = 60_000; // auto-refresh every 60 s
+const REFRESH_INTERVAL_MS = 60_000;
+
+function getTodayDateStr() {
+  return new Date().toISOString().split("T")[0];
+}
 
 function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
 
-  // ── Patient Stats (from dashboard/stats) ──
+  // ── Patient Stats ──
   const [totalPatients, setTotalPatients] = useState(0);
   const [activePatients, setActivePatients] = useState(0);
   const [inactivePatients, setInactivePatients] = useState(0);
   const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
 
-  // ── Appointment Stats ──
+  // ── Appointment Stats (derived from /admin/appointments) ──
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayOnline, setTodayOnline] = useState(0);
   const [todayPhysical, setTodayPhysical] = useState(0);
   const [todayAppointments, setTodayAppointments] = useState([]);
-  const [allAppointments, setAllAppointments] = useState([]);
 
-  // ── Consultation Request Stats ──
+  // ── Consultation Requests — ALL pending, sorted by urgency ──
   const [totalPendingRequests, setTotalPendingRequests] = useState(0);
-  const [todayRequests, setTodayRequests] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
-  // ── Patients Table (separate call → /admin/patients) ──
+  // ── Patients Table ──
   const [patients, setPatients] = useState([]);
   const [tableLoading, setTableLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -74,27 +77,12 @@ function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const PATIENTS_PER_PAGE = 10;
 
-  // ── Announcements (local state — no backend yet) ──
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: 1,
-      title: "Clinic Holiday Schedule",
-      message:
-        "The clinic will be closed on February 25 in observance of EDSA People Power Anniversary.",
-      date: "Feb 20, 2026",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "New Online Consultation Hours",
-      message:
-        "Starting March 1, online consultations will be available from 8:00 AM to 6:00 PM, Monday to Saturday.",
-      date: "Feb 18, 2026",
-      priority: "normal",
-    },
-  ]);
+  // ── Announcements ──
+  const [announcements, setAnnouncements] = useState([]);
+  const [annLoading, setAnnLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     title: "",
     message: "",
@@ -105,17 +93,14 @@ function AdminDashboard() {
   // DATA FETCHING
   // ─────────────────────────────────────────────
 
-  // 1️⃣  Dashboard stats  →  GET /admin/dashboard/stats
+  // 1 Dashboard stats — patients + consultation requests
   const fetchDashboardStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const { data } = await axiosClient.get("/admin/dashboard/stats");
-
       if (!data.success) throw new Error("stats fetch failed");
-
       const d = data.data;
 
-      // Patients
       setTotalPatients(d.totalPatients ?? 0);
       setActivePatients(d.activePatients ?? 0);
       setInactivePatients(d.inactivePatients ?? 0);
@@ -125,17 +110,9 @@ function AdminDashboard() {
           : Array(12).fill(0),
       );
 
-      // Appointments
-      setTodayTotal(d.todayTotal ?? 0);
-      setTodayOnline(d.todayOnline ?? 0);
-      setTodayPhysical(d.todayPhysical ?? 0);
-      setTodayAppointments(
-        Array.isArray(d.todayAppointments) ? d.todayAppointments : [],
-      );
-
-      // Consultation requests
+      // All pending consultation requests (sorted by urgency on backend)
       setTotalPendingRequests(d.totalPendingRequests ?? 0);
-      setTodayRequests(Array.isArray(d.todayRequests) ? d.todayRequests : []);
+      setPendingRequests(Array.isArray(d.todayRequests) ? d.todayRequests : []);
     } catch (err) {
       console.error("fetchDashboardStats:", err);
       toast.error("Failed to load dashboard stats");
@@ -144,45 +121,34 @@ function AdminDashboard() {
     }
   }, []);
 
-  // 1B️⃣  Fetch ALL appointments  →  GET /admin/appointments
+  // Appointments → filter by today's date on the frontend
   const fetchAppointments = useCallback(async () => {
     try {
       const { data } = await axiosClient.get("/admin/appointments");
-
       if (!data.success) throw new Error("appointments fetch failed");
 
-      setAllAppointments(Array.isArray(data.data) ? data.data : []);
-
-      // ── Filter today's appointments ──
-      const todayDateStr = today.toISOString().split("T")[0]; // "2026-03-30"
-      const filtered = (Array.isArray(data.data) ? data.data : []).filter(
-        (appt) => appt.appointment_date === todayDateStr,
+      const appointments = Array.isArray(data.data) ? data.data : [];
+      const todayStr = getTodayDateStr();
+      const filtered = appointments.filter(
+        (a) => a.appointment_date === todayStr,
       );
-
-      // ── Recalculate today's stats ──
-      const onlineCount = filtered.filter((a) => a.type === "online").length;
-      const physicalCount = filtered.filter(
-        (a) => a.type === "physical",
-      ).length;
 
       setTodayAppointments(filtered);
       setTodayTotal(filtered.length);
-      setTodayOnline(onlineCount);
-      setTodayPhysical(physicalCount);
+      setTodayOnline(filtered.filter((a) => a.type === "online").length);
+      setTodayPhysical(filtered.filter((a) => a.type === "physical").length);
     } catch (err) {
       console.error("fetchAppointments:", err);
       toast.error("Failed to load appointments");
     }
-  }, [today]);
+  }, []);
 
-  // 2️⃣  Patients table  →  GET /admin/patients
+  // 3️ Patients table
   const fetchPatients = useCallback(async () => {
     try {
       setTableLoading(true);
       const { data } = await axiosClient.get("/admin/patients");
-
       if (!data.success) throw new Error("patients fetch failed");
-
       setPatients(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.error("fetchPatients:", err);
@@ -193,11 +159,27 @@ function AdminDashboard() {
     }
   }, []);
 
-  // Initial load + auto-refresh
+  // 4️⃣ Announcements
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      setAnnLoading(true);
+      const { data } = await axiosClient.get("/admin/announcements");
+      if (!data.success) throw new Error("announcements fetch failed");
+      setAnnouncements(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error("fetchAnnouncements:", err);
+      toast.error("Failed to load announcements");
+    } finally {
+      setAnnLoading(false);
+    }
+  }, []);
+
+  // Initial load + auto-refresh every 60 s
   useEffect(() => {
     fetchDashboardStats();
     fetchAppointments();
     fetchPatients();
+    fetchAnnouncements();
 
     const interval = setInterval(() => {
       fetchDashboardStats();
@@ -205,9 +187,14 @@ function AdminDashboard() {
     }, REFRESH_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [fetchDashboardStats, fetchAppointments, fetchPatients]);
+  }, [
+    fetchDashboardStats,
+    fetchAppointments,
+    fetchPatients,
+    fetchAnnouncements,
+  ]);
 
-  // Clock tick
+  // Clock tick (display only — does not re-trigger fetches)
   useEffect(() => {
     const timer = setInterval(() => setToday(new Date()), 60_000);
     return () => clearInterval(timer);
@@ -216,7 +203,6 @@ function AdminDashboard() {
   // ─────────────────────────────────────────────
   // FILTER + PAGINATION
   // ─────────────────────────────────────────────
-
   const filteredPatients = patients.filter((p) => {
     const q = searchTerm.toLowerCase();
     const matchSearch =
@@ -224,13 +210,11 @@ function AdminDashboard() {
       p.lastName?.toLowerCase().includes(q) ||
       p.email?.toLowerCase().includes(q) ||
       p.contactNo?.includes(searchTerm);
-
     const matchGender = !genderFilter || p.sex === genderFilter;
     const matchStatus =
       !statusFilter ||
       (statusFilter === "active" && p.is_active) ||
       (statusFilter === "inactive" && !p.is_active);
-
     return matchSearch && matchGender && matchStatus;
   });
 
@@ -243,7 +227,6 @@ function AdminDashboard() {
   // ─────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────
-
   const formattedDate = today.toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
@@ -261,47 +244,69 @@ function AdminDashboard() {
   const getStatusLabel = (isActive) => (isActive ? "Active" : "Inactive");
 
   // ─────────────────────────────────────────────
-  // ANNOUNCEMENTS
+  // ANNOUNCEMENTS — CRUD against backend
   // ─────────────────────────────────────────────
-
   const openAddModal = () => {
     setForm({ title: "", message: "", priority: "normal" });
     setEditingId(null);
     setShowModal(true);
   };
+
   const openEditModal = (ann) => {
     setForm({ title: ann.title, message: ann.message, priority: ann.priority });
     setEditingId(ann.id);
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (!form.title.trim() || !form.message.trim()) return;
-    const nowFormatted = today.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-    if (editingId) {
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === editingId ? { ...a, ...form } : a)),
-      );
-    } else {
-      setAnnouncements((prev) => [
-        { id: Date.now(), ...form, date: nowFormatted },
-        ...prev,
-      ]);
+  const handleSave = async () => {
+    if (!form.title.trim() || !form.message.trim()) {
+      toast.error("Title and message are required.");
+      return;
     }
-    setShowModal(false);
+    try {
+      setSaving(true);
+      if (editingId) {
+        const { data } = await axiosClient.put(
+          `/admin/announcements/${editingId}`,
+          form,
+        );
+        if (!data.success) throw new Error("update failed");
+        setAnnouncements((prev) =>
+          prev.map((a) => (a.id === editingId ? { ...a, ...data.data } : a)),
+        );
+        toast.success("Announcement updated.");
+      } else {
+        const { data } = await axiosClient.post("/admin/announcements", form);
+        if (!data.success) throw new Error("create failed");
+        setAnnouncements((prev) => [data.data, ...prev]);
+        toast.success("Announcement posted.");
+      }
+      setShowModal(false);
+    } catch (err) {
+      console.error("handleSave:", err);
+      toast.error("Failed to save announcement.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id) =>
-    setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this announcement?")) return;
+    try {
+      const response = await axiosClient.delete(`/admin/announcements/${id}`);
+      console.log("DELETE response:", response.data);
+
+      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Announcement deleted.");
+    } catch (err) {
+      console.error("handleDelete error:", err.response?.data);
+      toast.error("Failed to delete announcement.");
+    }
+  };
 
   // ─────────────────────────────────────────────
   // CHART CONFIG
   // ─────────────────────────────────────────────
-
   const barData = {
     labels: [
       "Jan",
@@ -434,7 +439,6 @@ function AdminDashboard() {
   // ─────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────
-
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -443,7 +447,6 @@ function AdminDashboard() {
 
         <div className={`admin-content ${styles.adminContent}`}>
           <div className={`container-fluid ${styles.containerFluid}`}>
-            {/* ── Refresh banner while stats load ── */}
             {statsLoading && (
               <div className={styles.loadingBanner}>
                 Refreshing dashboard data…
@@ -469,7 +472,12 @@ function AdminDashboard() {
                     </button>
                   </div>
                   <hr />
-                  {announcements.length === 0 ? (
+
+                  {annLoading ? (
+                    <div className={styles.noAnnounce}>
+                      Loading announcements…
+                    </div>
+                  ) : announcements.length === 0 ? (
                     <div className={styles.noAnnounce}>
                       No announcements yet.
                     </div>
@@ -478,7 +486,11 @@ function AdminDashboard() {
                       {announcements.map((ann) => (
                         <div
                           key={ann.id}
-                          className={`${styles.announceItem} ${ann.priority === "high" ? styles.announceHigh : styles.announceNormal}`}
+                          className={`${styles.announceItem} ${
+                            ann.priority === "high"
+                              ? styles.announceHigh
+                              : styles.announceNormal
+                          }`}
                         >
                           <div className={styles.announceLeft}>
                             <div className={styles.announceItemHeader}>
@@ -553,6 +565,7 @@ function AdminDashboard() {
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
+                    {/* Online count — read-only, no click */}
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <IoVideocam className={styles.appointmentIcon} />
@@ -562,6 +575,8 @@ function AdminDashboard() {
                         {todayOnline} Appointment{todayOnline !== 1 ? "s" : ""}
                       </p>
                     </div>
+
+                    {/* Physical count — read-only, no click */}
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <FaClinicMedical className={styles.appointmentIcon} />
@@ -573,6 +588,7 @@ function AdminDashboard() {
                       </p>
                     </div>
 
+                    {/* Mini list — up to 3 */}
                     {todayAppointments.length > 0 && (
                       <div className={styles.appointmentMiniList}>
                         {todayAppointments.slice(0, 3).map((appt) => (
@@ -620,52 +636,49 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* ── Consultation Requests Card ── */}
+              {/* ── Consultation Requests Card — all pending ── */}
               <div className="col-md-4">
                 <div className={styles.dashboardCard}>
                   <div className={styles.cardHeader}>
                     <h5>Consultation Request</h5>
                     <div className={styles.cardDate}>
-                      {formattedDate} <span>{totalPendingRequests}</span>
+                      Pending <span>{totalPendingRequests}</span>
                     </div>
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
-                    {todayRequests.length === 0 && !statsLoading ? (
-                      <p className={styles.noData}>No new requests today</p>
+                    {pendingRequests.length === 0 && !statsLoading ? (
+                      <p className={styles.noData}>No pending requests</p>
                     ) : (
-                      <div className={styles.consultList}>
-                        {todayRequests.slice(0, 4).map((req) => (
-                          <div key={req.id} className={styles.consultItem}>
-                            <div className={styles.consultLeft}>
-                              <span className={styles.consultName}>
-                                {req.patient}
-                              </span>
-                              <span className={styles.consultConcern}>
-                                {req.concern.length > 45
-                                  ? req.concern.slice(0, 45) + "…"
-                                  : req.concern}
+                      <div className={styles.consultListContainer}>
+                        <div className={styles.consultList}>
+                          {pendingRequests.map((req) => (
+                            <div key={req.id} className={styles.consultItem}>
+                              <div className={styles.consultLeft}>
+                                <span className={styles.consultName}>
+                                  {req.patient}
+                                </span>
+                                <span className={styles.consultConcern}>
+                                  {req.concern.length > 35
+                                    ? req.concern.slice(0, 35) + "…"
+                                    : req.concern}
+                                </span>
+                              </div>
+                              <span
+                                className={styles.urgencyBadge}
+                                style={{
+                                  backgroundColor:
+                                    urgencyColor[req.urgency] + "1A",
+                                  color: urgencyColor[req.urgency],
+                                  border: `1px solid ${urgencyColor[req.urgency]}40`,
+                                }}
+                              >
+                                {req.urgency.charAt(0).toUpperCase() +
+                                  req.urgency.slice(1)}
                               </span>
                             </div>
-                            <span
-                              className={styles.urgencyBadge}
-                              style={{
-                                backgroundColor:
-                                  urgencyColor[req.urgency] + "1A",
-                                color: urgencyColor[req.urgency],
-                                border: `1px solid ${urgencyColor[req.urgency]}40`,
-                              }}
-                            >
-                              {req.urgency.charAt(0).toUpperCase() +
-                                req.urgency.slice(1)}
-                            </span>
-                          </div>
-                        ))}
-                        {todayRequests.length > 4 && (
-                          <p className={styles.appointmentMoreText}>
-                            +{todayRequests.length - 4} more today
-                          </p>
-                        )}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -911,6 +924,7 @@ function AdminDashboard() {
                     }
                   />
                 </div>
+
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Message</label>
                   <textarea
@@ -923,6 +937,7 @@ function AdminDashboard() {
                     rows={4}
                   />
                 </div>
+
                 <div>
                   <div className={styles.sectionHeader}>
                     <div className={styles.sectionIconBox}>
@@ -934,7 +949,9 @@ function AdminDashboard() {
                     {priorityOptions.map((opt) => (
                       <label
                         key={opt.value}
-                        className={`${styles.priorityCard} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                        className={`${styles.priorityCard} ${
+                          form.priority === opt.value ? opt.activeClass : ""
+                        }`}
                       >
                         <input
                           type="radio"
@@ -953,7 +970,9 @@ function AdminDashboard() {
                         />
                         <div>
                           <div
-                            className={`${styles.priorityCardLabel} ${form.priority === opt.value ? opt.activeClass : ""}`}
+                            className={`${styles.priorityCardLabel} ${
+                              form.priority === opt.value ? opt.activeClass : ""
+                            }`}
                           >
                             {opt.label}
                           </div>
@@ -972,11 +991,20 @@ function AdminDashboard() {
               <button
                 className={styles.btnCancel}
                 onClick={() => setShowModal(false)}
+                disabled={saving}
               >
                 Cancel
               </button>
-              <button className={styles.btnSave} onClick={handleSave}>
-                {editingId ? "Save Changes" : "Post Announcement"}
+              <button
+                className={styles.btnSave}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving…"
+                  : editingId
+                    ? "Save Changes"
+                    : "Post Announcement"}
               </button>
             </div>
           </div>

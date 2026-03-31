@@ -101,6 +101,17 @@
   margin: 0;
 }
 
+.loadingBanner {
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 16px;
+  border-radius: 6px;
+  color: #92400e;
+  font-weight: 500;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
 .emptyState {
   text-align: center;
   color: #999;
@@ -121,6 +132,7 @@
 .appointmentItems p {
   color: #555555a8;
   margin: 0;
+  font-size: 0.9rem;
 }
 
 .appointmentIconText {
@@ -136,17 +148,202 @@
   color: #4d227c;
 }
 
+/* ── SCROLLABLE APPOINTMENT LIST CONTAINER ── */
+.appointmentMiniListContainer {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e0d4ff;
+  border-radius: 10px;
+  padding: 8px;
+  background: #faf7ff;
+  margin-top: 8px;
+  scroll-behavior: smooth;
+}
+
+.appointmentMiniListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.appointmentMiniListContainer::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.appointmentMiniListContainer::-webkit-scrollbar-thumb {
+  background: #c9b3e0;
+  border-radius: 10px;
+}
+
+.appointmentMiniListContainer::-webkit-scrollbar-thumb:hover {
+  background: #b3a0d0;
+}
+
+.appointmentMiniList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.appointmentMiniItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ede9f6;
+  transition: all 0.2s ease;
+  gap: 10px;
+}
+
+.appointmentMiniItem:hover {
+  box-shadow: 0 4px 12px rgba(77, 34, 124, 0.08);
+  border-color: #dcc7f0;
+}
+
+.appointmentMiniLeft {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.appointmentMiniTime {
+  font-weight: 700;
+  color: #4d227c;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.appointmentMiniDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.appointmentMiniName {
+  font-weight: 600;
+  color: #2e104e;
+  font-size: 0.9rem;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointmentMiniReason {
+  font-size: 0.75rem;
+  color: #888;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.appointmentMiniType {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Consult Item ── */
+.consultListContainer {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e0d4ff;
+  border-radius: 10px;
+  padding: 8px;
+  background: #faf7ff;
+  margin-top: 8px;
+  scroll-behavior: smooth;
+}
+
+.consultListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.consultListContainer::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.consultListContainer::-webkit-scrollbar-thumb {
+  background: #c9b3e0;
+  border-radius: 10px;
+}
+
+.consultListContainer::-webkit-scrollbar-thumb:hover {
+  background: #b3a0d0;
+}
+
+.consultList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .consultItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ede9f6;
+  transition: all 0.2s ease;
+  gap: 10px;
+  min-height: 56px;
 }
 
-.consultItem p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: #555;
+.consultItem:hover {
+  box-shadow: 0 4px 12px rgba(77, 34, 124, 0.08);
+  border-color: #dcc7f0;
+}
+
+.consultLeft {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.consultName {
+  font-weight: 600;
+  color: #2e104e;
+  font-size: 0.9rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.consultConcern {
+  font-size: 0.8rem;
+  color: #888;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.urgencyBadge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 52px;
+  text-align: center;
 }
 
 /* ── FILTER SECTION ── */
@@ -349,6 +546,26 @@
   flex-direction: column;
   gap: 12px;
   margin-top: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.announceList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.announceList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.announceList::-webkit-scrollbar-thumb {
+  background: #d4c5e6;
+  border-radius: 3px;
+}
+
+.announceList::-webkit-scrollbar-thumb:hover {
+  background: #c9b3e0;
 }
 
 .announceItem {
@@ -836,6 +1053,14 @@
   .filterSelect {
     width: 100%;
   }
+
+  .appointmentMiniListContainer {
+    max-height: 280px;
+  }
+
+  .consultListContainer {
+    max-height: 280px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -860,6 +1085,14 @@
   .paginationButtons {
     width: 100%;
     justify-content: center;
+  }
+
+  .appointmentMiniListContainer {
+    max-height: 250px;
+  }
+
+  .consultListContainer {
+    max-height: 250px;
   }
 }
 
@@ -948,6 +1181,44 @@
     font-size: 12px;
     padding: 8px 12px;
   }
+
+  .appointmentMiniListContainer {
+    max-height: 240px;
+  }
+
+  .consultListContainer {
+    max-height: 240px;
+  }
+
+  .appointmentMiniItem {
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+
+  .appointmentMiniLeft {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .appointmentMiniType {
+    width: 100%;
+    text-align: center;
+  }
+
+  .consultItem {
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+
+  .consultLeft {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .urgencyBadge {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 @media (max-width: 400px) {
@@ -971,5 +1242,18 @@
   .cardDate span {
     padding: 1px 5px;
     font-size: 0.65rem;
+  }
+
+  .appointmentMiniTime {
+    min-width: 50px;
+    font-size: 0.8rem;
+  }
+
+  .appointmentMiniName {
+    font-size: 0.85rem;
+  }
+
+  .appointmentMiniReason {
+    font-size: 0.7rem;
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminPatient.module.css";
@@ -26,7 +26,10 @@ import {
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
+import axiosClient from "../axiosClient";
+import toast from "react-hot-toast";
 
+// ── Avatar ──
 const AvatarPlaceholder = ({ name, size = 80 }) => {
   const initials = name
     .split(" ")
@@ -66,6 +69,188 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
   );
 };
 
+// ── Helper: calculate age from dob ──
+const calcAge = (dob) => {
+  if (!dob) return "—";
+  return Math.floor(
+    (new Date() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 1000),
+  );
+};
+
+// ── Helper: format gender identity ──
+const formatGender = (g) =>
+  g
+    ? g
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    : "—";
+
+// ── Static data (endpoints not ready yet) ──
+const STATIC_CONSULTATION_REQUESTS = [
+  {
+    id: 1,
+    name: "Liezel Paciente",
+    date: "January 20, 2026",
+    time: "2:00 pm",
+    type: "Follow Up",
+    status: "Scheduled",
+    contact: "09171234567",
+    email: "liezel@email.com",
+    address: "123 Sampaguita St, Calamba, Laguna",
+    consultationMode: "On-Site",
+    patientType: "Existing Patient",
+    age: 34,
+    gender: "Female",
+    totalVisits: 5,
+    assignedDoctor: {
+      name: "Dr. Maria Reyes",
+      specialization: "General Physician",
+    },
+  },
+  {
+    id: 2,
+    name: "Ara Christina Ceres",
+    date: "January 15, 2026",
+    time: "9:00 am",
+    type: "New Concern",
+    status: "Scheduled",
+    contact: "09181234567",
+    email: "ara@email.com",
+    address: "22 Acacia Rd, Santa Rosa, Laguna",
+    consultationMode: "Virtual",
+    patientType: "New Patient",
+    age: 28,
+    gender: "Female",
+    totalVisits: 2,
+    assignedDoctor: {
+      name: "Dr. Jose Santos",
+      specialization: "Dermatologist",
+    },
+  },
+  {
+    id: 3,
+    name: "John Doe",
+    date: "January 22, 2026",
+    time: "11:00 am",
+    type: "Check Up",
+    status: "Cancelled",
+    contact: "09201234567",
+    email: "john@email.com",
+    address: "10 Magnolia St, Biñan, Laguna",
+    consultationMode: "On-Site",
+    patientType: "Existing Patient",
+    age: 45,
+    gender: "Male",
+    totalVisits: 8,
+    assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
+  },
+];
+
+const STATIC_CANCELLED = [
+  {
+    id: 301,
+    name: "John Doe",
+    date: "January 22, 2026",
+    time: "11:00 am",
+    type: "Check Up",
+    status: "Cancelled",
+    contact: "09201234567",
+    email: "john@email.com",
+    address: "10 Magnolia St, Biñan, Laguna",
+    consultationMode: "On-Site",
+    patientType: "Existing Patient",
+    age: 45,
+    gender: "Male",
+    totalVisits: 8,
+    assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
+    cancellationReason:
+      "Patient called to cancel due to a sudden work obligation that could not be rescheduled.",
+  },
+  {
+    id: 302,
+    name: "Sofia Dela Cruz",
+    date: "February 3, 2026",
+    time: "3:00 pm",
+    type: "Follow Up",
+    status: "Cancelled",
+    contact: "09301234567",
+    email: "sofia@email.com",
+    address: "11 Sampaguita Ave, Sta. Rosa, Laguna",
+    consultationMode: "Virtual",
+    patientType: "New Patient",
+    age: 25,
+    gender: "Female",
+    totalVisits: 1,
+    assignedDoctor: {
+      name: "Dr. Maria Reyes",
+      specialization: "General Physician",
+    },
+    cancellationReason:
+      "Patient requested cancellation via email citing personal reasons.",
+  },
+];
+
+const STATIC_RESCHEDULE = [
+  {
+    id: 201,
+    name: "Liezel Paciente",
+    originalDate: "January 20, 2026",
+    originalTime: "2:00 pm",
+    requestedDate: "January 27, 2026",
+    requestedTime: "10:00 am",
+    type: "Follow Up",
+    status: "Pending",
+    reason: "I have a conflict with my work schedule on the original date.",
+    contact: "09171234567",
+    email: "liezel@email.com",
+    address: "123 Sampaguita St, Calamba, Laguna",
+    consultationMode: "On-Site",
+    patientType: "Existing Patient",
+    age: 34,
+    gender: "Female",
+    totalVisits: 5,
+  },
+  {
+    id: 202,
+    name: "Kevin Ramos",
+    originalDate: "December 28, 2025",
+    originalTime: "10:00 am",
+    requestedDate: "January 5, 2026",
+    requestedTime: "2:00 pm",
+    type: "Follow Up",
+    status: "Pending",
+    reason: "Family emergency on the scheduled day.",
+    contact: "09221234567",
+    email: "kevin@email.com",
+    address: "45 Rizal Ave, San Pablo, Laguna",
+    consultationMode: "Virtual",
+    patientType: "New Patient",
+    age: 39,
+    gender: "Male",
+    totalVisits: 3,
+  },
+  {
+    id: 203,
+    name: "Maria Santos",
+    originalDate: "January 10, 2026",
+    originalTime: "1:30 pm",
+    requestedDate: "January 15, 2026",
+    requestedTime: "9:00 am",
+    type: "Check Up",
+    status: "Approved",
+    reason: "Transportation issue.",
+    contact: "09191234567",
+    email: "maria@email.com",
+    address: "78 Mabini St, Los Baños, Laguna",
+    consultationMode: "On-Site",
+    patientType: "Existing Patient",
+    age: 52,
+    gender: "Female",
+    totalVisits: 12,
+  },
+];
+
 function AdminPatient() {
   const [activeMenu, setActiveMenu] = useState("Patients");
   const [activeTab, setActiveTab] = useState("patients");
@@ -81,263 +266,68 @@ function AdminPatient() {
   const [refundProcessed, setRefundProcessed] = useState({});
   const navigate = useNavigate();
 
-  const [rescheduleRequests, setRescheduleRequests] = useState([
-    {
-      id: 201,
-      name: "Liezel Paciente",
-      originalDate: "January 20, 2026",
-      originalTime: "2:00 pm",
-      requestedDate: "January 27, 2026",
-      requestedTime: "10:00 am",
-      type: "Follow Up",
-      status: "Pending",
-      reason: "I have a conflict with my work schedule on the original date.",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-    },
-    {
-      id: 202,
-      name: "Kevin Ramos",
-      originalDate: "December 28, 2025",
-      originalTime: "10:00 am",
-      requestedDate: "January 5, 2026",
-      requestedTime: "2:00 pm",
-      type: "Follow Up",
-      status: "Pending",
-      reason: "Family emergency on the scheduled day.",
-      contact: "09221234567",
-      email: "kevin@email.com",
-      address: "45 Rizal Ave, San Pablo, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 39,
-      gender: "Male",
-      totalVisits: 3,
-    },
-    {
-      id: 203,
-      name: "Maria Santos",
-      originalDate: "January 10, 2026",
-      originalTime: "1:30 pm",
-      requestedDate: "January 15, 2026",
-      requestedTime: "9:00 am",
-      type: "Check Up",
-      status: "Approved",
-      reason: "Transportation issue.",
-      contact: "09191234567",
-      email: "maria@email.com",
-      address: "78 Mabini St, Los Baños, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 52,
-      gender: "Female",
-      totalVisits: 12,
-    },
-  ]);
+  // ── Dynamic: Patients ──
+  const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(false);
+
+  // ── Static until endpoints ready ──
+  const [rescheduleRequests, setRescheduleRequests] =
+    useState(STATIC_RESCHEDULE);
+  const consultationRequests = STATIC_CONSULTATION_REQUESTS;
+  const cancelledAppointments = STATIC_CANCELLED;
 
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedReschedule, setSelectedReschedule] = useState(null);
   const rowsPerPage = 4;
 
-  const consultationRequests = [
-    {
-      id: 1,
-      name: "Liezel Paciente",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Scheduled",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-    },
-    {
-      id: 2,
-      name: "Ara Christina Ceres",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Scheduled",
-      contact: "09181234567",
-      email: "ara@email.com",
-      address: "22 Acacia Rd, Santa Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 28,
-      gender: "Female",
-      totalVisits: 2,
-      assignedDoctor: {
-        name: "Dr. Jose Santos",
-        specialization: "Dermatologist",
-      },
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      date: "January 22, 2026",
-      time: "11:00 am",
-      type: "Check Up",
-      status: "Cancelled",
-      contact: "09201234567",
-      email: "john@email.com",
-      address: "10 Magnolia St, Biñan, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 45,
-      gender: "Male",
-      totalVisits: 8,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-    },
-  ];
+  // ─────────────────────────────────────────────
+  // FETCH PATIENTS
+  // ─────────────────────────────────────────────
+  const fetchPatients = useCallback(async () => {
+    try {
+      setPatientsLoading(true);
+      const { data } = await axiosClient.get("/admin/patients");
+      if (!data.success) throw new Error("Failed to fetch patients");
 
-  const patients = [
-    {
-      id: 101,
-      name: "Liezel Paciente",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-      progressionNote: {
-        assessment:
-          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed.",
-      },
-    },
-    {
-      id: 102,
-      name: "Ara Christina Ceres",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Completed",
-      contact: "09181234567",
-      email: "ara@email.com",
-      address: "22 Acacia Rd, Santa Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 28,
-      gender: "Female",
-      totalVisits: 2,
-      assignedDoctor: {
-        name: "Dr. Jose Santos",
-        specialization: "Dermatologist",
-      },
-      progressionNote: {
-        assessment:
-          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin.",
-      },
-    },
-    {
-      id: 103,
-      name: "Maria Santos",
-      date: "January 10, 2026",
-      time: "1:30 pm",
-      type: "Check Up",
-      status: "Scheduled",
-      contact: "09191234567",
-      email: "maria@email.com",
-      address: "78 Mabini St, Los Baños, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 52,
-      gender: "Female",
-      totalVisits: 12,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-    },
-    {
-      id: 104,
-      name: "Kevin Ramos",
-      date: "December 28, 2025",
-      time: "10:00 am",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09221234567",
-      email: "kevin@email.com",
-      address: "45 Rizal Ave, San Pablo, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 39,
-      gender: "Male",
-      totalVisits: 3,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-      progressionNote: {
-        assessment:
-          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg.",
-      },
-    },
-  ];
+      const mapped = data.data.map((p) => ({
+        id: p.id,
+        name: `${p.firstName} ${p.lastName}`,
+        email: p.email ?? "—",
+        contact: p.contactNo ?? "—",
+        address: p.address ?? "—",
+        sex: p.sex ? p.sex.charAt(0).toUpperCase() + p.sex.slice(1) : "—",
+        genderIdentity: p.genderIdentity ?? "—",
+        dob: p.dob ?? null,
+        age: calcAge(p.dob),
+        gender: p.sex ? p.sex.charAt(0).toUpperCase() + p.sex.slice(1) : "—",
+        status: p.is_active ? "Active" : "Inactive",
+        is_active: p.is_active,
+        patientType: "Existing Patient",
+        consultationMode: "On-Site",
+        totalVisits: 0,
+        assignedDoctor: null,
+        progressionNote: null,
+        date: "—",
+        time: "—",
+        type: "—",
+      }));
 
-  const cancelledAppointments = [
-    {
-      id: 301,
-      name: "John Doe",
-      date: "January 22, 2026",
-      time: "11:00 am",
-      type: "Check Up",
-      status: "Cancelled",
-      contact: "09201234567",
-      email: "john@email.com",
-      address: "10 Magnolia St, Biñan, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 45,
-      gender: "Male",
-      totalVisits: 8,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-      cancellationReason:
-        "Patient called to cancel due to a sudden work obligation that could not be rescheduled.",
-    },
-    {
-      id: 302,
-      name: "Sofia Dela Cruz",
-      date: "February 3, 2026",
-      time: "3:00 pm",
-      type: "Follow Up",
-      status: "Cancelled",
-      contact: "09301234567",
-      email: "sofia@email.com",
-      address: "11 Sampaguita Ave, Sta. Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 25,
-      gender: "Female",
-      totalVisits: 1,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-      cancellationReason:
-        "Patient requested cancellation via email citing personal reasons and did not wish to reschedule at this time.",
-    },
-  ];
+      setPatients(mapped);
+    } catch (err) {
+      console.error("fetchPatients:", err);
+      toast.error("Failed to load patients.");
+    } finally {
+      setPatientsLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    fetchPatients();
+  }, [fetchPatients]);
+
+  // ─────────────────────────────────────────────
+  // TABLE DATA
+  // ─────────────────────────────────────────────
   const rawData =
     activeTab === "consultation"
       ? consultationRequests
@@ -351,50 +341,74 @@ function AdminPatient() {
     patientTypeFilter === "all"
       ? rawData
       : rawData.filter((r) => r.patientType === patientTypeFilter);
+
   const totalPages = Math.ceil(activeData.length / rowsPerPage);
   const displayedData = activeData.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
 
+  // ─────────────────────────────────────────────
+  // HANDLERS
+  // ─────────────────────────────────────────────
   const handleView = (row, source) => {
     setSelectedPatient(row);
     setModalSource(source);
     setShowModal(true);
     setPaymentOpen(false);
   };
+
   const handleViewReschedule = (row) => {
     setSelectedReschedule(row);
     setShowRescheduleModal(true);
   };
-  const handleRescheduleAction = (id, action) => {
-    setRescheduleRequests((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, status: action === "approve" ? "Approved" : "Declined" }
-          : r,
-      ),
-    );
+
+  const handleRescheduleAction = async (id, action) => {
+    try {
+      await axiosClient.put(`/admin/reschedule-requests/${id}`, {
+        status: action === "approve" ? "Approved" : "Declined",
+      });
+      setRescheduleRequests((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, status: action === "approve" ? "Approved" : "Declined" }
+            : r,
+        ),
+      );
+      toast.success(
+        `Request ${action === "approve" ? "approved" : "declined"}.`,
+      );
+    } catch (err) {
+      console.error("handleRescheduleAction:", err);
+      toast.error("Failed to update reschedule request.");
+    }
     setShowRescheduleModal(false);
   };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
     setPatientTypeFilter("all");
   };
+
   const handleFilterChange = (e) => {
     setPatientTypeFilter(e.target.value);
     setCurrentPage(1);
   };
+
   const handleRefundOpen = (row) => {
     setSelectedRefund(row);
     setShowRefundModal(true);
   };
+
   const handleRefundConfirm = (id) => {
     setRefundProcessed((prev) => ({ ...prev, [id]: true }));
     setShowRefundModal(false);
   };
 
+  // ─────────────────────────────────────────────
+  // STYLE HELPERS
+  // ─────────────────────────────────────────────
   const getRescheduleStatusBadge = (s) =>
     ({
       Approved: {
@@ -430,6 +444,16 @@ function AdminPatient() {
         color: "#dc2626",
         border: "1px solid #fecaca",
       },
+      active: {
+        background: "#dcfce7",
+        color: "#16a34a",
+        border: "1px solid #bbf7d0",
+      },
+      inactive: {
+        background: "#f3f4f6",
+        color: "#6b7280",
+        border: "1px solid #e5e7eb",
+      },
     })[s?.toLowerCase()] || {
       background: "#f3f4f6",
       color: "#6b7280",
@@ -449,7 +473,6 @@ function AdminPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
-  /* ── Reusable section header ── */
   const SectionHeader = ({ icon, title }) => (
     <div className={styles.cardSectionHeader}>
       <div className={styles.cardSectionIcon}>{icon}</div>
@@ -457,6 +480,9 @@ function AdminPatient() {
     </div>
   );
 
+  // ─────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -471,7 +497,8 @@ function AdminPatient() {
                   className={`${styles.tabBtn} ${activeTab === "patients" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("patients")}
                 >
-                  Total's Patients <span>{patients.length}</span>
+                  Total Patients{" "}
+                  <span>{patientsLoading ? "…" : patients.length}</span>
                 </button>
                 <button
                   className={`${styles.tabBtn} ${activeTab === "consultation" ? styles.tabActive : ""}`}
@@ -522,234 +549,266 @@ function AdminPatient() {
 
             {/* ── Table ── */}
             <div className={styles.tableWrapper}>
-              {" "}
-              <table className={styles.patientTable}>
-                <thead>
-                  {activeTab === "reschedule" ? (
-                    <tr>
-                      <th>Name</th>
-                      <th>Patient Type</th>
-                      <th>Original Date & Time</th>
-                      <th>Requested Date & Time</th>
-                      <th>Visit Type</th>
-                      <th>Consultation Mode</th>
-                      <th>Action</th>
-                    </tr>
-                  ) : activeTab === "consultation" ? (
-                    <tr>
-                      <th>Name</th>
-                      <th>Patient Type</th>
-                      <th>Date of Appointment</th>
-                      <th>Time</th>
-                      <th>Visit Type</th>
-                      <th>Consultation Mode</th>
-                      <th>Action</th>
-                    </tr>
-                  ) : activeTab === "cancelled" ? (
-                    <tr>
-                      <th>Name</th>
-                      <th>Patient Type</th>
-                      <th>Date of Appointment</th>
-                      <th>Time</th>
-                      <th>Visit Type</th>
-                      <th>Consultation Mode</th>
-                      <th>Action</th>
-                    </tr>
-                  ) : (
-                    <tr>
-                      <th>Name</th>
-                      <th>Patient Type</th>
-                      <th>Age</th>
-                      <th>Gender</th>
-                      <th>Address</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  )}
-                </thead>
-                <tbody>
-                  {displayedData.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className={styles.emptyRow}>
-                        No{" "}
-                        {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
-                        records found.
-                      </td>
-                    </tr>
-                  ) : activeTab === "reschedule" ? (
-                    displayedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>
-                          <span
-                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
-                          >
-                            {row.patientType}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={styles.dateOriginal}>
-                            {row.originalDate}
-                          </span>
-                          <br />
-                          <small style={{ color: "#aaa" }}>
-                            {row.originalTime}
-                          </small>
-                        </td>
-                        <td>
-                          <span className={styles.dateRequested}>
-                            {row.requestedDate}
-                          </span>
-                          <br />
-                          <small style={{ color: "#4D227C", fontWeight: 600 }}>
-                            {row.requestedTime}
-                          </small>
-                        </td>
-                        <td>{row.type}</td>
-                        <td>
-                          <span style={getModeBadgeStyle(row.consultationMode)}>
-                            {row.consultationMode === "Virtual" ? (
-                              <FiMonitor size={11} />
-                            ) : (
-                              <FiHome size={11} />
-                            )}
-                            {row.consultationMode}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.btnView}
-                            onClick={() => handleViewReschedule(row)}
-                          >
-                            View
-                          </button>
-                          <button
-                            className={styles.btnConfirm}
-                            disabled={row.status !== "Pending"}
-                            onClick={() =>
-                              handleRescheduleAction(row.id, "approve")
-                            }
-                          >
-                            Approve
-                          </button>
+              {patientsLoading && activeTab === "patients" ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "#aaa",
+                    fontSize: "14px",
+                  }}
+                >
+                  Loading patients…
+                </div>
+              ) : (
+                <table className={styles.patientTable}>
+                  <thead>
+                    {activeTab === "reschedule" ? (
+                      <tr>
+                        <th>Name</th>
+                        <th>Patient Type</th>
+                        <th>Original Date & Time</th>
+                        <th>Requested Date & Time</th>
+                        <th>Visit Type</th>
+                        <th>Consultation Mode</th>
+                        <th>Action</th>
+                      </tr>
+                    ) : activeTab === "consultation" ? (
+                      <tr>
+                        <th>Name</th>
+                        <th>Patient Type</th>
+                        <th>Date of Appointment</th>
+                        <th>Time</th>
+                        <th>Visit Type</th>
+                        <th>Consultation Mode</th>
+                        <th>Action</th>
+                      </tr>
+                    ) : activeTab === "cancelled" ? (
+                      <tr>
+                        <th>Name</th>
+                        <th>Patient Type</th>
+                        <th>Date of Appointment</th>
+                        <th>Time</th>
+                        <th>Visit Type</th>
+                        <th>Consultation Mode</th>
+                        <th>Action</th>
+                      </tr>
+                    ) : (
+                      <tr>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Sex</th>
+                        <th>Gender Identity</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    )}
+                  </thead>
+                  <tbody>
+                    {displayedData.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className={styles.emptyRow}>
+                          No{" "}
+                          {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
+                          records found.
                         </td>
                       </tr>
-                    ))
-                  ) : activeTab === "consultation" ? (
-                    displayedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>
-                          <span
-                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                    ) : activeTab === "reschedule" ? (
+                      displayedData.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.name}</td>
+                          <td>
+                            <span
+                              className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                            >
+                              {row.patientType}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={styles.dateOriginal}>
+                              {row.originalDate}
+                            </span>
+                            <br />
+                            <small style={{ color: "#aaa" }}>
+                              {row.originalTime}
+                            </small>
+                          </td>
+                          <td>
+                            <span className={styles.dateRequested}>
+                              {row.requestedDate}
+                            </span>
+                            <br />
+                            <small
+                              style={{ color: "#4D227C", fontWeight: 600 }}
+                            >
+                              {row.requestedTime}
+                            </small>
+                          </td>
+                          <td>{row.type}</td>
+                          <td>
+                            <span
+                              style={getModeBadgeStyle(row.consultationMode)}
+                            >
+                              {row.consultationMode === "Virtual" ? (
+                                <FiMonitor size={11} />
+                              ) : (
+                                <FiHome size={11} />
+                              )}
+                              {row.consultationMode}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.btnView}
+                              onClick={() => handleViewReschedule(row)}
+                            >
+                              View
+                            </button>
+                            <button
+                              className={styles.btnConfirm}
+                              disabled={row.status !== "Pending"}
+                              onClick={() =>
+                                handleRescheduleAction(row.id, "approve")
+                              }
+                            >
+                              Approve
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : activeTab === "consultation" ? (
+                      displayedData.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.name}</td>
+                          <td>
+                            <span
+                              className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                            >
+                              {row.patientType}
+                            </span>
+                          </td>
+                          <td>{row.date}</td>
+                          <td>{row.time}</td>
+                          <td>{row.type}</td>
+                          <td>
+                            <span
+                              style={getModeBadgeStyle(row.consultationMode)}
+                            >
+                              {row.consultationMode === "Virtual" ? (
+                                <FiMonitor size={11} />
+                              ) : (
+                                <FiHome size={11} />
+                              )}
+                              {row.consultationMode}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.btnView}
+                              onClick={() => handleView(row, activeTab)}
+                            >
+                              View
+                            </button>
+                            <button
+                              className={styles.btnConfirm}
+                              disabled={row.status === "Cancelled"}
+                            >
+                              Confirm
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : activeTab === "cancelled" ? (
+                      displayedData.map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.name}</td>
+                          <td>
+                            <span
+                              className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                            >
+                              {row.patientType}
+                            </span>
+                          </td>
+                          <td>{row.date}</td>
+                          <td>{row.time}</td>
+                          <td>{row.type}</td>
+                          <td>
+                            <span
+                              style={getModeBadgeStyle(row.consultationMode)}
+                            >
+                              {row.consultationMode === "Virtual" ? (
+                                <FiMonitor size={11} />
+                              ) : (
+                                <FiHome size={11} />
+                              )}
+                              {row.consultationMode}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.btnView}
+                              onClick={() => handleView(row, "cancelled")}
+                            >
+                              View
+                            </button>
+                            <button
+                              className={`${styles.btnRefund} ${refundProcessed[row.id] ? styles.btnRefundDone : ""}`}
+                              disabled={refundProcessed[row.id]}
+                              onClick={() => handleRefundOpen(row)}
+                            >
+                              {refundProcessed[row.id] ? "Refunded" : "Refund"}
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      // ── PATIENTS TAB — dynamic ──
+                      displayedData.map((row) => (
+                        <tr key={row.id}>
+                          <td>
+                            <strong>{row.name}</strong>
+                          </td>
+                          <td>{row.age}</td>
+                          <td>{row.sex}</td>
+                          <td>{formatGender(row.genderIdentity)}</td>
+                          <td
+                            style={{
+                              maxWidth: "160px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
                           >
-                            {row.patientType}
-                          </span>
-                        </td>
-                        <td>{row.date}</td>
-                        <td>{row.time}</td>
-                        <td>{row.type}</td>
-                        <td>
-                          <span style={getModeBadgeStyle(row.consultationMode)}>
-                            {row.consultationMode === "Virtual" ? (
-                              <FiMonitor size={11} />
-                            ) : (
-                              <FiHome size={11} />
-                            )}
-                            {row.consultationMode}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.btnView}
-                            onClick={() => handleView(row, activeTab)}
-                          >
-                            View
-                          </button>
-                          <button
-                            className={styles.btnConfirm}
-                            disabled={row.status === "Cancelled"}
-                          >
-                            Confirm
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : activeTab === "cancelled" ? (
-                    displayedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>
-                          <span
-                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
-                          >
-                            {row.patientType}
-                          </span>
-                        </td>
-                        <td>{row.date}</td>
-                        <td>{row.time}</td>
-                        <td>{row.type}</td>
-                        <td>
-                          <span style={getModeBadgeStyle(row.consultationMode)}>
-                            {row.consultationMode === "Virtual" ? (
-                              <FiMonitor size={11} />
-                            ) : (
-                              <FiHome size={11} />
-                            )}
-                            {row.consultationMode}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.btnView}
-                            onClick={() => handleView(row, "cancelled")}
-                          >
-                            View
-                          </button>
-                          <button
-                            className={`${styles.btnRefund} ${refundProcessed[row.id] ? styles.btnRefundDone : ""}`}
-                            disabled={refundProcessed[row.id]}
-                            onClick={() => handleRefundOpen(row)}
-                          >
-                            {refundProcessed[row.id] ? "Refunded" : "Refund"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    displayedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>
-                          <span
-                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
-                          >
-                            {row.patientType}
-                          </span>
-                        </td>
-                        <td>{row.age}</td>
-                        <td>{row.gender}</td>
-                        <td>{row.address}</td>
-                        <td>
-                          <span
-                            className={`${styles.statusText} ${styles[`status${row.status}`]}`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.btnView}
-                            onClick={() => handleView(row, activeTab)}
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                            {row.address}
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                ...getStatusBadgeStyle(row.status),
+                                padding: "3px 10px",
+                                borderRadius: "20px",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {row.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.btnView}
+                              onClick={() => handleView(row, activeTab)}
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* ── Pagination ── */}
@@ -811,17 +870,23 @@ function AdminPatient() {
                     {selectedPatient.contact}
                   </p>
                   <div className={styles.patientProfileMeta}>
-                    {selectedPatient.age && (
+                    {selectedPatient.age && selectedPatient.age !== "—" && (
                       <span className={styles.metaChip}>
                         {selectedPatient.age} yrs
                       </span>
                     )}
-                    {selectedPatient.gender && (
+                    {selectedPatient.sex && selectedPatient.sex !== "—" && (
                       <span className={styles.metaChip}>
-                        {selectedPatient.gender}
+                        {selectedPatient.sex}
                       </span>
                     )}
-                    {selectedPatient.totalVisits && (
+                    {selectedPatient.genderIdentity &&
+                      selectedPatient.genderIdentity !== "—" && (
+                        <span className={styles.metaChip}>
+                          {formatGender(selectedPatient.genderIdentity)}
+                        </span>
+                      )}
+                    {selectedPatient.totalVisits > 0 && (
                       <span className={styles.metaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
@@ -836,179 +901,308 @@ function AdminPatient() {
                     })
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} />
-                  View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
                 </button>
               </div>
             </div>
 
             {/* Body */}
             <div className={styles.modalBody}>
-              {/* Appointment Details */}
-              <div
-                className={styles.modalCard}
-                style={{ marginBottom: "12px" }}
-              >
-                <SectionHeader
-                  icon={<FaCalendarAlt size={13} color="#fff" />}
-                  title="Appointment Details"
-                />
-                <div className={styles.twoCol}>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiCalendar />
+              {/* Patient Info (patients tab) */}
+              {modalSource === "patients" && (
+                <div
+                  className={styles.modalCard}
+                  style={{ marginBottom: "12px" }}
+                >
+                  <SectionHeader
+                    icon={<FiUser size={13} color="#fff" />}
+                    title="Patient Information"
+                  />
+                  <div className={styles.twoCol}>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Full Name</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.name}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Date</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.date}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiPhone />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Contact</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.contact}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiClock />
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiCalendar />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Date of Birth</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.dob ?? "—"}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Time</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.time}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Age</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.age}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiUser />
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Sex</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.sex}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Visit Type</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.type}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>
+                          Gender Identity
+                        </span>
+                        <span className={styles.infoValue}>
+                          {formatGender(selectedPatient.genderIdentity)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiUser />
-                    </div>
-                    <div>
-                      <span className={styles.infoLabel}>Status</span>
-                      <span
-                        className={styles.statusBadge}
-                        style={getStatusBadgeStyle(selectedPatient.status)}
-                      >
-                        {selectedPatient.status}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      {selectedPatient.patientType === "Existing Patient" ? (
-                        <FiUserCheck />
-                      ) : (
-                        <FiUserPlus />
-                      )}
-                    </div>
-                    <div>
-                      <span className={styles.infoLabel}>Patient Type</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.patientType}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      {selectedPatient.consultationMode === "Virtual" ? (
-                        <FiMonitor />
-                      ) : (
+                    <div
+                      className={styles.infoItem}
+                      style={{ gridColumn: "1 / -1" }}
+                    >
+                      <div className={styles.infoIcon}>
                         <FiHome />
-                      )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Address</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.address}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Mode</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.consultationMode}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiFileText />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Email</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.email}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiActivity />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Status</span>
+                        <span
+                          style={{
+                            ...getStatusBadgeStyle(selectedPatient.status),
+                            padding: "3px 10px",
+                            borderRadius: "20px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {selectedPatient.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {selectedPatient.assignedDoctor && (
-                  <div
-                    style={{
-                      marginTop: "16px",
-                      paddingTop: "14px",
-                      borderTop: "1px dashed #e5e7eb",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "#9b7ec8",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.07em",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      Assigned Doctor
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        background: "linear-gradient(135deg, #f3eeff, #ede9f6)",
-                        border: "1px solid #d8ccf0",
-                        borderRadius: "10px",
-                        padding: "12px 14px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          background:
-                            "linear-gradient(135deg, #7341A8, #4D227C)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          boxShadow: "0 2px 8px rgba(115,65,168,0.3)",
-                        }}
-                      >
-                        <FaUserMd size={18} color="#fff" />
+              {/* Appointment Details (non-patients tabs) */}
+              {modalSource !== "patients" && (
+                <div
+                  className={styles.modalCard}
+                  style={{ marginBottom: "12px" }}
+                >
+                  <SectionHeader
+                    icon={<FaCalendarAlt size={13} color="#fff" />}
+                    title="Appointment Details"
+                  />
+                  <div className={styles.twoCol}>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiCalendar />
                       </div>
                       <div>
-                        <p
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: 700,
-                            color: "#3b1f6e",
-                            margin: "0 0 2px 0",
-                            lineHeight: 1.2,
-                          }}
+                        <span className={styles.infoLabel}>Date</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.date}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiClock />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Time</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.time}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Visit Type</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.type}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Status</span>
+                        <span
+                          className={styles.statusBadge}
+                          style={getStatusBadgeStyle(selectedPatient.status)}
                         >
-                          {selectedPatient.assignedDoctor.name}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: "12px",
-                            color: "#7341A8",
-                            margin: 0,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {selectedPatient.assignedDoctor.specialization}
-                        </p>
+                          {selectedPatient.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        {selectedPatient.patientType === "Existing Patient" ? (
+                          <FiUserCheck />
+                        ) : (
+                          <FiUserPlus />
+                        )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Patient Type</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.patientType}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        {selectedPatient.consultationMode === "Virtual" ? (
+                          <FiMonitor />
+                        ) : (
+                          <FiHome />
+                        )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Mode</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.consultationMode}
+                        </span>
                       </div>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Cancellation Reason (cancelled tab only) */}
+                  {selectedPatient.assignedDoctor && (
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        paddingTop: "14px",
+                        borderTop: "1px dashed #e5e7eb",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#9b7ec8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        Assigned Doctor
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          background:
+                            "linear-gradient(135deg, #f3eeff, #ede9f6)",
+                          border: "1px solid #d8ccf0",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            background:
+                              "linear-gradient(135deg, #7341A8, #4D227C)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: "0 2px 8px rgba(115,65,168,0.3)",
+                          }}
+                        >
+                          <FaUserMd size={18} color="#fff" />
+                        </div>
+                        <div>
+                          <p
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 700,
+                              color: "#3b1f6e",
+                              margin: "0 0 2px 0",
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {selectedPatient.assignedDoctor.name}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              color: "#7341A8",
+                              margin: 0,
+                              fontStyle: "italic",
+                            }}
+                          >
+                            {selectedPatient.assignedDoctor.specialization}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Cancellation Reason */}
               {modalSource === "cancelled" &&
                 selectedPatient.cancellationReason && (
                   <div
@@ -1063,8 +1257,7 @@ function AdminPatient() {
                           gap: "6px",
                         }}
                       >
-                        <FiFileText size={12} />
-                        Assessment
+                        <FiFileText size={12} /> Assessment
                       </p>
                       <p
                         style={{
@@ -1197,16 +1390,14 @@ function AdminPatient() {
                   })
                 }
               >
-                <FiFileText style={{ marginRight: "6px" }} />
-                View History
+                <FiFileText style={{ marginRight: "6px" }} /> View History
               </button>
               {modalSource === "consultation" && (
                 <button
                   className={styles.btnFooterConfirm}
                   disabled={selectedPatient.status === "Cancelled"}
                 >
-                  <FiCheck size={15} />
-                  Confirm
+                  <FiCheck size={15} /> Confirm
                 </button>
               )}
             </div>
@@ -1270,8 +1461,7 @@ function AdminPatient() {
                     )
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} />
-                  View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
                 </button>
               </div>
             </div>
@@ -1438,8 +1628,7 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "decline")
                 }
               >
-                <FiXCircle style={{ marginRight: "6px" }} />
-                Decline
+                <FiXCircle style={{ marginRight: "6px" }} /> Decline
               </button>
               <button
                 className={styles.btnFooterConfirm}
@@ -1448,8 +1637,7 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "approve")
                 }
               >
-                <FiCheck size={15} />
-                Approve
+                <FiCheck size={15} /> Approve
               </button>
             </div>
           </div>

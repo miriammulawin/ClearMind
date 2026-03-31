@@ -34,13 +34,14 @@ class AdminController extends Controller
                                     ->where('is_active', false)
                                     ->count();
 
-            // ── Monthly patients (last 12 months) ──
+            // ── Monthly patients (all 12 months of current year) ──
             $monthlyPatients = [];
-            for ($i = 11; $i >= 0; $i--) {
-                $month = now()->subMonths($i);
+            $currentYear = now()->year;
+            
+            for ($month = 1; $month <= 12; $month++) {
                 $count = User::where('role', User::ROLE_CLIENT)
-                            ->whereYear('created_at', $month->year)
-                            ->whereMonth('created_at', $month->month)
+                            ->whereYear('created_at', $currentYear)
+                            ->whereMonth('created_at', $month)
                             ->count();
                 $monthlyPatients[] = $count;
             }
@@ -102,6 +103,7 @@ class AdminController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch dashboard stats.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
