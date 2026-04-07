@@ -10,6 +10,20 @@ function ManageAccounts() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
+const [formData, setFormData] = useState({
+  firstName: "",
+  lastName: "",
+  middleInitial: "",
+  sex: "",
+  dob: "",
+  email: "",
+  contactNo: "",
+  address: "",
+});
+
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [users, setUsers] = useState([
     {
       doctors_id: 1,
@@ -73,6 +87,8 @@ function ManageAccounts() {
     "Manage Accounts",
   ];
 
+  // ── Handlers ──────────────────────────────────────────────────────────
+
   const handleRoleChange = (userId, role) => {
     setUsers(
       users.map((user) => {
@@ -93,6 +109,80 @@ function ManageAccounts() {
     setShowViewModal(true);
   };
 
+  const handleOpenCreateModal = () => {
+    setFormData({
+      first_name: "",
+      last_name: "",
+      middle_initial: "",
+      sex: "",
+      date_of_birth: "",
+      email_address: "",
+      phone: "",
+      address: "",
+    });
+    setFormErrors({});
+    setShowCreateModal(true);
+  };
+
+  const handleCreateAccount = async () => {
+    setIsSubmitting(true);
+    setFormErrors({});
+
+    try {
+      const response = await fetch("http://localhost:8000/api/admin/doctors", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setFormErrors(result.errors || {});
+        return;
+      }
+
+      setUsers((prev) => [
+        ...prev,
+        {
+          doctors_id: result.data.doctor?.doctor_id,
+          first_name: result.data.firstName,
+          last_name: result.data.lastName,
+          middle_initial: result.data.middleInitial,
+          sex: result.data.sex,
+          date_of_birth: result.data.dob,
+          email_address: result.data.email,
+          phone: result.data.contactNo,
+          address: result.data.address,
+          age: null,
+          roles: [],
+          created_at: result.data.created_at,
+          professional_title: null,
+          license_number: null,
+          years_of_experience: null,
+          specialization: null,
+          sub_specialization: null,
+          board_certification: null,
+          service: null,
+          description: null,
+          profile_pic: null,
+          cert_image: null,
+        },
+      ]);
+
+      setShowCreateModal(false);
+    } catch (err) {
+      console.error("Network error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────
+
   return (
     <div className="admin-layout">
       <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -105,7 +195,7 @@ function ManageAccounts() {
             <h3 className={styles.title}>Manage Accounts</h3>
             <button
               className={styles.btnCreate}
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleOpenCreateModal}
             >
               + Create Account
             </button>
@@ -188,16 +278,36 @@ function ManageAccounts() {
                       type="text"
                       className={styles.formInput}
                       placeholder="e.g. Maria"
+                      value={formData.firstName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
                     />
+                    {formErrors.firstName && (
+                      <span style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.firstName[0]}
+                      </span>
+                    )}
                   </label>
+
                   <label className={styles.formLabel}>
                     Last Name
                     <input
                       type="text"
                       className={styles.formInput}
                       placeholder="e.g. Santos"
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastName: e.target.value })
+                      }
                     />
+                    {formErrors.lastName && (
+                      <span style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.lastName[0]}
+                      </span>
+                    )}
                   </label>
+
                   <label className={styles.formLabel}>
                     M.I.
                     <input
@@ -205,42 +315,84 @@ function ManageAccounts() {
                       className={styles.formInput}
                       placeholder="e.g. B"
                       maxLength={1}
+                      value={formData.middleInitial}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          middleInitial: e.target.value,
+                        })
+                      }
                     />
                   </label>
+
                   <label className={styles.formLabel}>
                     Sex
-                    <select className={styles.formInput}>
+                    <select
+                      className={styles.formInput}
+                      value={formData.sex}
+                      onChange={(e) =>
+                        setFormData({ ...formData, sex: e.target.value })
+                      }
+                    >
                       <option value="">Select Sex</option>
-                      <option>Female</option>
-                      <option>Male</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
                     </select>
                   </label>
+
                   <label className={styles.formLabel}>
                     Date of Birth
-                    <input type="date" className={styles.formInput} />
+                    <input
+                      type="date"
+                      className={styles.formInput}
+                      value={formData.dob}
+                      onChange={(e) =>
+                        setFormData({ ...formData, dob: e.target.value })
+                      }
+                    />
                   </label>
+
                   <label className={styles.formLabel}>
                     Email Address
                     <input
                       type="email"
                       className={styles.formInput}
                       placeholder="doctor@email.com"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                     />
+                    {formErrors.email && (
+                      <span style={{ color: "red", fontSize: "12px" }}>
+                        {formErrors.email[0]}
+                      </span>
+                    )}
                   </label>
+
                   <label className={`${styles.formLabel} ${styles.col2}`}>
                     Contact Number
                     <input
                       type="tel"
                       className={styles.formInput}
                       placeholder="e.g. 09123456789"
+                      value={formData.contactNo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contactNo: e.target.value })
+                      }
                     />
                   </label>
+
                   <label className={styles.formLabel}>
                     Address
                     <input
                       type="text"
                       className={styles.formInput}
                       placeholder="e.g. Quezon City"
+                      value={formData.address}
+                      onChange={(e) =>
+                        setFormData({ ...formData, address: e.target.value })
+                      }
                     />
                   </label>
                 </div>
@@ -254,7 +406,13 @@ function ManageAccounts() {
               >
                 Cancel
               </button>
-              <button className={styles.btnSubmit}>Create Account</button>
+              <button
+                className={styles.btnSubmit}
+                onClick={handleCreateAccount}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Creating..." : "Create Account"}
+              </button>
             </div>
           </div>
         </div>
@@ -315,16 +473,21 @@ function ManageAccounts() {
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Age</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.age} years old
+                      {selectedUser.age ? `${selectedUser.age} years old` : "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Date of Birth</span>
                     <span className={styles.viewInfoValue}>
-                      {new Date(selectedUser.date_of_birth).toLocaleDateString(
-                        "en-US",
-                        { year: "numeric", month: "long", day: "numeric" },
-                      )}
+                      {selectedUser.date_of_birth
+                        ? new Date(
+                            selectedUser.date_of_birth,
+                          ).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
@@ -336,7 +499,7 @@ function ManageAccounts() {
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Phone</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.phone}
+                      {selectedUser.phone || "—"}
                     </span>
                   </div>
                 </div>
@@ -351,19 +514,21 @@ function ManageAccounts() {
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>License No.</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.license_number}
+                      {selectedUser.license_number || "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Experience</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.years_of_experience} years
+                      {selectedUser.years_of_experience
+                        ? `${selectedUser.years_of_experience} years`
+                        : "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Specialization</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.specialization}
+                      {selectedUser.specialization || "—"}
                     </span>
                   </div>
                   <div
@@ -373,7 +538,7 @@ function ManageAccounts() {
                       Sub-Specialization
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.sub_specialization}
+                      {selectedUser.sub_specialization || "—"}
                     </span>
                   </div>
                   <div
@@ -383,7 +548,7 @@ function ManageAccounts() {
                       Board Certification
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.board_certification}
+                      {selectedUser.board_certification || "—"}
                     </span>
                   </div>
                   <div
@@ -393,7 +558,7 @@ function ManageAccounts() {
                       Service Department
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.service}
+                      {selectedUser.service || "—"}
                     </span>
                   </div>
                 </div>
@@ -403,7 +568,7 @@ function ManageAccounts() {
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>About</p>
                 <p className={styles.viewDescription}>
-                  {selectedUser.description}
+                  {selectedUser.description || "No description yet."}
                 </p>
               </div>
 
@@ -431,11 +596,17 @@ function ManageAccounts() {
                   Certification Document
                 </p>
                 <div className={styles.viewCertContainer}>
-                  <img
-                    src={selectedUser.cert_image}
-                    alt="Certificate"
-                    className={styles.viewCertImage}
-                  />
+                  {selectedUser.cert_image ? (
+                    <img
+                      src={selectedUser.cert_image}
+                      alt="Certificate"
+                      className={styles.viewCertImage}
+                    />
+                  ) : (
+                    <span style={{ color: "#999", fontSize: "14px" }}>
+                      No certificate uploaded yet.
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

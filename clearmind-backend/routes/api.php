@@ -5,6 +5,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ConsultationRequestController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\DoctorAccountController;
 
 // ── Public Auth Routes ──
 Route::post('/register', [AuthController::class, 'register']);
@@ -20,11 +22,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Patient-facing: submit a consultation request
     Route::post('consultation-requests', [ConsultationRequestController::class, 'store']);
 
+
+ 
+   
+ 
+
+
+
     // ── Admin Routes (with admin role check in controller) ──
     Route::prefix('admin')->group(function () {
 
         // Dashboard stats
         Route::get('dashboard/stats', [AdminController::class, 'stats']);
+      
 
         // Patients
         Route::get('patients',           [AdminController::class, 'getPatients']);
@@ -34,9 +44,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Appointments CRUD
         Route::apiResource('appointments', AppointmentController::class);
+         Route::apiResource('announcements', AnnouncementController::class);
 
         // Consultation Requests CRUD (admin manages all verbs except POST /store — handled above)
         Route::apiResource('consultation-requests', ConsultationRequestController::class)
              ->except(['store']);
+
+          Route::post('doctors', [DoctorAccountController::class, 'store']);
     });
 });
