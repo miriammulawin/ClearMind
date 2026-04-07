@@ -2,21 +2,23 @@
 // Step 1 of the appointment booking flow.
 // Calendar + time picker are now delegated to SelectDateAndTime.jsx.
 
-import React, { useMemo, useEffect } from 'react';
-import { FaVideo, FaHome } from 'react-icons/fa';
-import styles from '../../../ClientStyle/ScheduleForm.module.css';
+import React, { useMemo, useEffect } from "react";
+import { FaVideo, FaHome } from "react-icons/fa";
+import styles from "../../../ClientStyle/ScheduleForm.module.css";
 
-import SelectDateAndTime, { getEndTime } from '../../AppointmentComponents/SelectDateandTime';
-import SetAppointmentFormHeader from './SetAppointmentFormHeader'; // ← adjust path as needed
+import SelectDateAndTime, {
+  getEndTime,
+} from "../../AppointmentComponents/SelectDateandTime";
+import SetAppointmentFormHeader from "./SetAppointmentFormHeader"; // ← adjust path as needed
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getDayMode = (dateSlot, doctorData) => {
   if (!dateSlot || !doctorData) return null;
-  const day         = dateSlot.day;
-  const onSiteDays  = doctorData.onSiteDays  || [];
+  const day = dateSlot.day;
+  const onSiteDays = doctorData.onSiteDays || [];
   const virtualDays = doctorData.virtualDays || [];
-  if (onSiteDays.includes(day)  && !virtualDays.includes(day)) return 'ON-SITE';
-  if (virtualDays.includes(day) && !onSiteDays.includes(day))  return 'VIRTUAL';
+  if (onSiteDays.includes(day) && !virtualDays.includes(day)) return "ON-SITE";
+  if (virtualDays.includes(day) && !onSiteDays.includes(day)) return "VIRTUAL";
   return null;
 };
 
@@ -30,17 +32,19 @@ const ScheduleForm = ({
   selectedTime,
   setSelectedTime,
   consultationFee,
-  currentStep,   // ← new prop (pass 1 for the Schedule tab)
-  onBack,        // ← new prop
+  onSameDayClick, // ← receive and forward
+  currentStep, // ← new prop (pass 1 for the Schedule tab)
+  onBack, // ← new prop
 }) => {
-
   // ── Derive available modes from doctor data ──────────────────
   const availableModes = useMemo(() => {
     const modes = [];
     if (doctorData) {
       const mode = doctorData.consultationMode;
-      if (mode === 'Both' || mode === 'In-Person' || mode === 'Onsite') modes.push('ON-SITE');
-      if (mode === 'Both' || mode === 'Online'    || mode === 'Virtual') modes.push('VIRTUAL');
+      if (mode === "Both" || mode === "In-Person" || mode === "Onsite")
+        modes.push("ON-SITE");
+      if (mode === "Both" || mode === "Online" || mode === "Virtual")
+        modes.push("VIRTUAL");
     }
     return modes;
   }, [doctorData]);
@@ -57,7 +61,13 @@ const ScheduleForm = ({
     if (!selectedDate || availableModes.length !== 2) return;
     const dayMode = getDayMode(selectedDate, doctorData);
     if (dayMode && consultationMode !== dayMode) setConsultationMode(dayMode);
-  }, [selectedDate, availableModes, doctorData, consultationMode, setConsultationMode]);
+  }, [
+    selectedDate,
+    availableModes,
+    doctorData,
+    consultationMode,
+    setConsultationMode,
+  ]);
 
   const isFormComplete = consultationMode && selectedDate && selectedTime;
 
@@ -72,18 +82,25 @@ const ScheduleForm = ({
         {availableModes.length === 1 ? (
           /* Single mode — just show info, no toggle needed */
           <div className={styles.singleModeInfo}>
-            {availableModes[0] === 'VIRTUAL'
-              ? <><FaVideo className={styles.singleModeIcon} /> Virtual Consultation</>
-              : <><FaHome  className={styles.singleModeIcon} /> On-Site Consultation</>
-            }
+            {availableModes[0] === "VIRTUAL" ? (
+              <>
+                <FaVideo className={styles.singleModeIcon} /> Virtual
+                Consultation
+              </>
+            ) : (
+              <>
+                <FaHome className={styles.singleModeIcon} /> On-Site
+                Consultation
+              </>
+            )}
           </div>
         ) : (
           /* Both modes available — show toggle */
           <div className={styles.modeToggleRow}>
             <button
-              className={`${styles.modeToggle} ${consultationMode === 'ON-SITE' ? styles.modeToggleActive : ''}`}
+              className={`${styles.modeToggle} ${consultationMode === "ON-SITE" ? styles.modeToggleActive : ""}`}
               onClick={() => {
-                setConsultationMode('ON-SITE');
+                setConsultationMode("ON-SITE");
                 setSelectedDate(null);
                 setSelectedTime(null);
               }}
@@ -92,9 +109,9 @@ const ScheduleForm = ({
               <span>On-Site</span>
             </button>
             <button
-              className={`${styles.modeToggle} ${consultationMode === 'VIRTUAL' ? styles.modeToggleActive : ''}`}
+              className={`${styles.modeToggle} ${consultationMode === "VIRTUAL" ? styles.modeToggleActive : ""}`}
               onClick={() => {
-                setConsultationMode('VIRTUAL');
+                setConsultationMode("VIRTUAL");
                 setSelectedDate(null);
                 setSelectedTime(null);
               }}
@@ -113,6 +130,7 @@ const ScheduleForm = ({
         setSelectedDate={setSelectedDate}
         selectedTime={selectedTime}
         setSelectedTime={setSelectedTime}
+        onSameDayClick={onSameDayClick}
       />
 
       {/* ── Booking Summary (shown once all three fields are filled) ── */}
@@ -120,7 +138,6 @@ const ScheduleForm = ({
         <div className={styles.summaryCard}>
           <p className={styles.summaryTitle}>Booking Summary</p>
           <div className={styles.summaryGrid}>
-
             <span className={styles.summaryLabel}>Doctor</span>
             <span className={styles.summaryValue}>{doctorData.name}</span>
 
@@ -135,13 +152,14 @@ const ScheduleForm = ({
               {selectedTime} – {getEndTime(selectedTime)}
             </span>
 
-            <span className={`${styles.summaryLabel} ${styles.summaryFeeLabel}`}>
+            <span
+              className={`${styles.summaryLabel} ${styles.summaryFeeLabel}`}
+            >
               Consultation Fee
             </span>
             <span className={`${styles.summaryValue} ${styles.summaryFee}`}>
               ₱{consultationFee?.toLocaleString()}
             </span>
-
           </div>
         </div>
       )}

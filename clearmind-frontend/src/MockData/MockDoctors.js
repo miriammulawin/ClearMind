@@ -1,7 +1,7 @@
 // src/MockData/MockDoctors.js
-import Holidays from 'date-holidays';
+import Holidays from "date-holidays";
 
-const hd = new Holidays('PH');
+const hd = new Holidays("PH");
 
 const isPhilippineHoliday = (date) => {
   const result = hd.isHoliday(date);
@@ -10,22 +10,120 @@ const isPhilippineHoliday = (date) => {
 
 // ── Slot Templates ────────────────────────────────────────────────────────────
 
-const createSlots = (times) =>
-  times.map((time) => ({ time, available: true }));
+const createSlots = (times) => times.map((time) => ({ time, available: true }));
 
-const SLOTS_4PM_7PM       = createSlots(['4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM']);
-const SLOTS_10AM_4PM      = createSlots(['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM']);
-const SLOTS_1PM_7PM       = createSlots(['1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM']);
-const SLOTS_6PM_9PM       = createSlots(['6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM']);
-const SLOTS_3_30PM_7_30PM = createSlots(['3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM']);
-const SLOTS_9AM_12PM      = createSlots(['9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM']);
-const SLOTS_8AM_12PM      = createSlots(['8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM']);
-const SLOTS_1PM_5PM       = createSlots(['1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM']);
-const SLOTS_10AM_2PM      = createSlots(['10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM']);
+const SLOTS_4PM_7PM = createSlots([
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+  "5:30 PM",
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+]);
+const SLOTS_10AM_4PM = createSlots([
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "3:30 PM",
+  "4:00 PM",
+]);
+const SLOTS_1PM_7PM = createSlots([
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "3:30 PM",
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+  "5:30 PM",
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+]);
+const SLOTS_6PM_9PM = createSlots([
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+  "7:30 PM",
+  "8:00 PM",
+  "8:30 PM",
+  "9:00 PM",
+]);
+const SLOTS_3_30PM_7_30PM = createSlots([
+  "3:30 PM",
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+  "5:30 PM",
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+  "7:30 PM",
+]);
+const SLOTS_9AM_12PM = createSlots([
+  "9:00 AM",
+  "9:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+]);
+const SLOTS_8AM_12PM = createSlots([
+  "8:00 AM",
+  "8:30 AM",
+  "9:00 AM",
+  "9:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+]);
+const SLOTS_1PM_5PM = createSlots([
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "3:30 PM",
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+]);
+const SLOTS_10AM_2PM = createSlots([
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+]);
 
 // ── Availability Builder ──────────────────────────────────────────────────────
 
-const DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_ORDER = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 
 const buildAvailability = (schedule, weeksAhead = 12) => {
   const result = [];
@@ -53,10 +151,10 @@ const buildAvailability = (schedule, weeksAhead = 12) => {
         // ✅ Skip Philippine holidays
         if (isPhilippineHoliday(date)) return;
 
-        const dateStr = date.toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
+        const dateStr = date.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
         });
 
         result.push({
@@ -95,9 +193,15 @@ export const MOCK_DOCTORS = [
       mentalHealthCertification: 1500,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Monday","Tuesday","Wednesday","Thursday","Friday"], slots: SLOTS_4PM_7PM },
-      ], 12);
+      return buildAvailability(
+        [
+          {
+            days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            slots: SLOTS_4PM_7PM,
+          },
+        ],
+        12,
+      );
     },
   },
   {
@@ -121,9 +225,10 @@ export const MOCK_DOCTORS = [
       mentalHealthCertification: 1500,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Monday","Tuesday","Friday"], slots: SLOTS_10AM_4PM },
-      ], 12);
+      return buildAvailability(
+        [{ days: ["Monday", "Tuesday", "Friday"], slots: SLOTS_10AM_4PM }],
+        12,
+      );
     },
   },
   {
@@ -147,10 +252,13 @@ export const MOCK_DOCTORS = [
       mentalHealthCertification: 2000,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Thursday"], slots: SLOTS_1PM_7PM },
-        { days: ["Tuesday"],  slots: SLOTS_6PM_9PM },
-      ], 12);
+      return buildAvailability(
+        [
+          { days: ["Thursday"], slots: SLOTS_1PM_7PM },
+          { days: ["Tuesday"], slots: SLOTS_6PM_9PM },
+        ],
+        12,
+      );
     },
   },
   {
@@ -174,9 +282,10 @@ export const MOCK_DOCTORS = [
       mentalHealthCertification: 1500,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Saturday"], slots: SLOTS_3_30PM_7_30PM },
-      ], 12);
+      return buildAvailability(
+        [{ days: ["Saturday"], slots: SLOTS_3_30PM_7_30PM }],
+        12,
+      );
     },
   },
   {
@@ -200,9 +309,10 @@ export const MOCK_DOCTORS = [
       mentalHealthCertification: 2000,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Wednesday", "Saturday"], slots: SLOTS_9AM_12PM },
-      ], 12);
+      return buildAvailability(
+        [{ days: ["Wednesday", "Saturday"], slots: SLOTS_9AM_12PM }],
+        12,
+      );
     },
   },
   {
@@ -225,10 +335,13 @@ export const MOCK_DOCTORS = [
       psychometricTesting: 2000,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Monday", "Wednesday"], slots: SLOTS_8AM_12PM },
-        { days: ["Friday"],             slots: SLOTS_1PM_5PM  },
-      ], 12);
+      return buildAvailability(
+        [
+          { days: ["Monday", "Wednesday"], slots: SLOTS_8AM_12PM },
+          { days: ["Friday"], slots: SLOTS_1PM_5PM },
+        ],
+        12,
+      );
     },
   },
   {
@@ -251,9 +364,10 @@ export const MOCK_DOCTORS = [
       psychometricTesting: 2000,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Tuesday", "Thursday"], slots: SLOTS_10AM_2PM },
-      ], 12);
+      return buildAvailability(
+        [{ days: ["Tuesday", "Thursday"], slots: SLOTS_10AM_2PM }],
+        12,
+      );
     },
   },
   {
@@ -276,9 +390,10 @@ export const MOCK_DOCTORS = [
       psychometricTesting: 2000,
     },
     get availability() {
-      return buildAvailability([
-        { days: ["Tuesday", "Thursday", "Saturday"], slots: SLOTS_1PM_5PM },
-      ], 12);
+      return buildAvailability(
+        [{ days: ["Tuesday", "Thursday", "Saturday"], slots: SLOTS_1PM_5PM }],
+        12,
+      );
     },
   },
 ];
@@ -308,7 +423,9 @@ export const getDoctorById = (id) =>
 
 export const getAvailableDoctors = () =>
   MOCK_DOCTORS.filter((doctor) =>
-    doctor.availability.some((avail) => avail.slots.some((slot) => slot.available))
+    doctor.availability.some((avail) =>
+      avail.slots.some((slot) => slot.available),
+    ),
   );
 
 export default MOCK_DOCTORS;

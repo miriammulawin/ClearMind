@@ -1,13 +1,13 @@
-import React from 'react';
-import { Image } from 'react-bootstrap';
-import { FaArrowLeft } from 'react-icons/fa';
-import styles from '../style/PACSetAppointment.module.css';
+import React from "react";
+import { Image } from "react-bootstrap";
+import { FaArrowLeft } from "react-icons/fa";
+import styles from "../style/PACSetAppointment.module.css";
 import logo_login_single from "../../../../../src/assets/CMPS_Img_logo_only.png";
 
 const STEPS = [
-  { num: 1, label: 'Schedule'       },
-  { num: 2, label: 'Verify Profile' },
-  { num: 3, label: 'Payment'        },
+  { num: 1, label: "Schedule" },
+  { num: 2, label: "Verify Profile" },
+  { num: 3, label: "Payment" },
 ];
 const TOTAL_STEPS = STEPS.length;
 
@@ -24,7 +24,6 @@ const SetAppointmentFormHeader = ({ doctorData, currentStep, onBack }) => {
 
   return (
     <div className={styles.stickyHeader}>
-
       {/* ── Back Row ── */}
       <div className={styles.backRow}>
         <button className={styles.backBtn} onClick={onBack}>
@@ -53,7 +52,14 @@ const SetAppointmentFormHeader = ({ doctorData, currentStep, onBack }) => {
       </div>
 
       {/* ── Stepper ── */}
-      <div className={styles.stepper} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        className={styles.stepper}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         {STEPS.map((step, i, arr) => (
           <React.Fragment key={step.num}>
             <div className={styles.stepperItem}>
@@ -62,19 +68,19 @@ const SetAppointmentFormHeader = ({ doctorData, currentStep, onBack }) => {
                   step.num === currentStep
                     ? styles.active
                     : step.num < currentStep
-                    ? styles.done
-                    : ''
+                      ? styles.done
+                      : ""
                 }`}
               >
-                {step.num < currentStep ? '✓' : step.num}
+                {step.num < currentStep ? "✓" : step.num}
               </div>
               <span
                 className={`${styles.stepLabel} ${
                   step.num === currentStep
                     ? styles.stepLabelActive
                     : step.num < currentStep
-                    ? styles.stepLabelDone
-                    : ''
+                      ? styles.stepLabelDone
+                      : ""
                 }`}
               >
                 {step.label}
@@ -83,18 +89,15 @@ const SetAppointmentFormHeader = ({ doctorData, currentStep, onBack }) => {
             {i < arr.length - 1 && <div className={styles.stepperLine} />}
           </React.Fragment>
         ))}
-        
       </div>
-      
-       {/* ── Progress Bar ── */}
-        <div className={styles.progressBarTrack}>
-          <div
-            className={styles.progressBarFill}
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-     
 
+      {/* ── Progress Bar ── */}
+      <div className={styles.progressBarTrack}>
+        <div
+          className={styles.progressBarFill}
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
     </div>
   );
 };
