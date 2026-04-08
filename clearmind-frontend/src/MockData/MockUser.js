@@ -6,12 +6,14 @@ export const mockUser = {
   firstName: "Juan",
   middleName: "Santos",
   lastName: "Dela Cruz",
+  civilStatus: "Single",
   dateOfBirth: "1995-06-15",
   sex: "Male",
-  genderIdentity: "Male",
+  genderIdentity: "Man",
   preferredPronouns: "he/him",
   contactNo: "09123456789",
   email: "juan.delacruz@gmail.com",
-  homeAddress: "123 Sampaguita St., Brgy. Maligaya, Quezon City, Metro Manila, 1100",
+  homeAddress:
+    "123 Sampaguita St., Brgy. Maligaya, Quezon City, Metro Manila, 1100",
   profilePic: "",
 };

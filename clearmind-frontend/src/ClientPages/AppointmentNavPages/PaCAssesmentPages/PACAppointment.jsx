@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { flushSync } from "react-dom";
 import { Container, Card, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import {
@@ -84,9 +85,11 @@ const PACAppointment = () => {
   };
 
   const handleBackToDoctors = () => {
-    setSelectedDoctor(null);
-    setSelectedDate(null);
-    setSelectedTime(null);
+    flushSync(() => {
+      setSelectedDoctor(null);
+      setSelectedDate(null);
+      setSelectedTime(null);
+    });
   };
 
   // Filter doctors by specialist role
@@ -111,7 +114,9 @@ const PACAppointment = () => {
           variant="button"
           className={styles.backToServices}
           onClick={() =>
-            selectedDoctor ? handleBackToDoctors() : navigate(-1)
+            selectedDoctor
+              ? handleBackToDoctors()
+              : navigate("/client/appointment/services")
           }
         >
           <FaArrowLeft /> Go Back

@@ -17,6 +17,7 @@ import {
   BOOKING_POLICY_SECTIONS,
   BOOKING_POLICY_RADIO_LABEL,
 } from "../../AppointmentComponents/PolicyModalContent.js";
+import AppointmentSuccessScreen from "../../AppointmentComponents/AppointmentSuccessScreen.jsx";
 
 // ─── Derive initial consultation fee from a doctor object ─────────────────────
 // Each doctor has a consultationFees object with keys like initialConsultation,
@@ -77,6 +78,9 @@ const SetAppointmentForm = () => {
     else setCurrentStep((prev) => prev - 1);
   };
 
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
+  const [bookingPolicyAgreed, setBookingPolicyAgreed] = useState(false);
+
   const handleContinue = () => {
     const error = getStepError();
     if (error) {
@@ -84,34 +88,38 @@ const SetAppointmentForm = () => {
       return;
     }
 
-    // Step 1: show Declaration modal first before advancing
     if (currentStep === 1) {
-      setDeclarationModal(true);
+      setCurrentStep(2);
+      setDeclarationModal(true); // auto-open Declaration when entering Step 2
       return;
     }
 
-    if (currentStep < TOTAL_STEPS) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      setConfirmModal(true);
+    if (currentStep === 2) {
+      setCurrentStep(3);
+      setBookingPolicyModal(true); // auto-open Booking Policy when entering Step 3
+      return;
     }
+
+    setConfirmModal(true);
   };
 
   // Declaration confirmed → open Booking Policy next
   const handleDeclarationConfirm = () => {
     setDeclarationModal(false);
-    setBookingPolicyModal(true);
+    setDeclarationAgreed(true); // auto-check yung radio sa Step 2
   };
 
   // Booking Policy confirmed → advance to Step 2
   const handleBookingPolicyConfirm = () => {
     setBookingPolicyModal(false);
-    setCurrentStep((prev) => prev + 1);
+    setBookingPolicyAgreed(true); // auto-check yung radio sa Step 3
   };
+
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleConfirmBook = () => {
     setConfirmModal(false);
-    alert("Appointment booked!");
+    setShowSuccess(true); // ← show success screen
   };
 
   const closeErrorModal = () => setErrorModal({ show: false, message: "" });
@@ -126,6 +134,10 @@ const SetAppointmentForm = () => {
     }
 
     if (currentStep === 2) {
+      if (!declarationAgreed)
+        return "Please acknowledge the Declaration of Participation.";
+      if (!profileData.reason) return "Please enter a reason for consultation.";
+
       if (!profileData.reason) return "Please enter a reason for consultation.";
 
       if (profileData.isInformant === true) {
@@ -154,6 +166,9 @@ const SetAppointmentForm = () => {
     }
 
     if (currentStep === 3) {
+      if (!bookingPolicyAgreed)
+        return "Please acknowledge the Cancellation & Rebooking Policy.";
+      if (!paymentData.paymentMode) return "Please select a payment mode.";
       if (!paymentData.paymentMode) return "Please select a payment mode.";
       if (!paymentData.referenceNo) return "Please enter the reference number.";
       if (!paymentData.receiptFile)
@@ -185,6 +200,8 @@ const SetAppointmentForm = () => {
           <VerifyProfileForm
             formData={profileData}
             setFormData={setProfileData}
+            declarationAgreed={declarationAgreed}
+            onOpenDeclaration={() => setDeclarationModal(true)}
           />
         );
       case 3:
@@ -198,6 +215,8 @@ const SetAppointmentForm = () => {
             profileData={profileData}
             paymentData={paymentData}
             setPaymentData={setPaymentData}
+            bookingPolicyAgreed={bookingPolicyAgreed}
+            onOpenBookingPolicy={() => setBookingPolicyModal(true)}
           />
         );
       default:
@@ -219,7 +238,16 @@ const SetAppointmentForm = () => {
       </div>
     );
   }
-
+  //success screen
+  if (showSuccess) {
+    return (
+      <AppointmentSuccessScreen
+        serviceTitle="Psychotherapy & Counseling" // o anong service
+        refPrefix="PAC"
+        onBack={() => navigate("/client/appointment/services")}
+      />
+    );
+  }
   return (
     <div className={styles.pageWrapper}>
       {/* ── Header ── */}
@@ -266,6 +294,7 @@ const SetAppointmentForm = () => {
       {/* ── Step 1 Gate: Declaration of Participation ── */}
       <PolicyModal
         show={declarationModal}
+        initialAgreed={declarationAgreed}
         onHide={() => setDeclarationModal(false)}
         onConfirm={handleDeclarationConfirm}
         headerTitle="Declaration of Participation"
@@ -280,6 +309,7 @@ const SetAppointmentForm = () => {
       {/* ── Step 1 Gate: Booking & Cancellation Policy ── */}
       <PolicyModal
         show={bookingPolicyModal}
+        initialAgreed={bookingPolicyAgreed}
         onHide={() => setBookingPolicyModal(false)}
         onConfirm={handleBookingPolicyConfirm}
         headerTitle="Therapy Appointment, Cancellation & Rebooking Policy"
@@ -297,7 +327,6 @@ const SetAppointmentForm = () => {
         show={confirmModal}
         onHide={() => setConfirmModal(false)}
         centered
-        size="sm"
         contentClassName={styles.confirmModalContent}
       >
         <Modal.Body className={styles.confirmModalBody}>

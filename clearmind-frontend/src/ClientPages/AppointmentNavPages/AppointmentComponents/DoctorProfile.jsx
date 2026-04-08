@@ -108,7 +108,7 @@ const DoctorProfile = ({ doctorData, onBookAppointment }) => {
 
           <button
             type="button"
-            className={`${styles.btnBookAppointment} w-100 mt-4`}
+            className={`${styles.btnBookAppointment} w-100 `}
             onClick={handleBookAppointment}
           >
             SET APPOINTMENT

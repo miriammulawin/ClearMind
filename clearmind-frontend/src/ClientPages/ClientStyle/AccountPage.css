@@ -12,7 +12,7 @@
 }
 
 .profile-container-full {
-  padding-bottom: 120px; 
+  padding-bottom: 120px;
 }
 
 /* Profile Header */
@@ -46,6 +46,13 @@
   align-items: center;
   padding: 20px;
   gap: 15px;
+  transition: transform 0.3s ease;
+  border-radius: 10px;
+}
+
+.user-info-body:hover {
+  background-color: #e0d3f9 !important;
+  transform: scale(1.01);
 }
 
 .user-avatar-wrapper {
@@ -63,7 +70,7 @@
   color: #fff;
   font-size: 20px;
   font-weight: 600;
-  font-family: 'Google Sans', Roboto, sans-serif;
+  font-family: "Google Sans", Roboto, sans-serif;
   letter-spacing: 0.5px;
   flex-shrink: 0;
   user-select: none;
@@ -98,7 +105,6 @@
   transition: opacity 0.2s;
 }
 
-
 .user-details {
   flex: 1;
 }
@@ -132,7 +138,6 @@
 /* Menu Section */
 .menu-section {
   padding: 0 20px 20px 20px;
-  
 }
 
 .menu-card {
@@ -187,7 +192,7 @@
 /* Branding Section */
 .branding-section {
   text-align: center;
-  padding: 10px 20px 100px 20px; 
+  padding: 10px 20px 100px 20px;
 }
 
 .branding-text {
@@ -209,7 +214,7 @@
   width: 100%;
 }
 
-.branding-year {
+.year-branding-dev-version {
   font-size: 14px;
   font-weight: 500;
   color: #4a3968;
@@ -260,10 +265,9 @@
   border-color: #4a2e8f;
 }
 
-.text-custom{
+.text-custom {
   color: #4a2e8f;
 }
-
 
 /* Mobile Responsiveness */
 @media (max-width: 480px) {

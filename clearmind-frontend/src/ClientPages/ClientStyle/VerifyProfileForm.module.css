@@ -62,20 +62,22 @@
   border-radius: clamp(6px, 1.5vw, 9px) !important;
   padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.85rem) !important;
   background: white !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease !important;
   width: 100%;
 }
 
 .input:focus,
 .textarea:focus {
-  border-color: #5B2C91 !important;
+  border-color: #5b2c91 !important;
   box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.1) !important;
   outline: none !important;
 }
 
 .inputReadOnly {
   background: #f3eeff !important;
-  color: #5B2C91 !important;
+  color: #5b2c91 !important;
   font-weight: 700 !important;
   cursor: default !important;
   text-align: center !important;
@@ -128,7 +130,7 @@
   position: absolute;
   right: 0.6rem;
   font-size: clamp(1.2rem, 3vw, 1.5rem);
-  color: #5B2C91;
+  color: #5b2c91;
   pointer-events: none;
 }
 
@@ -181,37 +183,13 @@
   user-select: none;
 }
 
-.radioInput {
-  display: none; /* hidden — use custom circle */
-}
-
-/* Custom radio circle */
-.radioCustom {
-  width: clamp(16px, 4vw, 20px);
-  height: clamp(16px, 4vw, 20px);
-  border-radius: 50%;
-  border: 2px solid #c4aee8;
-  background: white;
+.radioInput:checked {
+  margin-top: 3px;
   flex-shrink: 0;
-  position: relative;
-  transition: border-color 0.2s ease;
-}
-
-.radioInput:checked + .radioCustom {
-  border-color: #5B2C91;
-  background: white;
-}
-
-.radioInput:checked + .radioCustom::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(7px, 2vw, 9px);
-  height: clamp(7px, 2vw, 9px);
-  border-radius: 50%;
-  background: #5B2C91;
+  accent-color: #5b2c91;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 }
 
 /* ── Sex toggle buttons ──────────────────────────────── */
@@ -225,7 +203,7 @@
   border-radius: 20px;
   border: 1.5px solid #c4aee8;
   background: white;
-  color: #5B2C91;
+  color: #5b2c91;
   font-size: clamp(0.72rem, 2vw, 0.82rem);
   font-weight: 700;
   font-family: inherit;
@@ -236,14 +214,22 @@
 
 .sexBtn:hover {
   background: #f3eeff;
-  border-color: #5B2C91;
+  border-color: #5b2c91;
 }
 
 .sexBtnActive {
-  background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
+  background: #5b2c91 !important;
+  border-color: #5b2c91 !important;
   color: white !important;
   box-shadow: 0 2px 8px rgba(91, 44, 145, 0.25);
+}
+
+.policyLink {
+  background: transparent;
+  border: transparent;
+  text-decoration: underline;
+  color: #5b2c91;
+  font-weight: bold;
 }
 
 /* ── Responsive ──────────────────────────────────────── */
@@ -266,7 +252,7 @@
   border-radius: clamp(6px, 1.5vw, 9px);
   border: 1.5px solid #c4aee8;
   background: white;
-  color: #5B2C91;
+  color: #5b2c91;
   font-size: clamp(0.75rem, 2.2vw, 0.85rem);
   font-weight: 600;
   font-family: inherit;
@@ -277,12 +263,12 @@
 
 .informantToggleBtn:hover {
   background: #f3eeff;
-  border-color: #5B2C91;
+  border-color: #5b2c91;
 }
 
 .informantToggleBtnActive {
-  background: #5B2C91 !important;
-  border-color: #5B2C91 !important;
+  background: #5b2c91 !important;
+  border-color: #5b2c91 !important;
   color: white !important;
   box-shadow: 0 2px 8px rgba(91, 44, 145, 0.2);
 }
@@ -301,7 +287,7 @@
 .informantCardTitle {
   font-size: clamp(0.72rem, 2vw, 0.82rem);
   font-weight: 700;
-  color: #5B2C91;
+  color: #5b2c91;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }

@@ -3,11 +3,14 @@ import { useState } from "react";
 import "./ClientStyle/ClientProfile.css";
 import ClientHeader from "./ClientComponents/Header";
 import ClientFooter from "./ClientComponents/Footer";
-import ProfilePage from "./ClientComponents/ProfileBody";
-import EditProfileModal from "./EditProfileModal";
+import AccountPage from "./ClientComponents/AccountPage";
+import EditProfileModal from "./ClientComponents/EditProfileModal";
 import { mockUser } from "../MockData/MockUser";
+import { Outlet, useLocation } from "react-router-dom";
 
 function ClientAccount() {
+  const location = useLocation();
+  const isProfilePage = location.pathname.includes("profile-page");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userData, setUserData] = useState(mockUser);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -16,9 +19,8 @@ function ClientAccount() {
     setUserData(updatedData);
     setIsModalOpen(false);
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000); 
+    setTimeout(() => setShowSuccess(false), 3000);
     console.log("Saved:", updatedData);
-
   };
 
   return (
@@ -36,10 +38,14 @@ function ClientAccount() {
       )}
 
       <div className="tab-content-wrapper">
-        <ProfilePage
-          userData={userData}
-          onEditClick={() => setIsModalOpen(true)}
-        />
+        {isProfilePage ? (
+          <Outlet context={{ userData, onSave: handleSave }} />
+        ) : (
+          <AccountPage
+            userData={userData}
+            onEditClick={() => setIsModalOpen(true)}
+          />
+        )}
       </div>
 
       <div className="sticky-footer">

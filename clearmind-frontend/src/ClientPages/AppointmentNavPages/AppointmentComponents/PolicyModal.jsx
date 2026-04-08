@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Modal } from 'react-bootstrap';
-import styles from './styles/PolicyModal.module.css';
+import React, { useState, useEffect, useRef } from "react";
+import { Modal } from "react-bootstrap";
+import styles from "./styles/PolicyModal.module.css";
 
 /**
  * PolicyModal — Versatile reusable modal for policy/declaration content.
@@ -67,23 +67,24 @@ const PolicyModal = ({
   show,
   onHide,
   onConfirm,
-  headerTitle = 'Policy',
-  headerSubtitle = '',
+  headerTitle = "Policy",
+  headerSubtitle = "",
   sections = [],
-  radioLabel = 'I acknowledge and agree.',
+  radioLabel = "I acknowledge and agree.",
   requireScroll = false,
-  cancelLabel = 'Cancel',
-  confirmLabel = 'Continue',
-  size = 'md',
+  cancelLabel = "Cancel",
+  confirmLabel = "Continue",
+  size = "md",
+  initialAgreed = false,
 }) => {
-  const [agreed, setAgreed]         = useState(false);
-  const [scrolled, setScrolled]     = useState(false);
-  const bodyRef                     = useRef(null);
+  const [agreed, setAgreed] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const bodyRef = useRef(null);
 
   // Reset state each time modal opens
   useEffect(() => {
     if (show) {
-      setAgreed(false);
+      setAgreed(initialAgreed);
       setScrolled(false);
       setTimeout(() => {
         if (bodyRef.current) {
@@ -117,27 +118,27 @@ const PolicyModal = ({
 
   const renderSection = (section, idx) => {
     switch (section.type) {
-      case 'heading':
+      case "heading":
         return (
           <p key={idx} className={styles.sectionHeading}>
             {section.content}
           </p>
         );
-      case 'paragraph':
+      case "paragraph":
         return (
           <p key={idx} className={styles.sectionParagraph}>
             {section.content}
           </p>
         );
-      case 'note':
+      case "note":
         return (
           <p key={idx} className={styles.sectionNote}>
             {section.content}
           </p>
         );
-      case 'divider':
+      case "divider":
         return <hr key={idx} className={styles.sectionDivider} />;
-      case 'ordered-list':
+      case "ordered-list":
         return (
           <div key={idx} className={styles.listBlock}>
             {section.title && (
@@ -145,7 +146,7 @@ const PolicyModal = ({
             )}
             <ol className={styles.orderedList}>
               {(section.content || []).map((item, i) =>
-                typeof item === 'string' ? (
+                typeof item === "string" ? (
                   <li key={i}>{item}</li>
                 ) : (
                   // item can be { text, sub: string[] } for nested bullets
@@ -153,22 +154,26 @@ const PolicyModal = ({
                     {item.text}
                     {item.sub && (
                       <ul className={styles.subList}>
-                        {item.sub.map((s, j) => <li key={j}>{s}</li>)}
+                        {item.sub.map((s, j) => (
+                          <li key={j}>{s}</li>
+                        ))}
                       </ul>
                     )}
                   </li>
-                )
+                ),
               )}
             </ol>
           </div>
         );
-      case 'unordered-list':
+      case "unordered-list":
         return (
           <div key={idx} className={styles.listBlock}>
             {section.title && (
               <p className={styles.listTitle}>{section.title}</p>
             )}
-            <ul className={`${styles.unorderedList} ${section.indent ? styles.indented : ''}`}>
+            <ul
+              className={`${styles.unorderedList} ${section.indent ? styles.indented : ""}`}
+            >
               {(section.content || []).map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
@@ -187,6 +192,8 @@ const PolicyModal = ({
       centered
       size={size}
       contentClassName={styles.modalContent}
+      backdrop="static"
+      keyboard={false}
     >
       {/* ── Purple Header ── */}
       <div className={styles.modalHeader}>
@@ -197,11 +204,7 @@ const PolicyModal = ({
       </div>
 
       {/* ── Scrollable Body ── */}
-      <div
-        className={styles.modalBody}
-        ref={bodyRef}
-        onScroll={handleScroll}
-      >
+      <div className={styles.modalBody} ref={bodyRef} onScroll={handleScroll}>
         {sections.map((section, idx) => renderSection(section, idx))}
 
         <hr className={styles.sectionDivider} />
@@ -219,7 +222,9 @@ const PolicyModal = ({
         </label>
 
         {requireScroll && !scrolled && (
-          <p className={styles.scrollHint}>↓ Please scroll to the bottom to continue.</p>
+          <p className={styles.scrollHint}>
+            ↓ Please scroll to the bottom to continue.
+          </p>
         )}
       </div>
 
@@ -229,7 +234,7 @@ const PolicyModal = ({
           {cancelLabel}
         </button>
         <button
-          className={`${styles.confirmBtn} ${!canConfirm ? styles.confirmBtnDisabled : ''}`}
+          className={`${styles.confirmBtn} ${!canConfirm ? styles.confirmBtnDisabled : ""}`}
           disabled={!canConfirm}
           onClick={handleConfirm}
         >

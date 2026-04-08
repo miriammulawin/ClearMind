@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
-import "./ClientStyle/EditProfileModal.css";
-import ProfileAvatar from "../ClientPages/ClientComponents/ProfileAvatar";
+import "../ClientStyle/EditProfileModal.css";
+import ProfileAvatar from "./ProfileAvatar";
 import { FaCamera } from "react-icons/fa";
 
 const PRONOUN_OPTIONS = [
@@ -11,9 +11,21 @@ const PRONOUN_OPTIONS = [
 ];
 
 const GENDER_OPTIONS = [
-  "Female", "Male", "Transgender", "Trans woman", "Trans man",
-  "Non-binary", "Genderqueer", "Gender fluid", "Agender", "Bigender",
-  "Two-spirit", "Intersex", "Pangender", "Prefer not to say", "Other (specify)",
+  "Woman",
+  "Man",
+  "Transgender",
+  "Trans woman",
+  "Trans man",
+  "Non-binary",
+  "Genderqueer",
+  "Gender fluid",
+  "Agender",
+  "Bigender",
+  "Two-spirit",
+  "Intersex",
+  "Pangender",
+  "Prefer not to say",
+  "Other (specify)",
 ];
 
 function EditProfileModal({ isOpen, onClose, userData, onSave }) {
@@ -21,6 +33,7 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
     firstName: userData?.firstName || "",
     middleName: userData?.middleName || "",
     lastName: userData?.lastName || "",
+    civilStatus: userData?.civilStatus || "",
     dateOfBirth: userData?.dateOfBirth || "",
     sex: userData?.sex || "",
     genderIdentity: userData?.genderIdentity || "",
@@ -53,22 +66,24 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
 
   // --- Pronouns state ---
   const isPresetPronoun = PRONOUN_OPTIONS.some(
-    (p) => p.value === userData?.preferredPronouns
+    (p) => p.value === userData?.preferredPronouns,
   );
   const [pronounSelect, setPronounSelect] = useState(
-    isPresetPronoun ? userData?.preferredPronouns || "" : "other"
+    isPresetPronoun ? userData?.preferredPronouns || "" : "other",
   );
   const [customPronoun, setCustomPronoun] = useState(
-    !isPresetPronoun && userData?.preferredPronouns ? userData.preferredPronouns : ""
+    !isPresetPronoun && userData?.preferredPronouns
+      ? userData.preferredPronouns
+      : "",
   );
 
   // --- Gender Identity state ---
   const isPresetGender = GENDER_OPTIONS.includes(userData?.genderIdentity);
   const [genderSelect, setGenderSelect] = useState(
-    isPresetGender ? userData?.genderIdentity || "" : "Other (specify)"
+    isPresetGender ? userData?.genderIdentity || "" : "Other (specify)",
   );
   const [customGender, setCustomGender] = useState(
-    !isPresetGender && userData?.genderIdentity ? userData.genderIdentity : ""
+    !isPresetGender && userData?.genderIdentity ? userData.genderIdentity : "",
   );
 
   if (!isOpen) return null;
@@ -120,7 +135,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
     if (!form.lastName.trim()) newErrors.lastName = "Last name is required.";
     if (!form.dateOfBirth) newErrors.dateOfBirth = "Date of birth is required.";
     if (!form.sex) newErrors.sex = "Sex is required.";
-    if (!form.contactNo.trim()) newErrors.contactNo = "Contact number is required.";
+    if (!form.civilStatus) newErrors.civilStatus = "Civil status is required.";
+    if (!form.contactNo.trim())
+      newErrors.contactNo = "Contact number is required.";
     if (!form.email.trim()) newErrors.email = "Email is required.";
     if (form.password && form.password !== form.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match.";
@@ -141,7 +158,6 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
   return (
     <div className="epm-overlay" onClick={onClose}>
       <div className="epm-modal" onClick={(e) => e.stopPropagation()}>
-
         {/* Header */}
         <div className="epm-header">
           {/* Clickable avatar — opens file picker */}
@@ -169,7 +185,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
 
           <div className="epm-header-text">
             <h2 className="epm-title">Edit Profile</h2>
-            <p className="epm-subtitle">Update your personal information</p>
+            <p className="epm-subtitle">
+              Change/Upload your profile picture here.
+            </p>
             {/* Remove photo link — only shows if a photo is set */}
             {profilePic && (
               <button
@@ -189,11 +207,12 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
 
         {/* Form */}
         <form className="epm-form" onSubmit={handleSubmit}>
-
           {/* Name Row */}
           <div className="epm-row">
             <div className="epm-field">
-              <label className="epm-label">First Name <span className="epm-req">*</span></label>
+              <label className="epm-label">
+                First Name <span className="epm-req">*</span>
+              </label>
               <input
                 className={`epm-input ${errors.firstName ? "epm-input-error" : ""}`}
                 type="text"
@@ -202,8 +221,11 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 value={form.firstName}
                 onChange={handleChange}
               />
-              {errors.firstName && <span className="epm-error-msg">{errors.firstName}</span>}
+              {errors.firstName && (
+                <span className="epm-error-msg">{errors.firstName}</span>
+              )}
             </div>
+            {/* Middle Name */}
             <div className="epm-field">
               <label className="epm-label">Middle Name</label>
               <input
@@ -211,13 +233,31 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 type="text"
                 name="middleName"
                 placeholder="Middle Name"
-                value={form.middleName}
+                value={form.noMiddleName ? "" : form.middleName}
                 onChange={handleChange}
+                disabled={form.noMiddleName}
+                style={{ opacity: form.noMiddleName ? 0.5 : 1 }}
               />
-              <span className="epm-helper">Type <b>N/A</b> if you do not have a middle name</span>
+              <label className="epm-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={form.noMiddleName || false}
+                  onChange={(e) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      noMiddleName: e.target.checked,
+                      middleName: e.target.checked ? "" : prev.middleName,
+                    }));
+                  }}
+                />
+                <span>I don't have a middle name</span>
+              </label>
             </div>
+
             <div className="epm-field">
-              <label className="epm-label">Last Name <span className="epm-req">*</span></label>
+              <label className="epm-label">
+                Last Name <span className="epm-req">*</span>
+              </label>
               <input
                 className={`epm-input ${errors.lastName ? "epm-input-error" : ""}`}
                 type="text"
@@ -226,14 +266,18 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 value={form.lastName}
                 onChange={handleChange}
               />
-              {errors.lastName && <span className="epm-error-msg">{errors.lastName}</span>}
+              {errors.lastName && (
+                <span className="epm-error-msg">{errors.lastName}</span>
+              )}
             </div>
           </div>
 
           {/* Date of Birth & Sex */}
           <div className="epm-row">
             <div className="epm-field">
-              <label className="epm-label">Date of Birth <span className="epm-req">*</span></label>
+              <label className="epm-label">
+                Date of Birth <span className="epm-req">*</span>
+              </label>
               <input
                 className={`epm-input ${errors.dateOfBirth ? "epm-input-error" : ""}`}
                 type="date"
@@ -241,10 +285,14 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 value={form.dateOfBirth}
                 onChange={handleChange}
               />
-              {errors.dateOfBirth && <span className="epm-error-msg">{errors.dateOfBirth}</span>}
+              {errors.dateOfBirth && (
+                <span className="epm-error-msg">{errors.dateOfBirth}</span>
+              )}
             </div>
             <div className="epm-field">
-              <label className="epm-label">Sex <span className="epm-req">*</span></label>
+              <label className="epm-label">
+                Sex <span className="epm-req">*</span>
+              </label>
               <select
                 className={`epm-input epm-select ${errors.sex ? "epm-input-error" : ""}`}
                 name="sex"
@@ -256,8 +304,28 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
-              {errors.sex && <span className="epm-error-msg">{errors.sex}</span>}
+              {errors.sex && (
+                <span className="epm-error-msg">{errors.sex}</span>
+              )}
             </div>
+          </div>
+
+          {/* Civil Status */}
+          <div className="epm-field">
+            <label className="epm-label">Civil Status</label>
+            <select
+              className="epm-input epm-select"
+              name="civilStatus"
+              value={form.civilStatus}
+              onChange={handleChange}
+            >
+              <option value="">Select Civil Status</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Widowed">Widowed</option>
+              <option value="Separated">Separated</option>
+              <option value="Annulled">Annulled</option>
+            </select>
           </div>
 
           {/* Gender Identity */}
@@ -270,7 +338,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
             >
               <option value="">Select gender identity...</option>
               {GENDER_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
             {genderSelect === "Other (specify)" && (
@@ -295,7 +365,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
             >
               <option value="">Select pronouns...</option>
               {PRONOUN_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
             {pronounSelect === "other" && (
@@ -312,7 +384,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
 
           {/* Contact No. */}
           <div className="epm-field">
-            <label className="epm-label">Contact No. <span className="epm-req">*</span></label>
+            <label className="epm-label">
+              Contact No. <span className="epm-req">*</span>
+            </label>
             <input
               className={`epm-input ${errors.contactNo ? "epm-input-error" : ""}`}
               type="tel"
@@ -321,12 +395,16 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
               value={form.contactNo}
               onChange={handleChange}
             />
-            {errors.contactNo && <span className="epm-error-msg">{errors.contactNo}</span>}
+            {errors.contactNo && (
+              <span className="epm-error-msg">{errors.contactNo}</span>
+            )}
           </div>
 
           {/* Email */}
           <div className="epm-field">
-            <label className="epm-label">Email <span className="epm-req">*</span></label>
+            <label className="epm-label">
+              Email <span className="epm-req">*</span>
+            </label>
             <input
               className={`epm-input ${errors.email ? "epm-input-error" : ""}`}
               type="email"
@@ -335,12 +413,16 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
               value={form.email}
               onChange={handleChange}
             />
-            {errors.email && <span className="epm-error-msg">{errors.email}</span>}
+            {errors.email && (
+              <span className="epm-error-msg">{errors.email}</span>
+            )}
           </div>
 
           {/* Home Address */}
           <div className="epm-field">
-            <label className="epm-label">Home Address <span className="epm-req">*</span></label>
+            <label className="epm-label">
+              Home Address <span className="epm-req">*</span>
+            </label>
             <textarea
               className="epm-input epm-textarea"
               name="homeAddress"
@@ -366,7 +448,9 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 value={form.password}
                 onChange={handleChange}
               />
-              {errors.password && <span className="epm-error-msg">{errors.password}</span>}
+              {errors.password && (
+                <span className="epm-error-msg">{errors.password}</span>
+              )}
             </div>
             <div className="epm-field">
               <label className="epm-label">Confirm Password</label>
@@ -378,15 +462,20 @@ function EditProfileModal({ isOpen, onClose, userData, onSave }) {
                 value={form.confirmPassword}
                 onChange={handleChange}
               />
-              {errors.confirmPassword && <span className="epm-error-msg">{errors.confirmPassword}</span>}
+              {errors.confirmPassword && (
+                <span className="epm-error-msg">{errors.confirmPassword}</span>
+              )}
             </div>
           </div>
 
           <div className="epm-actions">
-            <button type="button" className="epm-btn-cancel" onClick={onClose}>Cancel</button>
-            <button type="submit" className="epm-btn-save">Save Changes</button>
+            <button type="button" className="epm-btn-cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="epm-btn-save">
+              Save Changes
+            </button>
           </div>
-
         </form>
       </div>
     </div>

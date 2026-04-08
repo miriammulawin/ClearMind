@@ -81,16 +81,15 @@
 .doctorCredentialsFull {
   color: #718096;
   font-size: clamp(0.75rem, 2.5vw, 0.85rem);
-  margin: 0;
+  margin: 10px;
 }
 
 /* ─────────────────────────────────────────
    DIVIDER
 ───────────────────────────────────────── */
 .divider {
-  border: none;
-  border-top: 1px solid #e2e8f0;
-  margin: clamp(0.75rem, 2.5vw, 1.25rem) 0;
+  border-top: 4px solid #c1a3c8;
+  margin: 0px;
 }
 
 /* ─────────────────────────────────────────
@@ -107,7 +106,7 @@
    SCHEDULE DETAILS
 ───────────────────────────────────────── */
 .scheduleDetails {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .scheduleRow {
@@ -151,7 +150,7 @@
    CONSULTATION FEES
 ───────────────────────────────────────── */
 .feesDetails {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .feeRow {
