@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import {
@@ -8,12 +8,17 @@ import {
   FiToggleRight,
   FiPlus,
   FiTrash2,
+  FiImage,
 } from "react-icons/fi";
 import { FaClinicMedical, FaBrain } from "react-icons/fa";
 import { TiVideo } from "react-icons/ti";
 import styles from "./AdminStyle/AdminClinic.module.css";
 
-/* ── Defaults ── */
+/* ─── Config ─── */
+const API_BASE = "http://localhost:8000/api/admin";
+const getToken = () => localStorage.getItem("token");
+
+/* ─── Defaults ─── */
 const DEFAULT_SCHEDULE = {
   Monday: { start: "09:00", end: "17:00", closed: false },
   Tuesday: { start: "09:00", end: "17:00", closed: false },
@@ -25,6 +30,7 @@ const DEFAULT_SCHEDULE = {
 };
 
 const EMPTY_FORM = {
+  type: "Physical",
   name: "",
   blk: "",
   barangay: "",
@@ -32,14 +38,18 @@ const EMPTY_FORM = {
   province: "",
   region: "",
   zip: "",
-  clinicImage: null,
   description: "",
   schedule: DEFAULT_SCHEDULE,
   paymentMethod: "Gcash",
   consultationAmount: "",
-  qrImages: [],
   confirm: false,
-  type: "Physical",
+  // image state
+  clinicImageFile: null,
+  clinicImagePreview: null,
+  existingClinicImage: null,
+  qrImageFile: null,
+  qrImagePreview: null,
+  existingQrImage: null,
 };
 
 const INITIAL_SERVICES = [
@@ -96,147 +106,302 @@ const INITIAL_SERVICES = [
   },
 ];
 
-function AdminClinic() {
+/* ─── Map API → card ─── */
+const mapClinic = (s) => ({
+  id: s.clinic_id,
+  type: s.clinic_type === "Physical" ? "Physical Clinic" : "Online Clinic",
+  icon: s.clinic_type === "Physical" ? "physical" : "online",
+  days:
+    Object.entries(s.clinic_schedule || {})
+      .filter(([, v]) => !v.closed)
+      .map(([d]) => d)
+      .join(", ") || "—",
+  fee: s.clinic_fee || "—",
+  payment: s.clinic_paymentMethod || "—",
+  address: s.clinic_address || "—",
+  _raw: s,
+});
+
+/* ════════════════════════════════════════════ */
+export default function AdminClinic() {
   const [activeMenu, setActiveMenu] = useState("Clinic & Services");
 
-  /* ── Clinic modal state ── */
+  /* clinics */
+  const [clinics, setClinics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(null);
+
+  /* modal */
   const [showModal, setShowModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [clinicForm, setClinicForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [submitting, setSubmitting] = useState(false);
 
-  /* ── Services state ── */
+  /* file input refs */
+  const clinicImgRef = useRef(null);
+  const qrImgRef = useRef(null);
+
+  /* services */
   const [services, setServices] = useState(INITIAL_SERVICES);
-  const [expandedIds, setExpandedIds] = useState(["1"]); // PAE expanded by default
-
-  /* Add service form */
-  const [showAddService, setShowAddService] = useState(false);
+  const [expandedIds, setExpandedIds] = useState(["1"]);
+  const [showAddSvc, setShowAddSvc] = useState(false);
   const [newSvcTitle, setNewSvcTitle] = useState("");
   const [newSvcDesc, setNewSvcDesc] = useState("");
-
-  /* Add purpose form — keyed by service id */
   const [addPurposeFor, setAddPurposeFor] = useState(null);
-  const [newPurposeTitle, setNewPurposeTitle] = useState("");
+  const [newPurpose, setNewPurpose] = useState("");
 
-  const [clinics, setClinics] = useState([
-    {
-      id: 1,
-      type: "Physical Clinic",
-      icon: "physical",
-      days: "Monday, Friday",
-      fee: "₱ 2,000.00 - ₱ 2,500.00",
-      payment: "Gcash, Bank Payment",
-      address: "123 Main St, City",
-    },
-    {
-      id: 2,
-      type: "Online Clinic",
-      icon: "online",
-      days: "Thursday, Saturday",
-      fee: "₱ 2,000.00 - ₱ 2,500.00",
-      payment: "Gcash, Bank Payment",
-      address: "Virtual / Online",
-    },
-  ]);
+  /* ── fetch on mount ── */
+  useEffect(() => {
+    fetchClinics();
+  }, []);
 
-  /* ── Clinic handlers ── */
-  const openCreateModal = () => {
+  async function fetchClinics() {
+    setLoading(true);
+    setApiError(null);
+    try {
+      const res = await fetch(`${API_BASE}/clinics`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`${res.status} — ${txt.slice(0, 200)}`);
+      }
+      const json = await res.json();
+      setClinics((json.data || []).map(mapClinic));
+    } catch (e) {
+      setApiError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ── open create ── */
+  function openCreate() {
     setIsEdit(false);
     setEditId(null);
-    setClinicForm({ ...EMPTY_FORM, schedule: { ...DEFAULT_SCHEDULE } });
+    setForm({ ...EMPTY_FORM, schedule: { ...DEFAULT_SCHEDULE } });
+    if (clinicImgRef.current) clinicImgRef.current.value = "";
+    if (qrImgRef.current) qrImgRef.current.value = "";
     setShowModal(true);
-  };
-  const openEditModal = (clinic) => {
+  }
+
+  /* ── open edit ── */
+  function openEdit(clinic) {
+    const r = clinic._raw || {};
+    const schedule =
+      r.clinic_schedule && typeof r.clinic_schedule === "object"
+        ? r.clinic_schedule
+        : { ...DEFAULT_SCHEDULE };
+
     setIsEdit(true);
     setEditId(clinic.id);
-    setClinicForm({
+    setForm({
       ...EMPTY_FORM,
-      schedule: { ...DEFAULT_SCHEDULE },
-      name: clinic.type,
-      consultationAmount: clinic.fee,
-      paymentMethod: clinic.payment,
-      type: clinic.icon === "online" ? "Online" : "Physical",
+      type: r.clinic_type === "Online" ? "Online" : "Physical",
+      name: r.clinic_name || "",
+      blk: r.blk || "",
+      barangay: r.barangay || "",
+      city: r.city || "",
+      province: r.province || "",
+      region: r.region || "",
+      zip: r.zip_code || "",
+      description: r.clinic_description || "",
+      paymentMethod: r.clinic_paymentMethod || "Gcash",
+      consultationAmount: r.clinic_fee || "",
+      schedule,
       confirm: true,
+      existingClinicImage: r.clinic_image_url || null,
+      existingQrImage: r.qr_image_url || null,
+      clinicImageFile: null,
+      clinicImagePreview: null,
+      qrImageFile: null,
+      qrImagePreview: null,
     });
+    if (clinicImgRef.current) clinicImgRef.current.value = "";
+    if (qrImgRef.current) qrImgRef.current.value = "";
     setShowModal(true);
-  };
-  const handleInput = (e) => {
-    const { name, value, type, checked, files } = e.target;
-    if (type === "checkbox") setClinicForm((f) => ({ ...f, [name]: checked }));
-    else if (type === "file") setClinicForm((f) => ({ ...f, [name]: files }));
-    else setClinicForm((f) => ({ ...f, [name]: value }));
-  };
-  const handleScheduleChange = (day, field, value) =>
-    setClinicForm((f) => ({
+  }
+
+  /* ── text / select / checkbox ── */
+  function handleInput(e) {
+    const { name, value, type, checked } = e.target;
+    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+  }
+
+  /* ── file with live preview ── */
+  function handleFile(e) {
+    const { name, files } = e.target;
+    const file = files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (name === "clinicImageFile") {
+        setForm((f) => ({
+          ...f,
+          clinicImageFile: file,
+          clinicImagePreview: ev.target.result,
+          existingClinicImage: null,
+        }));
+      } else {
+        setForm((f) => ({
+          ...f,
+          qrImageFile: file,
+          qrImagePreview: ev.target.result,
+          existingQrImage: null,
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ── schedule toggle / time ── */
+  function setSchedule(day, field, value) {
+    setForm((f) => ({
       ...f,
       schedule: {
         ...f.schedule,
         [day]: { ...f.schedule[day], [field]: value },
       },
     }));
+  }
 
-  const handleSubmit = () => {
-    if (!clinicForm.confirm) {
-      alert("Please confirm the information.");
+  /* ── submit ── */
+  async function handleSubmit() {
+    if (!form.name.trim()) {
+      alert("Clinic name is required.");
       return;
     }
-    const daysString = Object.entries(clinicForm.schedule)
-      .filter(([, v]) => v.start && v.end && !v.closed)
-      .map(([d]) => d)
-      .join(", ");
-    const newClinic = {
-      id: isEdit ? editId : clinics.length + 1,
-      type:
-        clinicForm.type === "Physical" ? "Physical Clinic" : "Online Clinic",
-      icon: clinicForm.type === "Physical" ? "physical" : "online",
-      days: daysString,
-      fee: clinicForm.consultationAmount,
-      payment: clinicForm.paymentMethod,
-      address: `${clinicForm.blk}, ${clinicForm.barangay}, ${clinicForm.city}, ${clinicForm.province}, ${clinicForm.region} ${clinicForm.zip}`,
-    };
-    if (isEdit)
-      setClinics((p) => p.map((c) => (c.id === editId ? newClinic : c)));
-    else setClinics((p) => [...p, newClinic]);
-    setShowModal(false);
-  };
+    if (!form.confirm) {
+      alert("Please tick the confirmation checkbox.");
+      return;
+    }
 
-  /* ── Service handlers ── */
-  const updateService = (id, patch) =>
-    setServices((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    setSubmitting(true);
+    const fd = new FormData();
+    fd.append("clinic_name", form.name.trim());
+    fd.append("clinic_type", form.type);
+    fd.append("blk", form.blk);
+    fd.append("barangay", form.barangay);
+    fd.append("city", form.city);
+    fd.append("province", form.province);
+    fd.append("region", form.region);
+    fd.append("zip_code", form.zip);
+    fd.append("clinic_description", form.description);
+    fd.append("clinic_paymentMethod", form.paymentMethod);
+    fd.append("clinic_fee", form.consultationAmount);
+    fd.append("clinic_schedule", JSON.stringify(form.schedule));
+    if (form.clinicImageFile) fd.append("clinic_image", form.clinicImageFile);
+    if (form.qrImageFile) fd.append("qr_image", form.qrImageFile);
+    if (isEdit) fd.append("_method", "PUT");
 
-  const updateSubService = (svcId, subId, patch) =>
-    setServices((p) =>
-      p.map((s) =>
-        s.id === svcId
+    const url = isEdit
+      ? `${API_BASE}/clinics/${editId}`
+      : `${API_BASE}/clinics`;
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+          // ⚠️ Do NOT set Content-Type — browser sets multipart boundary automatically
+        },
+        body: fd,
+      });
+
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        alert(
+          `Server error ${res.status}.\nCheck Laravel logs.\n\n${text.slice(0, 400)}`,
+        );
+        return;
+      }
+
+      if (!res.ok) {
+        if (result.errors) {
+          alert(
+            "Validation errors:\n" +
+              Object.values(result.errors).flat().join("\n"),
+          );
+        } else {
+          alert(result.message || `Error ${res.status}`);
+        }
+        return;
+      }
+
+      const mapped = mapClinic(result.data);
+      setClinics((p) =>
+        isEdit ? p.map((c) => (c.id === editId ? mapped : c)) : [...p, mapped],
+      );
+      setShowModal(false);
+    } catch (e) {
+      alert(
+        "Network error — make sure Laravel is running on port 8000.\n" +
+          e.message,
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  /* ── delete ── */
+  async function handleDelete(id) {
+    if (!confirm("Delete this clinic?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/clinics/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      if (res.ok) {
+        setClinics((p) => p.filter((c) => c.id !== id));
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(j.message || `Delete failed (${res.status})`);
+      }
+    } catch {
+      alert("Network error during delete.");
+    }
+  }
+
+  /* ── service helpers ── */
+  const updSvc = (id, p) =>
+    setServices((s) => s.map((x) => (x.id === id ? { ...x, ...p } : x)));
+  const updSub = (sId, subId, p) =>
+    setServices((s) =>
+      s.map((x) =>
+        x.id === sId
           ? {
-              ...s,
-              subServices: s.subServices.map((sub) =>
-                sub.id === subId ? { ...sub, ...patch } : sub,
+              ...x,
+              subServices: x.subServices.map((b) =>
+                b.id === subId ? { ...b, ...p } : b,
               ),
             }
-          : s,
+          : x,
       ),
     );
-
-  const deleteService = (id) =>
-    setServices((p) => p.filter((s) => s.id !== id));
-
-  const deleteSubService = (svcId, subId) =>
-    setServices((p) =>
-      p.map((s) =>
-        s.id === svcId
-          ? {
-              ...s,
-              subServices: s.subServices.filter((sub) => sub.id !== subId),
-            }
-          : s,
+  const delSvc = (id) => setServices((s) => s.filter((x) => x.id !== id));
+  const delSub = (sId, subId) =>
+    setServices((s) =>
+      s.map((x) =>
+        x.id === sId
+          ? { ...x, subServices: x.subServices.filter((b) => b.id !== subId) }
+          : x,
       ),
     );
-
-  const addService = () => {
+  const addSvc = () => {
     if (!newSvcTitle.trim()) return;
-    setServices((p) => [
-      ...p,
+    setServices((s) => [
+      ...s,
       {
         id: String(Date.now()),
         title: newSvcTitle.trim(),
@@ -248,39 +413,37 @@ function AdminClinic() {
     ]);
     setNewSvcTitle("");
     setNewSvcDesc("");
-    setShowAddService(false);
+    setShowAddSvc(false);
   };
-
-  const addPurpose = (svcId) => {
-    if (!newPurposeTitle.trim()) return;
-    setServices((p) =>
-      p.map((s) =>
-        s.id === svcId
+  const addPurp = (sId) => {
+    if (!newPurpose.trim()) return;
+    setServices((s) =>
+      s.map((x) =>
+        x.id === sId
           ? {
-              ...s,
+              ...x,
               subServices: [
-                ...s.subServices,
+                ...x.subServices,
                 {
                   id: String(Date.now()),
-                  title: newPurposeTitle.trim(),
+                  title: newPurpose.trim(),
                   price: "",
                   available: true,
                 },
               ],
             }
-          : s,
+          : x,
       ),
     );
-    setNewPurposeTitle("");
+    setNewPurpose("");
     setAddPurposeFor(null);
   };
-
-  const toggleExpanded = (id) =>
+  const togExp = (id) =>
     setExpandedIds((p) =>
       p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
     );
 
-  /* ── Labeled input helper ── */
+  /* ── small helpers ── */
   const Field = ({ label, children }) => (
     <div className={styles.fieldRow}>
       <label className={styles.fieldLabel}>{label}</label>
@@ -288,41 +451,115 @@ function AdminClinic() {
     </div>
   );
 
+  const ImgPreview = ({ preview, existing, label }) => {
+    const src = preview || existing;
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: 120,
+          borderRadius: 8,
+          border: "2px dashed #c4b5d4",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f8f5fc",
+          marginBottom: 8,
+          overflow: "hidden",
+        }}
+      >
+        {src ? (
+          <img
+            src={src}
+            alt="preview"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <div style={{ textAlign: "center", color: "#a78cc2" }}>
+            <FiImage size={26} />
+            <p style={{ fontSize: 11, marginTop: 4 }}>{label}</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  /* ════════ RENDER ════════ */
   return (
     <div className="admin-layout">
       <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
-
         <div className={`admin-content ${styles.clinicPage}`}>
-          {/* ── Clinics ── */}
+          {/* header */}
           <div className={styles.clinicHeader}>
             <h3>Available Clinics</h3>
-            <button className={styles.btnCreate} onClick={openCreateModal}>
+            <button className={styles.btnCreate} onClick={openCreate}>
               + Create Clinic
             </button>
           </div>
 
+          {/* states */}
+          {loading && (
+            <p style={{ color: "#888", marginBottom: 16 }}>Loading clinics…</p>
+          )}
+          {apiError && (
+            <p style={{ color: "red", marginBottom: 16 }}>
+              Failed to load clinics: {apiError}.{" "}
+              <button
+                onClick={fetchClinics}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "red",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                }}
+              >
+                Retry
+              </button>
+            </p>
+          )}
+          {!loading && !apiError && clinics.length === 0 && (
+            <p style={{ color: "#888", marginBottom: 16 }}>
+              No clinics yet. Click "+ Create Clinic" to add one.
+            </p>
+          )}
+
+          {/* cards */}
           <div className={styles.clinicCards}>
-            {clinics.map((clinic) => (
-              <div key={clinic.id} className={styles.clinicCard}>
+            {clinics.map((c) => (
+              <div key={c.id} className={styles.clinicCard}>
                 <div className={styles.clinicCardHeader}>
                   <h4>
-                    {clinic.type}
+                    {c.type}
                     <span className={styles.clinicIcon}>
-                      {clinic.icon === "physical" ? (
+                      {c.icon === "physical" ? (
                         <FaClinicMedical />
                       ) : (
                         <TiVideo />
                       )}
                     </span>
                   </h4>
-                  <button
-                    className={styles.editBtn}
-                    onClick={() => openEditModal(clinic)}
-                  >
-                    Edit <FiEdit />
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      className={styles.editBtn}
+                      onClick={() => openEdit(c)}
+                    >
+                      Edit <FiEdit />
+                    </button>
+                    <button
+                      className={styles.editBtn}
+                      style={{
+                        background: "#fee2e2",
+                        color: "#b91c1c",
+                        borderColor: "#fca5a5",
+                      }}
+                      onClick={() => handleDelete(c.id)}
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
                 </div>
                 <hr
                   style={{
@@ -333,16 +570,16 @@ function AdminClinic() {
                 />
                 <div className={styles.clinicCardBody}>
                   <p>
-                    <strong>Clinic Days:</strong> {clinic.days}
+                    <strong>Clinic Days:</strong> {c.days}
                   </p>
                   <p>
-                    <strong>Consultation Fee:</strong> {clinic.fee}
+                    <strong>Consultation Fee:</strong> {c.fee}
                   </p>
                   <p>
-                    <strong>Payment Mode:</strong> {clinic.payment}
+                    <strong>Payment Mode:</strong> {c.payment}
                   </p>
                   <p>
-                    <strong>Address:</strong> {clinic.address}
+                    <strong>Address:</strong> {c.address}
                   </p>
                 </div>
               </div>
@@ -352,11 +589,11 @@ function AdminClinic() {
           {/* ══ SERVICES ══ */}
           <div className={styles.servicesSection}>
             <div className={styles.clinicHeader} style={{ marginBottom: 16 }}>
-              <h3>Manage Services & Pricing</h3>
+              <h3>Manage Services &amp; Pricing</h3>
               <button
                 className={styles.btnCreate}
                 onClick={() => {
-                  setShowAddService(true);
+                  setShowAddSvc(true);
                   setAddPurposeFor(null);
                 }}
               >
@@ -364,8 +601,7 @@ function AdminClinic() {
               </button>
             </div>
 
-            {/* ── Add Service form ── */}
-            {showAddService && (
+            {showAddSvc && (
               <div className={styles.addServiceForm}>
                 <p className={styles.addFormTitle}>New Service</p>
                 <div className={styles.addServiceInputs}>
@@ -389,49 +625,43 @@ function AdminClinic() {
                   <button
                     className={styles.addCancelBtn}
                     onClick={() => {
-                      setShowAddService(false);
+                      setShowAddSvc(false);
                       setNewSvcTitle("");
                       setNewSvcDesc("");
                     }}
                   >
                     Cancel
                   </button>
-                  <button className={styles.addConfirmBtn} onClick={addService}>
+                  <button className={styles.addConfirmBtn} onClick={addSvc}>
                     Add Service
                   </button>
                 </div>
               </div>
             )}
 
-            {/* ── Service list ── */}
             <div className={styles.servicesList}>
-              {services.map((service) => {
-                const isExpanded = expandedIds.includes(service.id);
-                const hasSubs = service.subServices.length > 0;
-                const isAddingPurpose = addPurposeFor === service.id;
-
+              {services.map((svc) => {
+                const expanded = expandedIds.includes(svc.id);
+                const addingPurp = addPurposeFor === svc.id;
                 return (
                   <div
-                    key={service.id}
-                    className={`${styles.serviceCard} ${!service.available ? styles.serviceCardDisabled : ""}`}
+                    key={svc.id}
+                    className={`${styles.serviceCard} ${!svc.available ? styles.serviceCardDisabled : ""}`}
                   >
-                    {/* Service row */}
                     <div className={styles.serviceCardHeader}>
                       <div className={styles.serviceCardLeft}>
                         <div className={styles.serviceIconBubble}>
-                          {service.id === "0" ? (
+                          {svc.id === "0" ? (
                             <FaBrain size={14} color="#fff" />
                           ) : (
                             <FaClinicMedical size={14} color="#fff" />
                           )}
                         </div>
                         <div>
-                          <p className={styles.serviceCardTitle}>
-                            {service.title}
-                          </p>
-                          {service.description && (
+                          <p className={styles.serviceCardTitle}>{svc.title}</p>
+                          {svc.description && (
                             <p className={styles.serviceCardDesc}>
-                              {service.description}
+                              {svc.description}
                             </p>
                           )}
                         </div>
@@ -443,71 +673,62 @@ function AdminClinic() {
                             className={styles.priceInput}
                             type="text"
                             placeholder="Set price"
-                            value={service.price}
-                            disabled={!service.available}
+                            value={svc.price}
+                            disabled={!svc.available}
                             onChange={(e) =>
-                              updateService(service.id, {
-                                price: e.target.value,
-                              })
+                              updSvc(svc.id, { price: e.target.value })
                             }
                           />
                         </div>
                         <button
-                          className={`${styles.availableBtn} ${service.available ? styles.availableBtnOn : styles.availableBtnOff}`}
+                          className={`${styles.availableBtn} ${svc.available ? styles.availableBtnOn : styles.availableBtnOff}`}
                           onClick={() =>
-                            updateService(service.id, {
-                              available: !service.available,
-                            })
+                            updSvc(svc.id, { available: !svc.available })
                           }
                         >
-                          {service.available ? (
+                          {svc.available ? (
                             <FiToggleRight size={18} />
                           ) : (
                             <FiToggleLeft size={18} />
                           )}
-                          {service.available ? "Available" : "Unavailable"}
+                          {svc.available ? "Available" : "Unavailable"}
                         </button>
                         <button
                           className={styles.deleteServiceBtn}
-                          onClick={() => deleteService(service.id)}
-                          title="Delete service"
+                          onClick={() => delSvc(svc.id)}
                         >
                           <FiTrash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Sub-services accordion */}
-                    {(hasSubs || service.id === "1") && (
+                    {(svc.subServices.length > 0 || svc.id === "1") && (
                       <>
                         <div className={styles.subToggleBar}>
                           <button
                             className={styles.subToggleBtn}
-                            onClick={() => toggleExpanded(service.id)}
+                            onClick={() => togExp(svc.id)}
                           >
-                            {isExpanded ? "▲" : "▼"}
-                            &nbsp; Assessment Purposes (
-                            {service.subServices.length})
+                            {expanded ? "▲" : "▼"}&nbsp;Assessment Purposes (
+                            {svc.subServices.length})
                           </button>
-                          {/* Always-visible add button */}
                           <button
                             className={styles.addPurposeBtnInline}
                             onClick={() => {
-                              setAddPurposeFor(service.id);
+                              setAddPurposeFor(svc.id);
                               setExpandedIds((p) =>
-                                p.includes(service.id) ? p : [...p, service.id],
+                                p.includes(svc.id) ? p : [...p, svc.id],
                               );
-                              setShowAddService(false);
-                              setNewPurposeTitle("");
+                              setShowAddSvc(false);
+                              setNewPurpose("");
                             }}
                           >
                             <FiPlus size={12} /> Add Purpose
                           </button>
                         </div>
-
-                        {isExpanded && (
+                        {expanded && (
                           <div className={styles.subServicesList}>
-                            {service.subServices.map((sub) => (
+                            {svc.subServices.map((sub) => (
                               <div
                                 key={sub.id}
                                 className={`${styles.subServiceRow} ${!sub.available ? styles.subServiceRowDisabled : ""}`}
@@ -526,10 +747,10 @@ function AdminClinic() {
                                       placeholder="Set price"
                                       value={sub.price}
                                       disabled={
-                                        !sub.available || !service.available
+                                        !sub.available || !svc.available
                                       }
                                       onChange={(e) =>
-                                        updateSubService(service.id, sub.id, {
+                                        updSub(svc.id, sub.id, {
                                           price: e.target.value,
                                         })
                                       }
@@ -537,9 +758,9 @@ function AdminClinic() {
                                   </div>
                                   <button
                                     className={`${styles.availableBtn} ${styles.availableBtnSm} ${sub.available ? styles.availableBtnOn : styles.availableBtnOff}`}
-                                    disabled={!service.available}
+                                    disabled={!svc.available}
                                     onClick={() =>
-                                      updateSubService(service.id, sub.id, {
+                                      updSub(svc.id, sub.id, {
                                         available: !sub.available,
                                       })
                                     }
@@ -553,36 +774,30 @@ function AdminClinic() {
                                   </button>
                                   <button
                                     className={styles.deleteSubBtn}
-                                    onClick={() =>
-                                      deleteSubService(service.id, sub.id)
-                                    }
-                                    title="Remove"
+                                    onClick={() => delSub(svc.id, sub.id)}
                                   >
                                     <FiTrash2 size={13} />
                                   </button>
                                 </div>
                               </div>
                             ))}
-
-                            {/* Add purpose inline row */}
-                            {isAddingPurpose ? (
+                            {addingPurp ? (
                               <div className={styles.addPurposeRow}>
                                 <input
                                   className={styles.addInput}
                                   style={{ flex: 1 }}
                                   type="text"
-                                  placeholder="Assessment purpose title *"
-                                  value={newPurposeTitle}
-                                  onChange={(e) =>
-                                    setNewPurposeTitle(e.target.value)
-                                  }
+                                  placeholder="Purpose title *"
+                                  value={newPurpose}
                                   autoFocus
+                                  onChange={(e) =>
+                                    setNewPurpose(e.target.value)
+                                  }
                                   onKeyDown={(e) => {
-                                    if (e.key === "Enter")
-                                      addPurpose(service.id);
+                                    if (e.key === "Enter") addPurp(svc.id);
                                     if (e.key === "Escape") {
                                       setAddPurposeFor(null);
-                                      setNewPurposeTitle("");
+                                      setNewPurpose("");
                                     }
                                   }}
                                 />
@@ -591,14 +806,14 @@ function AdminClinic() {
                                     className={styles.addCancelBtn}
                                     onClick={() => {
                                       setAddPurposeFor(null);
-                                      setNewPurposeTitle("");
+                                      setNewPurpose("");
                                     }}
                                   >
                                     Cancel
                                   </button>
                                   <button
                                     className={styles.addConfirmBtn}
-                                    onClick={() => addPurpose(service.id)}
+                                    onClick={() => addPurp(svc.id)}
                                   >
                                     Add
                                   </button>
@@ -609,9 +824,9 @@ function AdminClinic() {
                                 <button
                                   className={styles.addPurposeBtn}
                                   onClick={() => {
-                                    setAddPurposeFor(service.id);
-                                    setShowAddService(false);
-                                    setNewPurposeTitle("");
+                                    setAddPurposeFor(svc.id);
+                                    setShowAddSvc(false);
+                                    setNewPurpose("");
                                   }}
                                 >
                                   <FiPlus size={13} /> Add Assessment Purpose
@@ -627,7 +842,6 @@ function AdminClinic() {
               })}
             </div>
 
-            {/* Save button */}
             <div
               style={{
                 display: "flex",
@@ -646,7 +860,9 @@ function AdminClinic() {
         </div>
       </div>
 
-      {/* ══ CLINIC MODAL ══ */}
+      {/* ══════════════════════════════
+          MODAL
+      ══════════════════════════════ */}
       {showModal && (
         <div className={styles.backdrop}>
           <div className={styles.modal}>
@@ -669,26 +885,22 @@ function AdminClinic() {
                 <div className={styles.typeToggle}>
                   <button
                     type="button"
-                    className={`${styles.typeBtn} ${clinicForm.type === "Physical" ? styles.typeBtnActive : ""}`}
-                    onClick={() =>
-                      setClinicForm((f) => ({ ...f, type: "Physical" }))
-                    }
+                    className={`${styles.typeBtn} ${form.type === "Physical" ? styles.typeBtnActive : ""}`}
+                    onClick={() => setForm((f) => ({ ...f, type: "Physical" }))}
                   >
                     <FaClinicMedical /> Physical Clinic
                   </button>
                   <button
                     type="button"
-                    className={`${styles.typeBtn} ${clinicForm.type === "Online" ? styles.typeBtnActive : ""}`}
-                    onClick={() =>
-                      setClinicForm((f) => ({ ...f, type: "Online" }))
-                    }
+                    className={`${styles.typeBtn} ${form.type === "Online" ? styles.typeBtnActive : ""}`}
+                    onClick={() => setForm((f) => ({ ...f, type: "Online" }))}
                   >
                     <TiVideo /> Online Clinic
                   </button>
                 </div>
               </div>
 
-              {/* Clinic Information */}
+              {/* Clinic Info */}
               <div className={styles.section}>
                 <p className={styles.sectionTitle}>Clinic Information</p>
                 <Field label="Clinic Name *">
@@ -696,7 +908,7 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="name"
-                    value={clinicForm.name}
+                    value={form.name}
                     onChange={handleInput}
                     placeholder="e.g. ClearMind Wellness Clinic"
                   />
@@ -708,7 +920,7 @@ function AdminClinic() {
                       className={styles.input}
                       type="text"
                       name="blk"
-                      value={clinicForm.blk}
+                      value={form.blk}
                       onChange={handleInput}
                       placeholder="Blk / Lot / Bldg / Subd."
                     />
@@ -717,7 +929,7 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="barangay"
-                    value={clinicForm.barangay}
+                    value={form.barangay}
                     onChange={handleInput}
                     placeholder="Barangay"
                   />
@@ -725,7 +937,7 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="city"
-                    value={clinicForm.city}
+                    value={form.city}
                     onChange={handleInput}
                     placeholder="City / Municipality"
                   />
@@ -733,7 +945,7 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="province"
-                    value={clinicForm.province}
+                    value={form.province}
                     onChange={handleInput}
                     placeholder="Province"
                   />
@@ -741,7 +953,7 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="region"
-                    value={clinicForm.region}
+                    value={form.region}
                     onChange={handleInput}
                     placeholder="Region"
                   />
@@ -749,29 +961,45 @@ function AdminClinic() {
                     className={styles.input}
                     type="text"
                     name="zip"
-                    value={clinicForm.zip}
+                    value={form.zip}
                     onChange={handleInput}
                     placeholder="ZIP Code"
                   />
                 </div>
+
+                {/* Clinic Image */}
                 <Field label="Clinic Image">
-                  <div className={styles.fileUploadRow}>
-                    <input
-                      className={styles.fileInput}
-                      type="file"
-                      name="clinicImage"
-                      onChange={handleInput}
+                  <div>
+                    <ImgPreview
+                      preview={form.clinicImagePreview}
+                      existing={form.existingClinicImage}
+                      label="No image selected"
                     />
-                    <button type="button" className={styles.fileAddBtn}>
-                      +
-                    </button>
+                    <div className={styles.fileUploadRow}>
+                      <input
+                        ref={clinicImgRef}
+                        className={styles.fileInput}
+                        type="file"
+                        name="clinicImageFile"
+                        accept="image/*"
+                        onChange={handleFile}
+                      />
+                      <button
+                        type="button"
+                        className={styles.fileAddBtn}
+                        onClick={() => clinicImgRef.current?.click()}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </Field>
+
                 <Field label="Description (Optional)">
                   <textarea
                     className={styles.textarea}
                     name="description"
-                    value={clinicForm.description}
+                    value={form.description}
                     onChange={handleInput}
                     placeholder="Describe the clinic…"
                     maxLength={1500}
@@ -792,23 +1020,19 @@ function AdminClinic() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.keys(clinicForm.schedule).map((day) => {
-                      const isClosed = clinicForm.schedule[day].closed;
+                    {Object.keys(form.schedule).map((day) => {
+                      const closed = form.schedule[day].closed;
                       return (
-                        <tr key={day} style={{ opacity: isClosed ? 0.45 : 1 }}>
+                        <tr key={day} style={{ opacity: closed ? 0.45 : 1 }}>
                           <td className={styles.scheduleDayLabel}>{day}</td>
                           <td>
                             <input
                               className={styles.scheduleInput}
                               type="time"
-                              value={clinicForm.schedule[day].start}
-                              disabled={isClosed}
+                              value={form.schedule[day].start}
+                              disabled={closed}
                               onChange={(e) =>
-                                handleScheduleChange(
-                                  day,
-                                  "start",
-                                  e.target.value,
-                                )
+                                setSchedule(day, "start", e.target.value)
                               }
                             />
                           </td>
@@ -816,10 +1040,10 @@ function AdminClinic() {
                             <input
                               className={styles.scheduleInput}
                               type="time"
-                              value={clinicForm.schedule[day].end}
-                              disabled={isClosed}
+                              value={form.schedule[day].end}
+                              disabled={closed}
                               onChange={(e) =>
-                                handleScheduleChange(day, "end", e.target.value)
+                                setSchedule(day, "end", e.target.value)
                               }
                             />
                           </td>
@@ -827,17 +1051,13 @@ function AdminClinic() {
                             <label className={styles.closedToggle}>
                               <input
                                 type="checkbox"
-                                checked={isClosed}
+                                checked={closed}
                                 onChange={(e) =>
-                                  handleScheduleChange(
-                                    day,
-                                    "closed",
-                                    e.target.checked,
-                                  )
+                                  setSchedule(day, "closed", e.target.checked)
                                 }
                               />
                               <span
-                                className={`${styles.closedSlider} ${isClosed ? styles.closedSliderOn : ""}`}
+                                className={`${styles.closedSlider} ${closed ? styles.closedSliderOn : ""}`}
                               />
                             </label>
                           </td>
@@ -857,7 +1077,7 @@ function AdminClinic() {
                     <select
                       className={styles.select}
                       name="paymentMethod"
-                      value={clinicForm.paymentMethod}
+                      value={form.paymentMethod}
                       onChange={handleInput}
                     >
                       <option value="Gcash">GCash</option>
@@ -873,24 +1093,38 @@ function AdminClinic() {
                       className={styles.input}
                       type="text"
                       name="consultationAmount"
-                      value={clinicForm.consultationAmount}
+                      value={form.consultationAmount}
                       onChange={handleInput}
                       placeholder="e.g. ₱ 2,000.00 - ₱ 2,500.00"
                     />
                   </div>
                 </div>
+
+                {/* QR Code */}
                 <Field label="Payment QR Code">
-                  <div className={styles.fileUploadRow}>
-                    <input
-                      className={styles.fileInput}
-                      type="file"
-                      name="qrImages"
-                      multiple
-                      onChange={handleInput}
+                  <div>
+                    <ImgPreview
+                      preview={form.qrImagePreview}
+                      existing={form.existingQrImage}
+                      label="No QR code selected"
                     />
-                    <button type="button" className={styles.fileAddBtn}>
-                      +
-                    </button>
+                    <div className={styles.fileUploadRow}>
+                      <input
+                        ref={qrImgRef}
+                        className={styles.fileInput}
+                        type="file"
+                        name="qrImageFile"
+                        accept="image/*"
+                        onChange={handleFile}
+                      />
+                      <button
+                        type="button"
+                        className={styles.fileAddBtn}
+                        onClick={() => qrImgRef.current?.click()}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </Field>
               </div>
@@ -901,7 +1135,7 @@ function AdminClinic() {
                   <input
                     type="checkbox"
                     name="confirm"
-                    checked={clinicForm.confirm}
+                    checked={form.confirm}
                     onChange={handleInput}
                     className={styles.confirmCheckbox}
                   />
@@ -917,11 +1151,20 @@ function AdminClinic() {
               <button
                 className={styles.btnCancel}
                 onClick={() => setShowModal(false)}
+                disabled={submitting}
               >
                 Cancel
               </button>
-              <button className={styles.btnSubmit} onClick={handleSubmit}>
-                {isEdit ? "Save Changes" : "Create Clinic"}
+              <button
+                className={styles.btnSubmit}
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Saving…"
+                  : isEdit
+                    ? "Save Changes"
+                    : "Create Clinic"}
               </button>
             </div>
           </div>
@@ -930,5 +1173,3 @@ function AdminClinic() {
     </div>
   );
 }
-
-export default AdminClinic;

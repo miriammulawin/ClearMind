@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminPatient.module.css";
@@ -26,6 +26,8 @@ import {
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
 import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
+import axiosClient from "../axiosClient";
+import toast from "react-hot-toast";
 
 const AvatarPlaceholder = ({ name, size = 80 }) => {
   const initials = name
@@ -66,7 +68,6 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
   );
 };
 
-/* ── Reusable section header — declared OUTSIDE AdminPatient ── */
 const SectionHeader = ({ icon, title }) => (
   <div className={styles.cardSectionHeader}>
     <div className={styles.cardSectionIcon}>{icon}</div>
@@ -87,264 +88,221 @@ function AdminPatient() {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [selectedRefund, setSelectedRefund] = useState(null);
   const [refundProcessed, setRefundProcessed] = useState({});
-  const navigate = useNavigate();
-
-  const [rescheduleRequests, setRescheduleRequests] = useState([
-    {
-      id: 201,
-      name: "Liezel Paciente",
-      originalDate: "January 20, 2026",
-      originalTime: "2:00 pm",
-      requestedDate: "January 27, 2026",
-      requestedTime: "10:00 am",
-      type: "Follow Up",
-      status: "Pending",
-      reason: "I have a conflict with my work schedule on the original date.",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-    },
-    {
-      id: 202,
-      name: "Kevin Ramos",
-      originalDate: "December 28, 2025",
-      originalTime: "10:00 am",
-      requestedDate: "January 5, 2026",
-      requestedTime: "2:00 pm",
-      type: "Follow Up",
-      status: "Pending",
-      reason: "Family emergency on the scheduled day.",
-      contact: "09221234567",
-      email: "kevin@email.com",
-      address: "45 Rizal Ave, San Pablo, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 39,
-      gender: "Male",
-      totalVisits: 3,
-    },
-    {
-      id: 203,
-      name: "Maria Santos",
-      originalDate: "January 10, 2026",
-      originalTime: "1:30 pm",
-      requestedDate: "January 15, 2026",
-      requestedTime: "9:00 am",
-      type: "Check Up",
-      status: "Approved",
-      reason: "Transportation issue.",
-      contact: "09191234567",
-      email: "maria@email.com",
-      address: "78 Mabini St, Los Baños, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 52,
-      gender: "Female",
-      totalVisits: 12,
-    },
-  ]);
-
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [selectedReschedule, setSelectedReschedule] = useState(null);
+  const navigate = useNavigate();
+
+  // ── Real data state ──
+  const [patients, setPatients] = useState([]);
+  const [consultationRequests, setConsultationRequests] = useState([]);
+  const [rescheduleRequests, setRescheduleRequests] = useState([]);
+  const [cancelledAppointments, setCancelledAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const rowsPerPage = 4;
 
-  const consultationRequests = [
-    {
-      id: 1,
-      name: "Liezel Paciente",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Scheduled",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-    },
-    {
-      id: 2,
-      name: "Ara Christina Ceres",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Scheduled",
-      contact: "09181234567",
-      email: "ara@email.com",
-      address: "22 Acacia Rd, Santa Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 28,
-      gender: "Female",
-      totalVisits: 2,
-      assignedDoctor: {
-        name: "Dr. Jose Santos",
-        specialization: "Dermatologist",
-      },
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      date: "January 22, 2026",
-      time: "11:00 am",
-      type: "Check Up",
-      status: "Cancelled",
-      contact: "09201234567",
-      email: "john@email.com",
-      address: "10 Magnolia St, Biñan, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 45,
-      gender: "Male",
-      totalVisits: 8,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-    },
-  ];
+  // ─────────────────────────────────────────────
+  // DATA FETCHING
+  // ─────────────────────────────────────────────
 
-  const patients = [
-    {
-      id: 101,
-      name: "Liezel Paciente",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-      progressionNote: {
-        assessment:
-          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed.",
-      },
-    },
-    {
-      id: 102,
-      name: "Ara Christina Ceres",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Completed",
-      contact: "09181234567",
-      email: "ara@email.com",
-      address: "22 Acacia Rd, Santa Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 28,
-      gender: "Female",
-      totalVisits: 2,
-      assignedDoctor: {
-        name: "Dr. Jose Santos",
-        specialization: "Dermatologist",
-      },
-      progressionNote: {
-        assessment:
-          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin.",
-      },
-    },
-    {
-      id: 103,
-      name: "Maria Santos",
-      date: "January 10, 2026",
-      time: "1:30 pm",
-      type: "Check Up",
-      status: "Scheduled",
-      contact: "09191234567",
-      email: "maria@email.com",
-      address: "78 Mabini St, Los Baños, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 52,
-      gender: "Female",
-      totalVisits: 12,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-    },
-    {
-      id: 104,
-      name: "Kevin Ramos",
-      date: "December 28, 2025",
-      time: "10:00 am",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09221234567",
-      email: "kevin@email.com",
-      address: "45 Rizal Ave, San Pablo, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 39,
-      gender: "Male",
-      totalVisits: 3,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-      progressionNote: {
-        assessment:
-          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg.",
-      },
-    },
-  ];
+  const fetchPatients = useCallback(async () => {
+    try {
+      const { data } = await axiosClient.get("/admin/patients");
+      if (!data.success) throw new Error("patients fetch failed");
+      // Normalize API data to match the shape used in the UI
+      const normalized = (Array.isArray(data.data) ? data.data : []).map(
+        (p) => ({
+          id: p.id,
+          name: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim(),
+          date: p.lastAppointmentDate ?? "—",
+          time: p.lastAppointmentTime ?? "—",
+          type: p.lastVisitType ?? "—",
+          status: p.lastAppointmentStatus ?? "Scheduled",
+          contact: p.contactNo ?? "—",
+          email: p.email ?? "—",
+          address: p.address ?? "—",
+          consultationMode: p.consultationMode ?? "On-Site",
+          patientType: p.is_new ? "New Patient" : "Existing Patient",
+          age: p.age ?? "—",
+          gender: p.sex ? p.sex.charAt(0).toUpperCase() + p.sex.slice(1) : "—",
+          totalVisits: p.totalVisits ?? 0,
+          assignedDoctor: p.assignedDoctor ?? null,
+          progressionNote: p.progressionNote ?? null,
+        }),
+      );
+      setPatients(normalized);
+    } catch (err) {
+      console.error("fetchPatients:", err);
+      toast.error("Failed to load patients");
+      setPatients([]);
+    }
+  }, []);
 
-  const cancelledAppointments = [
-    {
-      id: 301,
-      name: "John Doe",
-      date: "January 22, 2026",
-      time: "11:00 am",
-      type: "Check Up",
-      status: "Cancelled",
-      contact: "09201234567",
-      email: "john@email.com",
-      address: "10 Magnolia St, Biñan, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 45,
-      gender: "Male",
-      totalVisits: 8,
-      assignedDoctor: { name: "Dr. Anna Cruz", specialization: "Cardiologist" },
-      cancellationReason:
-        "Patient called to cancel due to a sudden work obligation that could not be rescheduled.",
-    },
-    {
-      id: 302,
-      name: "Sofia Dela Cruz",
-      date: "February 3, 2026",
-      time: "3:00 pm",
-      type: "Follow Up",
-      status: "Cancelled",
-      contact: "09301234567",
-      email: "sofia@email.com",
-      address: "11 Sampaguita Ave, Sta. Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 25,
-      gender: "Female",
-      totalVisits: 1,
-      assignedDoctor: {
-        name: "Dr. Maria Reyes",
-        specialization: "General Physician",
-      },
-      cancellationReason:
-        "Patient requested cancellation via email citing personal reasons and did not wish to reschedule at this time.",
-    },
-  ];
+  const fetchAppointments = useCallback(async () => {
+    try {
+      const { data } = await axiosClient.get("/admin/appointments");
+      if (!data.success) throw new Error("appointments fetch failed");
+      const all = Array.isArray(data.data) ? data.data : [];
+
+      const normalize = (appt) => ({
+        id: appt.id,
+        name: appt.patient ?? appt.patientName ?? "Unknown",
+        date: appt.appointment_date ?? appt.date ?? "—",
+        time: appt.appointment_time ?? appt.time ?? "—",
+        type: appt.visit_type ?? appt.type ?? "—",
+        status: appt.status ?? "Scheduled",
+        contact: appt.contact ?? appt.contactNo ?? "—",
+        email: appt.email ?? "—",
+        address: appt.address ?? "—",
+        consultationMode:
+          appt.type === "online" || appt.consultationMode === "Virtual"
+            ? "Virtual"
+            : "On-Site",
+        patientType: appt.is_new ? "New Patient" : "Existing Patient",
+        age: appt.age ?? "—",
+        gender: appt.sex
+          ? appt.sex.charAt(0).toUpperCase() + appt.sex.slice(1)
+          : (appt.gender ?? "—"),
+        totalVisits: appt.totalVisits ?? 0,
+        assignedDoctor: appt.assignedDoctor ?? null,
+        progressionNote: appt.progressionNote ?? null,
+        cancellationReason:
+          appt.cancellationReason ?? appt.cancellation_reason ?? null,
+        reason: appt.reason ?? null,
+        originalDate: appt.originalDate ?? appt.original_date ?? null,
+        originalTime: appt.originalTime ?? appt.original_time ?? null,
+        requestedDate: appt.requestedDate ?? appt.requested_date ?? null,
+        requestedTime: appt.requestedTime ?? appt.requested_time ?? null,
+      });
+
+      // Split into tabs by status
+      const scheduled = all
+        .filter((a) => {
+          const s = (a.status ?? "").toLowerCase();
+          return s === "scheduled" || s === "confirmed" || s === "pending";
+        })
+        .map(normalize);
+
+      const cancelled = all
+        .filter((a) => (a.status ?? "").toLowerCase() === "cancelled")
+        .map(normalize);
+
+      const reschedule = all
+        .filter(
+          (a) =>
+            (a.status ?? "").toLowerCase() === "reschedule_requested" ||
+            a.reschedule_requested,
+        )
+        .map((a) => ({
+          ...normalize(a),
+          status: a.rescheduleStatus ?? "Pending",
+        }));
+
+      setConsultationRequests(scheduled);
+      setCancelledAppointments(cancelled);
+      setRescheduleRequests(reschedule);
+    } catch (err) {
+      console.error("fetchAppointments:", err);
+      toast.error("Failed to load appointments");
+    }
+  }, []);
+
+  // Also try dedicated reschedule endpoint if available
+  const fetchRescheduleRequests = useCallback(async () => {
+    try {
+      const { data } = await axiosClient.get("/admin/reschedule-requests");
+      if (!data.success) return; // silently skip if endpoint doesn't exist
+      const normalized = (Array.isArray(data.data) ? data.data : []).map(
+        (r) => ({
+          id: r.id,
+          name: r.patient ?? r.patientName ?? "Unknown",
+          originalDate: r.originalDate ?? r.original_date ?? "—",
+          originalTime: r.originalTime ?? r.original_time ?? "—",
+          requestedDate: r.requestedDate ?? r.requested_date ?? "—",
+          requestedTime: r.requestedTime ?? r.requested_time ?? "—",
+          type: r.visit_type ?? r.type ?? "—",
+          status: r.status ?? "Pending",
+          reason: r.reason ?? "—",
+          contact: r.contact ?? r.contactNo ?? "—",
+          email: r.email ?? "—",
+          address: r.address ?? "—",
+          consultationMode:
+            r.type === "online" || r.consultationMode === "Virtual"
+              ? "Virtual"
+              : "On-Site",
+          patientType: r.is_new ? "New Patient" : "Existing Patient",
+          age: r.age ?? "—",
+          gender: r.sex
+            ? r.sex.charAt(0).toUpperCase() + r.sex.slice(1)
+            : (r.gender ?? "—"),
+          totalVisits: r.totalVisits ?? 0,
+        }),
+      );
+      if (normalized.length > 0) setRescheduleRequests(normalized);
+    } catch {
+      // endpoint may not exist yet — silently ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchPatients(),
+        fetchAppointments(),
+        fetchRescheduleRequests(),
+      ]);
+      setLoading(false);
+    };
+    fetchAll();
+  }, [fetchPatients, fetchAppointments, fetchRescheduleRequests]);
+
+  // ─────────────────────────────────────────────
+  // RESCHEDULE ACTIONS (optimistic + API)
+  // ─────────────────────────────────────────────
+
+  const handleRescheduleAction = async (id, action) => {
+    const newStatus = action === "approve" ? "Approved" : "Declined";
+    // Optimistic UI update
+    setRescheduleRequests((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
+    );
+    setShowRescheduleModal(false);
+    try {
+      await axiosClient.patch(`/admin/reschedule-requests/${id}`, {
+        status: newStatus,
+      });
+      toast.success(`Request ${newStatus.toLowerCase()} successfully`);
+    } catch (err) {
+      console.error("reschedule action:", err);
+      toast.error("Failed to update reschedule request");
+      // Revert on failure
+      setRescheduleRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: "Pending" } : r)),
+      );
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // REFUND ACTION (optimistic + API)
+  // ─────────────────────────────────────────────
+
+  const handleRefundConfirm = async (id) => {
+    setRefundProcessed((prev) => ({ ...prev, [id]: true }));
+    setShowRefundModal(false);
+    try {
+      await axiosClient.patch(`/admin/appointments/${id}/refund`);
+      toast.success("Refund processed successfully");
+    } catch (err) {
+      console.error("refund:", err);
+      toast.error("Failed to process refund");
+      setRefundProcessed((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  // ─────────────────────────────────────────────
+  // UI HANDLERS
+  // ─────────────────────────────────────────────
 
   const rawData =
     activeTab === "consultation"
@@ -359,6 +317,7 @@ function AdminPatient() {
     patientTypeFilter === "all"
       ? rawData
       : rawData.filter((r) => r.patientType === patientTypeFilter);
+
   const totalPages = Math.ceil(activeData.length / rowsPerPage);
   const displayedData = activeData.slice(
     (currentPage - 1) * rowsPerPage,
@@ -375,16 +334,6 @@ function AdminPatient() {
     setSelectedReschedule(row);
     setShowRescheduleModal(true);
   };
-  const handleRescheduleAction = (id, action) => {
-    setRescheduleRequests((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, status: action === "approve" ? "Approved" : "Declined" }
-          : r,
-      ),
-    );
-    setShowRescheduleModal(false);
-  };
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
@@ -397,10 +346,6 @@ function AdminPatient() {
   const handleRefundOpen = (row) => {
     setSelectedRefund(row);
     setShowRefundModal(true);
-  };
-  const handleRefundConfirm = (id) => {
-    setRefundProcessed((prev) => ({ ...prev, [id]: true }));
-    setShowRefundModal(false);
   };
 
   const getRescheduleStatusBadge = (s) =>
@@ -464,6 +409,23 @@ function AdminPatient() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className={`admin-content ${styles.patientPage}`}>
           <div className={styles.patientCard}>
+            {/* ── Loading Banner ── */}
+            {loading && (
+              <div
+                style={{
+                  padding: "10px 16px",
+                  background: "#f0ebf8",
+                  color: "#4D227C",
+                  borderRadius: "8px",
+                  marginBottom: "12px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                }}
+              >
+                Loading patient data…
+              </div>
+            )}
+
             {/* ── Tabs + Filter ── */}
             <div className={styles.patientTabsRow}>
               <div className={styles.patientTabs}>
@@ -567,7 +529,13 @@ function AdminPatient() {
                   )}
                 </thead>
                 <tbody>
-                  {displayedData.length === 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className={styles.emptyRow}>
+                        Loading…
+                      </td>
+                    </tr>
+                  ) : displayedData.length === 0 ? (
                     <tr>
                       <td colSpan={7} className={styles.emptyRow}>
                         No{" "}
@@ -820,7 +788,7 @@ function AdminPatient() {
                         {selectedPatient.gender}
                       </span>
                     )}
-                    {selectedPatient.totalVisits && (
+                    {selectedPatient.totalVisits !== undefined && (
                       <span className={styles.metaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
@@ -1007,7 +975,7 @@ function AdminPatient() {
                 )}
               </div>
 
-              {/* Cancellation Reason (cancelled tab only) */}
+              {/* Cancellation Reason */}
               {modalSource === "cancelled" &&
                 selectedPatient.cancellationReason && (
                   <div
@@ -1129,7 +1097,9 @@ function AdminPatient() {
                             <span className={styles.infoLabel}>
                               Paid Amount
                             </span>
-                            <span className={styles.infoValue}>—</span>
+                            <span className={styles.infoValue}>
+                              {selectedPatient.paidAmount ?? "—"}
+                            </span>
                           </div>
                         </div>
                         <div className={styles.infoItem}>
@@ -1147,7 +1117,9 @@ function AdminPatient() {
                             <span className={styles.infoLabel}>
                               Reference No.
                             </span>
-                            <span className={styles.infoValue}>—</span>
+                            <span className={styles.infoValue}>
+                              {selectedPatient.referenceNo ?? "—"}
+                            </span>
                           </div>
                         </div>
                         <div className={styles.infoItem}>
@@ -1165,7 +1137,9 @@ function AdminPatient() {
                             <span className={styles.infoLabel}>
                               Payment Option
                             </span>
-                            <span className={styles.infoValue}>—</span>
+                            <span className={styles.infoValue}>
+                              {selectedPatient.paymentOption ?? "—"}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1174,10 +1148,14 @@ function AdminPatient() {
                           Payment Proof
                         </span>
                         <img
-                          src={samplePayment}
+                          src={selectedPatient.paymentProof ?? samplePayment}
                           alt="Payment Proof"
                           className={styles.paymentProofImg}
-                          onClick={() => setZoomImage(samplePayment)}
+                          onClick={() =>
+                            setZoomImage(
+                              selectedPatient.paymentProof ?? samplePayment,
+                            )
+                          }
                         />
                       </div>
                     </div>
@@ -1250,7 +1228,7 @@ function AdminPatient() {
                         {selectedReschedule.gender}
                       </span>
                     )}
-                    {selectedReschedule.totalVisits && (
+                    {selectedReschedule.totalVisits !== undefined && (
                       <span className={styles.metaChip}>
                         {selectedReschedule.totalVisits} Visits
                       </span>
@@ -1265,7 +1243,9 @@ function AdminPatient() {
                   onClick={() =>
                     navigate(
                       `/admin/patient-profile/${selectedReschedule.id}`,
-                      { state: { patient: selectedReschedule } },
+                      {
+                        state: { patient: selectedReschedule },
+                      },
                     )
                   }
                 >
@@ -1495,13 +1475,17 @@ function AdminPatient() {
                   <span className={styles.refundGridItemLabel}>
                     Paid Amount
                   </span>
-                  <span className={styles.refundGridItemValue}>—</span>
+                  <span className={styles.refundGridItemValue}>
+                    {selectedRefund.paidAmount ?? "—"}
+                  </span>
                 </div>
                 <div className={styles.refundGridItem}>
                   <span className={styles.refundGridItemLabel}>
                     Reference No.
                   </span>
-                  <span className={styles.refundGridItemValue}>—</span>
+                  <span className={styles.refundGridItemValue}>
+                    {selectedRefund.referenceNo ?? "—"}
+                  </span>
                 </div>
               </div>
               <p className={styles.refundWarning}>

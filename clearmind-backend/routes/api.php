@@ -7,6 +7,8 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\ConsultationRequestController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DoctorAccountController;
+use App\Http\Controllers\ClinicController;
+
 
 // ── Public Auth Routes ──
 Route::post('/register', [AuthController::class, 'register']);
@@ -52,5 +54,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
           Route::post('doctors', [DoctorAccountController::class, 'store']);
           Route::get('doctors', [DoctorAccountController::class, 'index']);
+
+           Route::get('/clinics', [ClinicController::class, 'index']);
+        Route::post('/clinics', [ClinicController::class, 'store']);
+        Route::get('/clinics/{id}', [ClinicController::class, 'show']);     // ← NEW
+     Route::match(['post', 'put'], '/clinics/{id}', [ClinicController::class, 'update']);
+        Route::delete('/clinics/{id}', [ClinicController::class, 'destroy']); // ← NEW
+        
     });
 });
