@@ -215,33 +215,32 @@ function DoctorProfile() {
                         <small className="text-muted fw-semibold">MENU</small>
                       </div>
                       <div className="d-flex flex-column gap-2">
-                        {["Personal Information", "Account Security"].map(
-                          (tab) => (
-                            <button
-                              key={tab}
-                              className="btn d-flex align-items-center py-3 px-3 border-0"
+                        {[
+                          "Personal Information",
+                          "Account Security",
+                          "Terms & Conditions",
+                        ].map((tab) => (
+                          <button
+                            key={tab}
+                            className="btn d-flex align-items-center py-3 px-3 border-0"
+                            style={{
+                              backgroundColor:
+                                profileTab === tab ? "#4D227C" : "transparent",
+                              color: profileTab === tab ? "white" : "#2D3748",
+                              borderRadius: "8px",
+                              textAlign: "left",
+                            }}
+                            onClick={() => setProfileTab(tab)}
+                          >
+                            <i
+                              className={`bi ${tab === "Personal Information" ? "bi-person" : "bi-shield-check"} me-3`}
                               style={{
-                                backgroundColor:
-                                  profileTab === tab
-                                    ? "#4D227C"
-                                    : "transparent",
-                                color: profileTab === tab ? "white" : "#2D3748",
-                                borderRadius: "8px",
-                                textAlign: "left",
+                                color: profileTab === tab ? "white" : "#4D227C",
                               }}
-                              onClick={() => setProfileTab(tab)}
-                            >
-                              <i
-                                className={`bi ${tab === "Personal Information" ? "bi-person" : "bi-shield-check"} me-3`}
-                                style={{
-                                  color:
-                                    profileTab === tab ? "white" : "#4D227C",
-                                }}
-                              ></i>
-                              {tab}
-                            </button>
-                          ),
-                        )}
+                            ></i>
+                            {tab}
+                          </button>
+                        ))}
                         <button
                           className="btn d-flex align-items-center py-3 px-3 border-0"
                           style={{
@@ -612,7 +611,7 @@ function DoctorProfile() {
                         )}
                       </div>
                     </div>
-                  ) : (
+                  ) : profileTab === "Account Security" ? (
                     <div
                       className="card shadow-sm border-0"
                       style={{ borderRadius: "12px", minHeight: "400px" }}
@@ -635,6 +634,7 @@ function DoctorProfile() {
                             ></i>
                           </button>
                         </div>
+
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2">
                             Email
@@ -644,10 +644,10 @@ function DoctorProfile() {
                             className="form-control border-0 bg-light"
                             style={{ borderRadius: "8px" }}
                             value={doctorData.email}
-                            disabled={!isEditing}
                             readOnly
                           />
                         </div>
+
                         <div className="mb-4">
                           <label className="form-label text-muted small mb-2">
                             Password
@@ -657,31 +657,161 @@ function DoctorProfile() {
                             className="form-control border-0 bg-light"
                             style={{ borderRadius: "8px" }}
                             value={doctorData.password}
-                            disabled={!isEditing}
                             readOnly
                           />
                         </div>
-                        {isEditing && (
-                          <div className="d-flex gap-2 justify-content-end">
-                            <button
-                              className="btn btn-outline-secondary"
-                              style={{ borderRadius: "8px" }}
-                              onClick={() => setIsEditing(false)}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              className="btn text-white"
-                              style={{
-                                backgroundColor: "#4D227C",
-                                borderRadius: "8px",
-                              }}
-                              onClick={() => setIsEditing(false)}
-                            >
-                              Save Changes
-                            </button>
-                          </div>
-                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="card p-4 shadow-sm"
+                      style={{ borderRadius: "12px" }}
+                    >
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h5 style={{ color: "#4D227C" }} className="fw-bold">
+                          Terms & Conditions
+                        </h5>
+                      </div>
+
+                      {/* IMPORTANT NOTICE */}
+                      <div
+                        className="p-3 mb-4"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #4D227C, #6B46C1)",
+                          color: "white",
+                          borderRadius: "10px",
+                          fontSize: "clamp(0.85rem, 1vw, 0.95rem)",
+                        }}
+                      >
+                        By using this platform, you agree to all terms below.
+                        Please read carefully before proceeding.
+                      </div>
+
+                      {/* SCROLLABLE CONTENT */}
+                      <div
+                        style={{
+                          maxHeight: "500px",
+                          overflowY: "auto",
+                          paddingRight: "5px",
+                        }}
+                      >
+                        {/* SECTION */}
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            1. User Responsibilities
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            You must provide accurate, complete, and updated
+                            information at all times. Any false or misleading
+                            data may result in account suspension.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            2. Data Privacy & Confidentiality
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            All patient information must remain confidential.
+                            Unauthorized sharing, duplication, or misuse of
+                            sensitive data is strictly prohibited and may lead
+                            to legal action.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            3. System Usage
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            The platform must only be used for professional and
+                            authorized purposes. Any attempt to exploit, hack,
+                            or disrupt the system will result in immediate
+                            account termination.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            4. Account Security
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            You are responsible for maintaining the
+                            confidentiality of your account credentials. Do not
+                            share your login details with others.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            5. Updates to Terms
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            The system reserves the right to update or modify
+                            these terms at any time. Continued use of the
+                            platform constitutes acceptance of any changes made.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            6. Violations & Penalties
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            Any violation of these terms may result in temporary
+                            suspension or permanent termination of your account
+                            depending on the severity of the offense.
+                          </p>
+                        </div>
+
+                        <div className="mb-4">
+                          <h6
+                            className="fw-semibold mb-2"
+                            style={{ color: "#4D227C" }}
+                          >
+                            7. Legal Compliance
+                          </h6>
+                          <p className="text-muted small mb-0">
+                            Users must comply with all applicable laws,
+                            regulations, and ethical standards when using the
+                            system.
+                          </p>
+                        </div>
+
+                        {/* FINAL AGREEMENT */}
+                        <div
+                          className="mt-4 p-3"
+                          style={{
+                            backgroundColor: "#F3F0FF",
+                            borderLeft: "5px solid #4D227C",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <p className="mb-0 small text-muted">
+                            By continuing to use this system, you acknowledge
+                            that you have read, understood, and agreed to all
+                            Terms & Conditions stated above.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}
