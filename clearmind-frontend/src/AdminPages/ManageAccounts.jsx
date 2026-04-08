@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/ManageAccounts.module.css";
@@ -9,75 +9,21 @@ function ManageAccounts() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
-const [formData, setFormData] = useState({
-  firstName: "",
-  lastName: "",
-  middleInitial: "",
-  sex: "",
-  dob: "",
-  email: "",
-  contactNo: "",
-  address: "",
-});
-
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [users, setUsers] = useState([
-    {
-      doctors_id: 1,
-      first_name: "Miriam",
-      last_name: "Mulawin",
-      middle_initial: "B",
-      sex: "Female",
-      date_of_birth: "1985-03-15",
-      age: 39,
-      email_address: "miriam.mulawin@gmail.com",
-      phone: "+63 917 123 4567",
-      description:
-        "Licensed clinical psychologist specializing in cognitive-behavioral therapy and trauma-informed care.",
-      professional_title: "Clinical Psychologist",
-      years_of_experience: 12,
-      license_number: "LIC-2012-45678",
-      specialization: "Psychology",
-      sub_specialization: "Cognitive-Behavioral Therapy",
-      board_certification: "Philippine Board of Psychology",
-      service: "Mental Health & Wellness Center",
-      cert_image:
-        "https://via.placeholder.com/600x400/6a49a9/ffffff?text=Psychology+Certificate",
-      profile_pic:
-        "https://via.placeholder.com/150/6a49a9/ffffff?text=Dr.+Mulawin",
-      roles: ["Add Clinic", "View Billing", "Edit Appointment"],
-      created_at: "2023-01-15",
-    },
-    {
-      doctors_id: 2,
-      first_name: "Liezel",
-      last_name: "Reyes",
-      middle_initial: "M",
-      sex: "Female",
-      date_of_birth: "1990-07-22",
-      age: 34,
-      email_address: "liezel.reyes@hospital.com",
-      phone: "+63 918 987 6543",
-      description:
-        "Board-certified psychologist with expertise in child and adolescent psychology and developmental behavioral assessments.",
-      professional_title: "Psychologist",
-      years_of_experience: 8,
-      license_number: "LIC-2016-78901",
-      specialization: "Psychology",
-      sub_specialization: "Child & Adolescent Psychology",
-      board_certification: "Philippine Board of Psychology",
-      service: "Child & Family Counseling Unit",
-      cert_image:
-        "https://via.placeholder.com/600x400/4e237c/ffffff?text=Board+Certificate",
-      profile_pic:
-        "https://via.placeholder.com/150/4e237c/ffffff?text=Dr.+Reyes",
-      roles: ["Edit Appointment", "Add Clinic"],
-      created_at: "2023-06-20",
-    },
-  ]);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
+    sex: "",
+    dob: "",
+    email: "",
+    contactNo: "",
+    address: "",
+  });
 
   const allRoles = [
     "Add Clinic",
@@ -86,6 +32,64 @@ const [formData, setFormData] = useState({
     "View Billing",
     "Manage Accounts",
   ];
+
+  // ── Fetch doctors on mount ─────────────────────────────────────────
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8000/api/admin/doctors", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed to fetch doctors:", result);
+        return;
+      }
+
+      // Map API response to the shape the table expects
+      const mapped = result.data.map((user) => ({
+        doctors_id: user.doctor?.doctor_id ?? user.id,
+        user_id: user.id,
+        first_name: user.firstName,
+        last_name: user.lastName,
+        middle_initial: user.middleInitial,
+        sex: user.sex,
+        date_of_birth: user.dob,
+        email_address: user.email,
+        phone: user.contactNo,
+        address: user.address,
+        age: user.age ?? null,
+        roles: user.roles ?? [],
+        created_at: user.created_at,
+        professional_title: user.doctor?.professional_title ?? null,
+        license_number: user.doctor?.license_number ?? null,
+        years_of_experience: user.doctor?.years_of_experience ?? null,
+        specialization: user.doctor?.specialization ?? null,
+        sub_specialization: user.doctor?.sub_specialization ?? null,
+        board_certification: user.doctor?.board_certification ?? null,
+        service: user.doctor?.service_department ?? null,
+        description: user.doctor?.description ?? null,
+        profile_pic: user.doctor?.profile_picture ?? null,
+        cert_image: user.doctor?.cert_image ?? null,
+        profile_completed: user.doctor?.profile_completed ?? false,
+      }));
+
+      setUsers(mapped);
+    } catch (err) {
+      console.error("Network error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -111,13 +115,13 @@ const [formData, setFormData] = useState({
 
   const handleOpenCreateModal = () => {
     setFormData({
-      first_name: "",
-      last_name: "",
-      middle_initial: "",
+      firstName: "",
+      lastName: "",
+      middleInitial: "",
       sex: "",
-      date_of_birth: "",
-      email_address: "",
-      phone: "",
+      dob: "",
+      email: "",
+      contactNo: "",
       address: "",
     });
     setFormErrors({});
@@ -145,10 +149,20 @@ const [formData, setFormData] = useState({
         return;
       }
 
+      if (result.is_existing) {
+        alert(
+          `Account already exists. Credentials email has been resent to ${formData.email}.`,
+        );
+        setShowCreateModal(false);
+        return;
+      }
+
+      // Append new doctor to table
       setUsers((prev) => [
         ...prev,
         {
           doctors_id: result.data.doctor?.doctor_id,
+          user_id: result.data.id,
           first_name: result.data.firstName,
           last_name: result.data.lastName,
           middle_initial: result.data.middleInitial,
@@ -170,9 +184,11 @@ const [formData, setFormData] = useState({
           description: null,
           profile_pic: null,
           cert_image: null,
+          profile_completed: false,
         },
       ]);
 
+      alert(`Account created! Credentials sent to ${formData.email}.`);
       setShowCreateModal(false);
     } catch (err) {
       console.error("Network error:", err);
@@ -190,7 +206,6 @@ const [formData, setFormData] = useState({
         <AdminTopNavbar activeMenu={activeMenu} />
 
         <div className={`admin-content ${styles.page}`}>
-          {/* Header */}
           <div className={styles.header}>
             <h3 className={styles.title}>Manage Accounts</h3>
             <button
@@ -201,7 +216,6 @@ const [formData, setFormData] = useState({
             </button>
           </div>
 
-          {/* Table */}
           <div className={styles.tableContainer}>
             <table className={styles.table}>
               <thead>
@@ -214,30 +228,50 @@ const [formData, setFormData] = useState({
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.doctors_id}>
-                    <td>{user.email_address}</td>
-                    {allRoles.map((role) => (
-                      <td key={role}>
-                        <input
-                          type="checkbox"
-                          checked={user.roles.includes(role)}
-                          onChange={() =>
-                            handleRoleChange(user.doctors_id, role)
-                          }
-                        />
-                      </td>
-                    ))}
-                    <td>
-                      <button
-                        className={styles.btnView}
-                        onClick={() => handleViewAccount(user)}
-                      >
-                        View
-                      </button>
+                {isLoading ? (
+                  <tr>
+                    <td
+                      colSpan={allRoles.length + 2}
+                      style={{ textAlign: "center", padding: "20px" }}
+                    >
+                      Loading doctors...
                     </td>
                   </tr>
-                ))}
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={allRoles.length + 2}
+                      style={{ textAlign: "center", padding: "20px" }}
+                    >
+                      No doctor accounts found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.doctors_id}>
+                      <td>{user.email_address}</td>
+                      {allRoles.map((role) => (
+                        <td key={role}>
+                          <input
+                            type="checkbox"
+                            checked={user.roles.includes(role)}
+                            onChange={() =>
+                              handleRoleChange(user.doctors_id, role)
+                            }
+                          />
+                        </td>
+                      ))}
+                      <td>
+                        <button
+                          className={styles.btnView}
+                          onClick={() => handleViewAccount(user)}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -430,18 +464,25 @@ const [formData, setFormData] = useState({
             <div className={styles.viewHeader}>
               <div className={styles.viewHeaderLeft}>
                 <img
-                  src={selectedUser.profile_pic}
+                  src={
+                    selectedUser.profile_pic ||
+                    "https://via.placeholder.com/150/6a49a9/ffffff?text=Dr."
+                  }
                   alt="Profile"
                   className={styles.viewAvatar}
                 />
                 <div className={styles.viewHeaderInfo}>
                   <h2>
-                    Dr. {selectedUser.first_name} {selectedUser.middle_initial}.{" "}
+                    Dr. {selectedUser.first_name}{" "}
+                    {selectedUser.middle_initial
+                      ? `${selectedUser.middle_initial}.`
+                      : ""}{" "}
                     {selectedUser.last_name}
                   </h2>
                   <p className={styles.viewSubtitle}>
-                    {selectedUser.professional_title} &nbsp;•&nbsp;{" "}
-                    {selectedUser.specialization}
+                    {selectedUser.professional_title || "No title yet"}{" "}
+                    &nbsp;•&nbsp;{" "}
+                    {selectedUser.specialization || "No specialization yet"}
                   </p>
                 </div>
               </div>
@@ -454,20 +495,19 @@ const [formData, setFormData] = useState({
             </div>
 
             <div className={styles.viewBody}>
-              {/* Personal Information */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>Personal Information</p>
                 <div className={styles.viewInfoGrid}>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Doctor ID</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.doctors_id}
+                      {selectedUser.doctors_id || "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Sex</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.sex}
+                      {selectedUser.sex || "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
@@ -493,7 +533,7 @@ const [formData, setFormData] = useState({
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Email</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.email_address}
+                      {selectedUser.email_address || "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
@@ -505,7 +545,6 @@ const [formData, setFormData] = useState({
                 </div>
               </div>
 
-              {/* Professional Information */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Professional Information
@@ -564,7 +603,6 @@ const [formData, setFormData] = useState({
                 </div>
               </div>
 
-              {/* About */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>About</p>
                 <p className={styles.viewDescription}>
@@ -572,7 +610,6 @@ const [formData, setFormData] = useState({
                 </p>
               </div>
 
-              {/* Roles */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Assigned Roles & Permissions
@@ -590,7 +627,6 @@ const [formData, setFormData] = useState({
                 </div>
               </div>
 
-              {/* Certificate */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Certification Document

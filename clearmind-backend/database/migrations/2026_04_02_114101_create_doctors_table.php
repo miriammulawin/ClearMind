@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('doctors', function (Blueprint $table) {
             $table->id('doctor_id');
             $table->unsignedBigInteger('user_id')->unique();
-            $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+           $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('prc_number', 255)->nullable()->unique();
             $table->string('professional_title', 255)->nullable();
             $table->text('description')->nullable();

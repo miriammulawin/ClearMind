@@ -51,5 +51,6 @@ Route::middleware('auth:sanctum')->group(function () {
              ->except(['store']);
 
           Route::post('doctors', [DoctorAccountController::class, 'store']);
+          Route::get('doctors', [DoctorAccountController::class, 'index']);
     });
 });

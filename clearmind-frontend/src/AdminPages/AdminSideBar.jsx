@@ -10,7 +10,7 @@ import { BiSolidUserCircle } from "react-icons/bi";
 import styles from "./AdminStyle/AdminSideBar.module.css";
 import logo from "../assets/CMPS_Logo.png";
 
-function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
+function AdminSideBar() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebarCollapsed") === "true";
   });
@@ -22,8 +22,50 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
     visible: false,
   });
 
+  const [adminProfile, setAdminProfile] = useState({
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
+    contactNo: "",
+    email: "",
+  });
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:8000/api/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch profile");
+
+        const json = await response.json();
+        const data = json.data;
+
+        setAdminProfile({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          middleInitial: data.middleInitial || "",
+          contactNo: data.contactNo || "",
+          email: data.email || "",
+        });
+      } catch (error) {
+        console.error("Error fetching admin profile:", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -68,8 +110,21 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
     });
   };
 
-  const handleMenuClick = (item) => {
-    navigate(item.path);
+  const handleMenuClick = (item) => navigate(item.path);
+const getDisplayName = () => {
+  const { firstName, lastName, middleInitial } = adminProfile;
+  if (!firstName && !lastName) return "Loading...";
+  const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
+  const li = lastName ? `${lastName.charAt(0).toUpperCase()}.` : "";
+  return [firstName, mi + li].filter(Boolean).join(" ");
+};
+
+  // First letter of firstName + first letter of lastName
+  const getInitials = () => {
+    const { firstName, lastName } = adminProfile;
+    const f = firstName?.charAt(0).toUpperCase() || "";
+    const l = lastName?.charAt(0).toUpperCase() || "";
+    return f + l || "?";
   };
 
   return (
@@ -84,12 +139,26 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
           </div>
 
           <div className={styles.profileSection}>
-            <div className={styles.profilePic}></div>
+            {/* Avatar circle with initials */}
+            <div className={styles.profilePic}>
+              {!loadingProfile && (
+                <span className={styles.profileInitials}>{getInitials()}</span>
+              )}
+            </div>
+
             <div className={styles.profileInfo}>
-              <h5 className={styles.profileName}>Admin101</h5>
+              {/* "John M. Doe" format */}
+              <h5 className={styles.profileName}>
+                {loadingProfile ? "Loading..." : getDisplayName()}
+              </h5>
+
+              {/* Email · Contact */}
               <p className={styles.profileContact}>
-                admin@gmail.com · 09123456767
+                {loadingProfile
+                  ? "..."
+                  : `${adminProfile.email} · ${adminProfile.contactNo}`}
               </p>
+
               <FiEdit
                 className={styles.editIcon}
                 onClick={(e) => {
@@ -105,7 +174,9 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`${styles.menuItem} ${location.pathname === item.path ? styles.menuItemActive : ""}`}
+                className={`${styles.menuItem} ${
+                  location.pathname === item.path ? styles.menuItemActive : ""
+                }`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
@@ -132,10 +203,7 @@ function AdminSideBar({ activeMenu: initialActiveMenu = "Dashboard" }) {
       {tooltip.visible && (
         <div
           className={styles.tooltipOverlay}
-          style={{
-            left: tooltip.x,
-            top: tooltip.y,
-          }}
+          style={{ left: tooltip.x, top: tooltip.y }}
         >
           {tooltip.text}
         </div>

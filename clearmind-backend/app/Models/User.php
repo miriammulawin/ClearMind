@@ -11,17 +11,14 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    // Roles
     const ROLE_ADMIN  = 'Admin';
     const ROLE_DOCTOR = 'Doctor';
     const ROLE_CLIENT = 'Client';
 
-    // Sex options
     const SEX_MALE   = 'male';
     const SEX_FEMALE = 'female';
     const SEX_OTHER  = 'other';
 
-    // Gender Identity options
     const GENDER_FEMALE      = 'female';
     const GENDER_MALE        = 'male';
     const GENDER_TRANSGENDER = 'transgender';
@@ -37,11 +34,10 @@ class User extends Authenticatable
     const GENDER_PANGENDER   = 'pangender';
     const GENDER_PREFER_NOT  = 'prefer_not';
 
-    // Pronoun options
-    const PRONOUN_HE_HIM      = 'he_him';
-    const PRONOUN_SHE_HER     = 'she_her';
-    const PRONOUN_THEY_THEM   = 'they_them';
-    const PRONOUN_OTHER       = 'other';
+    const PRONOUN_HE_HIM    = 'he_him';
+    const PRONOUN_SHE_HER   = 'she_her';
+    const PRONOUN_THEY_THEM = 'they_them';
+    const PRONOUN_OTHER     = 'other';
 
     protected $fillable = [
         'firstName',
@@ -71,7 +67,14 @@ class User extends Authenticatable
         'is_active'         => 'boolean',
     ];
 
-    // ---------- Helpers ----------
+    // ── Relationships ─────────────────────────────────────────────────
+
+    public function doctor()
+    {
+        return $this->hasOne(Doctor::class, 'user_id', 'id');
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────
 
     public function isAdmin(): bool
     {
@@ -88,18 +91,12 @@ class User extends Authenticatable
         return $this->role === self::ROLE_CLIENT;
     }
 
-    /**
-     * Get full name with middle initial
-     */
     public function getFullNameAttribute(): string
     {
         $mi = $this->middleInitial ? " {$this->middleInitial}." : '';
         return "{$this->firstName}{$mi} {$this->lastName}";
     }
 
-    /**
-     * Get the display pronoun (handles both standard and custom)
-     */
     public function getDisplayPronounAttribute(): ?string
     {
         if ($this->preferredPronoun === self::PRONOUN_OTHER) {
@@ -108,9 +105,6 @@ class User extends Authenticatable
         return $this->preferredPronoun;
     }
 
-    /**
-     * Get human-readable gender identity label
-     */
     public function getGenderIdentityLabelAttribute(): ?string
     {
         $labels = [

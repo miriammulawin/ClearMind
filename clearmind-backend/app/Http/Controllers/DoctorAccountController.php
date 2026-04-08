@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DoctorAccountCreated;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 
 class DoctorAccountController extends Controller
 {
@@ -18,12 +19,32 @@ class DoctorAccountController extends Controller
             'lastName'      => ['required', 'string', 'max:100'],
             'middleInitial' => ['nullable', 'string', 'max:5'],
             'sex'           => ['nullable', 'in:male,female,other'],
-            'dob'           => ['nullable', 'date', 'before:today'],
-            'email'         => ['required', 'email', 'unique:users,email'],
+            'dob'           => ['required', 'date', 'before:today'],
+            'email'         => ['required', 'email'],
             'contactNo'     => ['nullable', 'string', 'max:20'],
             'address'       => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Password = their birthday e.g. "1990-07-22"
+        $plainPassword = $request->dob;
+
+        // ── Check if email already exists ────────────────────────────
+        $existingUser = User::where('email', $request->email)->first();
+
+        if ($existingUser) {
+            // Already has an account — just re-send their credentials email
+            Mail::to($existingUser->email)->send(
+                new DoctorAccountCreated($existingUser, $plainPassword, isExisting: true)
+            );
+
+            return response()->json([
+                'message'     => 'Account already exists. Credentials email has been resent.',
+                'is_existing' => true,
+                'data'        => $existingUser->load('doctor'),
+            ], 200);
+        }
+
+        // ── Create new account ───────────────────────────────────────
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -33,11 +54,11 @@ class DoctorAccountController extends Controller
                 'sex'           => $request->sex,
                 'dob'           => $request->dob,
                 'email'         => $request->email,
-                'contactNo'     => $request->contactNo,
+                'contactNo'     => $request->contactNo ?? '',
                 'address'       => $request->address,
                 'role'          => 'Doctor',
                 'is_active'     => true,
-                'password'      => Hash::make(Str::random(16)),
+                'password'      => Hash::make($plainPassword),
             ]);
 
             $user->doctor()->create([
@@ -46,9 +67,15 @@ class DoctorAccountController extends Controller
 
             DB::commit();
 
+            // Send welcome email with credentials
+            Mail::to($user->email)->send(
+                new DoctorAccountCreated($user, $plainPassword, isExisting: false)
+            );
+
             return response()->json([
-                'message' => 'Doctor account created successfully.',
-                'data'    => $user->load('doctor'),
+                'message'     => 'Doctor account created successfully. Credentials sent to email.',
+                'is_existing' => false,
+                'data'        => $user->load('doctor'),
             ], 201);
 
         } catch (\Throwable $e) {
@@ -61,4 +88,16 @@ class DoctorAccountController extends Controller
             ], 500);
         }
     }
+
+    public function index(): JsonResponse
+{
+    $doctors = User::with('doctor')
+        ->where('role', 'Doctor')
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return response()->json([
+        'data' => $doctors,
+    ]);
+}
 }

@@ -66,6 +66,14 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
   );
 };
 
+/* ── Reusable section header — declared OUTSIDE AdminPatient ── */
+const SectionHeader = ({ icon, title }) => (
+  <div className={styles.cardSectionHeader}>
+    <div className={styles.cardSectionIcon}>{icon}</div>
+    <h4 className={styles.cardSectionTitle}>{title}</h4>
+  </div>
+);
+
 function AdminPatient() {
   const [activeMenu, setActiveMenu] = useState("Patients");
   const [activeTab, setActiveTab] = useState("patients");
@@ -449,14 +457,6 @@ function AdminPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
-  /* ── Reusable section header ── */
-  const SectionHeader = ({ icon, title }) => (
-    <div className={styles.cardSectionHeader}>
-      <div className={styles.cardSectionIcon}>{icon}</div>
-      <h4 className={styles.cardSectionTitle}>{title}</h4>
-    </div>
-  );
-
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -522,7 +522,6 @@ function AdminPatient() {
 
             {/* ── Table ── */}
             <div className={styles.tableWrapper}>
-              {" "}
               <table className={styles.patientTable}>
                 <thead>
                   {activeTab === "reschedule" ? (
