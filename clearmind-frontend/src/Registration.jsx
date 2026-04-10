@@ -27,6 +27,8 @@ function Register() {
     genderIdentity: "",
     preferredPronoun: "",
     contact: "",
+    civilStatus: "", // ✅ NEW
+    patientType: "", // ✅ NEW
     email: "",
     password: "",
     confirmPassword: "",
@@ -47,6 +49,8 @@ function Register() {
     if (!form.dob) newErrors.dob = "Date of birth is required";
     if (!form.sex) newErrors.sex = "Sex is required";
     if (!form.contact.trim()) newErrors.contact = "Contact number is required";
+    if (!form.civilStatus) newErrors.civilStatus = "Civil status is required";
+    if (!form.patientType) newErrors.patientType = "Patient type is required";
     if (!form.email.trim()) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(form.email))
       newErrors.email = "Invalid email format";
@@ -76,6 +80,8 @@ function Register() {
         preferredPronoun: form.preferredPronoun,
         customPronoun: form.preferredPronoun === "other" ? pronounOther : null,
         contactNo: form.contact,
+        civilStatus: form.civilStatus,
+        patientType: form.patientType,
         email: form.email,
         password: form.password,
         password_confirmation: form.confirmPassword,
@@ -338,6 +344,52 @@ function Register() {
                 </div>
               </fieldset>
 
+              {/* Civil Status & Patient Type */}
+              <div className={styles.formRow}>
+                <div className={styles.formCol}>
+                  <div className={styles.selectWrap}>
+                    <select
+                      name="civilStatus"
+                      className={`form-select ${styles.input} ${styles.select} ${errors.civilStatus ? styles.inputError : ""}`}
+                      value={form.civilStatus}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>
+                        Civil Status *
+                      </option>
+                      <option value="single">Single</option>
+                      <option value="married">Married</option>
+                      <option value="widowed">Widowed</option>
+                      <option value="divorced">Divorced</option>
+                      <option value="separated">Separated</option>
+                    </select>
+                    <FiChevronDown className={styles.selectArrow} />
+                  </div>
+                  <ErrMsg field="civilStatus" />
+                </div>
+
+                <div className={styles.formCol}>
+                  <div className={styles.selectWrap}>
+                    <select
+                      name="patientType"
+                      className={`form-select ${styles.input} ${styles.select} ${errors.patientType ? styles.inputError : ""}`}
+                      value={form.patientType}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="" disabled>
+                        Patient Type *
+                      </option>
+                      <option value="new">New</option>
+                      <option value="existing">Existing</option>
+                    </select>
+                    <FiChevronDown className={styles.selectArrow} />
+                  </div>
+                  <ErrMsg field="patientType" />
+                </div>
+              </div>
+
               {/* ── Contact Information ── */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.sectionLabel}>
@@ -396,9 +448,9 @@ function Register() {
                         tabIndex={-1}
                       >
                         {showPassword ? (
-                          <FiEye size={18} />
+                          <FiEye size={20} />
                         ) : (
-                          <FiEyeOff size={18} />
+                          <FiEyeOff size={20} />
                         )}
                       </button>
                     </div>
@@ -424,9 +476,9 @@ function Register() {
                         tabIndex={-1}
                       >
                         {showConfirm ? (
-                          <FiEye size={18} />
+                          <FiEye size={20} />
                         ) : (
-                          <FiEyeOff size={18} />
+                          <FiEyeOff size={20} />
                         )}
                       </button>
                     </div>
