@@ -181,6 +181,14 @@
   letter-spacing: 0.04em;
 }
 
+.calCellHoliday {
+  background-color: #fff0f0;
+  color: #e53e3e;
+  cursor: not-allowed;
+  font-weight: 600;
+  border: 1px solid #feb2b2;
+}
+
 .calEmpty { /* spacer — intentionally empty */ }
 
 /* Base day cell */

@@ -3,44 +3,22 @@ import { Container, Dropdown, Button, Row, Col } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaCalendarTimes, FaFilter, FaSort } from 'react-icons/fa';
 import { MOCK_APPOINTMENTS } from '../../MockData/MockAppointment';
-import AppointmentCard from './AppointmentComponents/AppointmentCard';
 import SessionCard from './AppointmentComponents/SessionCard';
-import styles from './styles/ScheduleTab.module.css';
+import styles from './styles/SessionsTab.module.css';
 
-/* ── Helpers ─────────────────────────────────────────────── */
-
-const groupAppointments = (appointments) => {
-  const programs = {};
-  const standalones = [];
-
-  appointments.forEach((apt) => {
-    if (apt.programId) {
-      if (!programs[apt.programId]) programs[apt.programId] = [];
-      programs[apt.programId].push(apt);
-    } else {
-      standalones.push(apt);
-    }
-  });
-
-  Object.values(programs).forEach((sessions) =>
-    sessions.sort((a, b) => new Date(a.date) - new Date(b.date))
-  );
-
-  return { programs, standalones };
+const PREFIX_LABEL = {
+  PAC: 'Psychotherapy & Counseling',
+  PAE: 'Psychological Assessment & Evaluation',
 };
 
-const getServicePrefix = (serviceType) => {
-  const psychotherapy = [
-    'Psychotherapy and Counseling',
-    'Initial Consultation',
-    'Follow-up Consultation',
-  ];
-  return psychotherapy.includes(serviceType) ? 'PAC' : 'PAE';
+const getPrefix = (referenceNumber) => {
+  if (!referenceNumber) return 'OTHER';
+  if (referenceNumber.startsWith('PAC')) return 'PAC';
+  if (referenceNumber.startsWith('PAE')) return 'PAE';
+  return 'OTHER';
 };
 
-/* ── Component ───────────────────────────────────────────── */
-
-const ScheduleTab = () => {
+const SessionsTab = () => {
   const navigate = useNavigate();
 
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -49,20 +27,25 @@ const ScheduleTab = () => {
   const [startDate, setStartDate]           = useState('');
   const [endDate, setEndDate]               = useState('');
 
-  const statusOptions = ['All', 'Confirmed', 'Rescheduled'];
+  const statusOptions = ['All', 'Pending', 'Confirmed', 'Rescheduled', 'Completed', 'Cancelled'];
   const sortOptions   = ['Newest First', 'Oldest First'];
 
   const getEmptyMessage = (status) => {
     const messages = {
-      All:         'You have no scheduled appointments.',
-      Confirmed:   'You have no confirmed appointments.',
-      Rescheduled: 'You have no rescheduled appointments.',
+      All:         'You have no sessions yet.',
+      Pending:     'You have no pending sessions.',
+      Confirmed:   'You have no confirmed sessions.',
+      Rescheduled: 'You have no rescheduled sessions.',
+      Completed:   'You have no completed sessions.',
+      Cancelled:   'You have no cancelled sessions.',
     };
-    return messages[status] || 'You have no upcoming appointments.';
+    return messages[status] || 'You have no sessions.';
   };
 
   const handleViewDetails = (appointmentId) => {
-    navigate(`/client/appointment/upcoming/${appointmentId}`);
+    navigate(`/client/appointment/sessions/${appointmentId}`, {
+      state: { from: 'sessions' },
+    });
   };
 
   const handleClearDates = () => {
@@ -70,12 +53,11 @@ const ScheduleTab = () => {
     setEndDate('');
   };
 
-  // ── Filter + Sort ─────────────────────────────────────────
-  const filtered = MOCK_APPOINTMENTS
+  // ── Step 1: filter & sort — only program appointments ──────────────────
+  const filteredAndSorted = MOCK_APPOINTMENTS
+    .filter((apt) => !!apt.programId)  // exclude standalones
     .filter((apt) =>
-      selectedStatus === 'All'
-        ? ['Confirmed', 'Rescheduled'].includes(apt.status)
-        : apt.status === selectedStatus
+      selectedStatus === 'All' ? true : apt.status === selectedStatus
     )
     .filter((apt) => {
       if (!startDate && !endDate) return true;
@@ -85,41 +67,39 @@ const ScheduleTab = () => {
       if (from && aptDate < from) return false;
       if (to   && aptDate > to)   return false;
       return true;
-    });
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  const { programs, standalones } = groupAppointments(filtered);
+  // ── Step 2: group by programId ─────────────────────────────────────────
+  const grouped = filteredAndSorted.reduce((acc, apt) => {
+    const key = apt.programId;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(apt);
+    return acc;
+  }, {});
 
-  const renderList = [
-    ...Object.entries(programs).map(([programId, sessions]) => ({
-      type: 'program',
-      key: programId,
-      sortDate: new Date(sessions[sessions.length - 1].date),
-      sessions,
-    })),
-    ...standalones.map((apt) => ({
-      type: 'standalone',
-      key: `standalone-${apt.id}`,
-      sortDate: new Date(apt.date),
-      appointment: apt,
-    })),
-  ].sort((a, b) =>
-    sortOrder === 'Newest First'
-      ? b.sortDate - a.sortDate
-      : a.sortDate - b.sortDate
-  );
+  // ── Step 3: order groups by sortOrder ──────────────────────────────────
+  const groupEntries = Object.entries(grouped).sort(([, aptsA], [, aptsB]) => {
+    const latestA = new Date(aptsA[aptsA.length - 1].date);
+    const latestB = new Date(aptsB[aptsB.length - 1].date);
+    return sortOrder === 'Newest First'
+      ? latestB - latestA
+      : latestA - latestB;
+  });
 
   return (
-    <Container className={`py-4 ${styles.scheduleContainer}`}>
+    <Container className={`py-4 ${styles.sessionsContainer}`}>
 
       {/* ── Header ── */}
       <div className={styles.headerSection}>
-        <h5 className={styles.titleSchedule}>SCHEDULED APPOINTMENTS</h5>
+        <h5 className={styles.titleSessions}>MY SESSIONS</h5>
 
         {/* ── Filters Row ── */}
         <div className={styles.filtersGroup}>
 
-          <Dropdown className={styles.statusDropdownSchedule}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-schedule-status">
+          {/* Status Dropdown */}
+          <Dropdown className={styles.statusDropdownSessions}>
+            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-status">
               {selectedStatus}
             </Dropdown.Toggle>
             <Dropdown.Menu>
@@ -135,8 +115,9 @@ const ScheduleTab = () => {
             </Dropdown.Menu>
           </Dropdown>
 
-          <Dropdown className={styles.sortDropdownSchedule}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-schedule-sort">
+          {/* Sort Dropdown */}
+          <Dropdown className={styles.sortDropdownSessions}>
+            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-sort">
               <FaSort className="me-1" />
               {sortOrder}
             </Dropdown.Toggle>
@@ -153,6 +134,7 @@ const ScheduleTab = () => {
             </Dropdown.Menu>
           </Dropdown>
 
+          {/* Date Filter Toggle */}
           <Button
             className={styles.dateFilterToggle}
             onClick={() => setShowDateFilter((prev) => !prev)}
@@ -194,33 +176,22 @@ const ScheduleTab = () => {
         )}
       </div>
 
-      {/* ── Appointments List ── */}
-      <div className={styles.appointmentsScheduleList}>
-        {renderList.length === 0 ? (
-          <div className={styles.noSchedule}>
-            <FaCalendarTimes className={styles.calendarIconSchedule} />
+      {/* ── Sessions List ── */}
+      <div className={styles.sessionsListWrapper}>
+        {groupEntries.length === 0 ? (
+          <div className={styles.noSessions}>
+            <FaCalendarTimes className={styles.calendarIconSessions} />
             <p>{getEmptyMessage(selectedStatus)}</p>
           </div>
         ) : (
-          renderList.map((item) => {
-            if (item.type === 'program') {
-              const firstSession = item.sessions[0];
-              return (
-                <SessionCard
-                  key={item.key}
-                  prefix={getServicePrefix(firstSession.serviceType)}
-                  groupLabel={firstSession.serviceType}
-                  subLabel={null}
-                  appointments={item.sessions}
-                  onViewDetails={handleViewDetails}
-                />
-              );
-            }
-
+          groupEntries.map(([programId, apts]) => {
+            const prefix = getPrefix(apts[0].referenceNumber);
             return (
-              <AppointmentCard
-                key={item.key}
-                appointment={item.appointment}
+              <SessionCard
+                key={programId}
+                prefix={prefix}
+                groupLabel={PREFIX_LABEL[prefix] || prefix}
+                appointments={apts}
                 onViewDetails={handleViewDetails}
               />
             );
@@ -232,4 +203,4 @@ const ScheduleTab = () => {
   );
 };
 
-export default ScheduleTab;
+export default SessionsTab;

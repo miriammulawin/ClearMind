@@ -27,8 +27,10 @@ const HistoryTab = () => {
   };
 
   const handleViewDetails = (appointmentId) => {
-    navigate(`/client/appointment/history/${appointmentId}`);
-  };
+  navigate(`/client/appointment/history/${appointmentId}`, {
+    state: { from: 'history' }
+  });
+  };  
 
   const handleClearDates = () => {
     setStartDate('');

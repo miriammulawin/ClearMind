@@ -1,0 +1,195 @@
+/* DoctorProfile.module.css
+   Styles scoped to the DoctorProfile card view
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────
+   BOOKING VIEW WRAPPER
+───────────────────────────────────────── */
+.bookingView {
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.bookingView::-webkit-scrollbar {
+  width: 8px;
+}
+.bookingView::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+.bookingView::-webkit-scrollbar-thumb {
+  background: #5b2c91;
+  border-radius: 10px;
+}
+.bookingView::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
+
+/* ─────────────────────────────────────────
+   PROFILE CARD
+───────────────────────────────────────── */
+.profileCard {
+  border: 2px solid #5b2c91;
+  border-radius: 16px;
+  background-color: white;
+}
+
+.cardBody {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* ─────────────────────────────────────────
+   DOCTOR HEADER
+───────────────────────────────────────── */
+.doctorHeaderCentered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  text-align: center;
+}
+
+.doctorAvatarLarge {
+  text-align: center;
+  margin-bottom: clamp(0.75rem, 2vw, 1rem);
+}
+
+.avatarIconLarge {
+  font-size: clamp(3.5rem, 10vw, 5rem);
+  color: #5b2c91;
+}
+
+.doctorInfoFull {
+  text-align: center;
+}
+
+.doctorNameLarge {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(1rem, 3.5vw, 1.3rem);
+  margin-bottom: 0.25rem;
+}
+
+.doctorTitle {
+  color: #718096;
+  font-weight: 600;
+  font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+  margin-bottom: 0.25rem;
+}
+
+.doctorCredentialsFull {
+  color: #718096;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  margin: 10px;
+}
+
+/* ─────────────────────────────────────────
+   DIVIDER
+───────────────────────────────────────── */
+.divider {
+  border-top: 4px solid #c1a3c8;
+  margin: 0px;
+}
+
+/* ─────────────────────────────────────────
+   SECTION TITLE
+───────────────────────────────────────── */
+.sectionTitle {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(0.85rem, 3vw, 1rem);
+  margin-bottom: 0.75rem;
+}
+
+/* ─────────────────────────────────────────
+   SCHEDULE DETAILS
+───────────────────────────────────────── */
+.scheduleDetails {
+  margin-bottom: 0.5rem;
+}
+
+.scheduleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(0.3rem, 1.5vw, 0.5rem) 0;
+  font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+  gap: 0.5rem;
+}
+
+.scheduleLabelText {
+  color: #718096;
+  font-weight: 500;
+}
+
+.scheduleValue {
+  color: #4a5568;
+  font-weight: 600;
+  text-align: right;
+}
+
+.consultationBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: clamp(0.25rem, 1vw, 0.4rem) clamp(0.5rem, 2vw, 0.8rem);
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  font-weight: 600;
+  background-color: #e3c6ff !important;
+  color: #5b2c91;
+  border-radius: 20px;
+}
+
+.consultationIcon {
+  color: #5b2c91;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+}
+
+/* ─────────────────────────────────────────
+   CONSULTATION FEES
+───────────────────────────────────────── */
+.feesDetails {
+  margin-bottom: 0.5rem;
+}
+
+.feeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: clamp(0.3rem, 1.5vw, 0.5rem) 0;
+  font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+  gap: 0.5rem;
+}
+
+.feeRow span:first-child {
+  color: #718096;
+  font-weight: 500;
+}
+
+.feeAmount {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(0.85rem, 3vw, 1rem);
+}
+
+/* ─────────────────────────────────────────
+   SET APPOINTMENT BUTTON
+───────────────────────────────────────── */
+.btnBookAppointment {
+  border-radius: 20px;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem);
+  font-weight: 600;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid #5b2c91;
+  background-color: #5b2c91;
+  color: white;
+}
+
+.btnBookAppointment:hover {
+  background-color: #4a2273;
+  border-color: #4a2273;
+  color: white;
+}

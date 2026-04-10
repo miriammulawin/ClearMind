@@ -42,7 +42,7 @@
 }
 
 .summaryVal {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 600;
 }
 
@@ -63,7 +63,7 @@
 .feeAmount {
   font-size: clamp(0.85rem, 2.5vw, 1rem);
   font-weight: 800;
-  color: #5B2C91;
+  color: #5b2c91;
 }
 
 /* ── Payment Mode Card ───────────────────────────────── */
@@ -89,10 +89,6 @@
   user-select: none;
 }
 
-.radioInput {
-  display: none;
-}
-
 .radioCustom {
   width: clamp(17px, 4vw, 21px);
   height: clamp(17px, 4vw, 21px);
@@ -105,11 +101,11 @@
 }
 
 .radioInput:checked + .radioCustom {
-  border-color: #5B2C91;
+  border-color: #5b2c91;
 }
 
 .radioInput:checked + .radioCustom::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -117,7 +113,16 @@
   width: clamp(8px, 2vw, 10px);
   height: clamp(8px, 2vw, 10px);
   border-radius: 50%;
-  background: #5B2C91;
+  background: #5b2c91;
+}
+
+.radioInput:checked {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #5b2c91;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 }
 
 /* ── QR Card ─────────────────────────────────────────── */
@@ -165,7 +170,7 @@
 .qrPlaceholderLabel {
   font-size: clamp(0.8rem, 2.2vw, 0.95rem);
   font-weight: 700;
-  color: #5B2C91;
+  color: #5b2c91;
   letter-spacing: 0.3px;
 }
 
@@ -179,7 +184,7 @@
 .accountName {
   font-size: clamp(0.88rem, 2.5vw, 1.05rem);
   font-weight: 800;
-  color: #5B2C91;
+  color: #5b2c91;
   margin: 0;
   text-align: center;
   letter-spacing: 0.5px;
@@ -213,12 +218,14 @@
   border-radius: clamp(6px, 1.5vw, 9px) !important;
   padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.65rem, 2vw, 0.85rem) !important;
   background: white !important;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease !important;
   width: 100%;
 }
 
 .input:focus {
-  border-color: #5B2C91 !important;
+  border-color: #5b2c91 !important;
   box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.1) !important;
   outline: none !important;
 }
@@ -247,7 +254,7 @@
   display: inline-flex;
   align-items: center;
   padding: clamp(0.45rem, 1.5vw, 0.6rem) clamp(0.75rem, 2.5vw, 1rem);
-  background: #5B2C91;
+  background: #5b2c91;
   color: white;
   font-size: clamp(0.72rem, 2vw, 0.82rem);
   font-weight: 700;
@@ -282,6 +289,15 @@
   color: #dc3545;
   font-style: normal;
   font-weight: 500;
+}
+
+/* Policy Link */
+.policyLink {
+  background: transparent;
+  border: transparent;
+  text-decoration: underline;
+  color: #5b2c91;
+  font-weight: bold;
 }
 
 /* ── File hint & error ───────────────────────────────── */

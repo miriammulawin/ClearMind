@@ -13,6 +13,7 @@ const AppointmentTab = () => {
     if (location.pathname.includes('/services')) return 'services';
     if (location.pathname.includes('/pending')) return 'pending';
     if (location.pathname.includes('/upcoming')) return 'upcoming';
+    if (location.pathname.includes('/sessions')) return 'sessions';
     if (location.pathname.includes('/history')) return 'history';
     return 'services';
   };
@@ -37,7 +38,7 @@ const AppointmentTab = () => {
   return (
     <div className="tab-navigation-wrapper">
       <Nav variant="tabs" className="custom-tabs">
-        {["services", "pending", "upcoming", "history"].map((tab) => (
+        {["services", "pending", "upcoming", "sessions", "history"].map((tab) => (
           <Nav.Item key={tab}>
             <Nav.Link
               ref={activeTab === tab ? activeRef : null}

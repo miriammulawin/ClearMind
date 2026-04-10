@@ -1,6 +1,5 @@
 /* =============================================
    AppointmentCard.module.css
-   Scoped styles for the AppointmentCard component
    ============================================= */
 
 /* Card */
@@ -22,53 +21,87 @@
 }
 
 /* =============================================
-   Status Badge — fully self-contained, no Bootstrap bg variant
+   Status Badge Position
    ============================================= */
-.statusBadge {
+.statusBadgePosition {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  display: inline-block;
-  padding: 6px 14px;
-  font-size: 0.75rem;
-  font-family: inherit;
-  font-weight: 600;
-  border-radius: 12px;
+  top: 80px;
+  right: 20px;
+}
+
+/* =============================================
+   Session Indicator — only renders for program appointments
+   ============================================= */
+.sessionIndicatorRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: #f8f3ff;
+  border: 1.5px solid #d8c4f5;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+}
+
+.sessionIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sessionLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #3d2b5e;
+}
+
+/* Progression status chip */
+.progressionChip {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  line-height: 1;
+  letter-spacing: 0.4px;
   white-space: nowrap;
 }
-
-/* Pending - soft yellow */
-.badgePending {
-  background-color: #fff5b5;
-  color: rgb(130, 130, 130);
+.progressionActive {
+  background-color: #dcfce7;
+  color: #166534;
+}
+.progressionOnHold {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+.progressionDiscontinued {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.progressionCompleted {
+  background-color: #ede9fe;
+  color: #5B2C91;
 }
 
-/* Confirmed - soft blue */
-.badgeConfirmed {
-  background-color: #a8bffd;
-  color: white;
+/* Mini progress track */
+.miniProgressTrack {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+.miniSegment {
+  flex: 1;
+  border-radius: 3px;
+}
+.miniSegmentEmpty {
+  background-color: #e9e0f8;
 }
 
-/* Rescheduled - soft orange */
-.badgeRescheduled {
-  background-color: #FFCE99;
-  color: white;
-}
-
-/* Completed - soft green */
-.badgeCompleted {
-  background-color: #94caa1;
-  color: white;
-}
-
-/* Cancelled - soft red */
-.badgeCancelled {
-  background-color: #f97b88;
-  color: white;
-}
+/* Done colors per progression status */
+.miniDoneActive       { background-color: #7C3AED; }
+.miniDoneOnHold       { background-color: #d97706; }
+.miniDoneDiscontinued { background-color: #dc2626; }
+.miniDoneCompleted    { background-color: #16a34a; }
 
 /* =============================================
    Card Content Layout
@@ -174,11 +207,13 @@
     padding: 1rem;
   }
 
-  .statusBadge {
+  .statusBadgePosition {
     top: 10px;
     right: 10px;
-    padding: 5px 12px;
-    font-size: 0.7rem;
+  }
+
+  .sessionIndicatorRow {
+    margin-top: 30px;
   }
 
   .infoRow {
@@ -211,11 +246,9 @@
     padding: 0.7rem;
   }
 
-  .statusBadge {
+  .statusBadgePosition {
     top: 7px;
     right: 7px;
-    padding: 4px 7px;
-    font-size: 0.58rem;
   }
 
   .label {

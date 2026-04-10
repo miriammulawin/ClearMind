@@ -35,9 +35,11 @@ import ClientAppointment from "./ClientPages/ClientAppointment";
 import ServicesTab from "./ClientPages/AppointmentNavPages/ServicesTab";
 import PendingTab from "./ClientPages/AppointmentNavPages/PendingTab";
 import ScheduleTab from "./ClientPages/AppointmentNavPages/ScheduleTab";
+import SessionsTab from "./ClientPages/AppointmentNavPages/SessionsTab";
 import HistoryTab from "./ClientPages/AppointmentNavPages/HistoryTab";
 import ClientMessages from "./ClientPages/ClientMessages";
-import ClientProfile from "./ClientPages/ClientProfile";
+import ClientAccount from "./ClientPages/ClientAccount";
+import ProfilePage from "./ClientPages/ClientComponents/ProfilePage";
 import Help from "./ClientPages/ClientComponents/Help";
 import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndConditions";
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
@@ -234,6 +236,7 @@ function App() {
             </Route>
             <Route path="pending" element={<PendingTab />} />
             <Route path="upcoming" element={<ScheduleTab />} />
+            <Route path="sessions" element={<SessionsTab />} />
             <Route path="history" element={<HistoryTab />} />
             <Route path="upcoming/:id" element={<AppointmentDetails />} />
             <Route path="details/:id" element={<AppointmentDetails />} />
@@ -246,14 +249,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
-            path="/client/profile"
+            path="/client/account"
             element={
               <ProtectedRoute role="Client">
-                <ClientProfile />
+                <ClientAccount />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="profile-page" element={<ProfilePage />} />
+          </Route>
+
           <Route
             path="/client/help"
             element={
