@@ -11,6 +11,7 @@ import Login from "./Login";
 import Registration from "./Registration";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
+
 import ProtectedRoute from "./ProtectedRoute";
 
 import DoctorDashboard from "./DoctorPages/DoctorDashboard";
@@ -63,6 +64,7 @@ function App() {
           <Route path="/register" element={<Registration />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          
 
           {/* ── Admin Routes ────────────────────────────────── */}
           <Route
