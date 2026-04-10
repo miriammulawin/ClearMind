@@ -8,11 +8,15 @@ use App\Http\Controllers\ConsultationRequestController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\DoctorAccountController;
 use App\Http\Controllers\ClinicController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 
 // ── Public Auth Routes ──
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password',  [ResetPasswordController::class, 'reset']);
 
 // ── Protected Routes ──
 Route::middleware('auth:sanctum')->group(function () {

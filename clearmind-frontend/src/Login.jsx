@@ -233,6 +233,15 @@ function Login() {
                   >
                     LOG IN
                   </Button>
+                  <p className="text-center mt-2 register-link">
+                    <span
+                      className="register-link"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => navigate("/forgot-password")}
+                    >
+                      Forgot Password?
+                    </span>
+                  </p>
 
                   <p className="register-text text-center mb-0">
                     Don't have an account?{" "}
