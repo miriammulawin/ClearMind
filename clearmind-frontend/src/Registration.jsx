@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEye, FiEyeOff } from "react-icons/fi";
-import { FiChevronDown } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiChevronDown } from "react-icons/fi";
 import styles from "./Registration.module.css";
 import logo_login from "./assets/CMPS_Logo.png";
 import axiosClient from "./axiosClient";
@@ -27,8 +26,8 @@ function Register() {
     genderIdentity: "",
     preferredPronoun: "",
     contact: "",
-    civilStatus: "", // ✅ NEW
-    patientType: "", // ✅ NEW
+    civilStatus: "",
+    patientType: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -68,7 +67,6 @@ function Register() {
     e.preventDefault();
     if (!validateForm()) return;
     setLoading(true);
-
     try {
       const response = await axiosClient.post("/register", {
         firstName: form.firstName,
@@ -86,14 +84,11 @@ function Register() {
         password: form.password,
         password_confirmation: form.confirmPassword,
       });
-
       const data = response.data;
-
       if (data.success) {
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("role", data.data.user.role);
         localStorage.setItem("user", JSON.stringify(data.data.user));
-
         toast.success("Registration Successful!", {
           duration: 1500,
           style: {
@@ -109,46 +104,37 @@ function Register() {
           },
           iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
         });
-
         setTimeout(() => navigate("/login"), 1500);
       }
     } catch (err) {
-      if (err.response) {
-        if (err.response.status === 422) {
-          const laravelErrors = err.response.data.errors || {};
-          const mapped = {};
-          if (laravelErrors.firstName)
-            mapped.firstName = laravelErrors.firstName[0];
-          if (laravelErrors.lastName)
-            mapped.lastName = laravelErrors.lastName[0];
-          if (laravelErrors.middleInitial)
-            mapped.middleInitial = laravelErrors.middleInitial[0];
-          if (laravelErrors.dob) mapped.dob = laravelErrors.dob[0];
-          if (laravelErrors.sex) mapped.sex = laravelErrors.sex[0];
-          if (laravelErrors.contactNo)
-            mapped.contact = laravelErrors.contactNo[0];
-          if (laravelErrors.email) mapped.email = laravelErrors.email[0];
-          if (laravelErrors.password)
-            mapped.password = laravelErrors.password[0];
-          setErrors(mapped);
-        } else {
-          toast.error(err.response.data?.message || "Registration failed.");
-        }
+      if (err.response?.status === 422) {
+        const e = err.response.data.errors || {};
+        setErrors({
+          ...(e.firstName && { firstName: e.firstName[0] }),
+          ...(e.lastName && { lastName: e.lastName[0] }),
+          ...(e.middleInitial && { middleInitial: e.middleInitial[0] }),
+          ...(e.dob && { dob: e.dob[0] }),
+          ...(e.sex && { sex: e.sex[0] }),
+          ...(e.contactNo && { contact: e.contactNo[0] }),
+          ...(e.email && { email: e.email[0] }),
+          ...(e.password && { password: e.password[0] }),
+        });
       } else {
-        toast.error("Server error. Please try again later.");
+        toast.error(
+          err.response?.data?.message ||
+            "Server error. Please try again later.",
+        );
       }
     } finally {
       setLoading(false);
     }
   };
 
-  /* ── small helper: field error message ── */
   const ErrMsg = ({ field }) =>
     errors[field] ? <div className={styles.errMsg}>{errors[field]}</div> : null;
 
   return (
     <>
-      {/* ── TERMS MODAL ── */}
       <TermsModal
         isOpen={showTerms}
         onClose={() => setShowTerms(false)}
@@ -158,42 +144,179 @@ function Register() {
             setErrors((prev) => ({ ...prev, agreeTerms: "" }));
         }}
       />
+
       <div className={styles.page}>
-        <div className={styles.card}>
+        <div className={styles.containerSplit}>
+
           {/* ── LEFT PANEL ── */}
           <div className={styles.leftPanel}>
+            {/* Dark gradient overlay */}
             <div className={styles.leftOverlay} />
+
+            {/* Cute floating deco blobs */}
+            <div
+              className={styles.leftDeco}
+              style={{
+                width: 110,
+                height: 110,
+                background: "rgba(216, 168, 255, 0.13)",
+                top: 24,
+                right: -28,
+              }}
+            />
+            <div
+              className={styles.leftDeco}
+              style={{
+                width: 60,
+                height: 60,
+                background: "rgba(255, 200, 240, 0.1)",
+                top: 110,
+                left: 18,
+              }}
+            />
+            <div
+              className={styles.leftDeco}
+              style={{
+                width: 36,
+                height: 36,
+                border: "1.5px solid rgba(255,255,255,0.12)",
+                background: "transparent",
+                top: 175,
+                right: 38,
+              }}
+            />
+
+            {/* Sparkle star — top left area */}
+            <svg
+              className={styles.leftSparkle}
+              style={{ top: 60, left: 55 }}
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+            >
+              <path
+                d="M9 1v4M9 13v4M1 9h4M13 9h4"
+                stroke="rgba(255,255,255,0.32)"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+              />
+              <circle cx="9" cy="9" r="2" fill="rgba(216,168,255,0.55)" />
+            </svg>
+
+            {/* Sparkle star — upper right */}
+            <svg
+              className={styles.leftSparkle}
+              style={{ top: 195, right: 28 }}
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+            >
+              <path
+                d="M7 1v3M7 10v3M1 7h3M10 7h3"
+                stroke="rgba(255,255,255,0.25)"
+                strokeWidth="1.1"
+                strokeLinecap="round"
+              />
+              <circle cx="7" cy="7" r="1.5" fill="rgba(255,200,240,0.6)" />
+            </svg>
+
+            {/* Tiny dot sparkle */}
+            <svg
+              className={styles.leftSparkle}
+              style={{ top: 148, right: 78 }}
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+            >
+              <circle cx="5" cy="5" r="2.5" fill="rgba(255,255,255,0.18)" />
+            </svg>
+
+            {/* Cute heart — upper right corner */}
+            <svg
+              className={styles.leftSparkle}
+              style={{ top: 82, right: 52 }}
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 018 3a3.5 3.5 0 016 2.5C14 9.5 8 13.5 8 13.5z"
+                fill="rgba(232,165,255,0.45)"
+              />
+            </svg>
+
+            {/* Tiny heart — mid left */}
+            <svg
+              className={styles.leftSparkle}
+              style={{ top: 235, left: 28 }}
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+            >
+              <path
+                d="M6 10.5S1 7.2 1 4.2A2.6 2.6 0 016 2.2a2.6 2.6 0 015 2C11 7.2 6 10.5 6 10.5z"
+                fill="rgba(255,200,240,0.38)"
+              />
+            </svg>
+
+            {/* Text content — anchored to bottom */}
             <div className={styles.leftContent}>
-              <span className={styles.tagline}>● Mental Wellness Care</span>
+              <span className={styles.tagline}>
+                <span className={styles.taglineDot} />
+                Mental Wellness Care
+              </span>
+
               <h1 className={styles.heroTitle}>
-                Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
+                Welcome To{" "}
+                <span className={styles.heroAccent}>ClearMind</span>{" "}
                 Psychological Services
               </h1>
+
               <p className={styles.heroDesc}>
                 Begin your journey toward emotional wellness and a clearer mind.
                 We provide compassionate, professional care in a safe and
                 confidential environment.
               </p>
+
+              {/* Cute pill tags */}
+              <div className={styles.pillRow}>
+                <span className={styles.pill}>
+                  <span className={styles.pillDot} />
+                  Safe &amp; Confidential
+                </span>
+                <span className={styles.pill}>
+                  <span className={styles.pillDot} />
+                  Compassionate Care
+                </span>
+                <span className={styles.pill}>
+                  <span className={styles.pillDot} />
+                  Free to Register
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* ── RIGHT PANEL ── */}
-          <div className={styles.rightPanel}>
-            {/* Logo */}
-            <div className="text-center mb-1">
-              <img
-                src={logo_login}
-                alt="ClearMind Logo"
-                className={styles.logo}
-              />
-            </div>
+          {/* ── RIGHT PANEL (FORM) ── */}
+          <div className={styles.card}>
+            {/* LOGO */}
+            <img
+              src={logo_login}
+              alt="ClearMind Logo"
+              className={styles.logo}
+            />
 
+            {/* SUBTITLE */}
             <p className={styles.formSubtitle}>
               Fill in your details to get started
             </p>
 
             <form onSubmit={handleSubmit} noValidate className={styles.form}>
-              {/* ── Personal Information ── */}
+              {/* ── PERSONAL INFORMATION ── */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.sectionLabel}>
                   Personal Information
@@ -209,7 +332,6 @@ function Register() {
                       placeholder="First Name *"
                       value={form.firstName}
                       onChange={handleChange}
-                      required
                     />
                     <ErrMsg field="firstName" />
                   </div>
@@ -221,7 +343,6 @@ function Register() {
                       placeholder="Last Name *"
                       value={form.lastName}
                       onChange={handleChange}
-                      required
                     />
                     <ErrMsg field="lastName" />
                   </div>
@@ -238,7 +359,6 @@ function Register() {
                       value={form.middleInitial}
                       onChange={handleChange}
                       maxLength={1}
-                      required
                     />
                     <ErrMsg field="middleInitial" />
                   </div>
@@ -249,7 +369,6 @@ function Register() {
                       className={`form-control ${styles.input} ${errors.dob ? styles.inputError : ""}`}
                       value={form.dob}
                       onChange={handleChange}
-                      required
                     />
                     <ErrMsg field="dob" />
                   </div>
@@ -264,11 +383,8 @@ function Register() {
                         className={`form-select ${styles.input} ${styles.select} ${errors.sex ? styles.inputError : ""}`}
                         value={form.sex}
                         onChange={handleChange}
-                        required
                       >
-                        <option value="" disabled>
-                          Sex *
-                        </option>
+                        <option value="" disabled>Sex *</option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                         <option value="other">Other</option>
@@ -285,9 +401,7 @@ function Register() {
                         value={form.genderIdentity}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>
-                          Gender Identity
-                        </option>
+                        <option value="" disabled>Gender Identity</option>
                         <option value="female">Female</option>
                         <option value="male">Male</option>
                         <option value="transgender">Transgender</option>
@@ -308,7 +422,7 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Preferred Pronouns & Custom */}
+                {/* Preferred Pronouns */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -318,9 +432,7 @@ function Register() {
                         value={form.preferredPronoun}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>
-                          Preferred Pronoun/s
-                        </option>
+                        <option value="" disabled>Preferred Pronoun/s</option>
                         <option value="he_him">He/Him</option>
                         <option value="she_her">She/Her</option>
                         <option value="they_them">They/Them</option>
@@ -337,60 +449,52 @@ function Register() {
                         placeholder="Specify pronoun/s *"
                         value={pronounOther}
                         onChange={(e) => setPronounOther(e.target.value)}
-                        required
                       />
                     </div>
                   )}
                 </div>
+
+                {/* Civil Status & Patient Type */}
+                <div className={styles.formRow}>
+                  <div className={styles.formCol}>
+                    <div className={styles.selectWrap}>
+                      <select
+                        name="civilStatus"
+                        className={`form-select ${styles.input} ${styles.select} ${errors.civilStatus ? styles.inputError : ""}`}
+                        value={form.civilStatus}
+                        onChange={handleChange}
+                      >
+                        <option value="" disabled>Civil Status *</option>
+                        <option value="single">Single</option>
+                        <option value="married">Married</option>
+                        <option value="widowed">Widowed</option>
+                        <option value="divorced">Divorced</option>
+                        <option value="separated">Separated</option>
+                      </select>
+                      <FiChevronDown className={styles.selectArrow} />
+                    </div>
+                    <ErrMsg field="civilStatus" />
+                  </div>
+                  <div className={styles.formCol}>
+                    <div className={styles.selectWrap}>
+                      <select
+                        name="patientType"
+                        className={`form-select ${styles.input} ${styles.select} ${errors.patientType ? styles.inputError : ""}`}
+                        value={form.patientType}
+                        onChange={handleChange}
+                      >
+                        <option value="" disabled>Patient Type *</option>
+                        <option value="new">New</option>
+                        <option value="existing">Existing</option>
+                      </select>
+                      <FiChevronDown className={styles.selectArrow} />
+                    </div>
+                    <ErrMsg field="patientType" />
+                  </div>
+                </div>
               </fieldset>
 
-              {/* Civil Status & Patient Type */}
-              <div className={styles.formRow}>
-                <div className={styles.formCol}>
-                  <div className={styles.selectWrap}>
-                    <select
-                      name="civilStatus"
-                      className={`form-select ${styles.input} ${styles.select} ${errors.civilStatus ? styles.inputError : ""}`}
-                      value={form.civilStatus}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Civil Status *
-                      </option>
-                      <option value="single">Single</option>
-                      <option value="married">Married</option>
-                      <option value="widowed">Widowed</option>
-                      <option value="divorced">Divorced</option>
-                      <option value="separated">Separated</option>
-                    </select>
-                    <FiChevronDown className={styles.selectArrow} />
-                  </div>
-                  <ErrMsg field="civilStatus" />
-                </div>
-
-                <div className={styles.formCol}>
-                  <div className={styles.selectWrap}>
-                    <select
-                      name="patientType"
-                      className={`form-select ${styles.input} ${styles.select} ${errors.patientType ? styles.inputError : ""}`}
-                      value={form.patientType}
-                      onChange={handleChange}
-                      required
-                    >
-                      <option value="" disabled>
-                        Patient Type *
-                      </option>
-                      <option value="new">New</option>
-                      <option value="existing">Existing</option>
-                    </select>
-                    <FiChevronDown className={styles.selectArrow} />
-                  </div>
-                  <ErrMsg field="patientType" />
-                </div>
-              </div>
-
-              {/* ── Contact Information ── */}
+              {/* ── CONTACT INFORMATION ── */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.sectionLabel}>
                   Contact Information
@@ -405,7 +509,6 @@ function Register() {
                       placeholder="Contact No. *"
                       value={form.contact}
                       onChange={handleChange}
-                      required
                     />
                     <ErrMsg field="contact" />
                   </div>
@@ -417,19 +520,17 @@ function Register() {
                       placeholder="Email Address *"
                       value={form.email}
                       onChange={handleChange}
-                      required
                     />
                     <ErrMsg field="email" />
                   </div>
                 </div>
               </fieldset>
 
-              {/* ── Security ── */}
+              {/* ── SECURITY ── */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.sectionLabel}>Security</legend>
 
-                {/* Password */}
-                <div className={`${styles.pwWrap} ${styles.formRow}`}>
+                <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.pwInner}>
                       <input
@@ -439,25 +540,19 @@ function Register() {
                         placeholder="Password *"
                         value={form.password}
                         onChange={handleChange}
-                        required
                       />
                       <button
                         type="button"
                         className={styles.eyeBtn}
-                        onClick={() => setShowPassword((p) => !p)}
                         tabIndex={-1}
+                        onClick={() => setShowPassword((p) => !p)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
-                        {showPassword ? (
-                          <FiEye size={20} />
-                        ) : (
-                          <FiEyeOff size={20} />
-                        )}
+                        {showPassword ? <FiEye /> : <FiEyeOff />}
                       </button>
                     </div>
                     <ErrMsg field="password" />
                   </div>
-
-                  {/* Confirm Password */}
                   <div className={styles.formCol}>
                     <div className={styles.pwInner}>
                       <input
@@ -467,19 +562,15 @@ function Register() {
                         placeholder="Confirm Password *"
                         value={form.confirmPassword}
                         onChange={handleChange}
-                        required
                       />
                       <button
                         type="button"
                         className={styles.eyeBtn}
-                        onClick={() => setShowConfirm((p) => !p)}
                         tabIndex={-1}
+                        onClick={() => setShowConfirm((p) => !p)}
+                        aria-label={showConfirm ? "Hide password" : "Show password"}
                       >
-                        {showConfirm ? (
-                          <FiEye size={20} />
-                        ) : (
-                          <FiEyeOff size={20} />
-                        )}
+                        {showConfirm ? <FiEye /> : <FiEyeOff />}
                       </button>
                     </div>
                     <ErrMsg field="confirmPassword" />
@@ -487,7 +578,6 @@ function Register() {
                 </div>
               </fieldset>
 
-              {/* ── Terms & Submit ── */}
               {/* ── FOOTER ── */}
               <div className={styles.footer}>
                 <div className={styles.checkGroup}>
@@ -516,7 +606,7 @@ function Register() {
                     >
                       Terms and Conditions
                     </span>{" "}
-                    *
+                    <span style={{ color: "#e53e3e" }}>*</span>
                   </label>
                 </div>
                 {errors.agreeTerms && (

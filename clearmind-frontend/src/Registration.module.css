@@ -1,221 +1,220 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-/* ═══════════════════════════════════════
-   CSS CUSTOM PROPERTIES
-═══════════════════════════════════════ */
-:root {
-  --color-primary: #5b2d8e;
-  --color-primary-dark: #4a2278;
-  --color-primary-light: #7341a8;
-  --color-accent: #c9a0f5;
-  --color-accent-soft: #9b7ec8;
-  --color-bg: #faf8ff;
-  --color-border: #ddd6ee;
-  --color-border-hover: #b79df2;
-  --color-text: #2e1060;
-  --color-text-muted: #9b8ab0;
-  --color-text-soft: #4a3060;
-  --color-section-label: #4a2278;
-  --color-error: #e53e3e;
-  --color-white: #fff;
-  --color-overlay-start: rgba(60, 20, 100, 0.28);
-  --color-overlay-mid: rgba(60, 20, 100, 0.65);
-  --color-overlay-end: rgba(40, 10, 80, 0.9);
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-
-  --input-height: clamp(34px, 3vw, 42px);
-  --btn-height: clamp(38px, 3.5vw, 44px);
-
-  --font-size-base: clamp(12px, 1vw, 14px);
-  --font-size-sm: clamp(10px, 0.9vw, 12px);
-  --font-size-xs: 10px;
-
-  --gap-form: clamp(8px, 1vh, 12px);
-  --gap-row: clamp(8px, 1vw, 12px);
-  --padding-panel: clamp(16px, 3vw, 40px);
-}
-
-/* ═══════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════ */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: "Poppins", sans-serif;
-  font-size: var(--font-size-base);
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* ═══════════════════════════════════════
-   PAGE - FULL VIEWPORT
-═══════════════════════════════════════ */
+/* ============================================ */
+/* PAGE                                         */
+/* ============================================ */
 .page {
-  width: 100vw;
-  height: 100vh;
-  min-height: 100dvh; /* dynamic viewport height for mobile */
-  overflow: hidden;
-  background: linear-gradient(135deg, #f3ecff, #fdfbff);
+  font-family: "Poppins", sans-serif;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-family: "Poppins", sans-serif;
+  background-color: transparent;
+  padding: clamp(1rem, 3vh, 2rem) clamp(0.75rem, 3vw, 1.5rem);
+  box-sizing: border-box;
 }
 
-/* ═══════════════════════════════════════
-   CARD
-═══════════════════════════════════════ */
-.card {
+/* ============================================ */
+/* SPLIT LAYOUT                                 */
+/* ============================================ */
+.containerSplit {
   display: flex;
   width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100dvh;
-  border-radius: clamp(0px, 1.5vw, var(--radius-lg));
-  box-shadow: 0 10px 30px rgba(80, 40, 120, 0.15);
+  max-width: 1000px;
+  min-height: 620px;
+  border-radius: 20px;
   overflow: hidden;
-  background: var(--color-white);
-  border: none;
 }
 
-/* ═══════════════════════════════════════
-   LEFT PANEL
-═══════════════════════════════════════ */
+/* ============================================ */
+/* LEFT PANEL                                   */
+/* ============================================ */
 .leftPanel {
   position: relative;
-  flex: 0 0 38%;
-  background-image: url("https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=800&q=80");
-  background-size: cover;
-  background-position: center;
+  flex: 0 0 42%;
   display: flex;
   align-items: flex-end;
-  padding: var(--padding-panel);
+  overflow: hidden;
+  background-image: url("https://images.unsplash.com/photo-1528715471579-d1bcf0ba5e83?auto=format&fit=crop&w=800&q=80");
+  background-size: cover;
+  background-position: center top;
 }
 
+/* Gradient overlay — light at top to let photo breathe, dark at bottom for text */
 .leftOverlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to bottom,
-    var(--color-overlay-start) 0%,
-    var(--color-overlay-mid) 55%,
-    var(--color-overlay-end) 100%
+    rgba(60, 20, 100, 0.15) 0%,
+    rgba(60, 20, 100, 0.32) 38%,
+    rgba(40, 10, 75, 0.8) 68%,
+    rgba(30, 5, 60, 0.96) 100%
   );
+  z-index: 1;
 }
 
+/* Cute floating deco blobs — add via JSX as <div className={styles.leftDeco} style={{...}} /> */
+.leftDeco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Sparkle SVGs — add via JSX as <svg className={styles.leftSparkle} style={{...}} /> */
+.leftSparkle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.65;
+}
+
+/* Content sits above all layers */
 .leftContent {
   position: relative;
-  z-index: 1;
-  color: var(--color-white);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.65rem, 1.4vh, 0.9rem);
+  padding: clamp(1.5rem, 4vw, 2.25rem) clamp(1.25rem, 3vw, 1.75rem);
+  width: 100%;
 }
 
+/* ── Tagline ── */
 .tagline {
-  display: inline-block;
-  font-size: var(--font-size-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: clamp(0.6rem, 0.85vw, 0.7rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 20px;
-  padding: 6px 14px;
-  margin-bottom: 16px;
-  color: var(--color-white);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
 }
 
+.taglineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8a5ff;
+  flex-shrink: 0;
+}
+
+/* ── Hero title ── */
 .heroTitle {
-  font-size: clamp(16px, 2.2vw, 28px);
+  font-size: clamp(1.15rem, 1.9vw, 1.55rem);
   font-weight: 700;
-  line-height: 1.3;
-  margin: 0 0 12px 0;
-  color: var(--color-white);
-  font-family: "Poppins", sans-serif;
-}
-
-.heroAccent {
-  color: var(--color-accent);
-  font-style: italic;
-}
-
-.heroDesc {
-  font-size: clamp(11px, 1.1vw, 14px);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.32;
+  color: #fff;
   margin: 0;
 }
 
-/* ═══════════════════════════════════════
-   RIGHT PANEL
-═══════════════════════════════════════ */
-.rightPanel {
+.heroAccent {
+  color: #d8a8ff;
+}
+
+/* ── Description ── */
+.heroDesc {
+  font-size: clamp(0.74rem, 1vw, 0.82rem);
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 300px;
+  margin: 0;
+}
+
+/* ── Cute pill tags ── */
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 0.15rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: clamp(0.63rem, 0.88vw, 0.7rem);
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 500;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pillDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8a5ff;
+  flex-shrink: 0;
+}
+
+/* ============================================ */
+/* CARD — matches Login .card-custom            */
+/* ============================================ */
+.card {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: clamp(12px, 2vh, 20px) clamp(16px, 3vw, 40px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--color-white);
-  font-family: "Poppins", sans-serif;
-  max-height: 100dvh;
+  justify-content: center;
+  background-color: #ffffff;
+  width: 100%;
+  max-width: clamp(420px, 560%, 600px);
+  padding: clamp(1.8rem, 3.5vw, 2.8rem);
+  box-sizing: border-box;
+  border-left: 1px solid rgba(84, 41, 130, 0.08);
 }
 
-/* Custom scrollbar */
-.rightPanel::-webkit-scrollbar {
-  width: 5px;
-}
-.rightPanel::-webkit-scrollbar-track {
-  background: transparent;
-}
-.rightPanel::-webkit-scrollbar-thumb {
-  background: #ddd6ee;
-  border-radius: 3px;
-}
-.rightPanel::-webkit-scrollbar-thumb:hover {
-  background: #c4b5d1;
-}
-
-/* ═══════════════════════════════════════
-   LOGO
-═══════════════════════════════════════ */
+/* ============================================ */
+/* LOGO                                         */
+/* ============================================ */
 .logo {
-  max-width: 50%;
+  max-width: clamp(100px, 55%, 175px);
   height: auto;
-  object-fit: contain;
-  border-radius: 10px;
-  margin: 0 auto clamp(4px, 0.5vh, 8px);
   display: block;
+  margin: 0 auto clamp(0.4rem, 1vh, 0.75rem);
 }
 
+/* ============================================ */
+/* SUBTITLE                                     */
+/* ============================================ */
 .formSubtitle {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(10px, 1vw, 13px);
-  color: var(--color-text-muted);
+  font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  color: #646465;
   text-align: center;
-  margin: 0 0 clamp(8px, 1.5vh, 14px) 0;
+  margin: 0 0 clamp(0.75rem, 2vh, 1.25rem) 0;
+  line-height: 1.4;
 }
 
-/* ═══════════════════════════════════════
-   FORM
-═══════════════════════════════════════ */
+/* ============================================ */
+/* SECTION LABELS                               */
+/* ============================================ */
+.sectionLabel {
+  font-family: "Poppins", sans-serif;
+  font-size: clamp(0.65rem, 1vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #542982;
+  text-transform: uppercase;
+  margin: clamp(0.5rem, 1.5vh, 0.9rem) 0 clamp(0.35rem, 0.8vh, 0.5rem) 0;
+  padding: 0;
+  border: none;
+  width: 100%;
+}
+
+/* ============================================ */
+/* FORM                                         */
+/* ============================================ */
 .form {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  gap: var(--gap-form);
+  gap: 0;
 }
 
 .fieldset {
@@ -224,74 +223,60 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 1vh, 10px);
+  gap: clamp(0.5rem, 1.2vh, 0.75rem);
 }
 
-.sectionLabel {
-  font-family: "Poppins", sans-serif;
-  font-size: clamp(10px, 1.1vw, 14px);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--color-section-label);
-  margin: clamp(4px, 1vh, 10px) 0 0 0;
-  padding: 0;
-  text-transform: uppercase;
-}
-
-/* ═══════════════════════════════════════
-   FORM LAYOUT - TWO COLUMNS
-═══════════════════════════════════════ */
+/* ============================================ */
+/* TWO-COLUMN GRID                              */
+/* ============================================ */
 .formRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--gap-row);
+  gap: clamp(0.4rem, 1.2vw, 0.75rem);
 }
 
 .formCol {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-/* ═══════════════════════════════════════
-   INPUTS
-═══════════════════════════════════════ */
+/* ============================================ */
+/* INPUTS — matches Login .input-field          */
+/* ============================================ */
 .input {
   font-family: "Poppins", sans-serif !important;
-  font-size: var(--font-size-base) !important;
-  color: var(--color-text) !important;
-  background: var(--color-bg) !important;
-  border: 1.5px solid var(--color-border) !important;
-  border-radius: clamp(var(--radius-sm), 1vw, var(--radius-md)) !important;
-  height: var(--input-height);
-  padding: 0 12px !important;
-  transition:
-    border-color 0.18s,
-    box-shadow 0.18s !important;
+  font-size: clamp(0.72rem, 1.1vw, 0.875rem) !important;
+  color: #2e1060 !important;
+  background: #fff !important;
+  border: 2px solid #542982 !important;
+  border-radius: 8px !important;
+  height: clamp(34px, 4.5vh, 42px);
+  padding: 0 clamp(8px, 1.5vw, 14px) !important;
   width: 100%;
-}
-
-.input:hover {
-  border-color: var(--color-border-hover) !important;
+  box-sizing: border-box;
+  transition: all 0.2s ease !important;
+  outline: none !important;
 }
 
 .input::placeholder {
-  color: #b8a8d0 !important;
+  color: #999 !important;
+  font-size: clamp(0.7rem, 1vw, 0.875rem) !important;
 }
 
 .input:focus {
-  border-color: var(--color-primary-light) !important;
-  box-shadow: 0 0 0 3px rgba(115, 65, 168, 0.12) !important;
-  background: var(--color-white) !important;
+  border-color: #783bb5 !important;
+  box-shadow: 0 0 0 0.15rem rgba(84, 41, 130, 0.15) !important;
   outline: none !important;
 }
 
 .inputError {
-  border-color: var(--color-error) !important;
+  border-color: #e53e3e !important;
 }
 
-/* ═══════════════════════════════════════
-   SELECT
-═══════════════════════════════════════ */
+/* ============================================ */
+/* SELECT                                       */
+/* ============================================ */
 .selectWrap {
   position: relative;
   width: 100%;
@@ -300,9 +285,17 @@ body {
 .select {
   appearance: none !important;
   -webkit-appearance: none !important;
-  -moz-appearance: none !important;
-  padding-right: 32px !important;
+  padding-right: clamp(26px, 3vw, 32px) !important;
   cursor: pointer;
+}
+
+.select option[value=""][disabled] {
+  color: #999 !important;
+}
+
+.select:invalid,
+.select option:not([value]) {
+  color: #999;
 }
 
 .selectArrow {
@@ -311,18 +304,14 @@ body {
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: var(--color-accent-soft);
-  font-size: clamp(14px, 1.3vw, 20px);
+  color: #542982;
+  font-size: clamp(13px, 1.3vw, 17px);
   z-index: 2;
 }
 
-/* ═══════════════════════════════════════
-   PASSWORD WRAPPER
-═══════════════════════════════════════ */
-.pwWrap {
-  flex-direction: column;
-}
-
+/* ============================================ */
+/* PASSWORD WRAPPER                             */
+/* ============================================ */
 .pwInner {
   position: relative;
   display: flex;
@@ -331,7 +320,7 @@ body {
 }
 
 .pwInput {
-  padding-right: 40px !important;
+  padding-right: clamp(34px, 3.5vw, 42px) !important;
 }
 
 .eyeBtn {
@@ -341,567 +330,204 @@ body {
   transform: translateY(-50%);
   background: none;
   border: none;
-  padding: 0 4px;
+  padding: 0.2rem;
   cursor: pointer;
-  color: var(--color-accent-soft);
+  color: #542982;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s ease;
   z-index: 5;
-  transition: color 0.15s;
-  width: clamp(28px, 2.5vw, 36px);
-  height: clamp(28px, 2.5vw, 36px);
+  font-size: clamp(14px, 1.3vw, 18px);
 }
 
-.eyeBtn:hover {
-  color: var(--color-primary-dark);
+.eyeBtn:hover,
+.eyeBtn:focus {
+  color: #783bb5;
+  outline: 2px solid #542982;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* ═══════════════════════════════════════
-   ERROR MESSAGE
-═══════════════════════════════════════ */
+/* ============================================ */
+/* ERROR MESSAGES — plain small red text        */
+/* ============================================ */
 .errMsg {
   font-family: "Poppins", sans-serif;
-  font-size: var(--font-size-xs);
-  color: var(--color-error);
-  margin-top: 2px;
+  font-size: clamp(0.62rem, 0.9vw, 0.72rem);
+  color: #e53e3e;
+  margin-top: 3px;
   padding-left: 2px;
+  line-height: 1.3;
 }
 
-/* ═══════════════════════════════════════
-   CHECKBOX & TERMS
-═══════════════════════════════════════ */
+/* ============================================ */
+/* CHECKBOX & TERMS                             */
+/* ============================================ */
 .checkGroup {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  margin-top: auto;
-  padding-top: clamp(6px, 1vh, 10px);
 }
 
 .checkbox {
-  accent-color: var(--color-primary-light);
-  width: clamp(14px, 1.2vw, 16px) !important;
-  height: clamp(14px, 1.2vw, 16px) !important;
+  accent-color: #542982;
+  width: clamp(13px, 1.2vw, 15px) !important;
+  height: clamp(13px, 1.2vw, 15px) !important;
   margin-top: 3px !important;
   flex-shrink: 0;
+  border: 2px solid #542982 !important;
+  cursor: pointer;
+}
+
+.checkbox:checked {
+  background-color: #542982 !important;
+  border-color: #542982 !important;
 }
 
 .checkLabel {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(10px, 1vw, 13px);
-  color: var(--color-text-soft);
+  font-size: clamp(0.68rem, 1vw, 0.8rem);
+  color: #646465;
   cursor: pointer;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .termsLink {
-  color: var(--color-primary-light);
+  color: #542982;
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
 }
 
-/* ═══════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════ */
+.termsLink:hover {
+  color: #783bb5;
+}
+
+/* ============================================ */
+/* FOOTER                                       */
+/* ============================================ */
 .footer {
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 1vh, 10px);
-  padding-top: clamp(8px, 1.5vh, 12px);
-  border-top: 1px solid #e8e0f0;
-  margin-top: auto;
+  gap: clamp(0.4rem, 1vh, 0.65rem);
+  padding-top: clamp(0.6rem, 1.5vh, 1rem);
+  border-top: 1px solid rgba(84, 41, 130, 0.12);
+  margin-top: clamp(0.5rem, 1.5vh, 1rem);
 }
 
+/* ============================================ */
+/* SUBMIT BUTTON — matches Login .login-button  */
+/* ============================================ */
 .submitBtn {
-  font-family: "Poppins", sans-serif;
-  font-size: clamp(11px, 1.1vw, 14px);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  background: var(--color-primary);
-  color: var(--color-white);
-  border: none;
-  border-radius: clamp(var(--radius-sm), 1vw, var(--radius-md));
-  height: var(--btn-height);
+  font-family: "Poppins", sans-serif !important;
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+  background-color: #542982 !important;
+  color: #fff !important;
+  border: 2px solid #542982 !important;
+  border-radius: 20px !important;
+  padding: clamp(0.5rem, 1.2vh, 0.7rem) 1rem !important;
   width: 100%;
   cursor: pointer;
-  transition:
-    background 0.18s,
-    box-shadow 0.18s;
-  padding: 0 !important;
+  transition: all 0.2s ease !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-  box-shadow: 0 3px 12px rgba(91, 45, 142, 0.3);
+  background-color: #783bb5 !important;
+  border-color: #783bb5 !important;
+  transform: translateY(-1px);
 }
 
 .submitBtn:active:not(:disabled) {
-  transform: translateY(1px);
+  background-color: #3e1d63 !important;
+  transform: translateY(0);
+  box-shadow: 0 0 0 0.15rem rgba(84, 41, 130, 0.25) !important;
 }
 
 .submitBtn:disabled {
-  opacity: 0.65;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
+/* ============================================ */
+/* LOGIN LINK                                   */
+/* ============================================ */
 .loginLink {
   font-family: "Poppins", sans-serif;
-  font-size: clamp(10px, 1vw, 13px);
-  color: var(--color-text-muted);
+  font-size: clamp(0.68rem, 1vw, 0.8rem);
+  color: #646465;
   text-align: center;
-  margin: 2px 0 0 0;
+  margin: 0;
 }
 
 .loginLinkBold {
-  color: var(--color-primary-light);
-  font-weight: 700;
+  color: #542982;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 
 .loginLinkBold:hover {
+  color: #783bb5;
   text-decoration: underline;
 }
 
-/* ═══════════════════════════════════════
-   RESPONSIVE — LARGE DESKTOP (1400px+)
-═══════════════════════════════════════ */
-@media (min-width: 1400px) {
-  :root {
-    --input-height: 46px;
-    --btn-height: 48px;
-    --gap-form: 14px;
-    --gap-row: 14px;
-  }
-
-  .leftPanel {
-    flex: 0 0 40%;
-  }
-
-  .sectionLabel {
-    font-size: 15px;
-    margin-top: 14px;
-  }
-
-  .checkLabel,
-  .loginLink {
-    font-size: 14px;
-  }
+/* ============================================ */
+/* HIDE PASSWORD REVEAL (IE/Edge)               */
+/* ============================================ */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
 }
 
-/* ═══════════════════════════════════════
-   RESPONSIVE — WIDE DESKTOP (1200px–1399px)
-═══════════════════════════════════════ */
-@media (max-width: 1399px) and (min-width: 1200px) {
-  :root {
-    --input-height: 42px;
-    --btn-height: 46px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — STANDARD DESKTOP (1024px–1199px)
-═══════════════════════════════════════ */
-@media (max-width: 1199px) and (min-width: 1025px) {
-  :root {
-    --input-height: 40px;
-    --btn-height: 44px;
-    --gap-form: 10px;
-  }
-
-  .leftPanel {
-    flex: 0 0 36%;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — SMALL LAPTOP (900px–1024px)
-═══════════════════════════════════════ */
-@media (max-width: 1024px) and (min-width: 901px) {
-  :root {
-    --input-height: 38px;
-    --btn-height: 42px;
-    --gap-form: 9px;
-    --gap-row: 9px;
-  }
-
-  .leftPanel {
-    flex: 0 0 34%;
-  }
-
-  .heroTitle {
-    font-size: clamp(16px, 2vw, 22px);
-  }
-
-  .rightPanel {
-    padding: 14px 28px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — TABLET LANDSCAPE (821px–900px)
-═══════════════════════════════════════ */
-@media (max-width: 900px) and (min-width: 821px) {
-  :root {
-    --input-height: 36px;
-    --btn-height: 40px;
-    --gap-form: 8px;
-    --gap-row: 8px;
-  }
-
-  .leftPanel {
-    flex: 0 0 32%;
-    padding: 24px 20px;
-  }
-
-  .heroTitle {
-    font-size: 18px;
-  }
-
-  .heroDesc {
-    font-size: 11px;
-  }
-
-  .rightPanel {
-    padding: 12px 22px;
-  }
-
-  .logo {
-    max-width: 60%;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — TABLET PORTRAIT (≤820px)
-   Hide left panel
-═══════════════════════════════════════ */
-@media (max-width: 820px) {
-  .leftPanel {
-    display: none;
-  }
-
-  .card {
-    border-radius: 0;
-  }
-
-  .rightPanel {
-    padding: clamp(16px, 4vw, 28px) clamp(20px, 5vw, 36px);
-  }
-
-  :root {
-    --input-height: 36px;
-    --btn-height: 42px;
-    --gap-form: 9px;
-    --gap-row: 9px;
-  }
-
-  .logo {
-    max-width: 55%;
-    margin-bottom: 8px;
-  }
-
-  .sectionLabel {
-    font-size: 11px;
-  }
-
-  .checkLabel,
-  .loginLink {
-    font-size: 12px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — LARGE PHONE (601px–768px)
-═══════════════════════════════════════ */
-@media (max-width: 768px) and (min-width: 601px) {
-  .rightPanel {
-    padding: 20px 28px;
-  }
-
-  :root {
-    --input-height: 36px;
-    --btn-height: 40px;
-    --gap-form: 8px;
-    --gap-row: 8px;
-  }
-
-  .logo {
-    max-width: 50%;
-  }
-
-  .formSubtitle {
-    font-size: 11px;
-  }
-
-  .sectionLabel {
-    font-size: 11px;
-    margin-top: 6px;
-  }
-
-  .formRow {
-    gap: 8px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — MOBILE (≤600px)
-═══════════════════════════════════════ */
-@media (max-width: 600px) {
-  .page {
-    padding: 0;
-    min-height: 100dvh;
-  }
-
-  .card {
-    flex-direction: column;
-    border-radius: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 100dvh;
-  }
-
-  .leftPanel {
-    display: none;
-  }
-
-  .rightPanel {
-    padding: clamp(14px, 4vw, 20px) clamp(16px, 5vw, 24px);
-    width: 100%;
-    flex: 1;
-    min-height: 100dvh;
-  }
-
-  :root {
-    --input-height: 36px;
-    --btn-height: 40px;
-    --font-size-base: 12px;
-    --gap-form: 8px;
-    --gap-row: 8px;
-  }
-
-  .logo {
-    max-width: 58%;
-  }
-
-  .formSubtitle {
-    font-size: 11px;
-    margin-bottom: 10px;
-  }
-
-  .sectionLabel {
-    font-size: 10px;
-    margin-top: 6px;
-  }
-
-  .form {
-    gap: 8px;
-  }
-
-  .fieldset {
-    gap: 7px;
-  }
-
-  .submitBtn {
-    font-size: 12px;
-    letter-spacing: 0.05em;
-  }
-
-  .checkLabel {
-    font-size: 10px;
-  }
-
-  .loginLink {
-    font-size: 10px;
-  }
-
-  .selectArrow {
-    font-size: 14px;
-    right: 8px;
-  }
-
-  .eyeBtn {
-    width: 28px;
-    height: 28px;
-  }
-
-  .tagline {
-    font-size: 9px;
-    padding: 5px 10px;
-    margin-bottom: 10px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — SMALL MOBILE (≤400px)
-═══════════════════════════════════════ */
+/* ============================================ */
+/* RESPONSIVE — collapse grid on small phones  */
+/* ============================================ */
 @media (max-width: 400px) {
-  .rightPanel {
-    padding: 12px 14px;
-  }
-
-  :root {
-    --input-height: 33px;
-    --btn-height: 38px;
-    --font-size-base: 11px;
-    --gap-form: 7px;
-    --gap-row: 7px;
-  }
-
-  .logo {
-    max-width: 52%;
-  }
-
-  .formSubtitle {
-    font-size: 10px;
-    margin-bottom: 8px;
-  }
-
-  .sectionLabel {
-    font-size: 9px;
-  }
-
-  .submitBtn {
-    font-size: 11px;
-  }
-
-  .checkLabel,
-  .loginLink {
-    font-size: 9px;
-  }
-
   .formRow {
-    gap: 6px;
+    grid-template-columns: 1fr;
   }
 
-  .fieldset {
-    gap: 6px;
-  }
-
-  .footer {
-    gap: 6px;
-    padding-top: 8px;
+  .card {
+    border-radius: 16px;
+    padding: 1.25rem 1rem;
   }
 }
 
-/* ═══════════════════════════════════════
-   RESPONSIVE — VERY SMALL MOBILE (≤320px)
-═══════════════════════════════════════ */
 @media (max-width: 320px) {
-  .rightPanel {
-    padding: 10px 12px;
-  }
-
-  :root {
-    --input-height: 31px;
-    --btn-height: 36px;
-    --font-size-base: 10px;
-    --gap-form: 6px;
-    --gap-row: 6px;
-  }
-
-  .logo {
-    max-width: 48%;
-  }
-
-  .sectionLabel {
-    font-size: 8px;
+  .card {
+    border-radius: 12px;
+    padding: 1rem 0.875rem;
   }
 
   .formRow {
     grid-template-columns: 1fr;
   }
-
-  .checkLabel,
-  .loginLink {
-    font-size: 9px;
-  }
 }
 
-/* ═══════════════════════════════════════
-   RESPONSIVE — LANDSCAPE MOBILE
-   Optimize for short viewport heights
-═══════════════════════════════════════ */
+/* ============================================ */
+/* LANDSCAPE MOBILE                             */
+/* ============================================ */
 @media (max-height: 600px) and (orientation: landscape) {
-  .leftPanel {
-    display: none;
+  .containerSplit {
+    flex-direction: column;
   }
 
-  .rightPanel {
-    padding: 8px 20px;
-    overflow-y: auto;
-  }
-
-  :root {
-    --input-height: 32px;
-    --btn-height: 36px;
-    --gap-form: 5px;
-    --gap-row: 6px;
-  }
-
-  .logo {
-    max-width: 30%;
-    margin-bottom: 2px;
-  }
-
-  .formSubtitle {
-    font-size: 10px;
-    margin-bottom: 4px;
-  }
-
-  .sectionLabel {
-    font-size: 9px;
-    margin-top: 4px;
-  }
-
-  .checkGroup {
-    padding-top: 4px;
-  }
-
-  .footer {
-    padding-top: 6px;
-    gap: 5px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   RESPONSIVE — TALL NARROW SCREENS
-   e.g. Samsung Galaxy S8 (360x740)
-═══════════════════════════════════════ */
-@media (max-width: 400px) and (min-height: 700px) {
-  :root {
-    --gap-form: 9px;
-    --input-height: 36px;
-  }
-
-  .rightPanel {
-    padding: 16px 16px;
-  }
-}
-
-/* ═══════════════════════════════════════
-   PRINT — BASIC CLEAN LAYOUT
-═══════════════════════════════════════ */
-@media print {
   .leftPanel {
     display: none;
   }
 
   .page {
-    background: none;
+    align-items: flex-start;
+    padding: 0.75rem;
   }
 
-  .card {
-    box-shadow: none;
-  }
-
-  .rightPanel {
-    padding: 24px;
-  }
-
-  .submitBtn,
-  .footer,
-  .checkGroup {
-    display: none;
+  .logo {
+    max-width: 35%;
   }
 }
