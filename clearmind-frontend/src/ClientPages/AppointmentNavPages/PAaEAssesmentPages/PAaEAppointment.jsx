@@ -57,9 +57,9 @@ const PAE_SERVICES = [
   },
   {
     id: "6",
-    title: "Mental Health Certification",
+    title: "Mental Health Certification for Internship",
     description:
-      "The purpose of mental health certification is to provide professional documentation from a licensed mental health professional regarding an individual's psychological condition, which may be required for medical, workplace, educational, or legal purposes.",
+      "A Mental Health Certification for Internship is an official document issued by a licensed professional confirming that an individual is mentally fit and ready to participate in an internship, ensuring they can handle responsibilities and adapt to the work environment.",
     available: true,
   },
 ];
