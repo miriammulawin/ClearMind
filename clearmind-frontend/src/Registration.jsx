@@ -6,6 +6,7 @@ import logo_login from "./assets/CMPS_Logo.png";
 import axiosClient from "./axiosClient";
 import toast from "react-hot-toast";
 import TermsModal from "./components/TermsModal";
+import { Toaster, toast } from "react-hot-toast";
 
 function Register() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showTerms, setShowTerms] = useState(false);
+  const [serverError, setServerError] = useState(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -36,31 +38,96 @@ function Register() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Clear the consolidated summary when user starts correcting
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
+
+    // REQUIRED FIELDS
     if (!form.firstName.trim()) newErrors.firstName = "First name is required";
     if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
     if (!form.middleInitial.trim())
       newErrors.middleInitial = "Middle initial is required";
     if (!form.dob) newErrors.dob = "Date of birth is required";
     if (!form.sex) newErrors.sex = "Sex is required";
-    if (!form.contact.trim()) newErrors.contact = "Contact number is required";
+
+    // ✅ CONTACT NUMBER VALIDATION
+    if (!form.contact.trim()) {
+      newErrors.contact = "Contact number is required";
+    } else if (!/^09\d{9}$/.test(form.contact)) {
+      newErrors.contact =
+        "Contact number must start with 09 and be exactly 11 digits";
+    }
+
     if (!form.civilStatus) newErrors.civilStatus = "Civil status is required";
     if (!form.patientType) newErrors.patientType = "Patient type is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
+
+    // ✅ EMAIL VALIDATION (must contain @ and valid format)
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Invalid email format";
-    if (!form.password) newErrors.password = "Password is required";
-    else if (form.password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
-    if (form.password !== form.confirmPassword)
+    }
+
+    // ✅ PASSWORD VALIDATION
+    if (!form.password) {
+      newErrors.password = "Password is required";
+    } else if (
+      !/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{6,}$/.test(form.password)
+    ) {
+      newErrors.password =
+        "Password must be at least 6 characters, include 1 uppercase letter, 1 number, and 1 special character";
+    }
+
+    // ✅ CONFIRM PASSWORD
+    if (!form.confirmPassword) {
+      newErrors.confirmPassword = "Confirm your password";
+    } else if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
-    if (!agreed) newErrors.agreeTerms = "You must agree to the terms";
+    }
+
+    // TERMS
+    if (!agreed)
+      newErrors.agreeTerms = "You must agree to the Terms and Condition";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Derive a single summary message from all active errors
+  const getConsolidatedError = () => {
+    if (serverError) {
+      return serverError;
+    }
+
+    const entries = Object.entries(errors);
+
+    // 🔴 Check if there are REQUIRED field errors
+    const hasRequiredError = entries.some(([key, val]) =>
+      val?.toLowerCase().includes("required"),
+    );
+
+    if (hasRequiredError) {
+      return "All fields are required to fill out";
+    }
+
+    // 🟡 Otherwise show first specific validation error
+    const otherErrors = entries
+      .filter(([key, val]) => key !== "agreeTerms" && val)
+      .map(([, val]) => val);
+
+    if (otherErrors.length > 0) {
+      return otherErrors[0];
+    }
+
+    // 🔵 Terms checkbox error
+    if (errors.agreeTerms) {
+      return errors.agreeTerms;
+    }
+
+    return null;
   };
 
   const handleSubmit = async (e) => {
@@ -91,18 +158,24 @@ function Register() {
         localStorage.setItem("user", JSON.stringify(data.data.user));
         toast.success("Registration Successful!", {
           duration: 1500,
+          position: "top-center",
           style: {
-            background: "#E2F7E3",
-            border: "1px solid #91C793",
+            background: "#E2F7E3FF",
+            border: "1px solid #91C793FF",
             color: "#2E7D32",
             fontWeight: 600,
-            fontSize: "0.95rem",
+            fontSize: "1rem",
             textAlign: "center",
-            maxWidth: "320px",
+            width: "100%",
+            maxWidth: "300px",
+            margin: "0 auto",
             borderRadius: "10px",
-            boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.2)",
           },
-          iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+          iconTheme: {
+            primary: "#2E7D32",
+            secondary: "#E2F7E3",
+          },
         });
         setTimeout(() => navigate("/login"), 1500);
       }
@@ -119,22 +192,24 @@ function Register() {
           ...(e.email && { email: e.email[0] }),
           ...(e.password && { password: e.password[0] }),
         });
+        setServerError(null);
       } else {
-        toast.error(
+        const message =
           err.response?.data?.message ||
-            "Server error. Please try again later.",
-        );
+          "Server error. Please try again later.";
+
+        setServerError(message);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const ErrMsg = ({ field }) =>
-    errors[field] ? <div className={styles.errMsg}>{errors[field]}</div> : null;
+  const consolidatedError = getConsolidatedError();
 
   return (
     <>
+      <Toaster />
       <TermsModal
         isOpen={showTerms}
         onClose={() => setShowTerms(false)}
@@ -147,7 +222,6 @@ function Register() {
 
       <div className={styles.page}>
         <div className={styles.containerSplit}>
-
           {/* ── LEFT PANEL ── */}
           <div className={styles.leftPanel}>
             {/* Dark gradient overlay */}
@@ -272,8 +346,7 @@ function Register() {
               </span>
 
               <h1 className={styles.heroTitle}>
-                Welcome To{" "}
-                <span className={styles.heroAccent}>ClearMind</span>{" "}
+                Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
                 Psychological Services
               </h1>
 
@@ -333,7 +406,6 @@ function Register() {
                       value={form.firstName}
                       onChange={handleChange}
                     />
-                    <ErrMsg field="firstName" />
                   </div>
                   <div className={styles.formCol}>
                     <input
@@ -344,7 +416,6 @@ function Register() {
                       value={form.lastName}
                       onChange={handleChange}
                     />
-                    <ErrMsg field="lastName" />
                   </div>
                 </div>
 
@@ -360,7 +431,6 @@ function Register() {
                       onChange={handleChange}
                       maxLength={1}
                     />
-                    <ErrMsg field="middleInitial" />
                   </div>
                   <div className={styles.formCol}>
                     <input
@@ -370,7 +440,6 @@ function Register() {
                       value={form.dob}
                       onChange={handleChange}
                     />
-                    <ErrMsg field="dob" />
                   </div>
                 </div>
 
@@ -384,14 +453,15 @@ function Register() {
                         value={form.sex}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>Sex *</option>
+                        <option value="" disabled>
+                          Sex *
+                        </option>
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                         <option value="other">Other</option>
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
-                    <ErrMsg field="sex" />
                   </div>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -401,7 +471,9 @@ function Register() {
                         value={form.genderIdentity}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>Gender Identity</option>
+                        <option value="" disabled>
+                          Gender Identity
+                        </option>
                         <option value="female">Female</option>
                         <option value="male">Male</option>
                         <option value="transgender">Transgender</option>
@@ -432,7 +504,9 @@ function Register() {
                         value={form.preferredPronoun}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>Preferred Pronoun/s</option>
+                        <option value="" disabled>
+                          Preferred Pronoun/s
+                        </option>
                         <option value="he_him">He/Him</option>
                         <option value="she_her">She/Her</option>
                         <option value="they_them">They/Them</option>
@@ -464,7 +538,9 @@ function Register() {
                         value={form.civilStatus}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>Civil Status *</option>
+                        <option value="" disabled>
+                          Civil Status *
+                        </option>
                         <option value="single">Single</option>
                         <option value="married">Married</option>
                         <option value="widowed">Widowed</option>
@@ -473,7 +549,6 @@ function Register() {
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
-                    <ErrMsg field="civilStatus" />
                   </div>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -483,13 +558,14 @@ function Register() {
                         value={form.patientType}
                         onChange={handleChange}
                       >
-                        <option value="" disabled>Patient Type *</option>
+                        <option value="" disabled>
+                          Patient Type *
+                        </option>
                         <option value="new">New</option>
                         <option value="existing">Existing</option>
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
-                    <ErrMsg field="patientType" />
                   </div>
                 </div>
               </fieldset>
@@ -510,7 +586,6 @@ function Register() {
                       value={form.contact}
                       onChange={handleChange}
                     />
-                    <ErrMsg field="contact" />
                   </div>
                   <div className={styles.formCol}>
                     <input
@@ -521,7 +596,6 @@ function Register() {
                       value={form.email}
                       onChange={handleChange}
                     />
-                    <ErrMsg field="email" />
                   </div>
                 </div>
               </fieldset>
@@ -546,12 +620,13 @@ function Register() {
                         className={styles.eyeBtn}
                         tabIndex={-1}
                         onClick={() => setShowPassword((p) => !p)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                       >
                         {showPassword ? <FiEye /> : <FiEyeOff />}
                       </button>
                     </div>
-                    <ErrMsg field="password" />
                   </div>
                   <div className={styles.formCol}>
                     <div className={styles.pwInner}>
@@ -568,12 +643,13 @@ function Register() {
                         className={styles.eyeBtn}
                         tabIndex={-1}
                         onClick={() => setShowConfirm((p) => !p)}
-                        aria-label={showConfirm ? "Hide password" : "Show password"}
+                        aria-label={
+                          showConfirm ? "Hide password" : "Show password"
+                        }
                       >
                         {showConfirm ? <FiEye /> : <FiEyeOff />}
                       </button>
                     </div>
-                    <ErrMsg field="confirmPassword" />
                   </div>
                 </div>
               </fieldset>
@@ -609,8 +685,12 @@ function Register() {
                     <span style={{ color: "#e53e3e" }}>*</span>
                   </label>
                 </div>
-                {errors.agreeTerms && (
-                  <div className={styles.errMsg}>{errors.agreeTerms}</div>
+
+                {/* ── CONSOLIDATED ERROR MESSAGE ── */}
+                {consolidatedError && (
+                  <div className="text-danger d-block text-center">
+                    {consolidatedError}
+                  </div>
                 )}
 
                 <button
