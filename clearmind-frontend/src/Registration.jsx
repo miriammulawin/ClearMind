@@ -131,7 +131,7 @@ function Register() {
       });
       const data = response.data;
       if (data.success) {
-        // ✅ Store email for OTP page — don't store token until verified
+        //  Store email for OTP page — don't store token until verified
         localStorage.setItem("pendingEmail", form.email);
 
         toast.success(
@@ -155,7 +155,7 @@ function Register() {
           },
         );
 
-        // ✅ Redirect to OTP verification page after toast
+        // Redirect to OTP verification page after toast
         setTimeout(() => navigate("/verify-otp"), 2000);
       }
     } catch (err) {
@@ -657,7 +657,7 @@ function Register() {
                   Already have an account?{" "}
                   <span
                     className={styles.loginLinkBold}
-                    onClick={() => navigate("/verify-otp")}
+                    onClick={() => navigate("/")}
                   >
                     Log In
                   </span>
