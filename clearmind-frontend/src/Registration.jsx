@@ -4,9 +4,8 @@ import { FiEye, FiEyeOff, FiChevronDown } from "react-icons/fi";
 import styles from "./Registration.module.css";
 import logo_login from "./assets/CMPS_Logo.png";
 import axiosClient from "./axiosClient";
-import toast from "react-hot-toast";
-import TermsModal from "./components/TermsModal";
 import { Toaster, toast } from "react-hot-toast";
+import TermsModal from "./components/TermsModal";
 
 function Register() {
   const navigate = useNavigate();
