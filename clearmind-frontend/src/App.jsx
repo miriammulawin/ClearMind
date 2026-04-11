@@ -52,7 +52,7 @@ import PACAppointment from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/
 import PACSetAppointmentForm from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/AppointmentForm/PACSetAppointmentForm";
 import PAEAppointment from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/PAaEAppointment";
 import PAaESetAppointmentForm from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/AppointmentForm/PAaESetAppoitnmentForm";
-
+import VerifyOtp from "./VerifyOtp";
 function App() {
   return (
     <>
@@ -64,8 +64,7 @@ function App() {
           <Route path="/register" element={<Registration />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          
-
+          <Route path="/verify-otp" element={<VerifyOtp />} />
           {/* ── Admin Routes ────────────────────────────────── */}
           <Route
             path="/admin/dashboard"

@@ -37,14 +37,13 @@ function Register() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear the consolidated summary when user starts correcting
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    if (serverError) setServerError(null);
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    // REQUIRED FIELDS
     if (!form.firstName.trim()) newErrors.firstName = "First name is required";
     if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
     if (!form.middleInitial.trim())
@@ -52,7 +51,6 @@ function Register() {
     if (!form.dob) newErrors.dob = "Date of birth is required";
     if (!form.sex) newErrors.sex = "Sex is required";
 
-    // ✅ CONTACT NUMBER VALIDATION
     if (!form.contact.trim()) {
       newErrors.contact = "Contact number is required";
     } else if (!/^09\d{9}$/.test(form.contact)) {
@@ -63,14 +61,12 @@ function Register() {
     if (!form.civilStatus) newErrors.civilStatus = "Civil status is required";
     if (!form.patientType) newErrors.patientType = "Patient type is required";
 
-    // ✅ EMAIL VALIDATION (must contain @ and valid format)
     if (!form.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = "Invalid email format";
     }
 
-    // ✅ PASSWORD VALIDATION
     if (!form.password) {
       newErrors.password = "Password is required";
     } else if (
@@ -80,14 +76,12 @@ function Register() {
         "Password must be at least 6 characters, include 1 uppercase letter, 1 number, and 1 special character";
     }
 
-    // ✅ CONFIRM PASSWORD
     if (!form.confirmPassword) {
       newErrors.confirmPassword = "Confirm your password";
     } else if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
 
-    // TERMS
     if (!agreed)
       newErrors.agreeTerms = "You must agree to the Terms and Condition";
 
@@ -95,36 +89,21 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Derive a single summary message from all active errors
   const getConsolidatedError = () => {
-    if (serverError) {
-      return serverError;
-    }
+    if (serverError) return serverError;
 
     const entries = Object.entries(errors);
-
-    // 🔴 Check if there are REQUIRED field errors
-    const hasRequiredError = entries.some(([key, val]) =>
+    const hasRequiredError = entries.some(([, val]) =>
       val?.toLowerCase().includes("required"),
     );
+    if (hasRequiredError) return "All fields are required to fill out";
 
-    if (hasRequiredError) {
-      return "All fields are required to fill out";
-    }
-
-    // 🟡 Otherwise show first specific validation error
     const otherErrors = entries
       .filter(([key, val]) => key !== "agreeTerms" && val)
       .map(([, val]) => val);
+    if (otherErrors.length > 0) return otherErrors[0];
 
-    if (otherErrors.length > 0) {
-      return otherErrors[0];
-    }
-
-    // 🔵 Terms checkbox error
-    if (errors.agreeTerms) {
-      return errors.agreeTerms;
-    }
+    if (errors.agreeTerms) return errors.agreeTerms;
 
     return null;
   };
@@ -152,31 +131,32 @@ function Register() {
       });
       const data = response.data;
       if (data.success) {
-        localStorage.setItem("token", data.data.token);
-        localStorage.setItem("role", data.data.user.role);
-        localStorage.setItem("user", JSON.stringify(data.data.user));
-        toast.success("Registration Successful!", {
-          duration: 1500,
-          position: "top-center",
-          style: {
-            background: "#E2F7E3FF",
-            border: "1px solid #91C793FF",
-            color: "#2E7D32",
-            fontWeight: 600,
-            fontSize: "1rem",
-            textAlign: "center",
-            width: "100%",
-            maxWidth: "300px",
-            margin: "0 auto",
-            borderRadius: "10px",
-            boxShadow: "0 3px 10px rgba(0, 0, 0, 0.2)",
+        // ✅ Store email for OTP page — don't store token until verified
+        localStorage.setItem("pendingEmail", form.email);
+
+        toast.success(
+          "Registration successful! Check your email for the OTP code.",
+          {
+            duration: 2000,
+            position: "top-center",
+            style: {
+              background: "#E2F7E3",
+              border: "1px solid #91C793",
+              color: "#2E7D32",
+              fontWeight: 600,
+              fontSize: "1rem",
+              textAlign: "center",
+              maxWidth: "360px",
+              margin: "0 auto",
+              borderRadius: "10px",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.2)",
+            },
+            iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
           },
-          iconTheme: {
-            primary: "#2E7D32",
-            secondary: "#E2F7E3",
-          },
-        });
-        setTimeout(() => navigate("/login"), 1500);
+        );
+
+        // ✅ Redirect to OTP verification page after toast
+        setTimeout(() => navigate("/verify-otp"), 2000);
       }
     } catch (err) {
       if (err.response?.status === 422) {
@@ -193,11 +173,10 @@ function Register() {
         });
         setServerError(null);
       } else {
-        const message =
+        setServerError(
           err.response?.data?.message ||
-          "Server error. Please try again later.";
-
-        setServerError(message);
+            "Server error. Please try again later.",
+        );
       }
     } finally {
       setLoading(false);
@@ -223,10 +202,8 @@ function Register() {
         <div className={styles.containerSplit}>
           {/* ── LEFT PANEL ── */}
           <div className={styles.leftPanel}>
-            {/* Dark gradient overlay */}
             <div className={styles.leftOverlay} />
 
-            {/* Cute floating deco blobs */}
             <div
               className={styles.leftDeco}
               style={{
@@ -259,7 +236,6 @@ function Register() {
               }}
             />
 
-            {/* Sparkle star — top left area */}
             <svg
               className={styles.leftSparkle}
               style={{ top: 60, left: 55 }}
@@ -276,8 +252,6 @@ function Register() {
               />
               <circle cx="9" cy="9" r="2" fill="rgba(216,168,255,0.55)" />
             </svg>
-
-            {/* Sparkle star — upper right */}
             <svg
               className={styles.leftSparkle}
               style={{ top: 195, right: 28 }}
@@ -294,8 +268,6 @@ function Register() {
               />
               <circle cx="7" cy="7" r="1.5" fill="rgba(255,200,240,0.6)" />
             </svg>
-
-            {/* Tiny dot sparkle */}
             <svg
               className={styles.leftSparkle}
               style={{ top: 148, right: 78 }}
@@ -306,8 +278,6 @@ function Register() {
             >
               <circle cx="5" cy="5" r="2.5" fill="rgba(255,255,255,0.18)" />
             </svg>
-
-            {/* Cute heart — upper right corner */}
             <svg
               className={styles.leftSparkle}
               style={{ top: 82, right: 52 }}
@@ -321,8 +291,6 @@ function Register() {
                 fill="rgba(232,165,255,0.45)"
               />
             </svg>
-
-            {/* Tiny heart — mid left */}
             <svg
               className={styles.leftSparkle}
               style={{ top: 235, left: 28 }}
@@ -337,25 +305,20 @@ function Register() {
               />
             </svg>
 
-            {/* Text content — anchored to bottom */}
             <div className={styles.leftContent}>
               <span className={styles.tagline}>
                 <span className={styles.taglineDot} />
                 Mental Wellness Care
               </span>
-
               <h1 className={styles.heroTitle}>
                 Welcome To <span className={styles.heroAccent}>ClearMind</span>{" "}
                 Psychological Services
               </h1>
-
               <p className={styles.heroDesc}>
                 Begin your journey toward emotional wellness and a clearer mind.
                 We provide compassionate, professional care in a safe and
                 confidential environment.
               </p>
-
-              {/* Cute pill tags */}
               <div className={styles.pillRow}>
                 <span className={styles.pill}>
                   <span className={styles.pillDot} />
@@ -375,14 +338,11 @@ function Register() {
 
           {/* ── RIGHT PANEL (FORM) ── */}
           <div className={styles.card}>
-            {/* LOGO */}
             <img
               src={logo_login}
               alt="ClearMind Logo"
               className={styles.logo}
             />
-
-            {/* SUBTITLE */}
             <p className={styles.formSubtitle}>
               Fill in your details to get started
             </p>
@@ -394,7 +354,6 @@ function Register() {
                   Personal Information
                 </legend>
 
-                {/* First & Last Name */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <input
@@ -418,7 +377,6 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Middle Initial & DOB */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <input
@@ -442,7 +400,6 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Sex & Gender Identity */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -493,7 +450,6 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Preferred Pronouns */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -527,7 +483,6 @@ function Register() {
                   )}
                 </div>
 
-                {/* Civil Status & Patient Type */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -574,7 +529,6 @@ function Register() {
                 <legend className={styles.sectionLabel}>
                   Contact Information
                 </legend>
-
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <input
@@ -602,7 +556,6 @@ function Register() {
               {/* ── SECURITY ── */}
               <fieldset className={styles.fieldset}>
                 <legend className={styles.sectionLabel}>Security</legend>
-
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.pwInner}>
@@ -687,7 +640,7 @@ function Register() {
 
                 {/* ── CONSOLIDATED ERROR MESSAGE ── */}
                 {consolidatedError && (
-                  <div className="text-danger d-block text-center">
+                  <div className="text-danger d-block text-center mt-1">
                     {consolidatedError}
                   </div>
                 )}
@@ -704,7 +657,7 @@ function Register() {
                   Already have an account?{" "}
                   <span
                     className={styles.loginLinkBold}
-                    onClick={() => navigate("/")}
+                    onClick={() => navigate("/verify-otp")}
                   >
                     Log In
                   </span>

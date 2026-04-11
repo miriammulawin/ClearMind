@@ -104,7 +104,7 @@ function Login() {
 
   return (
     <>
-      {/* ✅ TERMS MODAL */}
+      {/* TERMS MODAL */}
       <TermsModal
         isOpen={showTerms}
         onClose={() => setShowTerms(false)}
