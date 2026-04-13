@@ -155,7 +155,7 @@ const getDisplayName = () => {
               {/* Email · Contact */}
               <p className={styles.profileContact}>
                 {loadingProfile
-                  ? "..."
+                  ? "..." 
                   : `${adminProfile.email} · ${adminProfile.contactNo}`}
               </p>
 
