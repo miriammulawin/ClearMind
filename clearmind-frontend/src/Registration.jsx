@@ -28,7 +28,7 @@ function Register() {
     preferredPronoun: "",
     contact: "",
     civilStatus: "",
-    patientType: "",
+    patientClassification: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -60,7 +60,9 @@ function Register() {
     }
 
     if (!form.civilStatus) newErrors.civilStatus = "Civil status is required";
-    if (!form.patientType) newErrors.patientType = "Patient type is required";
+
+    if (!form.patientClassification)
+      newErrors.patientClassification = "Patient classification is required";
 
     if (!form.email.trim()) {
       newErrors.email = "Email is required";
@@ -129,7 +131,7 @@ function Register() {
         customPronoun: form.preferredPronoun === "other" ? pronounOther : null,
         contactNo: form.contact,
         civilStatus: form.civilStatus,
-        patientType: form.patientType,
+        patientClassification: form.patientClassification,
         email: form.email,
         password: form.password,
         password_confirmation: form.confirmPassword,
@@ -137,7 +139,6 @@ function Register() {
       });
       const data = response.data;
       if (data.success) {
-        //  Store email for OTP page — don't store token until verified
         localStorage.setItem("pendingEmail", form.email);
 
         toast.success(
@@ -161,7 +162,6 @@ function Register() {
           },
         );
 
-        // Redirect to OTP verification page after toast
         setTimeout(() => navigate("/verify-otp"), 2000);
       }
     } catch (err) {
@@ -174,6 +174,10 @@ function Register() {
           ...(e.dob && { dob: e.dob[0] }),
           ...(e.sex && { sex: e.sex[0] }),
           ...(e.contactNo && { contact: e.contactNo[0] }),
+          ...(e.civilStatus && { civilStatus: e.civilStatus[0] }),
+          ...(e.patientClassification && {
+            patientClassification: e.patientClassification[0],
+          }),
           ...(e.email && { email: e.email[0] }),
           ...(e.password && { password: e.password[0] }),
           ...(e.address && { address: e.address[0] }),
@@ -490,6 +494,7 @@ function Register() {
                   )}
                 </div>
 
+                {/* ── CIVIL STATUS & PATIENT CLASSIFICATION ── */}
                 <div className={styles.formRow}>
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
@@ -514,17 +519,17 @@ function Register() {
                   <div className={styles.formCol}>
                     <div className={styles.selectWrap}>
                       <select
-                        name="patientType"
-                        className={`form-select ${styles.input} ${styles.select} ${errors.patientType ? styles.inputError : ""}`}
-                        value={form.patientType}
+                        name="patientClassification"
+                        className={`form-select ${styles.input} ${styles.select} ${errors.patientClassification ? styles.inputError : ""}`}
+                        value={form.patientClassification}
                         onChange={handleChange}
                       >
                         <option value="" disabled>
                           Patient Classification *
                         </option>
-                        <option value="pwd">PWD</option>
-                        <option value="seniorcitizen">Senior Citizen</option>
-                        <option value="regular">Regular</option>
+                        <option value="PWD">PWD</option>
+                        <option value="Senior Citizen">Senior Citizen</option>
+                        <option value="Solo Parent">Solo Parent</option>
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
