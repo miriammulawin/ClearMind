@@ -51,6 +51,12 @@ return new class extends Migration
                 'they_them',
                 'other'
             ])->nullable();
+
+            $table->enum('civilStatus', [
+                    'Single', 'Married', 'Widowed', 'Divorced', 'Separated'
+                ])->nullable();
+
+          $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->nullable();
             
             // For custom pronouns (when preferredPronoun = 'other')
             $table->string('customPronoun', 100)->nullable();

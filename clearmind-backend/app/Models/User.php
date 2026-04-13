@@ -53,6 +53,8 @@ class User extends Authenticatable
         'password',
         'role',
         'address',
+        'civilStatus',
+        'patientClassification',
         'is_active',
         'email_verified_at',  
         'email_verification_code',
