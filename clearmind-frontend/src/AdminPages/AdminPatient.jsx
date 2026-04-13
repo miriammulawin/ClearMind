@@ -28,8 +28,12 @@ import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
+import { format } from "date-fns";
 
-const AvatarPlaceholder = ({ name, size = 80 }) => {
+/* ─────────────────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────────────────── */
+const AvatarPlaceholder = ({ name = "?", size = 80 }) => {
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -44,7 +48,7 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
     "#9333ea",
     "#0ea5e9",
   ];
-  const color = colors[name.charCodeAt(0) % colors.length];
+  const color = colors[(name.charCodeAt(0) || 0) % colors.length];
   return (
     <div
       style={{
@@ -75,6 +79,103 @@ const SectionHeader = ({ icon, title }) => (
   </div>
 );
 
+/* ─────────────────────────────────────────────────────────
+   Normalizers
+───────────────────────────────────────────────────────── */
+const normalizePatient = (p) => ({
+  id: p.patient_id,
+  name: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "—",
+  firstName: p.firstName ?? "",
+  lastName: p.lastName ?? "",
+  middleInitial: p.middleInitial ?? "",
+  contact: p.contactNo ?? "—",
+  email: p.email ?? "—",
+  address: p.address ?? "—",
+  age: p.dob ? calcAge(p.dob) : "—",
+  gender: p.sex ? capitalize(p.sex) : "—",
+  civilStatus: p.civilStatus ?? "—",
+  classification: p.patientClassification ?? "Regular",
+  patientType: p.user_id ? "Existing Patient" : "New Patient",
+  totalVisits: p.appointments_count ?? 0,
+  is_active: p.is_active,
+  date: p.last_appointment_date
+    ? format(new Date(p.last_appointment_date), "MMMM dd, yyyy")
+    : "—",
+  time: p.last_appointment_time
+    ? format(new Date(`1970-01-01T${p.last_appointment_time}`), "hh:mm a")
+    : "—",
+  type: p.last_visit_type ?? "—",
+  status: p.last_status ?? "—",
+  consultationMode: p.last_visit_type === "virtual" ? "Virtual" : "On-Site",
+  assignedDoctor: p.assigned_doctor ?? null,
+  progressionNote: p.progression_note ?? null,
+});
+
+const normalizeAppointment = (a) => {
+  const patient = a.patient ?? {};
+  const doctor = a.doctor ?? null;
+  const name = patient.firstName
+    ? `${patient.firstName}${patient.middleInitial ? " " + patient.middleInitial + "." : ""} ${patient.lastName}`
+    : "Unknown";
+
+  return {
+    id: a.appointment_id,
+    patientId: a.patient_id,
+    name,
+    contact: patient.contactNo ?? "—",
+    email: patient.email ?? "—",
+    address: patient.address ?? "—",
+    age: patient.dob ? calcAge(patient.dob) : "—",
+    gender: patient.sex ? capitalize(patient.sex) : "—",
+    patientType: patient.user_id ? "Existing Patient" : "New Patient",
+    classification: patient.patientClassification ?? "Regular",
+    date: a.appointment_date
+      ? format(new Date(a.appointment_date), "MMMM dd, yyyy")
+      : "—",
+    time: a.start_time
+      ? format(new Date(`1970-01-01T${a.start_time}`), "hh:mm a")
+      : "—",
+    endTime: a.end_time ?? "—",
+    type: a.visit_type ?? "—",
+    status: capitalize(a.status ?? "pending"),
+    consultationMode: a.visit_type === "virtual" ? "Virtual" : "On-Site",
+    reason: a.reason_for_consultation ?? "—",
+    serviceType: a.service_type ?? "—",
+    paePurpose: a.pae_purpose ?? null,
+    paymentStatus: a.payment_status ?? "—",
+    receiptPath: a.receipt_path ?? null,
+    informantName: a.informant_name ?? null,
+    informantRelation: a.informant_relation ?? null,
+    cancellationReason: a.notes ?? null,
+    assignedDoctor: doctor
+      ? {
+          name: `${doctor.firstName} ${doctor.lastName}`,
+          specialization: doctor.specialty ?? "",
+        }
+      : null,
+    progressionNote: null,
+    totalVisits: 0,
+  };
+};
+
+function calcAge(dob) {
+  if (!dob) return "—";
+  const b = new Date(dob);
+  const t = new Date();
+  let a = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+  return a >= 0 ? `${a}` : "—";
+}
+
+function capitalize(str) {
+  if (!str) return "—";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Component
+───────────────────────────────────────────────────────── */
 function AdminPatient() {
   const [activeMenu, setActiveMenu] = useState("Patients");
   const [activeTab, setActiveTab] = useState("patients");
@@ -92,45 +193,26 @@ function AdminPatient() {
   const [selectedReschedule, setSelectedReschedule] = useState(null);
   const navigate = useNavigate();
 
-  // ── Real data state ──
+  /* ── Data state ── */
   const [patients, setPatients] = useState([]);
-  const [consultationRequests, setConsultationRequests] = useState([]);
-  const [rescheduleRequests, setRescheduleRequests] = useState([]);
+  const [consultationRequests, setConsultationRequests] = useState([]); // pending only
+  const [confirmedAppointments, setConfirmedAppointments] = useState([]); // confirmed
   const [cancelledAppointments, setCancelledAppointments] = useState([]);
+  const [rescheduleRequests, setRescheduleRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const rowsPerPage = 4;
 
-  // ─────────────────────────────────────────────
-  // DATA FETCHING
-  // ─────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     DATA FETCHING
+  ══════════════════════════════════════════════════════ */
   const fetchPatients = useCallback(async () => {
     try {
-      const { data } = await axiosClient.get("/admin/patients");
-      if (!data.success) throw new Error("patients fetch failed");
-      // Normalize API data to match the shape used in the UI
-      const normalized = (Array.isArray(data.data) ? data.data : []).map(
-        (p) => ({
-          id: p.id,
-          name: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim(),
-          date: p.lastAppointmentDate ?? "—",
-          time: p.lastAppointmentTime ?? "—",
-          type: p.lastVisitType ?? "—",
-          status: p.lastAppointmentStatus ?? "Scheduled",
-          contact: p.contactNo ?? "—",
-          email: p.email ?? "—",
-          address: p.address ?? "—",
-          consultationMode: p.consultationMode ?? "On-Site",
-          patientType: p.is_new ? "New Patient" : "Existing Patient",
-          age: p.age ?? "—",
-          gender: p.sex ? p.sex.charAt(0).toUpperCase() + p.sex.slice(1) : "—",
-          totalVisits: p.totalVisits ?? 0,
-          assignedDoctor: p.assignedDoctor ?? null,
-          progressionNote: p.progressionNote ?? null,
-        }),
-      );
-      setPatients(normalized);
+      const { data } = await axiosClient.get("/admin/patients", {
+        params: { per_page: 100 },
+      });
+      const rows = Array.isArray(data.data) ? data.data : [];
+      setPatients(rows.map(normalizePatient));
     } catch (err) {
       console.error("fetchPatients:", err);
       toast.error("Failed to load patients");
@@ -141,64 +223,31 @@ function AdminPatient() {
   const fetchAppointments = useCallback(async () => {
     try {
       const { data } = await axiosClient.get("/admin/appointments");
-      if (!data.success) throw new Error("appointments fetch failed");
       const all = Array.isArray(data.data) ? data.data : [];
+      const normalized = all.map(normalizeAppointment);
 
-      const normalize = (appt) => ({
-        id: appt.id,
-        name: appt.patient ?? appt.patientName ?? "Unknown",
-        date: appt.appointment_date ?? appt.date ?? "—",
-        time: appt.appointment_time ?? appt.time ?? "—",
-        type: appt.visit_type ?? appt.type ?? "—",
-        status: appt.status ?? "Scheduled",
-        contact: appt.contact ?? appt.contactNo ?? "—",
-        email: appt.email ?? "—",
-        address: appt.address ?? "—",
-        consultationMode:
-          appt.type === "online" || appt.consultationMode === "Virtual"
-            ? "Virtual"
-            : "On-Site",
-        patientType: appt.is_new ? "New Patient" : "Existing Patient",
-        age: appt.age ?? "—",
-        gender: appt.sex
-          ? appt.sex.charAt(0).toUpperCase() + appt.sex.slice(1)
-          : (appt.gender ?? "—"),
-        totalVisits: appt.totalVisits ?? 0,
-        assignedDoctor: appt.assignedDoctor ?? null,
-        progressionNote: appt.progressionNote ?? null,
-        cancellationReason:
-          appt.cancellationReason ?? appt.cancellation_reason ?? null,
-        reason: appt.reason ?? null,
-        originalDate: appt.originalDate ?? appt.original_date ?? null,
-        originalTime: appt.originalTime ?? appt.original_time ?? null,
-        requestedDate: appt.requestedDate ?? appt.requested_date ?? null,
-        requestedTime: appt.requestedTime ?? appt.requested_time ?? null,
-      });
+      // ── pending only → Consultation Requests tab
+      const pending = normalized.filter(
+        (a) => (a.status ?? "").toLowerCase() === "pending",
+      );
 
-      // Split into tabs by status
-      const scheduled = all
-        .filter((a) => {
-          const s = (a.status ?? "").toLowerCase();
-          return s === "scheduled" || s === "confirmed" || s === "pending";
-        })
-        .map(normalize);
+      // ── confirmed → Appointments tab + Calendar
+      const confirmed = normalized.filter(
+        (a) => (a.status ?? "").toLowerCase() === "confirmed",
+      );
 
-      const cancelled = all
-        .filter((a) => (a.status ?? "").toLowerCase() === "cancelled")
-        .map(normalize);
+      // ── cancelled
+      const cancelled = normalized.filter(
+        (a) => (a.status ?? "").toLowerCase() === "cancelled",
+      );
 
-      const reschedule = all
-        .filter(
-          (a) =>
-            (a.status ?? "").toLowerCase() === "reschedule_requested" ||
-            a.reschedule_requested,
-        )
-        .map((a) => ({
-          ...normalize(a),
-          status: a.rescheduleStatus ?? "Pending",
-        }));
+      // ── reschedule
+      const reschedule = normalized.filter(
+        (a) => (a.status ?? "").toLowerCase() === "reschedule_requested",
+      );
 
-      setConsultationRequests(scheduled);
+      setConsultationRequests(pending);
+      setConfirmedAppointments(confirmed);
       setCancelledAppointments(cancelled);
       setRescheduleRequests(reschedule);
     } catch (err) {
@@ -207,111 +256,86 @@ function AdminPatient() {
     }
   }, []);
 
-  // Also try dedicated reschedule endpoint if available
-  const fetchRescheduleRequests = useCallback(async () => {
-    try {
-      const { data } = await axiosClient.get("/admin/reschedule-requests");
-      if (!data.success) return; // silently skip if endpoint doesn't exist
-      const normalized = (Array.isArray(data.data) ? data.data : []).map(
-        (r) => ({
-          id: r.id,
-          name: r.patient ?? r.patientName ?? "Unknown",
-          originalDate: r.originalDate ?? r.original_date ?? "—",
-          originalTime: r.originalTime ?? r.original_time ?? "—",
-          requestedDate: r.requestedDate ?? r.requested_date ?? "—",
-          requestedTime: r.requestedTime ?? r.requested_time ?? "—",
-          type: r.visit_type ?? r.type ?? "—",
-          status: r.status ?? "Pending",
-          reason: r.reason ?? "—",
-          contact: r.contact ?? r.contactNo ?? "—",
-          email: r.email ?? "—",
-          address: r.address ?? "—",
-          consultationMode:
-            r.type === "online" || r.consultationMode === "Virtual"
-              ? "Virtual"
-              : "On-Site",
-          patientType: r.is_new ? "New Patient" : "Existing Patient",
-          age: r.age ?? "—",
-          gender: r.sex
-            ? r.sex.charAt(0).toUpperCase() + r.sex.slice(1)
-            : (r.gender ?? "—"),
-          totalVisits: r.totalVisits ?? 0,
-        }),
-      );
-      if (normalized.length > 0) setRescheduleRequests(normalized);
-    } catch {
-      // endpoint may not exist yet — silently ignore
-    }
-  }, []);
-
   useEffect(() => {
-    const fetchAll = async () => {
+    const load = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchPatients(),
-        fetchAppointments(),
-        fetchRescheduleRequests(),
-      ]);
+      await Promise.all([fetchPatients(), fetchAppointments()]);
       setLoading(false);
     };
-    fetchAll();
-  }, [fetchPatients, fetchAppointments, fetchRescheduleRequests]);
+    load();
+  }, [fetchPatients, fetchAppointments]);
 
-  // ─────────────────────────────────────────────
-  // RESCHEDULE ACTIONS (optimistic + API)
-  // ─────────────────────────────────────────────
+  /* ══════════════════════════════════════════════════════
+     ACTIONS
+  ══════════════════════════════════════════════════════ */
 
-  const handleRescheduleAction = async (id, action) => {
-    const newStatus = action === "approve" ? "Approved" : "Declined";
-    // Optimistic UI update
-    setRescheduleRequests((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r)),
-    );
-    setShowRescheduleModal(false);
+  // Confirm → remove from pending, add to confirmed
+  const handleConfirmAppointment = async (id) => {
     try {
-      await axiosClient.patch(`/admin/reschedule-requests/${id}`, {
-        status: newStatus,
+      await axiosClient.put(`/admin/appointments/${id}`, {
+        status: "confirmed",
       });
-      toast.success(`Request ${newStatus.toLowerCase()} successfully`);
+      toast.success("Appointment confirmed");
+
+      const appt = consultationRequests.find((a) => a.id === id);
+      if (appt) {
+        setConsultationRequests((prev) => prev.filter((a) => a.id !== id));
+        setConfirmedAppointments((prev) => [
+          ...prev,
+          { ...appt, status: "Confirmed" },
+        ]);
+      }
+      setShowModal(false);
     } catch (err) {
-      console.error("reschedule action:", err);
-      toast.error("Failed to update reschedule request");
-      // Revert on failure
-      setRescheduleRequests((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, status: "Pending" } : r)),
-      );
+      console.error(err);
+      toast.error("Failed to confirm appointment");
     }
   };
 
-  // ─────────────────────────────────────────────
-  // REFUND ACTION (optimistic + API)
-  // ─────────────────────────────────────────────
+  const handleRescheduleAction = async (id, action) => {
+    const newStatus = action === "approve" ? "confirmed" : "cancelled";
+    setRescheduleRequests((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: capitalize(newStatus) } : r,
+      ),
+    );
+    setShowRescheduleModal(false);
+    try {
+      await axiosClient.put(`/admin/appointments/${id}`, { status: newStatus });
+      toast.success(`Request ${newStatus}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update reschedule request");
+      fetchAppointments();
+    }
+  };
 
   const handleRefundConfirm = async (id) => {
     setRefundProcessed((prev) => ({ ...prev, [id]: true }));
     setShowRefundModal(false);
     try {
       await axiosClient.patch(`/admin/appointments/${id}/refund`);
-      toast.success("Refund processed successfully");
+      toast.success("Refund processed");
     } catch (err) {
-      console.error("refund:", err);
+      console.error(err);
       toast.error("Failed to process refund");
       setRefundProcessed((prev) => ({ ...prev, [id]: false }));
     }
   };
 
-  // ─────────────────────────────────────────────
-  // UI HANDLERS
-  // ─────────────────────────────────────────────
-
+  /* ══════════════════════════════════════════════════════
+     UI HELPERS
+  ══════════════════════════════════════════════════════ */
   const rawData =
     activeTab === "consultation"
       ? consultationRequests
-      : activeTab === "patients"
-        ? patients
-        : activeTab === "cancelled"
-          ? cancelledAppointments
-          : rescheduleRequests;
+      : activeTab === "confirmed"
+        ? confirmedAppointments
+        : activeTab === "patients"
+          ? patients
+          : activeTab === "cancelled"
+            ? cancelledAppointments
+            : rescheduleRequests;
 
   const activeData =
     patientTypeFilter === "all"
@@ -330,19 +354,23 @@ function AdminPatient() {
     setShowModal(true);
     setPaymentOpen(false);
   };
+
   const handleViewReschedule = (row) => {
     setSelectedReschedule(row);
     setShowRescheduleModal(true);
   };
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setCurrentPage(1);
     setPatientTypeFilter("all");
   };
+
   const handleFilterChange = (e) => {
     setPatientTypeFilter(e.target.value);
     setCurrentPage(1);
   };
+
   const handleRefundOpen = (row) => {
     setSelectedRefund(row);
     setShowRefundModal(true);
@@ -373,17 +401,27 @@ function AdminPatient() {
         color: "#16a34a",
         border: "1px solid #bbf7d0",
       },
+      confirmed: {
+        background: "#dbeafe",
+        color: "#1d4ed8",
+        border: "1px solid #bfdbfe",
+      },
       scheduled: {
         background: "#dbeafe",
         color: "#1d4ed8",
         border: "1px solid #bfdbfe",
+      },
+      pending: {
+        background: "#fef9c3",
+        color: "#b45309",
+        border: "1px solid #fde68a",
       },
       cancelled: {
         background: "#fee2e2",
         color: "#dc2626",
         border: "1px solid #fecaca",
       },
-    })[s?.toLowerCase()] || {
+    })[(s ?? "").toLowerCase()] || {
       background: "#f3f4f6",
       color: "#6b7280",
       border: "1px solid #e5e7eb",
@@ -402,6 +440,9 @@ function AdminPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
+  /* ══════════════════════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════════════════════ */
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -409,7 +450,6 @@ function AdminPatient() {
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className={`admin-content ${styles.patientPage}`}>
           <div className={styles.patientCard}>
-            {/* ── Loading Banner ── */}
             {loading && (
               <div
                 style={{
@@ -422,45 +462,71 @@ function AdminPatient() {
                   fontWeight: 500,
                 }}
               >
-                Loading patient data…
+                Loading data…
               </div>
             )}
 
             {/* ── Tabs + Filter ── */}
             <div className={styles.patientTabsRow}>
               <div className={styles.patientTabs}>
+                {/* Total Patients */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "patients" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("patients")}
                 >
-                  Total's Patients <span>{patients.length}</span>
+                  Total Patients <span>{patients.length}</span>
                 </button>
+
+                {/* Confirmed Appointments — new tab */}
+                <button
+                  className={`${styles.tabBtn} ${activeTab === "confirmed" ? styles.tabActive : ""}`}
+                  onClick={() => handleTabChange("confirmed")}
+                >
+                  Total Appointments <span>{confirmedAppointments.length}</span>
+                </button>
+
+
+                {/* Consultation Requests — pending only */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "consultation" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("consultation")}
                 >
-                  Consultation Request{" "}
-                  <span>{consultationRequests.length}</span>
+                  Consultation Requests{" "}
+                  <span
+                    className={
+                      consultationRequests.length > 0
+                        ? styles.tabBadgePending
+                        : ""
+                    }
+                  >
+                    {consultationRequests.length}
+                  </span>
                 </button>
+
+                {/* Reschedule */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "reschedule" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("reschedule")}
                 >
-                  Reschedule Request{" "}
+                  Reschedule Requests{" "}
                   <span
                     className={
-                      rescheduleRequests.filter((r) => r.status === "Pending")
-                        .length > 0
+                      rescheduleRequests.filter(
+                        (r) => (r.status ?? "").toLowerCase() === "pending",
+                      ).length > 0
                         ? styles.tabBadgePending
                         : ""
                     }
                   >
                     {
-                      rescheduleRequests.filter((r) => r.status === "Pending")
-                        .length
+                      rescheduleRequests.filter(
+                        (r) => (r.status ?? "").toLowerCase() === "pending",
+                      ).length
                     }
                   </span>
                 </button>
+
+                {/* Cancelled */}
                 <button
                   className={`${styles.tabCancelledBtn} ${activeTab === "cancelled" ? styles.tabCancelledActive : ""}`}
                   onClick={() => handleTabChange("cancelled")}
@@ -486,34 +552,45 @@ function AdminPatient() {
             <div className={styles.tableWrapper}>
               <table className={styles.patientTable}>
                 <thead>
-                  {activeTab === "reschedule" ? (
+                  {activeTab === "confirmed" ? (
+                    <tr>
+                      <th>Name</th>
+                      <th>Patient Type</th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Service</th>
+                      <th>Mode</th>
+                      <th>Doctor</th>
+                      <th>Action</th>
+                    </tr>
+                  ) : activeTab === "reschedule" ? (
                     <tr>
                       <th>Name</th>
                       <th>Patient Type</th>
                       <th>Original Date & Time</th>
                       <th>Requested Date & Time</th>
                       <th>Visit Type</th>
-                      <th>Consultation Mode</th>
+                      <th>Mode</th>
                       <th>Action</th>
                     </tr>
                   ) : activeTab === "consultation" ? (
                     <tr>
                       <th>Name</th>
                       <th>Patient Type</th>
-                      <th>Date of Appointment</th>
+                      <th>Date</th>
                       <th>Time</th>
-                      <th>Visit Type</th>
-                      <th>Consultation Mode</th>
+                      <th>Service</th>
+                      <th>Mode</th>
                       <th>Action</th>
                     </tr>
                   ) : activeTab === "cancelled" ? (
                     <tr>
                       <th>Name</th>
                       <th>Patient Type</th>
-                      <th>Date of Appointment</th>
+                      <th>Date</th>
                       <th>Time</th>
                       <th>Visit Type</th>
-                      <th>Consultation Mode</th>
+                      <th>Mode</th>
                       <th>Action</th>
                     </tr>
                   ) : (
@@ -523,7 +600,7 @@ function AdminPatient() {
                       <th>Age</th>
                       <th>Gender</th>
                       <th>Address</th>
-                      <th>Status</th>
+                      <th>Classification</th>
                       <th>Action</th>
                     </tr>
                   )}
@@ -531,19 +608,74 @@ function AdminPatient() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyRow}>
+                      <td colSpan={8} className={styles.emptyRow}>
                         Loading…
                       </td>
                     </tr>
                   ) : displayedData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={styles.emptyRow}>
+                      <td colSpan={8} className={styles.emptyRow}>
                         No{" "}
                         {patientTypeFilter !== "all" ? patientTypeFilter : ""}{" "}
                         records found.
                       </td>
                     </tr>
+                  ) : activeTab === "confirmed" ? (
+                    /* ── Confirmed Appointments Table ── */
+                    displayedData.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.name}</td>
+                        <td>
+                          <span
+                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                          >
+                            {row.patientType}
+                          </span>
+                        </td>
+                        <td>{row.date}</td>
+                        <td>{row.time}</td>
+                        <td style={{ fontSize: "12px" }}>
+                          {row.serviceType}
+                          {row.paePurpose && (
+                            <>
+                              <br />
+                              <small style={{ color: "#1d6fa4" }}>
+                                {row.paePurpose}
+                              </small>
+                            </>
+                          )}
+                        </td>
+                        <td>
+                          <span style={getModeBadgeStyle(row.consultationMode)}>
+                            {row.consultationMode === "Virtual" ? (
+                              <FiMonitor size={11} />
+                            ) : (
+                              <FiHome size={11} />
+                            )}
+                            {row.consultationMode}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: "12px" }}>
+                          {row.assignedDoctor ? (
+                            <span style={{ color: "#4D227C", fontWeight: 600 }}>
+                              {row.assignedDoctor.name}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#aaa" }}>—</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            className={styles.btnView}
+                            onClick={() => handleView(row, "confirmed")}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   ) : activeTab === "reschedule" ? (
+                    /* ── Reschedule Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -556,20 +688,18 @@ function AdminPatient() {
                         </td>
                         <td>
                           <span className={styles.dateOriginal}>
-                            {row.originalDate}
+                            {row.date}
                           </span>
                           <br />
-                          <small style={{ color: "#aaa" }}>
-                            {row.originalTime}
-                          </small>
+                          <small style={{ color: "#aaa" }}>{row.time}</small>
                         </td>
                         <td>
                           <span className={styles.dateRequested}>
-                            {row.requestedDate}
+                            {row.requestedDate ?? "—"}
                           </span>
                           <br />
                           <small style={{ color: "#4D227C", fontWeight: 600 }}>
-                            {row.requestedTime}
+                            {row.requestedTime ?? "—"}
                           </small>
                         </td>
                         <td>{row.type}</td>
@@ -603,6 +733,7 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : activeTab === "consultation" ? (
+                    /* ── Consultation Requests Table (pending only) ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -615,7 +746,17 @@ function AdminPatient() {
                         </td>
                         <td>{row.date}</td>
                         <td>{row.time}</td>
-                        <td>{row.type}</td>
+                        <td style={{ fontSize: "12px" }}>
+                          {row.serviceType}
+                          {row.paePurpose && (
+                            <>
+                              <br />
+                              <small style={{ color: "#1d6fa4" }}>
+                                {row.paePurpose}
+                              </small>
+                            </>
+                          )}
+                        </td>
                         <td>
                           <span style={getModeBadgeStyle(row.consultationMode)}>
                             {row.consultationMode === "Virtual" ? (
@@ -629,13 +770,17 @@ function AdminPatient() {
                         <td>
                           <button
                             className={styles.btnView}
-                            onClick={() => handleView(row, activeTab)}
+                            onClick={() => handleView(row, "consultation")}
                           >
                             View
                           </button>
                           <button
                             className={styles.btnConfirm}
-                            disabled={row.status === "Cancelled"}
+                            disabled={
+                              row.status === "Confirmed" ||
+                              row.status === "Cancelled"
+                            }
+                            onClick={() => handleConfirmAppointment(row.id)}
                           >
                             Confirm
                           </button>
@@ -643,6 +788,7 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : activeTab === "cancelled" ? (
+                    /* ── Cancelled Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -684,6 +830,7 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : (
+                    /* ── Patients Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -699,15 +846,32 @@ function AdminPatient() {
                         <td>{row.address}</td>
                         <td>
                           <span
-                            className={`${styles.statusText} ${styles[`status${row.status}`]}`}
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              padding: "3px 10px",
+                              borderRadius: "20px",
+                              background:
+                                row.classification === "PWD"
+                                  ? "#fef9c3"
+                                  : row.classification === "Senior Citizen"
+                                    ? "#dbeafe"
+                                    : "#f3f4f6",
+                              color:
+                                row.classification === "PWD"
+                                  ? "#b45309"
+                                  : row.classification === "Senior Citizen"
+                                    ? "#1d4ed8"
+                                    : "#6b7280",
+                            }}
                           >
-                            {row.status}
+                            {row.classification}
                           </span>
                         </td>
                         <td>
                           <button
                             className={styles.btnView}
-                            onClick={() => handleView(row, activeTab)}
+                            onClick={() => handleView(row, "patients")}
                           >
                             View
                           </button>
@@ -793,6 +957,9 @@ function AdminPatient() {
                         {selectedPatient.totalVisits} Visits
                       </span>
                     )}
+                    <span className={styles.metaChip}>
+                      {selectedPatient.classification}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -803,179 +970,309 @@ function AdminPatient() {
                     })
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} />
-                  View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
                 </button>
               </div>
             </div>
 
             {/* Body */}
             <div className={styles.modalBody}>
-              {/* Appointment Details */}
-              <div
-                className={styles.modalCard}
-                style={{ marginBottom: "12px" }}
-              >
-                <SectionHeader
-                  icon={<FaCalendarAlt size={13} color="#fff" />}
-                  title="Appointment Details"
-                />
-                <div className={styles.twoCol}>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiCalendar />
+              {/* ── Appointment Details (consultation, confirmed, cancelled) ── */}
+              {(modalSource === "consultation" ||
+                modalSource === "confirmed" ||
+                modalSource === "cancelled") && (
+                <div
+                  className={styles.modalCard}
+                  style={{ marginBottom: "12px" }}
+                >
+                  <SectionHeader
+                    icon={<FaCalendarAlt size={13} color="#fff" />}
+                    title="Appointment Details"
+                  />
+                  <div className={styles.twoCol}>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiCalendar />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Date</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.date}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Date</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.date}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiClock />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Time</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.time}
+                          {selectedPatient.endTime &&
+                            ` – ${selectedPatient.endTime}`}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiClock />
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiFileText />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Service</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.serviceType ?? selectedPatient.type}
+                        </span>
+                        {selectedPatient.paePurpose && (
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              color: "#1d6fa4",
+                              display: "block",
+                            }}
+                          >
+                            → {selectedPatient.paePurpose}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Time</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.time}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Status</span>
+                        <span
+                          className={styles.statusBadge}
+                          style={getStatusBadgeStyle(selectedPatient.status)}
+                        >
+                          {selectedPatient.status}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiUser />
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        {selectedPatient.patientType === "Existing Patient" ? (
+                          <FiUserCheck />
+                        ) : (
+                          <FiUserPlus />
+                        )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Patient Type</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.patientType}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Visit Type</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.type}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        {selectedPatient.consultationMode === "Virtual" ? (
+                          <FiMonitor />
+                        ) : (
+                          <FiHome />
+                        )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Mode</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.consultationMode}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiUser />
-                    </div>
-                    <div>
-                      <span className={styles.infoLabel}>Status</span>
-                      <span
-                        className={styles.statusBadge}
-                        style={getStatusBadgeStyle(selectedPatient.status)}
+                    {selectedPatient.reason && (
+                      <div
+                        className={styles.infoItem}
+                        style={{ gridColumn: "1/-1" }}
                       >
-                        {selectedPatient.status}
-                      </span>
-                    </div>
+                        <div className={styles.infoIcon}>
+                          <FiFileText />
+                        </div>
+                        <div>
+                          <span className={styles.infoLabel}>Reason</span>
+                          <span className={styles.infoValue}>
+                            {selectedPatient.reason}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedPatient.informantName && (
+                      <div
+                        className={styles.infoItem}
+                        style={{ gridColumn: "1/-1" }}
+                      >
+                        <div className={styles.infoIcon}>
+                          <FiUser />
+                        </div>
+                        <div>
+                          <span className={styles.infoLabel}>Informant</span>
+                          <span className={styles.infoValue}>
+                            {selectedPatient.informantName} (
+                            {selectedPatient.informantRelation})
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      {selectedPatient.patientType === "Existing Patient" ? (
-                        <FiUserCheck />
-                      ) : (
-                        <FiUserPlus />
-                      )}
+
+                  {/* Assigned Doctor */}
+                  {selectedPatient.assignedDoctor && (
+                    <div
+                      style={{
+                        marginTop: "16px",
+                        paddingTop: "14px",
+                        borderTop: "1px dashed #e5e7eb",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          color: "#9b7ec8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        Assigned Doctor
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          background:
+                            "linear-gradient(135deg, #f3eeff, #ede9f6)",
+                          border: "1px solid #d8ccf0",
+                          borderRadius: "10px",
+                          padding: "12px 14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "50%",
+                            background:
+                              "linear-gradient(135deg, #7341A8, #4D227C)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <FaUserMd size={18} color="#fff" />
+                        </div>
+                        <div>
+                          <p
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 700,
+                              color: "#3b1f6e",
+                              margin: "0 0 2px 0",
+                            }}
+                          >
+                            {selectedPatient.assignedDoctor.name}
+                          </p>
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              color: "#7341A8",
+                              margin: 0,
+                              fontStyle: "italic",
+                            }}
+                          >
+                            {selectedPatient.assignedDoctor.specialization}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Patient Type</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.patientType}
-                      </span>
+                  )}
+                </div>
+              )}
+
+              {/* ── Patient Details (patients tab) ── */}
+              {modalSource === "patients" && (
+                <div
+                  className={styles.modalCard}
+                  style={{ marginBottom: "12px" }}
+                >
+                  <SectionHeader
+                    icon={<FiUser size={13} color="#fff" />}
+                    title="Patient Details"
+                  />
+                  <div className={styles.twoCol}>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiPhone />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Contact</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.contact}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      {selectedPatient.consultationMode === "Virtual" ? (
-                        <FiMonitor />
-                      ) : (
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Email</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.email}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
                         <FiHome />
-                      )}
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Address</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.address}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.infoLabel}>Mode</span>
-                      <span className={styles.infoValue}>
-                        {selectedPatient.consultationMode}
-                      </span>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiUser />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Civil Status</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.civilStatus}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiCalendar />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Classification</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.classification}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.infoItem}>
+                      <div className={styles.infoIcon}>
+                        <FiActivity />
+                      </div>
+                      <div>
+                        <span className={styles.infoLabel}>Total Visits</span>
+                        <span className={styles.infoValue}>
+                          {selectedPatient.totalVisits}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
 
-                {selectedPatient.assignedDoctor && (
-                  <div
-                    style={{
-                      marginTop: "16px",
-                      paddingTop: "14px",
-                      borderTop: "1px dashed #e5e7eb",
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        color: "#9b7ec8",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.07em",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      Assigned Doctor
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        background: "linear-gradient(135deg, #f3eeff, #ede9f6)",
-                        border: "1px solid #d8ccf0",
-                        borderRadius: "10px",
-                        padding: "12px 14px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          background:
-                            "linear-gradient(135deg, #7341A8, #4D227C)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                          boxShadow: "0 2px 8px rgba(115,65,168,0.3)",
-                        }}
-                      >
-                        <FaUserMd size={18} color="#fff" />
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: 700,
-                            color: "#3b1f6e",
-                            margin: "0 0 2px 0",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {selectedPatient.assignedDoctor.name}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: "12px",
-                            color: "#7341A8",
-                            margin: 0,
-                            fontStyle: "italic",
-                          }}
-                        >
-                          {selectedPatient.assignedDoctor.specialization}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Cancellation Reason */}
+              {/* ── Cancellation Reason ── */}
               {modalSource === "cancelled" &&
                 selectedPatient.cancellationReason && (
                   <div
@@ -998,56 +1295,7 @@ function AdminPatient() {
                   </div>
                 )}
 
-              {/* Progression Note */}
-              {selectedPatient.status === "Completed" &&
-                selectedPatient.progressionNote && (
-                  <div
-                    className={styles.modalCard}
-                    style={{ marginBottom: "12px" }}
-                  >
-                    <SectionHeader
-                      icon={<FiActivity size={14} color="#fff" />}
-                      title="Progression Note"
-                    />
-                    <div
-                      style={{
-                        background: "#faf7ff",
-                        border: "1px solid #ede9f6",
-                        borderRadius: "10px",
-                        padding: "16px 18px",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          color: "#7341A8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.07em",
-                          marginBottom: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <FiFileText size={12} />
-                        Assessment
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "13.5px",
-                          color: "#374151",
-                          margin: 0,
-                          lineHeight: "1.75",
-                        }}
-                      >
-                        {selectedPatient.progressionNote.assessment}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              {/* Payment Details */}
+              {/* ── Payment ── */}
               <div className={styles.modalCard}>
                 <button
                   className={styles.paymentToggle}
@@ -1095,50 +1343,10 @@ function AdminPatient() {
                           </div>
                           <div>
                             <span className={styles.infoLabel}>
-                              Paid Amount
+                              Payment Status
                             </span>
                             <span className={styles.infoValue}>
-                              {selectedPatient.paidAmount ?? "—"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={styles.infoItem}>
-                          <div
-                            className={styles.infoIcon}
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            #
-                          </div>
-                          <div>
-                            <span className={styles.infoLabel}>
-                              Reference No.
-                            </span>
-                            <span className={styles.infoValue}>
-                              {selectedPatient.referenceNo ?? "—"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={styles.infoItem}>
-                          <div
-                            className={styles.infoIcon}
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            PAY
-                          </div>
-                          <div>
-                            <span className={styles.infoLabel}>
-                              Payment Option
-                            </span>
-                            <span className={styles.infoValue}>
-                              {selectedPatient.paymentOption ?? "—"}
+                              {selectedPatient.paymentStatus ?? "—"}
                             </span>
                           </div>
                         </div>
@@ -1148,12 +1356,18 @@ function AdminPatient() {
                           Payment Proof
                         </span>
                         <img
-                          src={selectedPatient.paymentProof ?? samplePayment}
+                          src={
+                            selectedPatient.receiptPath
+                              ? `http://localhost:8000/storage/${selectedPatient.receiptPath}`
+                              : samplePayment
+                          }
                           alt="Payment Proof"
                           className={styles.paymentProofImg}
                           onClick={() =>
                             setZoomImage(
-                              selectedPatient.paymentProof ?? samplePayment,
+                              selectedPatient.receiptPath
+                                ? `http://localhost:8000/storage/${selectedPatient.receiptPath}`
+                                : samplePayment,
                             )
                           }
                         />
@@ -1174,16 +1388,19 @@ function AdminPatient() {
                   })
                 }
               >
-                <FiFileText style={{ marginRight: "6px" }} />
-                View History
+                <FiFileText style={{ marginRight: "6px" }} /> View History
               </button>
+              {/* Confirm button only in consultation tab */}
               {modalSource === "consultation" && (
                 <button
                   className={styles.btnFooterConfirm}
-                  disabled={selectedPatient.status === "Cancelled"}
+                  disabled={
+                    selectedPatient.status === "Confirmed" ||
+                    selectedPatient.status === "Cancelled"
+                  }
+                  onClick={() => handleConfirmAppointment(selectedPatient.id)}
                 >
-                  <FiCheck size={15} />
-                  Confirm
+                  <FiCheck size={15} /> Confirm
                 </button>
               )}
             </div>
@@ -1228,11 +1445,6 @@ function AdminPatient() {
                         {selectedReschedule.gender}
                       </span>
                     )}
-                    {selectedReschedule.totalVisits !== undefined && (
-                      <span className={styles.metaChip}>
-                        {selectedReschedule.totalVisits} Visits
-                      </span>
-                    )}
                     <span className={styles.metaChip}>
                       {selectedReschedule.patientType}
                     </span>
@@ -1243,14 +1455,11 @@ function AdminPatient() {
                   onClick={() =>
                     navigate(
                       `/admin/patient-profile/${selectedReschedule.id}`,
-                      {
-                        state: { patient: selectedReschedule },
-                      },
+                      { state: { patient: selectedReschedule } },
                     )
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} />
-                  View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
                 </button>
               </div>
             </div>
@@ -1262,7 +1471,7 @@ function AdminPatient() {
               >
                 <SectionHeader
                   icon={<FaCalendarAlt size={13} color="#fff" />}
-                  title="Appointment Details"
+                  title="Reschedule Details"
                 />
                 <div className={styles.twoCol}>
                   <div className={styles.infoItem}>
@@ -1272,7 +1481,7 @@ function AdminPatient() {
                     <div>
                       <span className={styles.infoLabel}>Original Date</span>
                       <span className={styles.infoValue}>
-                        {selectedReschedule.originalDate}
+                        {selectedReschedule.date}
                       </span>
                     </div>
                   </div>
@@ -1283,7 +1492,7 @@ function AdminPatient() {
                     <div>
                       <span className={styles.infoLabel}>Original Time</span>
                       <span className={styles.infoValue}>
-                        {selectedReschedule.originalTime}
+                        {selectedReschedule.time}
                       </span>
                     </div>
                   </div>
@@ -1300,7 +1509,7 @@ function AdminPatient() {
                         className={styles.infoValue}
                         style={{ color: "#4D227C", fontWeight: 700 }}
                       >
-                        {selectedReschedule.requestedDate}
+                        {selectedReschedule.requestedDate ?? "—"}
                       </span>
                     </div>
                   </div>
@@ -1317,33 +1526,7 @@ function AdminPatient() {
                         className={styles.infoValue}
                         style={{ color: "#4D227C", fontWeight: 700 }}
                       >
-                        {selectedReschedule.requestedTime}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiUser />
-                    </div>
-                    <div>
-                      <span className={styles.infoLabel}>Visit Type</span>
-                      <span className={styles.infoValue}>
-                        {selectedReschedule.type}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      {selectedReschedule.consultationMode === "Virtual" ? (
-                        <FiMonitor />
-                      ) : (
-                        <FiHome />
-                      )}
-                    </div>
-                    <div>
-                      <span className={styles.infoLabel}>Mode</span>
-                      <span className={styles.infoValue}>
-                        {selectedReschedule.consultationMode}
+                        {selectedReschedule.requestedTime ?? "—"}
                       </span>
                     </div>
                   </div>
@@ -1365,7 +1548,7 @@ function AdminPatient() {
                       color: "#6b7280",
                     }}
                   >
-                    Request Status:
+                    Status:
                   </span>
                   <span
                     className={styles.statusBadge}
@@ -1381,7 +1564,6 @@ function AdminPatient() {
                   </span>
                 </div>
               </div>
-
               <div className={styles.modalCard}>
                 <SectionHeader
                   icon={<FiAlertCircle size={14} color="#fff" />}
@@ -1417,8 +1599,7 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "decline")
                 }
               >
-                <FiXCircle style={{ marginRight: "6px" }} />
-                Decline
+                <FiXCircle style={{ marginRight: "6px" }} /> Decline
               </button>
               <button
                 className={styles.btnFooterConfirm}
@@ -1427,8 +1608,7 @@ function AdminPatient() {
                   handleRescheduleAction(selectedReschedule.id, "approve")
                 }
               >
-                <FiCheck size={15} />
-                Approve
+                <FiCheck size={15} /> Approve
               </button>
             </div>
           </div>
@@ -1473,18 +1653,10 @@ function AdminPatient() {
               <div className={styles.refundGrid}>
                 <div className={styles.refundGridItem}>
                   <span className={styles.refundGridItemLabel}>
-                    Paid Amount
+                    Payment Status
                   </span>
                   <span className={styles.refundGridItemValue}>
-                    {selectedRefund.paidAmount ?? "—"}
-                  </span>
-                </div>
-                <div className={styles.refundGridItem}>
-                  <span className={styles.refundGridItemLabel}>
-                    Reference No.
-                  </span>
-                  <span className={styles.refundGridItemValue}>
-                    {selectedRefund.referenceNo ?? "—"}
+                    {selectedRefund.paymentStatus ?? "—"}
                   </span>
                 </div>
               </div>

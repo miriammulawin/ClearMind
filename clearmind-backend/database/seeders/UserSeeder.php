@@ -262,23 +262,7 @@ class UserSeeder extends Seeder
         ]
     );
 
-    // ONE Doctor
-    User::updateOrCreate(
-        ['email' => 'doctor@clearmind.com'],
-        [
-            'firstName' => 'Maria',
-            'lastName'  => 'Santos',
-            'middleInitial' => 'L',
-            'dob'       => '1985-06-15',
-            'sex'       => 'female',
-            'genderIdentity' => 'female',
-            'preferredPronoun' => 'she_her',
-            'contactNo' => '09123456789',
-            'password'  => Hash::make('doctor123'),
-            'role'      => User::ROLE_DOCTOR,
-            'is_active' => true,
-        ]
-    );
+   
 
     // ONE Client
     User::updateOrCreate(

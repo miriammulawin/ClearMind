@@ -37,6 +37,12 @@ return new class extends Migration
                 'pangender',
                 'prefer_not'
             ])->nullable();
+
+                // Additional patient-specific info
+            $table->enum('civilStatus', ['single', 'married', 'widowed', 'divorced', 'separated'])->nullable();
+            $table->enum('patientType', ['existing', 'new'])->default('new');
+            $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->default('Regular');
+
             
             // Preferred Pronouns
             $table->enum('preferredPronoun', [

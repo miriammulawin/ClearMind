@@ -34,38 +34,51 @@ function AdminSideBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8000/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
+useEffect(() => {
+  const cached = localStorage.getItem("adminProfile");
 
-        if (!response.ok) throw new Error("Failed to fetch profile");
+  if (cached) {
+    setAdminProfile(JSON.parse(cached));
+    setLoadingProfile(false);
+    return; // ✅ stop fetching again
+  }
 
-        const json = await response.json();
-        const data = json.data;
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:8000/api/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
 
-        setAdminProfile({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
-          middleInitial: data.middleInitial || "",
-          contactNo: data.contactNo || "",
-          email: data.email || "",
-        });
-      } catch (error) {
-        console.error("Error fetching admin profile:", error);
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
+      if (!response.ok) throw new Error("Failed to fetch profile");
 
-    fetchProfile();
-  }, []);
+      const json = await response.json();
+      const data = json.data;
+
+      const profileData = {
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        middleInitial: data.middleInitial || "",
+        contactNo: data.contactNo || "",
+        email: data.email || "",
+      };
+
+      setAdminProfile(profileData);
+
+      // ✅ SAVE to localStorage
+      localStorage.setItem("adminProfile", JSON.stringify(profileData));
+    } catch (error) {
+      console.error("Error fetching admin profile:", error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  fetchProfile();
+}, []);
 
   useEffect(() => {
     const handleResize = () => {

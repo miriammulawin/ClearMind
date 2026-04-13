@@ -1,78 +1,73 @@
 <?php
+// app/Models/Appointment.php
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Appointment extends Model
 {
+    use HasFactory, SoftDeletes;
+
+    // ✅ FIXED: tell Eloquent the PK is appointment_id, not id
+    protected $primaryKey = 'appointment_id';
+
     protected $fillable = [
+        'booked_by_user_id',
         'patient_id',
-        'doctor_id',
+        'informant_name',
+        'informant_relation',
+        'doctor_user_id',
         'appointment_date',
-        'appointment_time',
-        'type',
+        'start_time',
+        'end_time',
+        'visit_type',
+        'reason_for_consultation',
+        'service_type',
+        'pae_purpose',
+        'payment_status',
+        'receipt_paths',
         'status',
-        'reason',
         'notes',
-        'cancellation_reason',
     ];
 
     protected $casts = [
         'appointment_date' => 'date',
+        'receipt_paths'    => 'array', // auto JSON encode/decode
     ];
 
-    // ── Constants ──
-    const TYPE_ONLINE   = 'online';
-    const TYPE_PHYSICAL = 'physical';
+    // ✅ Appends full public URLs so the frontend can display receipts directly
+    protected $appends = ['receipt_urls'];
 
-    const STATUS_PENDING   = 'pending';
-    const STATUS_CONFIRMED = 'confirmed';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELLED = 'cancelled';
-    const STATUS_NO_SHOW   = 'no_show';
-
-    // ── Relationships ──
-    public function patient(): BelongsTo
+    public function getReceiptUrlsAttribute(): array
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        if (empty($this->receipt_paths)) return [];
+
+        return array_map(
+            fn($path) => Storage::disk('public')->url($path),
+            $this->receipt_paths
+        );
     }
 
-    public function doctor(): BelongsTo
+    /* ── Relationships ── */
+
+    // ✅ FIXED: explicit foreign + owner keys because patient PK is patient_id not id
+    public function patient()
     {
-        return $this->belongsTo(User::class, 'doctor_id');
+        return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
     }
 
-    public function consultationRequest(): HasOne
+    // ✅ FIXED: explicit foreign key so Eloquent doesn't guess 'appointment_id' on User
+    public function doctor()
     {
-        return $this->hasOne(ConsultationRequest::class);
+        return $this->belongsTo(User::class, 'doctor_user_id', 'id');
     }
 
-    // ── Scopes ──
-    public function scopeToday($query)
+    public function bookedBy()
     {
-        return $query->whereDate('appointment_date', today());
-    }
-
-    public function scopeOnline($query)
-    {
-        return $query->where('type', self::TYPE_ONLINE);
-    }
-
-    public function scopePhysical($query)
-    {
-        return $query->where('type', self::TYPE_PHYSICAL);
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('status', self::STATUS_PENDING);
-    }
-
-    public function scopeConfirmed($query)
-    {
-        return $query->where('status', self::STATUS_CONFIRMED);
+        return $this->belongsTo(User::class, 'booked_by_user_id', 'id');
     }
 }

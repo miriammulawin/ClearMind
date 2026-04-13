@@ -1,20 +1,145 @@
-import { useState, useCallback } from "react";
-import { format } from "date-fns";
+import { useState, useEffect, useCallback } from "react";
+import { format, parseISO } from "date-fns";
 import {
   FiX,
   FiDownload,
   FiFile,
   FiPaperclip,
   FiChevronDown,
+  FiRefreshCw,
+  FiCalendar,
+  FiClock,
+  FiUser,
 } from "react-icons/fi";
-import { EVENT_COLORS } from "../data/appointmentsData";
 import styles from "../DoctorStyle/DayAppointmentsModal.module.css";
 import CompleteAppointmentModal from "./CompleteAppointmentModal";
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-const toTime24 = (date) =>
-  `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+/* ─────────────────────────────────────────────────────────
+   Config
+───────────────────────────────────────────────────────── */
+const API_BASE = "http://localhost:8000/api";
+const getToken = () => localStorage.getItem("token");
 
+/* ─────────────────────────────────────────────────────────
+   API fetch helper
+───────────────────────────────────────────────────────── */
+async function fetchAppointments(date, signal) {
+  const dateStr = format(date, "yyyy-MM-dd");
+  const res = await fetch(`${API_BASE}/appointments?date=${dateStr}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      Accept: "application/json",
+    },
+    signal,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  return json.data || [];
+}
+
+/* ─────────────────────────────────────────────────────────
+   Map Laravel appointment → display shape
+   Handles all field names from your AppointmentController
+───────────────────────────────────────────────────────── */
+function mapAppointment(raw) {
+  // Patient name from nested relation
+  const patient = raw.patient || {};
+  const patientName =
+    [
+      patient.firstName,
+      patient.middleInitial ? patient.middleInitial + "." : null,
+      patient.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    raw.patient_name ||
+    "—";
+
+  // Doctor name from nested relation
+  const doctor = raw.doctor || {};
+  const doctorName = doctor.firstName
+    ? [
+        doctor.firstName,
+        doctor.middleInitial ? doctor.middleInitial + "." : null,
+        doctor.lastName,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : null;
+
+  // Booker name
+  const booker = raw.bookedBy || raw.booked_by || {};
+  const bookerName = booker.firstName
+    ? [booker.firstName, booker.lastName].filter(Boolean).join(" ")
+    : null;
+
+  return {
+    // IDs
+    id: raw.appointment_id,
+    appointment_id: raw.appointment_id,
+
+    // Patient
+    patientName,
+    patientId: raw.patient_id,
+    patientDob: patient.dob || null,
+    patientSex: patient.sex || null,
+    patientContact: patient.contactNo || null,
+    patientEmail: patient.email || null,
+    patientAddress: patient.address || null,
+    patientClassification: patient.patientClassification || null,
+    gender: patient.sex || null,
+
+    // Informant
+    informantName: raw.informant_name || null,
+    informantRelation: raw.informant_relation || null,
+
+    // Schedule — keep raw strings for display
+    appointmentDate: raw.appointment_date, // "2025-05-10"
+    startTime: raw.start_time, // "09:00"
+    endTime: raw.end_time, // "10:00"
+
+    // Build JS Date objects for compatibility with old helper fns
+    start: new Date(`${raw.appointment_date}T${raw.start_time}:00`),
+    end: new Date(`${raw.appointment_date}T${raw.end_time}:00`),
+
+    // Visit / service
+    visitType: raw.visit_type, // "onsite" | "virtual"
+    serviceType: raw.service_type || "", // e.g. "Psychological Assessment and Evaluation"
+    paePurpose: raw.pae_purpose || null,
+    assessmentPurpose: raw.pae_purpose || null,
+    reason: raw.reason_for_consultation || null,
+
+    // Payment
+    paymentStatus: raw.payment_status, // "paid" | "not_paid" | "probono"
+    receiptPaths:
+      raw.receipt_paths || (raw.receipt_path ? [raw.receipt_path] : []),
+
+    // Status
+    status: raw.status, // "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
+
+    // Doctor / Booker
+    doctorName,
+    doctorId: raw.doctor_user_id || null,
+    bookerName,
+    bookedByUserId: raw.booked_by_user_id,
+
+    // Notes
+    notes: raw.notes || null,
+
+    // Title (used by some helpers) — construct from visit type
+    title:
+      raw.visit_type === "virtual"
+        ? "Online Consultation"
+        : "Physical Consultation",
+
+    // Reference number — generate from real data
+    referenceNumber: generateReferenceNumber(raw),
+  };
+}
+
+/* ─────────────────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────────────────── */
 const toTime12 = (timeStr) => {
   if (!timeStr) return "";
   const [h, m] = timeStr.split(":");
@@ -22,143 +147,130 @@ const toTime12 = (timeStr) => {
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
 };
 
-const isSameDay = (d1, d2) => {
-  const a = new Date(d1);
-  const b = new Date(d2);
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-};
-const cleanReferenceNumber = (ref) => ref?.replace(/-rescheduled$/i, "");
+const isPsychAssessment = (s = "") =>
+  s.toLowerCase().includes("psychological assessment") ||
+  s.toLowerCase().includes("assessment and evaluation");
 
-// ── Service type detectors ─────────────────────────────────────────────────
-const isPsychAssessment = (serviceType) =>
-  serviceType?.toLowerCase().includes("psychological assessment") ||
-  serviceType?.toLowerCase().includes("assessment and evaluation");
+const isESA = (s = "") =>
+  s.toLowerCase().includes("emotional support animal") ||
+  s.toLowerCase().includes("esa");
 
-const isESA = (serviceType) =>
-  serviceType?.toLowerCase().includes("emotional support animal") ||
-  serviceType?.toLowerCase().includes("esa");
+const isInternship = (s = "") => s.toLowerCase().includes("internship");
 
-const isInternship = (serviceType) =>
-  serviceType?.toLowerCase().includes("internship");
-
-// ── PA Purposes ────────────────────────────────────────────────────────────
-const PURPOSES = {
-  VAWC: "VAWC",
-  LEGAL: "Adoption or Legal",
-  SCHOOL: "School / Academic Support",
-  WORK: "Work-Related",
-  PRE_EMPLOYMENT: "Pre-Employment",
-};
-
-const getPurpose = (appt) => appt?.assessmentPurpose || null;
-
-const isFemalePatient = (appt) =>
-  appt?.gender?.toLowerCase() === "female" ||
-  appt?.gender?.toLowerCase() === "f";
-
-// ── Visit Type helper ──────────────────────────────────────────────────────
-const getVisitType = (appt) =>
-  appt.title?.toLowerCase().includes("online")
-    ? "Online Consultation"
-    : "Physical Consultation";
-
-// ── Service Label helper ───────────────────────────────────────────────────
-// Returns only the parent service title from the services list:
-//   "Psychological Assessment and Evaluation"  — for all PA sub-types
-//     (VAWC, Legal, School, Work, Pre-Employment, ESA, Internship)
-//   "Psychotherapy and Counseling"             — for everything else
 const getServiceLabel = (appt) => {
   const svc = appt.serviceType || "";
-  if (isPsychAssessment(svc) || isESA(svc) || isInternship(svc)) {
+  if (isPsychAssessment(svc) || isESA(svc) || isInternship(svc))
     return "Psychological Assessment and Evaluation";
-  }
   return "Psychotherapy and Counseling";
 };
 
-const generateReferenceNumber = (appt) => {
-  const date = new Date(appt.start);
-
+function generateReferenceNumber(raw) {
+  const date = new Date(raw.appointment_date + "T00:00:00");
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
+  const svc = raw.service_type || "";
+  const prefix = isPsychAssessment(svc) ? "PAE" : "PAC";
+  const seq = String(
+    raw.appointment_id || Math.floor(Math.random() * 9999),
+  ).padStart(4, "0");
+  return `${prefix}-${yyyy}-${mm}-${dd}-${seq}`;
+}
 
-  // Determine prefix
-  const serviceLabel = getServiceLabel(appt);
-
-  let prefix = "PAC"; // default
-  if (serviceLabel === "Psychological Assessment and Evaluation") {
-    prefix = "PAE";
-  }
-
-  // Unique 4-digit (based on ID or fallback random)
-  const sequence = String(appt.id || Math.floor(Math.random() * 9999)).padStart(
-    4,
-    "0",
-  );
-
-  return `${prefix}-${yyyy}-${mm}-${dd}-${sequence}`;
+// Color helpers
+const COLORS = {
+  purple: "#4D227C",
+  blue: "#1e6091",
+  red: "#dc2626",
+  brown: "#8B4545",
+  green: "#2d6a4f",
+  amber: "#92400e",
+  teal: "#0e7490",
+  violet: "#5b21b6",
+  orange: "#b45309",
+  gray: "#6b7280",
 };
 
-// ── Inline badge styles ────────────────────────────────────────────────────
-const purposeInlineStyle = (purpose) => {
-  switch (purpose) {
-    case PURPOSES.VAWC:
-      return {
-        background: "#ede9f6",
-        color: "#4D227C",
-        border: "1px solid #d8ccf0",
-      };
-    case PURPOSES.LEGAL:
-      return {
-        background: "#fce8e8",
-        color: "#8B4545",
-        border: "1px solid #f5c6c6",
-      };
-    case PURPOSES.SCHOOL:
-      return {
-        background: "#dbeafe",
-        color: "#1e6091",
-        border: "1px solid #bfdbfe",
-      };
-    case PURPOSES.WORK:
-      return {
-        background: "#dcfce7",
-        color: "#2d6a4f",
-        border: "1px solid #bbf7d0",
-      };
-    case PURPOSES.PRE_EMPLOYMENT:
-      return {
-        background: "#fef3c7",
-        color: "#92400e",
-        border: "1px solid #fde68a",
-      };
-    default:
-      return {
-        background: "#f3f4f6",
-        color: "#6b7280",
-        border: "1px solid #e5e7eb",
-      };
+const getDotColor = (appt) => {
+  const svc = appt.serviceType || "";
+  if (isESA(svc)) return COLORS.teal;
+  if (isInternship(svc)) return COLORS.violet;
+  if (isPsychAssessment(svc)) {
+    const p = appt.assessmentPurpose || "";
+    if (p.toLowerCase().includes("vawc")) return COLORS.red;
+    if (
+      p.toLowerCase().includes("legal") ||
+      p.toLowerCase().includes("adoption")
+    )
+      return COLORS.brown;
+    if (
+      p.toLowerCase().includes("school") ||
+      p.toLowerCase().includes("academic")
+    )
+      return COLORS.blue;
+    if (
+      p.toLowerCase().includes("pre-employment") ||
+      p.toLowerCase().includes("pre_employment")
+    )
+      return COLORS.amber;
+    return COLORS.green;
   }
+  return appt.visitType === "virtual" ? COLORS.blue : COLORS.purple;
 };
 
-const serviceTypeInlineStyle = (serviceType) => {
-  if (isESA(serviceType))
+const purposeBadgeStyle = (purpose = "") => {
+  const p = purpose.toLowerCase();
+  if (p.includes("vawc"))
+    return {
+      background: "#ede9f6",
+      color: "#4D227C",
+      border: "1px solid #d8ccf0",
+    };
+  if (p.includes("legal") || p.includes("adoption"))
+    return {
+      background: "#fce8e8",
+      color: "#8B4545",
+      border: "1px solid #f5c6c6",
+    };
+  if (p.includes("school") || p.includes("academic"))
+    return {
+      background: "#dbeafe",
+      color: "#1e6091",
+      border: "1px solid #bfdbfe",
+    };
+  if (p.includes("work"))
+    return {
+      background: "#dcfce7",
+      color: "#2d6a4f",
+      border: "1px solid #bbf7d0",
+    };
+  if (p.includes("pre-employment") || p.includes("pre_employment"))
+    return {
+      background: "#fef3c7",
+      color: "#92400e",
+      border: "1px solid #fde68a",
+    };
+  return {
+    background: "#f3f4f6",
+    color: "#6b7280",
+    border: "1px solid #e5e7eb",
+  };
+};
+
+const serviceBadgeStyle = (svc = "") => {
+  if (isESA(svc))
     return {
       background: "#cffafe",
       color: "#0e7490",
       border: "1px solid #a5f3fc",
     };
-  if (isInternship(serviceType))
+  if (isInternship(svc))
     return {
       background: "#ede9fe",
       color: "#5b21b6",
       border: "1px solid #ddd6fe",
     };
-  if (isPsychAssessment(serviceType))
+  if (isPsychAssessment(svc))
     return {
       background: "#ede9f6",
       color: "#4D227C",
@@ -171,75 +283,41 @@ const serviceTypeInlineStyle = (serviceType) => {
   };
 };
 
-const getDotColor = (appt) => {
-  const svc = appt.serviceType || "";
-  if (isESA(svc)) return EVENT_COLORS.esa ?? "#0e7490";
-  if (isInternship(svc)) return EVENT_COLORS.internship ?? "#6d28d9";
-  if (isPsychAssessment(svc)) {
-    const p = getPurpose(appt);
-    if (p === PURPOSES.VAWC) return EVENT_COLORS.vawc;
-    if (p === PURPOSES.LEGAL) return EVENT_COLORS.legal;
-    if (p === PURPOSES.SCHOOL) return EVENT_COLORS.school;
-    if (p === PURPOSES.PRE_EMPLOYMENT)
-      return EVENT_COLORS.preEmployment ?? "#b45309";
-    return EVENT_COLORS.work;
-  }
-  return EVENT_COLORS.online;
+const paymentBadgeStyle = (status = "") => {
+  if (status === "paid")
+    return {
+      background: "#dcfce7",
+      color: "#15803d",
+      border: "1px solid #bbf7d0",
+    };
+  if (status === "probono")
+    return {
+      background: "#dbeafe",
+      color: "#1e6091",
+      border: "1px solid #bfdbfe",
+    };
+  return {
+    background: "#fef3c7",
+    color: "#92400e",
+    border: "1px solid #fde68a",
+  };
 };
 
-// ── StatusBadge ────────────────────────────────────────────────────────────
-function StatusBadge({ status }) {
-  const s = (status || "").toLowerCase();
-  if (s === "scheduled" || s === "confirmed")
-    return <span className={styles.statusScheduled}>{status}</span>;
-  if (s === "cancelled" || s === "canceled")
-    return <span className={styles.statusCancelled}>{status}</span>;
-  if (s === "completed" || s === "complete")
-    return <span className={styles.statusCompleted}>{status}</span>;
-  if (s === "rescheduled")
-    return <span className={styles.statusRescheduled}>{status}</span>;
-  return (
-    <span
-      style={{
-        fontSize: 12,
-        fontWeight: 700,
-        color: "#4d227c",
-        fontFamily: "'Poppins', sans-serif",
-      }}
-    >
-      {status || "—"}
-    </span>
-  );
-}
+const paymentLabel = (status = "") => {
+  if (status === "paid") return "Paid";
+  if (status === "probono") return "Pro Bono";
+  return "Not Paid";
+};
 
-// ── Shared sub-components ──────────────────────────────────────────────────
-const ModalHeader = ({ title, dateLabel, onClose }) => (
-  <div className={styles.modalHeader}>
-    <h3 className={styles.modalTitle}>{title}</h3>
-    <div className={styles.modalHeaderRight}>
-      <span className={styles.dateBadge}>{dateLabel}</span>
-      <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
-        <FiX />
-      </button>
-    </div>
-  </div>
-);
-
-const InfoRow = ({ label, value, minWidth }) => (
-  <div className={styles.infoRow}>
-    <span className={styles.infoLabel} style={minWidth ? { minWidth } : {}}>
-      {label}:
-    </span>
-    <span className={styles.infoValue}>{value}</span>
-  </div>
-);
-
+/* ─────────────────────────────────────────────────────────
+   Reusable UI pieces
+───────────────────────────────────────────────────────── */
 const Badge = ({ style, children }) => (
   <span
     style={{
       display: "inline-flex",
       alignItems: "center",
-      padding: "3px 12px",
+      padding: "3px 10px",
       borderRadius: 20,
       fontSize: 11.5,
       fontWeight: 600,
@@ -251,169 +329,109 @@ const Badge = ({ style, children }) => (
   </span>
 );
 
-// ── react-pdf setup ────────────────────────────────────────────────────────
-import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url,
-).toString();
-
-// ── PDF Viewer Modal ───────────────────────────────────────────────────────
-function PdfViewerModal({ label, filename, onClose }) {
-  const src = `/forms/${filename}`;
-  const [numPages, setNumPages] = useState(null);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.0);
-
-  return (
-    <div className={styles.pdfViewerOverlay} onClick={onClose}>
-      <div
-        className={styles.pdfViewerModal}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={styles.pdfViewerHeader}>
-          <span className={styles.pdfViewerTitle}>
-            <FiFile size={15} /> {label}
-          </span>
-          <div className={styles.pdfViewerActions}>
-            <a
-              href={src}
-              download={filename}
-              className={styles.pdfViewerDownload}
-            >
-              <FiDownload size={14} /> Download
-            </a>
-            <button
-              className={styles.pdfViewerClose}
-              onClick={onClose}
-              aria-label="Close PDF"
-            >
-              <FiX size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.pdfViewerContent}>
-          <Document
-            file={src}
-            onLoadSuccess={({ numPages }) => {
-              setNumPages(numPages);
-              setPageNumber(1);
-            }}
-            loading={<div className={styles.pdfLoading}>Loading PDF…</div>}
-            error={<div className={styles.pdfError}>Failed to load PDF.</div>}
-          >
-            <Page
-              pageNumber={pageNumber}
-              scale={scale}
-              renderTextLayer
-              renderAnnotationLayer
-            />
-          </Document>
-        </div>
-
-        <div className={styles.pdfToolbar}>
-          <div className={styles.pdfPagination}>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-              disabled={pageNumber <= 1}
-              aria-label="Previous page"
-            >
-              ‹
-            </button>
-            <span className={styles.pdfPageInfo}>
-              {numPages ? `${pageNumber} / ${numPages}` : "—"}
-            </span>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() => setPageNumber((p) => Math.min(numPages, p + 1))}
-              disabled={!numPages || pageNumber >= numPages}
-              aria-label="Next page"
-            >
-              ›
-            </button>
-          </div>
-          <div className={styles.pdfZoom}>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() =>
-                setScale((s) => Math.max(0.5, +(s - 0.1).toFixed(1)))
-              }
-              aria-label="Zoom out"
-            >
-              −
-            </button>
-            <span className={styles.pdfPageInfo}>
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              className={styles.pdfNavBtn}
-              onClick={() =>
-                setScale((s) => Math.min(2.5, +(s + 0.1).toFixed(1)))
-              }
-              aria-label="Zoom in"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── PDF File Chip ──────────────────────────────────────────────────────────
-function PdfFileChip({ label, filename }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        className={styles.pdfChip}
-        onClick={() => setOpen(true)}
-        aria-label={`View ${label} PDF`}
-      >
-        <FiFile size={13} className={styles.pdfChipIcon} />
-        <span className={styles.pdfChipLabel}>{label}.pdf</span>
-      </button>
-      {open && (
-        <PdfViewerModal
-          label={label}
-          filename={filename}
-          onClose={() => setOpen(false)}
-        />
-      )}
-    </>
-  );
-}
-
-// ── Complaint Box ──────────────────────────────────────────────────────────
-const ComplaintBox = ({ text }) => (
-  <div>
-    <div className={styles.complaintLabel}>Initial Complaint:</div>
-    <div className={styles.complaintBox}>
-      {text || (
-        <span className={styles.complaintEmpty}>
-          No initial complaint recorded.
-        </span>
-      )}
-    </div>
+const InfoRow = ({ label, value }) => (
+  <div className={styles.infoRow}>
+    <span className={styles.infoLabel}>{label}:</span>
+    <span className={styles.infoValue}>{value}</span>
   </div>
 );
 
-// ── DRAWER ACCORDION ──────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const s = (status || "").toLowerCase();
+  if (s === "pending")
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#b45309",
+          background: "#fef3c7",
+          padding: "2px 10px",
+          borderRadius: 20,
+          border: "1px solid #fde68a",
+        }}
+      >
+        Pending
+      </span>
+    );
+  if (s === "confirmed")
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#1e6091",
+          background: "#dbeafe",
+          padding: "2px 10px",
+          borderRadius: 20,
+          border: "1px solid #bfdbfe",
+        }}
+      >
+        Confirmed
+      </span>
+    );
+  if (s === "completed")
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#15803d",
+          background: "#dcfce7",
+          padding: "2px 10px",
+          borderRadius: 20,
+          border: "1px solid #bbf7d0",
+        }}
+      >
+        Completed
+      </span>
+    );
+  if (s === "cancelled" || s === "canceled")
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#dc2626",
+          background: "#fce8e8",
+          padding: "2px 10px",
+          borderRadius: 20,
+          border: "1px solid #f5c6c6",
+        }}
+      >
+        Cancelled
+      </span>
+    );
+  if (s === "no_show")
+    return (
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#6b7280",
+          background: "#f3f4f6",
+          padding: "2px 10px",
+          borderRadius: 20,
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        No Show
+      </span>
+    );
+  return (
+    <span style={{ fontSize: 12, fontWeight: 700, color: "#4d227c" }}>
+      {status || "—"}
+    </span>
+  );
+}
+
 function DrawerAccordion({
   title,
-  icon,
   children,
   defaultOpen = false,
   accentColor = "#4D227C",
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
     <div className={styles.card}>
       <button
@@ -433,7 +451,6 @@ function DrawerAccordion({
             flex: 1,
           }}
         >
-          {icon}
           {title}
         </span>
         <FiChevronDown
@@ -446,7 +463,6 @@ function DrawerAccordion({
           }}
         />
       </button>
-
       {isOpen && (
         <div
           className={styles.accordionBodyWrapper}
@@ -459,306 +475,263 @@ function DrawerAccordion({
   );
 }
 
-// ── Purpose / service-specific sections ───────────────────────────────────
-const VawcSection = ({ appt }) => (
-  <DrawerAccordion
-    title="VAWC — Initial Complaint & Details"
-    icon={<span className={styles.vawcDot} />}
-    accentColor="#dc2626"
-    defaultOpen={false}
-  >
-    <ComplaintBox text={appt.initialComplaint} />
-    <div className={styles.docsSection} style={{ marginTop: 12 }}>
-      <div className={styles.docsSectionLabel}>Supporting Documents:</div>
-      <div className={styles.docsChipRow}>
-        <PdfFileChip
-          label="Barangay Blotter"
-          filename="VAWC_Barangay_Blotter.pdf"
-        />
-        <PdfFileChip label="Police Report" filename="VAWC_Police_Report.pdf" />
-        <PdfFileChip label="Incident Photos" filename="VAWC_Photos.pdf" />
-      </div>
-    </div>
-  </DrawerAccordion>
-);
-
-const LegalSection = ({ appt }) => (
-  <DrawerAccordion
-    title="Adoption / Legal — Court-Related Assessment"
-    accentColor="#8B4545"
-    defaultOpen={false}
-  >
-    <ComplaintBox text={appt.initialComplaint} />
-    <div className={styles.docsSection} style={{ marginTop: 12 }}>
-      <div className={styles.docsSectionLabel}>Court Documents:</div>
-      <div className={styles.docsChipRow}>
-        <PdfFileChip label="Court Order" filename="Court_Order.pdf" />
-        <PdfFileChip
-          label="PACO Referral"
-          filename="PACO_CSWD_Referral_Document.pdf"
-        />
-        <PdfFileChip
-          label="Previous Assessment"
-          filename="Previous_Psych_Report.pdf"
-        />
-        <PdfFileChip label="Case Summary" filename="Case_Summary.pdf" />
-      </div>
-    </div>
-  </DrawerAccordion>
-);
-
-const SchoolSection = ({ appt }) => {
-  const docs = appt.schoolDocuments || [];
-  if (docs.length === 0) return null;
+/* ─────────────────────────────────────────────────────────
+   Receipt viewer — shows uploaded receipt files
+───────────────────────────────────────────────────────── */
+function ReceiptViewer({ paths = [] }) {
+  if (!paths || paths.length === 0) return null;
   return (
     <DrawerAccordion
-      title="School / Academic — Learning Assessment"
-      accentColor="#1e6091"
+      title="Receipt / Proof of Payment"
+      accentColor="#15803d"
       defaultOpen={false}
     >
-      <div className={styles.docsSection}>
-        <div className={styles.docsSectionLabel}>Academic Documents:</div>
-        <div className={styles.docsChipRow}>
-          {docs.map((doc, i) => (
-            <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
-          ))}
-        </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        {paths.map((path, i) => {
+          const url = `http://localhost:8000/storage/${path}`;
+          const isPdf = path.toLowerCase().endsWith(".pdf");
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "6px",
+                padding: "10px",
+                border: "1.5px solid #bbf7d0",
+                borderRadius: "10px",
+                background: "#f0fdf4",
+                textDecoration: "none",
+                color: "#15803d",
+                fontSize: "11px",
+                fontWeight: "600",
+                minWidth: "80px",
+                transition: "background .15s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#dcfce7")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "#f0fdf4")
+              }
+            >
+              <FiFile size={22} />
+              <span>{isPdf ? "PDF" : `Image ${i + 1}`}</span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  color: "#6b7280",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "3px",
+                }}
+              >
+                <FiDownload size={10} /> View
+              </span>
+            </a>
+          );
+        })}
       </div>
     </DrawerAccordion>
   );
-};
+}
 
-const WorkSection = ({ appt }) => (
-  <DrawerAccordion
-    title="Work-Related — Occupational Health Assessment"
-    accentColor="#2d6a4f"
-    defaultOpen={false}
-  >
-    <div>
-      <div className={styles.complaintLabel}>
-        Reason for Appointment / Assessment:
-      </div>
-      <div className={styles.complaintBox}>
-        {appt.reason || (
-          <span className={styles.complaintEmpty}>No reason provided.</span>
-        )}
-      </div>
-    </div>
-  </DrawerAccordion>
-);
-
-const PreEmploymentSection = ({ appt }) => (
-  <DrawerAccordion
-    title="Pre-Employment Psychological Assessment"
-    accentColor="#92400e"
-    defaultOpen={false}
-  >
-    <InfoRow
-      label="Employer Name"
-      value={appt.employerName || "Not specified"}
-    />
-    <InfoRow
-      label="Purpose of Assessment"
-      value={appt.purposeOfAssessment || "Not specified"}
-    />
-  </DrawerAccordion>
-);
-
-const ESASection = ({ appt }) => {
-  const hasDiagnosis = appt.hasExistingDiagnosis;
-  const hasDocs = appt.diagnosisDocuments?.length > 0;
-
+/* ─────────────────────────────────────────────────────────
+   Loading skeleton
+───────────────────────────────────────────────────────── */
+function LoadingSkeleton() {
   return (
-    <DrawerAccordion
-      title="Emotional Support Animal (ESA) Assessment"
-      accentColor="#0e7490"
-      defaultOpen={false}
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "12px",
+        padding: "4px 0",
+      }}
     >
-      <InfoRow
-        label="Place of Travel"
-        value={
-          <Badge
-            style={
-              appt.placeOfTravel === "International"
-                ? {
-                    background: "#dbeafe",
-                    color: "#1d4ed8",
-                    border: "1px solid #bfdbfe",
-                  }
-                : {
-                    background: "#dcfce7",
-                    color: "#15803d",
-                    border: "1px solid #bbf7d0",
-                  }
-            }
+      {[1, 2].map((i) => (
+        <div
+          key={i}
+          style={{
+            borderRadius: "12px",
+            overflow: "hidden",
+            border: "1px solid #f0eaf8",
+          }}
+        >
+          <div
+            style={{
+              height: "44px",
+              background:
+                "linear-gradient(90deg, #f3ecfc 0%, #e8dcf5 50%, #f3ecfc 100%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 1.4s infinite",
+            }}
+          />
+          <div
+            style={{
+              padding: "16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
           >
-            {appt.placeOfTravel === "International"
-              ? " Abroad / International"
-              : " Local"}
-          </Badge>
-        }
-      />
-
-      {appt.travelDestination && (
-        <InfoRow label="Destination" value={appt.travelDestination} />
-      )}
-
-      <InfoRow
-        label="Existing Clinical Diagnosis"
-        value={
-          <Badge
-            style={
-              hasDiagnosis
-                ? {
-                    background: "#fef9c3",
-                    color: "#854d0e",
-                    border: "1px solid #fde68a",
-                  }
-                : {
-                    background: "#f3f4f6",
-                    color: "#6b7280",
-                    border: "1px solid #e5e7eb",
-                  }
-            }
-          >
-            {hasDiagnosis ? "Yes" : "No"}
-          </Badge>
-        }
-      />
-
-      {hasDiagnosis && appt.existingDiagnosisNote && (
-        <div style={{ marginTop: 8 }}>
-          <div className={styles.complaintLabel}>Diagnosis Notes:</div>
-          <div className={styles.complaintBox}>
-            {appt.existingDiagnosisNote}
-          </div>
-        </div>
-      )}
-
-      {hasDiagnosis && hasDocs && (
-        <div className={styles.docsSection} style={{ marginTop: 12 }}>
-          <div className={styles.docsSectionLabel}>
-            <FiPaperclip size={12} style={{ marginRight: 5 }} />
-            Medical Records & Letters:
-          </div>
-          <div className={styles.docsChipRow}>
-            {appt.diagnosisDocuments.map((doc, i) => (
-              <PdfFileChip key={i} label={doc.label} filename={doc.filename} />
+            {[80, 60, 70, 50].map((w, j) => (
+              <div
+                key={j}
+                style={{
+                  height: "14px",
+                  width: `${w}%`,
+                  borderRadius: "7px",
+                  background:
+                    "linear-gradient(90deg, #f3ecfc 0%, #e8dcf5 50%, #f3ecfc 100%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.4s infinite",
+                }}
+              />
             ))}
           </div>
         </div>
-      )}
-    </DrawerAccordion>
+      ))}
+      <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+    </div>
   );
-};
+}
 
-const InternshipSection = ({ appt }) => (
-  <DrawerAccordion
-    title="Mental Health for Internship"
-    accentColor="#5b21b6"
-    defaultOpen={false}
-  >
-    <InfoRow label="University" value={appt.schoolName || "Not specified"} />
-    <InfoRow label="Program" value={appt.program || "Not specified"} />
-  </DrawerAccordion>
-);
+/* ─────────────────────────────────────────────────────────
+   safeFormatDate — never throws, handles all input shapes:
+     "2025-05-10"          API string date
+     new Date(...)         JS Date (legacy static events)
+     "2025-05-10T09:00"   ISO string
+───────────────────────────────────────────────────────── */
+function safeFormatDate(value, fmt = "MMMM d, yyyy") {
+  if (!value) return "—";
+  try {
+    // Already a valid Date object
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return "—";
+      return format(value, fmt);
+    }
+    // Plain date string "YYYY-MM-DD" — append time to avoid UTC shift
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return format(new Date(value + "T00:00:00"), fmt);
+    }
+    // ISO / other string
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "—";
+    return format(d, fmt);
+  } catch {
+    return "—";
+  }
+}
 
-const SESSION_TYPE_COLORS = {
-  "Discussion of Psychological Assessment Results": {
-    bg: "#e0f2fe",
-    color: "#0369a1",
-  },
-  "Release of Certificate": { bg: "#dcfce7", color: "#15803d" },
-};
+/* ─────────────────────────────────────────────────────────
+   safeTime12 — converts either "09:00" string or JS Date
+───────────────────────────────────────────────────────── */
+function safeTime12(value) {
+  if (!value) return "—";
+  // Already a string like "09:00" or "09:00:00"
+  if (typeof value === "string" && /^\d{1,2}:\d{2}/.test(value)) {
+    return toTime12(value);
+  }
+  // JS Date object (legacy static events)
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    const h = value.getHours();
+    const m = String(value.getMinutes()).padStart(2, "0");
+    return `${h % 12 || 12}:${m} ${h >= 12 ? "PM" : "AM"}`;
+  }
+  return "—";
+}
 
-const AssessmentSessionSection = ({ appt }) => {
-  const session = appt.assessmentSession;
-  if (!session) return null;
-  const isCertRelease = session.sessionType === "Release of Certificate";
-  const badgeStyle = SESSION_TYPE_COLORS[session.sessionType] || {
-    bg: "#f3f4f6",
-    color: "#374151",
+/* ─────────────────────────────────────────────────────────
+   normalizeAppt — unifies API-mapped and legacy static
+   event objects into one consistent shape so DetailView
+   never crashes regardless of what gets passed in
+───────────────────────────────────────────────────────── */
+function normalizeAppt(appt) {
+  if (!appt) return appt;
+
+  // Already has API-mapped fields → use as-is
+  if (appt.appointmentDate && appt.startTime) return appt;
+
+  // Legacy static event (has appt.start as JS Date, appt.end as JS Date)
+  const start =
+    appt.start instanceof Date
+      ? appt.start
+      : appt.start
+        ? new Date(appt.start)
+        : null;
+  const end =
+    appt.end instanceof Date ? appt.end : appt.end ? new Date(appt.end) : null;
+
+  const padTime = (d) =>
+    d
+      ? `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+      : null;
+
+  return {
+    ...appt,
+    // Build API-style fields from legacy JS Date fields
+    appointmentDate: start
+      ? `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`
+      : appt.appointmentDate || null,
+    startTime: appt.startTime || padTime(start),
+    endTime: appt.endTime || padTime(end),
+    // visit type: legacy uses appt.title containing "online"
+    visitType:
+      appt.visitType ||
+      (appt.title?.toLowerCase().includes("online") ? "virtual" : "onsite"),
+    // service: legacy may use appt.serviceType or appt.visitType
+    serviceType: appt.serviceType || "",
+    // patient name
+    patientName:
+      appt.patientName || appt.patient?.firstName
+        ? [appt.patient?.firstName, appt.patient?.lastName]
+            .filter(Boolean)
+            .join(" ")
+        : appt.patientName || "—",
+    // status fallback
+    status: appt.status || "pending",
+    // payment
+    paymentStatus: appt.paymentStatus || appt.payment_status || "not_paid",
+    // purpose
+    assessmentPurpose:
+      appt.assessmentPurpose || appt.pae_purpose || appt.paePurpose || null,
+    // notes
+    reason: appt.reason || appt.reason_for_consultation || null,
+    // receipts
+    receiptPaths: appt.receiptPaths || appt.receipt_paths || [],
+    // IDs
+    appointment_id: appt.appointment_id || appt.id,
   };
-  const releaseDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  return (
-    <DrawerAccordion
-      title={session.sessionType}
-      accentColor={badgeStyle.color}
-      defaultOpen={false}
-    >
-      <InfoRow label="Session Type" value={session.sessionType} />
-      <InfoRow label="Expected Duration" value="60-90 minutes" />
-      <InfoRow label="Location" value="Office Room 305, Makati Branch" />
-      {isCertRelease && (
-        <>
-          <InfoRow label="Release Date" value={releaseDate} />
-          <div className={styles.certReminderBox}>
-            <span className={styles.certReminderIcon}>⚠️</span>
-            <span className={styles.certReminderText}>
-              The certificate must be claimed <strong>in person</strong> at the
-              clinic. Please bring a valid government-issued ID upon release.
-            </span>
-          </div>
-        </>
-      )}
-    </DrawerAccordion>
-  );
-};
+}
 
-const RescheduleSection = ({ appt }) => (
-  <DrawerAccordion
-    title="Reschedule Status"
-    accentColor="#b45309"
-    defaultOpen={false}
-  >
-    <InfoRow
-      label="Original Date"
-      value="March 5, 2026 | 10:00 AM - 11:00 AM"
-    />
-    <InfoRow
-      label="New Date"
-      value={format(new Date(appt.rescheduledTo.date), "MMMM dd, yyyy")}
-    />
-    <InfoRow
-      label="New Time"
-      value={`${toTime12(appt.rescheduledTo.startTime)} – ${toTime12(appt.rescheduledTo.endTime)}`}
-    />
-    <InfoRow
-      label="Reason for Reschedule"
-      value={appt.rescheduledTo.reason || "Not specified"}
-    />
-  </DrawerAccordion>
-);
-
-// ══════════════════════════════════════════════════════════════════════════
-// DETAIL VIEW
-// ══════════════════════════════════════════════════════════════════════════
-function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
+/* ─────────────────────────────────────────────────────────
+   Detail View — full appointment info
+───────────────────────────────────────────────────────── */
+function DetailView({ appt: rawAppt, onClose, onBack, onRefresh }) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
-  const startTime = toTime12(toTime24(appt.start));
-  const endTime = toTime12(toTime24(appt.end));
-  const isOnline = appt.title?.toLowerCase().includes("online");
-  const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
-  const isRescheduled = appt.status === "Rescheduled" || isGhost;
-  const displayDate = format(new Date(appt.start), "MMMM dd, yyyy");
-  const displayDateShort = format(new Date(appt.start), "MMMM dd, yyyy");
+  // Normalize so both legacy static events and API-mapped objects work
+  const appt = normalizeAppt(rawAppt);
 
-  const serviceType = appt.serviceType || appt.visitType || "";
-  const isAssessment = isPsychAssessment(serviceType);
-  const isEsa = isESA(serviceType);
-  const isIntern = isInternship(serviceType);
-  const purpose = isAssessment ? getPurpose(appt) : null;
-
-  // ── CHANGED: use getServiceLabel helper ──
+  const svc = appt.serviceType || "";
+  const isAssessment = isPsychAssessment(svc);
+  const purpose = appt.assessmentPurpose || "";
+  const dotColor = getDotColor(appt);
   const serviceLabel = getServiceLabel(appt);
+  const visitLabel =
+    appt.visitType === "virtual"
+      ? "Virtual Consultation"
+      : "Onsite Consultation";
 
-  // ── CHANGED: use getVisitType helper ──
-  const visitTypeLabel = getVisitType(appt);
-
-  const clinicColor = getDotColor(appt);
-  const showVawc =
-    isAssessment && purpose === PURPOSES.VAWC && isFemalePatient(appt);
+  // Safe display values — never throw
+  const dateBadge = safeFormatDate(appt.appointmentDate, "MMM d, yyyy");
+  const dateFull = safeFormatDate(appt.appointmentDate, "MMMM d, yyyy");
+  const timeDisplay = `${safeTime12(appt.startTime)} – ${safeTime12(appt.endTime)}`;
 
   return (
     <>
@@ -769,16 +742,29 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
             <h3 className={styles.modalTitle}>
               <span
                 className={styles.clinicDot}
-                style={{ backgroundColor: clinicColor }}
+                style={{ backgroundColor: dotColor }}
               />
-              {isGhost ? "↪ " : ""}
-              {startTime} — {clinicType}
-              {isGhost && (
-                <span className={styles.rescheduledBadge}>Rescheduled</span>
-              )}
+              Appointment Details
             </h3>
             <div className={styles.modalHeaderRight}>
-              <span className={styles.dateBadge}>{displayDateShort}</span>
+              <span className={styles.dateBadge}>{dateBadge}</span>
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  style={{
+                    background: "none",
+                    border: "1px solid #e2d5f5",
+                    borderRadius: "7px",
+                    cursor: "pointer",
+                    color: "#4D227C",
+                    fontSize: "12px",
+                    padding: "4px 10px",
+                    fontWeight: "600",
+                  }}
+                >
+                  ← Back
+                </button>
+              )}
               <button
                 className={styles.closeBtn}
                 onClick={onClose}
@@ -791,20 +777,21 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
 
           {/* Scrollable body */}
           <div className={styles.scrollBody}>
-            {/* Appointment Info card */}
+            {/* ── Main info card ── */}
             <section className={styles.card}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardHeaderLeft}>
-                  {isGhost
-                    ? "Rescheduled Appointment Information"
-                    : "Appointment Information"}
+                  <span
+                    className={styles.clinicDot}
+                    style={{ backgroundColor: dotColor }}
+                  />
+                  Appointment Information
                 </span>
                 <span className={styles.referenceNumber}>
-                  {cleanReferenceNumber(
-                    appt.referenceNumber || generateReferenceNumber(appt),
-                  )}
+                  {appt.referenceNumber || "—"}
                 </span>
               </div>
+
               <div className={styles.cardBody}>
                 <div className={styles.cardFields}>
                   <InfoRow
@@ -812,56 +799,139 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
                     value={appt.patientName || "—"}
                   />
 
+                  {appt.patientDob && (
+                    <InfoRow label="Date of Birth" value={appt.patientDob} />
+                  )}
+                  {appt.patientSex && (
+                    <InfoRow
+                      label="Sex"
+                      value={
+                        appt.patientSex.charAt(0).toUpperCase() +
+                        appt.patientSex.slice(1)
+                      }
+                    />
+                  )}
+                  {appt.patientContact && (
+                    <InfoRow label="Contact No." value={appt.patientContact} />
+                  )}
+                  {appt.patientEmail && (
+                    <InfoRow label="Email" value={appt.patientEmail} />
+                  )}
+                  {appt.patientClassification && (
+                    <InfoRow
+                      label="Classification"
+                      value={appt.patientClassification}
+                    />
+                  )}
+
                   <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Payment Status:</span>
-                    <span className={styles.paymentPaid}>Paid</span>
+                    <span className={styles.infoLabel}>Appointment Date:</span>
+                    <span
+                      className={styles.infoValue}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiCalendar size={13} style={{ color: "#9c7dd4" }} />
+                      {dateFull}
+                    </span>
                   </div>
 
-                  {/* ── CHANGED: Visit Type now shows Online/Physical Consultation ── */}
-                  <InfoRow label="Visit Type" value={visitTypeLabel} />
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Time:</span>
+                    <span
+                      className={styles.infoValue}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiClock size={13} style={{ color: "#9c7dd4" }} />
+                      {timeDisplay}
+                    </span>
+                  </div>
+
+                  <InfoRow label="Visit Type" value={visitLabel} />
 
                   <div className={styles.infoRow}>
                     <span className={styles.infoLabel}>Service:</span>
-                    <Badge style={serviceTypeInlineStyle(serviceType)}>
-                      {serviceLabel}
-                    </Badge>
+                    <Badge style={serviceBadgeStyle(svc)}>{serviceLabel}</Badge>
                   </div>
 
                   {isAssessment && purpose && (
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Purpose:</span>
-                      <Badge style={purposeInlineStyle(purpose)}>
+                      <Badge style={purposeBadgeStyle(purpose)}>
                         {purpose}
                       </Badge>
                     </div>
                   )}
 
                   <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Status:</span>
-                    <StatusBadge
-                      status={isGhost ? "Rescheduled" : appt.status}
-                    />
+                    <span className={styles.infoLabel}>Payment:</span>
+                    <Badge style={paymentBadgeStyle(appt.paymentStatus)}>
+                      {paymentLabel(appt.paymentStatus)}
+                    </Badge>
                   </div>
 
-                  <InfoRow
-                    label="Reason for Consultation"
-                    value={appt.reason || "Not specified"}
-                  />
-                  <InfoRow
-                    label="Appointment Date & Time"
-                    value={`${displayDate} | ${startTime} – ${endTime}`}
-                  />
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Status:</span>
+                    <StatusBadge status={appt.status} />
+                  </div>
 
-                  {isGhost && appt.rescheduledTo?.reason && (
-                    <InfoRow
-                      label="Reason for Reschedule"
-                      value={appt.rescheduledTo.reason}
-                    />
+                  {appt.reason && (
+                    <div>
+                      <div className={styles.complaintLabel}>
+                        Reason for Consultation:
+                      </div>
+                      <div className={styles.complaintBox}>{appt.reason}</div>
+                    </div>
+                  )}
+
+                  {appt.doctorName && (
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Assigned Doctor:</span>
+                      <span
+                        className={styles.infoValue}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "5px",
+                        }}
+                      >
+                        <FiUser size={13} style={{ color: "#9c7dd4" }} />
+                        {appt.doctorName}
+                      </span>
+                    </div>
+                  )}
+
+                  {appt.informantName && (
+                    <>
+                      <InfoRow label="Informant" value={appt.informantName} />
+                      {appt.informantRelation && (
+                        <InfoRow
+                          label="Relation"
+                          value={appt.informantRelation}
+                        />
+                      )}
+                    </>
+                  )}
+
+                  {appt.notes && (
+                    <div>
+                      <div className={styles.complaintLabel}>
+                        Clinical Notes:
+                      </div>
+                      <div className={styles.complaintBox}>{appt.notes}</div>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {(!isRescheduled || isGhost) && (
+              {appt.status !== "completed" && appt.status !== "cancelled" && (
                 <div className={styles.cardFooter}>
                   <button
                     className={styles.btnGreen}
@@ -873,28 +943,8 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
               )}
             </section>
 
-            {/* Drawer Accordions */}
-            {showVawc && <VawcSection appt={appt} />}
-            {isAssessment && purpose === PURPOSES.LEGAL && (
-              <LegalSection appt={appt} />
-            )}
-            {isAssessment && purpose === PURPOSES.SCHOOL && (
-              <SchoolSection appt={appt} />
-            )}
-            {isAssessment && purpose === PURPOSES.WORK && (
-              <WorkSection appt={appt} />
-            )}
-            {isAssessment && purpose === PURPOSES.PRE_EMPLOYMENT && (
-              <PreEmploymentSection appt={appt} />
-            )}
-            {isEsa && <ESASection appt={appt} />}
-            {isIntern && <InternshipSection appt={appt} />}
-            {isAssessment && appt.assessmentSession && (
-              <AssessmentSessionSection appt={appt} allEvents={allEvents} />
-            )}
-            {!isGhost && isRescheduled && appt.rescheduledTo && (
-              <RescheduleSection appt={appt} />
-            )}
+            {/* ── Receipts ── */}
+            <ReceiptViewer paths={appt.receiptPaths} />
           </div>
         </div>
       </div>
@@ -903,68 +953,194 @@ function DetailView({ appt, isGhost, onClose, allEvents = [] }) {
         isOpen={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
         appt={appt}
-        onConfirm={() => setShowCompleteModal(false)}
+        onConfirm={() => {
+          setShowCompleteModal(false);
+          if (onRefresh) onRefresh();
+        }}
       />
     </>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ══════════════════════════════════════════════════════════════════════════
-function DayAppointmentsModal({
-  isOpen,
-  onClose,
-  selectedDate,
-  events,
-  singleEventId = null,
-}) {
+/* ─────────────────────────────────────────────────────────
+   Appointment Card — used in list view
+───────────────────────────────────────────────────────── */
+function AppointmentCard({ appt, onView }) {
+  const svc = appt.serviceType || "";
+  const dotColor = getDotColor(appt);
+  const serviceLabel = getServiceLabel(appt);
+  const purpose = appt.assessmentPurpose || "";
+  const visitLabel = appt.visitType === "virtual" ? "Virtual" : "Onsite";
+
+  return (
+    <div className={styles.card}>
+      {/* Header */}
+      <div className={styles.cardHeader}>
+        <span className={styles.cardHeaderLeft}>
+          <span
+            className={styles.clinicDot}
+            style={{ backgroundColor: dotColor }}
+          />
+          {toTime12(appt.startTime)} — {visitLabel} Consultation
+        </span>
+        <span className={styles.badgeGroup}>
+          {purpose && (
+            <Badge
+              style={{
+                ...purposeBadgeStyle(purpose),
+                fontSize: 11,
+                padding: "2px 9px",
+              }}
+            >
+              {purpose}
+            </Badge>
+          )}
+          <span className={styles.referenceNumber}>{appt.referenceNumber}</span>
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className={styles.cardBody}>
+        <div className={styles.cardFields}>
+          <InfoRow label="Patient" value={appt.patientName} />
+
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Time:</span>
+            <span className={styles.infoValue}>
+              {toTime12(appt.startTime)} – {toTime12(appt.endTime)}
+            </span>
+          </div>
+
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Service:</span>
+            <Badge style={{ ...serviceBadgeStyle(svc), fontSize: 11 }}>
+              {serviceLabel}
+            </Badge>
+          </div>
+
+          {appt.reason && <InfoRow label="Reason" value={appt.reason} />}
+
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Payment:</span>
+            <Badge
+              style={{ ...paymentBadgeStyle(appt.paymentStatus), fontSize: 11 }}
+            >
+              {paymentLabel(appt.paymentStatus)}
+            </Badge>
+          </div>
+
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Status:</span>
+            <StatusBadge status={appt.status} />
+          </div>
+
+          {appt.doctorName && (
+            <InfoRow label="Doctor" value={appt.doctorName} />
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className={styles.cardFooter}>
+        <button className={styles.btnPurple} onClick={() => onView(appt)}>
+          View Details
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────────────────── */
+function DayAppointmentsModal({ isOpen, onClose, selectedDate }) {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [activeAppt, setActiveAppt] = useState(null);
+
+  const loadAppointments = useCallback(async (date, signal) => {
+    if (!date) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const raw = await fetchAppointments(date, signal);
+      setAppointments(raw.map(mapAppointment));
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        setError(e.message || "Failed to load appointments.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen || !selectedDate) return;
+    // Reset to list view whenever date changes
+    setActiveAppt(null);
+    const ctrl = new AbortController();
+    loadAppointments(new Date(selectedDate), ctrl.signal);
+    return () => ctrl.abort();
+  }, [isOpen, selectedDate, loadAppointments]);
 
   if (!isOpen || !selectedDate) return null;
 
-  const selectedDateObj = new Date(selectedDate);
-  const formattedDate = format(selectedDateObj, "MMMM dd, yyyy");
-  const formattedDateShort = format(selectedDateObj, "MMMM dd, yyyy");
-  const dayAppointments = events.filter((e) =>
-    isSameDay(e.start, selectedDateObj),
-  );
+  const dateObj = new Date(selectedDate);
+  const formattedDate = format(dateObj, "MMMM d, yyyy");
+  const dayName = format(dateObj, "EEEE");
 
-  // Week/Day view → jump straight to detail
-  if (singleEventId && !activeAppt) {
-    const target = events.find((e) => e.id === singleEventId);
-    if (target)
-      return (
-        <DetailView
-          appt={target}
-          isGhost={!!target.isRescheduledGhost}
-          onClose={onClose}
-          allEvents={events}
-        />
-      );
-  }
+  const handleRefresh = () => {
+    loadAppointments(dateObj);
+  };
 
-  // Detail view
+  // ── Detail view ──
   if (activeAppt) {
     return (
       <DetailView
-        appt={activeAppt.appt}
-        isGhost={activeAppt.isGhost}
-        onClose={() => setActiveAppt(null)}
-        allEvents={events}
+        appt={activeAppt}
+        onClose={onClose}
+        onBack={() => setActiveAppt(null)}
+        onRefresh={() => {
+          setActiveAppt(null);
+          handleRefresh();
+        }}
       />
     );
   }
 
-  // List view
+  // ── List view ──
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>Appointments</h3>
+          <h3 className={styles.modalTitle}>{dayName}'s Appointments</h3>
           <div className={styles.modalHeaderRight}>
-            <span className={styles.dateBadge}>{formattedDateShort}</span>
+            <span className={styles.dateBadge}>{formattedDate}</span>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              title="Refresh"
+              style={{
+                background: "none",
+                border: "1px solid #e2d5f5",
+                borderRadius: "7px",
+                cursor: "pointer",
+                color: "#4D227C",
+                padding: "5px",
+                display: "flex",
+                alignItems: "center",
+                opacity: loading ? 0.5 : 1,
+              }}
+            >
+              <FiRefreshCw
+                size={14}
+                style={{
+                  animation: loading ? "spin 1s linear infinite" : "none",
+                }}
+              />
+            </button>
             <button
               className={styles.closeBtn}
               onClick={onClose}
@@ -975,9 +1151,43 @@ function DayAppointmentsModal({
           </div>
         </div>
 
-        {/* Scrollable Body */}
+        {/* Body */}
         <div className={styles.scrollBody}>
-          {dayAppointments.length === 0 ? (
+          {loading ? (
+            <LoadingSkeleton />
+          ) : error ? (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div style={{ fontSize: "32px", marginBottom: "12px" }}>⚠️</div>
+              <p
+                style={{
+                  color: "#dc2626",
+                  fontSize: "14px",
+                  margin: "0 0 16px",
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              >
+                {error}
+              </p>
+              <button
+                onClick={handleRefresh}
+                style={{
+                  background: "#4D227C",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px 20px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <FiRefreshCw size={13} /> Try Again
+              </button>
+            </div>
+          ) : appointments.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -995,155 +1205,31 @@ function DayAppointmentsModal({
               </p>
             </div>
           ) : (
-            dayAppointments.map((appt) => {
-              const isGhost = !!appt.isRescheduledGhost;
-              const startTime = toTime12(toTime24(appt.start));
-              const endTime = toTime12(toTime24(appt.end));
-              const isOnline = appt.title?.toLowerCase().includes("online");
-              const clinicType = isOnline ? "Online Clinic" : "Physical Clinic";
-              const cardDate = format(new Date(appt.start), "MMMM dd, yyyy");
-
-              const svc = appt.serviceType || appt.visitType || "";
-              const isAssessment = isPsychAssessment(svc);
-              const isEsa = isESA(svc);
-              const isIntern = isInternship(svc);
-              const purpose = isAssessment ? getPurpose(appt) : null;
-              const dotColor = getDotColor(appt);
-
-              // ── CHANGED: use getServiceLabel helper ──
-              const serviceLabel = getServiceLabel(appt);
-
-              // ── CHANGED: use getVisitType helper ──
-              const visitTypeLabel = getVisitType(appt);
-
-              const displayPurpose =
-                purpose === PURPOSES.VAWC
-                  ? isFemalePatient(appt)
-                    ? purpose
-                    : null
-                  : purpose;
-
-              return (
-                <div key={appt.id} className={styles.card}>
-                  {/* ── HEADER ───────────────────────── */}
-                  <div className={styles.cardHeader}>
-                    {/* LEFT: Title */}
-                    <span className={styles.cardHeaderLeft}>
-                      <span
-                        className={styles.clinicDot}
-                        style={{ backgroundColor: dotColor }}
-                      />
-                      {isGhost
-                        ? "Rescheduled Appointment"
-                        : "Appointment Information"}
-                    </span>
-
-                    {/* RIGHT: Badges + Reference Number */}
-                    <span className={styles.badgeGroup}>
-                      {displayPurpose && (
-                        <Badge
-                          style={{
-                            ...purposeInlineStyle(displayPurpose),
-                            fontSize: 11,
-                            padding: "2px 10px",
-                          }}
-                        >
-                          {displayPurpose}
-                        </Badge>
-                      )}
-
-                      {!displayPurpose && (isEsa || isIntern) && (
-                        <Badge
-                          style={{
-                            ...serviceTypeInlineStyle(svc),
-                            fontSize: 11,
-                            padding: "2px 10px",
-                          }}
-                        >
-                          {isEsa ? "ESA" : "Internship"}
-                        </Badge>
-                      )}
-
-                      <span className={styles.referenceNumber}>
-                        {cleanReferenceNumber(
-                          appt.referenceNumber || generateReferenceNumber(appt),
-                        )}
-                      </span>
-                    </span>
-                  </div>
-
-                  {/* ── BODY ───────────────────────── */}
-                  <div className={styles.cardBody}>
-                    <div className={styles.cardFields}>
-                      <InfoRow
-                        label="Patient Name"
-                        value={appt.patientName || "—"}
-                      />
-
-                      <InfoRow label="Date of Appointment" value={cardDate} />
-
-                      <InfoRow
-                        label="Time"
-                        value={`${startTime} – ${endTime}`}
-                      />
-
-                      <InfoRow label="Visit Type" value={visitTypeLabel} />
-
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Service:</span>
-                        <Badge
-                          style={{
-                            ...serviceTypeInlineStyle(svc),
-                            fontSize: 11,
-                          }}
-                        >
-                          {serviceLabel}
-                        </Badge>
-                      </div>
-
-                      {displayPurpose && (
-                        <div className={styles.infoRow}>
-                          <span className={styles.infoLabel}>Purpose:</span>
-                          <Badge
-                            style={{
-                              ...purposeInlineStyle(displayPurpose),
-                              fontSize: 11,
-                            }}
-                          >
-                            {displayPurpose}
-                          </Badge>
-                        </div>
-                      )}
-
-                      <InfoRow
-                        label="Reason for Consultation"
-                        value={appt.reason || "Not specified"}
-                      />
-
-                      <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Status:</span>
-                        <StatusBadge
-                          status={isGhost ? "Rescheduled" : appt.status}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── FOOTER ───────────────────────── */}
-                  <div className={styles.cardFooter}>
-                    <button
-                      className={styles.btnPurple}
-                      onClick={() => setActiveAppt({ appt, isGhost })}
-                    >
-                      View
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            <>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#9c7dd4",
+                  fontWeight: "600",
+                  marginBottom: "12px",
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              >
+                {appointments.length} appointment
+                {appointments.length !== 1 ? "s" : ""} on {formattedDate}
+              </div>
+              {appointments.map((appt) => (
+                <AppointmentCard
+                  key={appt.id}
+                  appt={appt}
+                  onView={setActiveAppt}
+                />
+              ))}
+            </>
           )}
         </div>
       </div>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
