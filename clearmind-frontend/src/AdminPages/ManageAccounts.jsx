@@ -3,6 +3,7 @@ import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/ManageAccounts.module.css";
 import { FiX } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
@@ -128,8 +129,38 @@ function ManageAccounts() {
     setShowCreateModal(true);
   };
 
+  const validateForm = () => {
+    let errors = {};
+
+    if (!formData.email.includes("@") || !formData.email.endsWith(".com")) {
+      errors.email = ["Email must contain '@' and valid"];
+    }
+
+    const phoneRegex = /^09\d{9}$/;
+    if (!phoneRegex.test(formData.contactNo)) {
+      errors.contactNo = [
+        "Contact number must start with '09' and be exactly 11 digits",
+      ];
+    }
+
+    return errors;
+  };
+
   const handleCreateAccount = async () => {
     setIsSubmitting(true);
+
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+
+      setTimeout(() => {
+        setFormErrors({});
+      }, 1500);
+
+      setIsSubmitting(false);
+      return;
+    }
+
     setFormErrors({});
 
     try {
@@ -150,14 +181,32 @@ function ManageAccounts() {
       }
 
       if (result.is_existing) {
-        alert(
+        toast.error(
           `Account already exists. Credentials email has been resent to ${formData.email}.`,
+          {
+            duration: 1500,
+            style: {
+              background: "#FDECEA",
+              border: "1px solid #F5C6CB",
+              color: "#C62828",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              textAlign: "center",
+              maxWidth: "320px",
+              borderRadius: "10px",
+              boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+            },
+            iconTheme: {
+              primary: "#C62828",
+              secondary: "#FDECEA",
+            },
+          },
         );
         setShowCreateModal(false);
         return;
       }
 
-      // Append new doctor to table
+      // Append new doctor
       setUsers((prev) => [
         ...prev,
         {
@@ -188,7 +237,22 @@ function ManageAccounts() {
         },
       ]);
 
-      alert(`Account created! Credentials sent to ${formData.email}.`);
+      toast.success(`Account created! Credentials sent to ${formData.email}.`, {
+        duration: 1500,
+        style: {
+          background: "#E2F7E3",
+          border: "1px solid #91C793",
+          color: "#2E7D32",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          textAlign: "center",
+          maxWidth: "320px",
+          borderRadius: "10px",
+          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+        },
+        iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+      });
+
       setShowCreateModal(false);
     } catch (err) {
       console.error("Network error:", err);
@@ -397,11 +461,6 @@ function ManageAccounts() {
                         setFormData({ ...formData, email: e.target.value })
                       }
                     />
-                    {formErrors.email && (
-                      <span style={{ color: "red", fontSize: "12px" }}>
-                        {formErrors.email[0]}
-                      </span>
-                    )}
                   </label>
 
                   <label className={`${styles.formLabel} ${styles.col2}`}>
@@ -429,6 +488,22 @@ function ManageAccounts() {
                       }
                     />
                   </label>
+                </div>
+                <div className={styles.errorContainer}>
+                  {Object.keys(formErrors).length > 0 && (
+                    <div className={styles.errorBox}>
+                      {Object.entries(formErrors).map(([field, messages]) =>
+                        messages.map((msg, index) => (
+                          <p
+                            key={`${field}-${index}`}
+                            className={styles.errorText}
+                          >
+                            {msg}
+                          </p>
+                        )),
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

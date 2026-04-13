@@ -54,10 +54,6 @@ return new class extends Migration
                 'other'
             ])->nullable();
 
-
-
-     
-            
             // For custom pronouns (when preferredPronoun = 'other')
             $table->string('customPronoun', 100)->nullable();
             
