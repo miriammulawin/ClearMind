@@ -1,160 +1,39 @@
-/* ─── PAGE LAYOUT ─────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+/* ─── PAGE ───────────────────────────────────────────────── */
 .page {
+  font-family: "Poppins", sans-serif;
   min-height: 100vh;
   display: flex;
-  align-items: stretch;
-  background: #f4f0fb;
-  font-family:
-    "Segoe UI",
-    system-ui,
-    -apple-system,
-    sans-serif;
-}
-
-/* ─── LEFT PANEL ─────────────────────────────────────────── */
-.leftPanel {
-  display: none;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, #3a2a6e 0%, #6b46c1 60%, #9f7aea 100%);
-}
-
-@media (min-width: 900px) {
-  .leftPanel {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    flex: 0 0 42%;
-    max-width: 42%;
-    padding: 2.5rem;
-  }
-}
-
-.leftOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(30, 15, 60, 0.18) 0%,
-    rgba(30, 15, 60, 0.55) 100%
-  );
-  pointer-events: none;
-}
-
-.blob {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.sparkle {
-  position: absolute;
-}
-
-.leftContent {
-  position: relative;
-  z-index: 2;
-}
-
-.tagline {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  padding: 4px 14px 4px 10px;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.88);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-weight: 500;
-  margin-bottom: 1.1rem;
+  justify-content: center;
+  background-color: transparent;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
 }
 
-.taglineDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #c4b5fd;
-  flex-shrink: 0;
-}
-
-.heroTitle {
-  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.28;
-  margin: 0 0 1rem;
-  letter-spacing: -0.02em;
-}
-
-.heroAccent {
-  background: linear-gradient(90deg, #e9d5ff, #c4b5fd);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.heroDesc {
-  font-size: 0.92rem;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.65;
-  margin: 0 0 1.5rem;
-  max-width: 340px;
-}
-
-.pillRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 0.5rem;
-}
-
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.pillDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #c4b5fd;
-  flex-shrink: 0;
-}
-
-/* ─── RIGHT PANEL / CARD ─────────────────────────────────── */
+/* ─── CARD ───────────────────────────────────────────────── */
 .card {
-  flex: 1;
+  border: 2px solid #542982 !important;
+  border-radius: 20px !important;
+  background-color: #fff;
+  width: 100%;
+  min-width: 360px;
+  max-width: 420px;
+  box-shadow: 0 4px 6px rgba(84, 41, 130, 0.1);
+  padding: 2rem !important;
+  box-sizing: border-box;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 2.5rem 1.5rem;
-  background: #fff;
-  overflow-y: auto;
 }
 
-@media (min-width: 900px) {
-  .card {
-    padding: 3rem 3.5rem;
-    align-items: flex-start;
-    max-width: 520px;
-    margin: 0 auto;
-  }
-}
-
+/* ─── LOGO ───────────────────────────────────────────────── */
 .logo {
-  width: 64px;
+  max-width: 65%;
   height: auto;
-  margin-bottom: 1.5rem;
+  margin: 0 auto 1rem auto;
   display: block;
 }
 
@@ -163,7 +42,6 @@
   display: flex;
   gap: 6px;
   width: 100%;
-  max-width: 360px;
   margin-bottom: 6px;
 }
 
@@ -171,100 +49,115 @@
   height: 3px;
   border-radius: 2px;
   flex: 1;
-  background: #e9d5ff;
+  background: rgba(84, 41, 130, 0.2);
 }
 
 .stepDone {
-  background: #7c3aed;
+  background: #542982;
 }
 
 .stepActive {
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: linear-gradient(90deg, #542982, #783bb5);
 }
 
 .stepLabel {
+  font-family: "Poppins", sans-serif;
   font-size: 0.75rem;
-  color: #9f7aea;
+  color: #542982;
   font-weight: 500;
-  margin: 0 0 1.4rem;
+  margin: 0 0 1.25rem;
   letter-spacing: 0.01em;
+  width: 100%;
 }
 
 /* ─── HEADINGS ───────────────────────────────────────────── */
 .title {
-  font-size: 1.5rem;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 6px;
-  letter-spacing: -0.02em;
+  color: #542982;
+  margin: 0 0 0.3rem;
+  text-align: center;
+  line-height: 1.3;
+  width: 100%;
 }
 
 .subtitle {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0 0 10px;
-  line-height: 1.55;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.8rem;
+  color: #646465;
+  text-align: center;
+  margin: 0 0 0.6rem;
+  line-height: 1.5;
+  width: 100%;
 }
 
+/* ─── EMAIL BADGE ────────────────────────────────────────── */
 .emailBadge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
+  background: #faf8ff;
+  border: 1.5px solid rgba(84, 41, 130, 0.25);
   border-radius: 8px;
   padding: 6px 14px;
-  font-size: 0.85rem;
-  color: #6d28d9;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.82rem;
+  color: #542982;
   font-weight: 500;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
   word-break: break-all;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* ─── OTP INPUT ROW ──────────────────────────────────────── */
+/* ─── OTP INPUTS ─────────────────────────────────────────── */
 .otpRow {
   display: flex;
-  gap: 10px;
-  margin-bottom: 0.6rem;
+  justify-content: center;
+  gap: 12px;
+  margin: 0.5rem 0 0.6rem;
   width: 100%;
-  max-width: 360px;
 }
 
 .otpBox {
-  flex: 1;
-  min-width: 0;
-  height: 58px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2e1060;
+  width: 50px;
+  height: 50px;
   text-align: center;
-  color: #1a1a2e;
-  background: #fafafa;
+  background: #faf8ff;
+  border: 2px solid #542982;
+  border-radius: 10px;
   outline: none;
-  caret-color: transparent;
   transition:
-    border-color 0.15s,
-    background 0.15s,
-    box-shadow 0.15s;
+    border-color 0.18s,
+    box-shadow 0.18s,
+    transform 0.15s;
+  caret-color: #783bb5;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .otpBox:focus {
-  border-color: #7c3aed;
+  border-color: #783bb5;
+  box-shadow: 0 0 0 0.15rem rgba(84, 41, 130, 0.15);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+  transform: scale(1.04);
 }
 
 .otpBoxFilled {
-  border-color: #7c3aed;
-  background: #f5f3ff;
-  color: #5b21b6;
+  border-color: #542982;
+  background: rgba(84, 41, 130, 0.06);
+  color: #542982;
 }
 
 .otpBoxError {
-  border-color: #ef4444 !important;
-  background: #fef2f2 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  border-color: #e53e3e !important;
+  background: #fff5f5 !important;
+  box-shadow: 0 0 0 0.15rem rgba(229, 62, 62, 0.12) !important;
 }
 
 .otpBoxDisabled {
@@ -274,12 +167,15 @@
 
 /* ─── ERROR ──────────────────────────────────────────────── */
 .errorMsg {
-  font-size: 0.82rem;
-  color: #ef4444;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.8rem;
+  color: #e53e3e;
+  text-align: center;
+  display: block;
   min-height: 20px;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   width: 100%;
-  max-width: 360px;
+  line-height: 1.4;
 }
 
 /* ─── TIMER / RESEND ─────────────────────────────────────── */
@@ -288,80 +184,85 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 360px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .timerLabel {
-  font-size: 0.82rem;
-  color: #6b7280;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.8rem;
+  color: #646465;
 }
 
 .timerValue {
-  color: #7c3aed;
+  color: #542982;
   font-weight: 600;
 }
 
 .expiredLabel {
-  color: #ef4444;
+  color: #e53e3e;
   font-weight: 500;
 }
 
 .resendBtn {
   background: none;
   border: none;
-  font-size: 0.82rem;
-  color: #9ca3af;
-  cursor: not-allowed;
   padding: 0;
-  font-family: inherit;
+  cursor: not-allowed;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #9b8ab0;
   transition: color 0.15s;
+  text-decoration: none;
 }
 
 .resendActive {
-  color: #7c3aed;
+  color: #542982;
   cursor: pointer;
-  font-weight: 500;
   text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 .resendActive:hover {
-  color: #5b21b6;
+  color: #783bb5;
 }
 
 /* ─── VERIFY BUTTON ──────────────────────────────────────── */
 .verifyBtn {
-  width: 100%;
-  max-width: 360px;
-  padding: 13px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #7c3aed 0%, #9f7aea 100%);
-  color: #fff;
+  font-family: "Poppins", sans-serif;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background-color: #542982 !important;
+  color: #fff !important;
+  border: 2px solid #542982 !important;
+  border-radius: 20px;
+  padding: 0.7rem 1rem;
+  width: 100%;
   cursor: pointer;
-  letter-spacing: 0.03em;
-  transition:
-    opacity 0.15s,
-    transform 0.1s;
-  margin-bottom: 1.1rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+  white-space: nowrap;
 }
 
 .verifyBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background-color: #783bb5 !important;
+  border-color: #783bb5 !important;
   transform: translateY(-1px);
 }
 
 .verifyBtn:active:not(:disabled) {
+  background-color: #3e1d63 !important;
   transform: translateY(0);
+  box-shadow: 0 0 0 0.15rem rgba(84, 41, 130, 0.25) !important;
 }
 
 .verifyBtn:disabled {
-  opacity: 0.45;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 /* ─── SPINNER ────────────────────────────────────────────── */
@@ -373,16 +274,17 @@
 }
 
 .spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: fp-spin 0.65s linear infinite;
+  display: inline-block;
   flex-shrink: 0;
 }
 
-@keyframes spin {
+@keyframes fp-spin {
   to {
     transform: rotate(360deg);
   }
@@ -390,20 +292,25 @@
 
 /* ─── BACK LINK ──────────────────────────────────────────── */
 .backLink {
-  font-size: 0.85rem;
-  color: #6b7280;
-  text-align: center;
-  width: 100%;
-  max-width: 360px;
-}
-
-.backLinkBold {
-  color: #7c3aed;
-  font-weight: 600;
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #542982;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  transition: color 0.15s;
+  white-space: nowrap;
 }
 
-.backLinkBold:hover {
+.backLink:hover {
+  color: #783bb5;
   text-decoration: underline;
 }
 
@@ -413,9 +320,9 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 360px;
   padding: 1rem 0;
   text-align: center;
+  gap: 0.75rem;
 }
 
 .successIconWrap {
@@ -426,13 +333,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.25rem;
-  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fp-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
-@keyframes popIn {
+@keyframes fp-pop {
   from {
-    transform: scale(0.5);
+    transform: scale(0);
     opacity: 0;
   }
   to {
@@ -442,40 +348,74 @@
 }
 
 .successTitle {
-  font-size: 1.4rem;
+  font-family: "Poppins", sans-serif;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 8px;
+  color: #542982;
+  margin: 0;
 }
 
 .successDesc {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0 0 1.5rem;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.85rem;
+  color: #646465;
+  margin: 0;
   line-height: 1.6;
 }
 
 .progressTrack {
   width: 100%;
   height: 4px;
-  background: #e9d5ff;
+  background: rgba(84, 41, 130, 0.15);
   border-radius: 4px;
   overflow: hidden;
+  margin-top: 0.5rem;
 }
 
 .progressBar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  background: linear-gradient(90deg, #542982, #783bb5);
   border-radius: 4px;
   animation: fillBar 2.4s ease-in-out forwards;
 }
 
 @keyframes fillBar {
-  from {
-    width: 0%;
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .card {
+    min-width: unset;
+    padding: 1.5rem 1.25rem !important;
+    border-radius: 16px !important;
   }
-  to {
-    width: 100%;
+
+  .otpBox {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .otpRow {
+    gap: 8px;
+  }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  .page {
+    padding: 0.75rem 1rem;
+    align-items: flex-start;
+  }
+
+  .card {
+    padding: 1rem 1.5rem !important;
+  }
+
+  .logo {
+    max-width: 40%;
+    margin-bottom: 0.5rem;
   }
 }
