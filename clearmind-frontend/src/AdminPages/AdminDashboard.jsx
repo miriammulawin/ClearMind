@@ -155,11 +155,10 @@ function AdminDashboard() {
   const [inactivePatients, setInactivePatients] = useState(0);
   const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
 
-  /* ── Today's appointments ── */
+  /* ── Today's appointments (Confirmed only) ── */
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayOnline, setTodayOnline] = useState(0);
   const [todayPhysical, setTodayPhysical] = useState(0);
-  const [todayAppointments, setTodayAppointments] = useState([]);
 
   /* ── Pending consultation requests ── */
   const [totalPendingRequests, setTotalPendingRequests] = useState(0);
@@ -222,6 +221,7 @@ function AdminDashboard() {
 
   /**
    * GET /admin/appointments
+   * Today counts only include appointments with status "Confirmed".
    * Uses rawDate ("YYYY-MM-DD") for reliable today comparison —
    * avoids timezone issues that occur when re-parsing a formatted date string.
    */
@@ -236,23 +236,25 @@ function AdminDashboard() {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      // Today's appointments — slice(0,10) handles "YYYY-MM-DD HH:mm:ss" too
+      // Today's CONFIRMED appointments only
       const todays = all.filter(
-        (a) => a.rawDate && a.rawDate.slice(0, 10) === todayStr,
+        (a) =>
+          a.rawDate &&
+          a.rawDate.slice(0, 10) === todayStr &&
+          ["confirmed", "Confirmed"].includes(a.status),
       );
-      setTodayAppointments(todays);
       setTodayTotal(todays.length);
       setTodayOnline(todays.filter((a) => a.visitType === "virtual").length);
       setTodayPhysical(todays.filter((a) => a.visitType === "onsite").length);
 
-      // Pending consultations widget
+      // Pending consultations widget (all dates, pending status)
       const pending = all.filter((a) =>
         ["pending", "Pending"].includes(a.status),
       );
       setPendingAppointments(pending);
       setTotalPendingRequests(pending.length);
 
-      // Monthly data for Bar chart — use rawDate to avoid re-parse issues
+      // Monthly data for Bar chart — all statuses, use rawDate
       const monthly = Array(12).fill(0);
       all.forEach((a) => {
         if (!a.rawDate) return;
@@ -633,6 +635,9 @@ function AdminDashboard() {
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
+                  
+            
+
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <IoVideocam className={styles.appointmentIcon} />
@@ -642,6 +647,7 @@ function AdminDashboard() {
                         {todayOnline} Appointment{todayOnline !== 1 ? "s" : ""}
                       </p>
                     </div>
+
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <FaClinicMedical className={styles.appointmentIcon} />
@@ -653,9 +659,7 @@ function AdminDashboard() {
                       </p>
                     </div>
 
-                 
-
-                    
+              
                   </div>
                 </div>
               </div>
