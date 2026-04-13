@@ -248,7 +248,7 @@ function ManageAccounts() {
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user.doctors_id}>
+                    <tr key={`${user.user_id}-${user.doctors_id}`}>
                       <td>{user.email_address}</td>
                       {allRoles.map((role) => (
                         <td key={role}>

@@ -43,7 +43,6 @@ const EMPTY_FORM = {
   paymentMethod: "Gcash",
   consultationAmount: "",
   confirm: false,
-  // image state
   clinicImageFile: null,
   clinicImagePreview: null,
   existingClinicImage: null,
@@ -51,60 +50,6 @@ const EMPTY_FORM = {
   qrImagePreview: null,
   existingQrImage: null,
 };
-
-const INITIAL_SERVICES = [
-  {
-    id: "0",
-    title: "Psychotherapy and Counseling",
-    description:
-      "Helps individuals understand and manage their thoughts, emotions, and behaviors in a healthy way.",
-    price: "",
-    available: true,
-    subServices: [],
-  },
-  {
-    id: "1",
-    title: "Psychological Assessment and Evaluation",
-    description:
-      "Gathers and integrates data about a person's mental, emotional, cognitive, behavioral, personality, and social functioning.",
-    price: "",
-    available: true,
-    subServices: [
-      { id: "1-0", title: "VAWC Purpose", price: "", available: true },
-      {
-        id: "1-1",
-        title: "Adoption or Other Legal Purposes",
-        price: "",
-        available: true,
-      },
-      {
-        id: "1-2",
-        title: "School / Academic Support",
-        price: "",
-        available: true,
-      },
-      { id: "1-3", title: "Work-related Purpose", price: "", available: true },
-      {
-        id: "1-4",
-        title: "Pre-Employment Purpose",
-        price: "",
-        available: true,
-      },
-      {
-        id: "1-5",
-        title: "Emotional Support Animal (ESA) Certification",
-        price: "",
-        available: true,
-      },
-      {
-        id: "1-6",
-        title: "Mental Health Certification",
-        price: "",
-        available: true,
-      },
-    ],
-  },
-];
 
 /* ─── Map API → card ─── */
 const mapClinic = (s) => ({
@@ -138,24 +83,73 @@ export default function AdminClinic() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
 
-  /* file input refs */
+  /* file refs */
   const clinicImgRef = useRef(null);
   const qrImgRef = useRef(null);
 
   /* services */
-  const [services, setServices] = useState(INITIAL_SERVICES);
-  const [expandedIds, setExpandedIds] = useState(["1"]);
+  const [services, setServices] = useState([]);
+  const [expandedIds, setExpandedIds] = useState([]);
+
+  /* add service form */
   const [showAddSvc, setShowAddSvc] = useState(false);
   const [newSvcTitle, setNewSvcTitle] = useState("");
   const [newSvcDesc, setNewSvcDesc] = useState("");
+  const [newSvcPrice, setNewSvcPrice] = useState("");
+
+  /* add purpose form */
   const [addPurposeFor, setAddPurposeFor] = useState(null);
   const [newPurpose, setNewPurpose] = useState("");
+  const [newPurposePrice, setNewPurposePrice] = useState("");
 
   /* ── fetch on mount ── */
   useEffect(() => {
     fetchClinics();
+    fetchServices();
   }, []);
 
+  /* ── fetch services ── */
+  async function fetchServices() {
+    try {
+      const res = await fetch(`${API_BASE}/services`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch services");
+
+      const mapped = (data.data || []).map((s) => {
+        const isPsych = s.service_name
+          .toLowerCase()
+          .includes("psychological assessment");
+
+        return {
+          id: String(s.service_id),
+          title: s.service_name,
+          description: s.description,
+          price: s.price,
+          available: s.is_available === 1 || s.is_available === true,
+          isPsych,
+          subServices: isPsych
+            ? (s.purposes || []).map((p) => ({
+                id: String(p.purpose_id),
+                title: p.purpose_name,
+                price: p.price,
+                available: p.is_active === 1 || p.is_active === true,
+              }))
+            : [],
+        };
+      });
+
+      setServices(mapped);
+    } catch (e) {
+      console.error("Fetch Services Error:", e);
+    }
+  }
+
+  /* ── fetch clinics ── */
   async function fetchClinics() {
     setLoading(true);
     setApiError(null);
@@ -226,13 +220,13 @@ export default function AdminClinic() {
     setShowModal(true);
   }
 
-  /* ── text / select / checkbox ── */
+  /* ── form input ── */
   function handleInput(e) {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   }
 
-  /* ── file with live preview ── */
+  /* ── file with preview ── */
   function handleFile(e) {
     const { name, files } = e.target;
     const file = files?.[0];
@@ -258,7 +252,7 @@ export default function AdminClinic() {
     reader.readAsDataURL(file);
   }
 
-  /* ── schedule toggle / time ── */
+  /* ── schedule ── */
   function setSchedule(day, field, value) {
     setForm((f) => ({
       ...f,
@@ -269,7 +263,7 @@ export default function AdminClinic() {
     }));
   }
 
-  /* ── submit ── */
+  /* ── submit clinic ── */
   async function handleSubmit() {
     if (!form.name.trim()) {
       alert("Clinic name is required.");
@@ -308,31 +302,25 @@ export default function AdminClinic() {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           Accept: "application/json",
-          // ⚠️ Do NOT set Content-Type — browser sets multipart boundary automatically
         },
         body: fd,
       });
-
       const text = await res.text();
       let result;
       try {
         result = JSON.parse(text);
       } catch {
-        alert(
-          `Server error ${res.status}.\nCheck Laravel logs.\n\n${text.slice(0, 400)}`,
-        );
+        alert(`Server error ${res.status}.\n\n${text.slice(0, 400)}`);
         return;
       }
 
       if (!res.ok) {
-        if (result.errors) {
+        if (result.errors)
           alert(
             "Validation errors:\n" +
               Object.values(result.errors).flat().join("\n"),
           );
-        } else {
-          alert(result.message || `Error ${res.status}`);
-        }
+        else alert(result.message || `Error ${res.status}`);
         return;
       }
 
@@ -342,16 +330,13 @@ export default function AdminClinic() {
       );
       setShowModal(false);
     } catch (e) {
-      alert(
-        "Network error — make sure Laravel is running on port 8000.\n" +
-          e.message,
-      );
+      alert("Network error — make sure Laravel is running.\n" + e.message);
     } finally {
       setSubmitting(false);
     }
   }
 
-  /* ── delete ── */
+  /* ── delete clinic ── */
   async function handleDelete(id) {
     if (!confirm("Delete this clinic?")) return;
     try {
@@ -362,9 +347,8 @@ export default function AdminClinic() {
           Accept: "application/json",
         },
       });
-      if (res.ok) {
-        setClinics((p) => p.filter((c) => c.id !== id));
-      } else {
+      if (res.ok) setClinics((p) => p.filter((c) => c.id !== id));
+      else {
         const j = await res.json().catch(() => ({}));
         alert(j.message || `Delete failed (${res.status})`);
       }
@@ -373,71 +357,223 @@ export default function AdminClinic() {
     }
   }
 
-  /* ── service helpers ── */
-  const updSvc = (id, p) =>
-    setServices((s) => s.map((x) => (x.id === id ? { ...x, ...p } : x)));
-  const updSub = (sId, subId, p) =>
+  /* ────────────────────────────────
+     SERVICE CRUD
+  ──────────────────────────────── */
+
+  /* add service */
+  async function addSvc() {
+    if (!newSvcTitle.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/services`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          service_name: newSvcTitle.trim(),
+          description: newSvcDesc.trim(),
+          price: newSvcPrice || 0,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to add service");
+
+      const isPsych = result.data.service_name
+        .toLowerCase()
+        .includes("psychological assessment");
+
+      setServices((s) => [
+        ...s,
+        {
+          id: String(result.data.service_id),
+          title: result.data.service_name,
+          description: result.data.description,
+          price: result.data.price,
+          available:
+            result.data.is_available === 1 || result.data.is_available === true,
+          isPsych,
+          subServices: [],
+        },
+      ]);
+
+      setNewSvcTitle("");
+      setNewSvcDesc("");
+      setNewSvcPrice("");
+      setShowAddSvc(false);
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /* update service (price / toggle) */
+  async function updSvc(id, patch) {
+    setServices((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    try {
+      const svc = services.find((x) => x.id === id);
+      await fetch(`${API_BASE}/services/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          price: patch.price ?? svc.price,
+          is_available:
+            patch.available !== undefined
+              ? patch.available
+                ? 1
+                : 0
+              : svc.available
+                ? 1
+                : 0,
+        }),
+      });
+    } catch (e) {
+      console.error("Update service failed:", e);
+    }
+  }
+
+  /* delete service */
+  async function delSvc(id) {
+    if (!confirm("Delete this service?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/services/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setServices((s) => s.filter((x) => x.id !== id));
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /* ────────────────────────────────
+     PURPOSE CRUD
+  ──────────────────────────────── */
+
+  /* add purpose */
+  async function addPurp(sId) {
+    if (!newPurpose.trim()) return;
+    try {
+      const res = await fetch(`${API_BASE}/assessment-purposes`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          service_id: sId,
+          purpose_name: newPurpose.trim(),
+          price: newPurposePrice || 0,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to add purpose");
+
+      setServices((prev) =>
+        prev.map((svc) =>
+          String(svc.id) === String(sId)
+            ? {
+                ...svc,
+                subServices: [
+                  ...svc.subServices,
+                  {
+                    id: String(result.data.purpose_id),
+                    title: result.data.purpose_name,
+                    price: result.data.price || "",
+                    available:
+                      result.data.is_active === 1 ||
+                      result.data.is_active === true,
+                  },
+                ],
+              }
+            : svc,
+        ),
+      );
+
+      setNewPurpose("");
+      setNewPurposePrice("");
+      setAddPurposeFor(null);
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  /* update purpose (price / toggle) */
+  async function updSub(sId, subId, patch) {
     setServices((s) =>
       s.map((x) =>
         x.id === sId
           ? {
               ...x,
               subServices: x.subServices.map((b) =>
-                b.id === subId ? { ...b, ...p } : b,
+                b.id === subId ? { ...b, ...patch } : b,
               ),
             }
           : x,
       ),
     );
-  const delSvc = (id) => setServices((s) => s.filter((x) => x.id !== id));
-  const delSub = (sId, subId) =>
-    setServices((s) =>
-      s.map((x) =>
-        x.id === sId
-          ? { ...x, subServices: x.subServices.filter((b) => b.id !== subId) }
-          : x,
-      ),
-    );
-  const addSvc = () => {
-    if (!newSvcTitle.trim()) return;
-    setServices((s) => [
-      ...s,
-      {
-        id: String(Date.now()),
-        title: newSvcTitle.trim(),
-        description: newSvcDesc.trim(),
-        price: "",
-        available: true,
-        subServices: [],
-      },
-    ]);
-    setNewSvcTitle("");
-    setNewSvcDesc("");
-    setShowAddSvc(false);
-  };
-  const addPurp = (sId) => {
-    if (!newPurpose.trim()) return;
-    setServices((s) =>
-      s.map((x) =>
-        x.id === sId
-          ? {
-              ...x,
-              subServices: [
-                ...x.subServices,
-                {
-                  id: String(Date.now()),
-                  title: newPurpose.trim(),
-                  price: "",
-                  available: true,
-                },
-              ],
-            }
-          : x,
-      ),
-    );
-    setNewPurpose("");
-    setAddPurposeFor(null);
-  };
+    try {
+      const sub = services
+        .find((x) => x.id === sId)
+        ?.subServices.find((b) => b.id === subId);
+      await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          price: patch.price ?? sub?.price,
+          is_active:
+            patch.available !== undefined
+              ? patch.available
+                ? 1
+                : 0
+              : sub?.available
+                ? 1
+                : 0,
+        }),
+      });
+    } catch (e) {
+      console.error("Update purpose failed:", e);
+    }
+  }
+
+  /* delete purpose */
+  async function delSub(sId, subId) {
+    if (!confirm("Delete this purpose?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      setServices((s) =>
+        s.map((x) =>
+          x.id === sId
+            ? { ...x, subServices: x.subServices.filter((b) => b.id !== subId) }
+            : x,
+        ),
+      );
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
   const togExp = (id) =>
     setExpandedIds((p) =>
       p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
@@ -491,7 +627,7 @@ export default function AdminClinic() {
       <div className="admin-main">
         <AdminTopNavbar activeMenu={activeMenu} />
         <div className={`admin-content ${styles.clinicPage}`}>
-          {/* header */}
+          {/* ── Clinic Header ── */}
           <div className={styles.clinicHeader}>
             <h3>Available Clinics</h3>
             <button className={styles.btnCreate} onClick={openCreate}>
@@ -499,7 +635,7 @@ export default function AdminClinic() {
             </button>
           </div>
 
-          {/* states */}
+          {/* ── States ── */}
           {loading && (
             <p style={{ color: "#888", marginBottom: 16 }}>Loading clinics…</p>
           )}
@@ -526,7 +662,7 @@ export default function AdminClinic() {
             </p>
           )}
 
-          {/* cards */}
+          {/* ── Clinic Cards ── */}
           <div className={styles.clinicCards}>
             {clinics.map((c) => (
               <div key={c.id} className={styles.clinicCard}>
@@ -601,6 +737,7 @@ export default function AdminClinic() {
               </button>
             </div>
 
+            {/* ── Add Service Form ── */}
             {showAddSvc && (
               <div className={styles.addServiceForm}>
                 <p className={styles.addFormTitle}>New Service</p>
@@ -620,6 +757,31 @@ export default function AdminClinic() {
                     value={newSvcDesc}
                     onChange={(e) => setNewSvcDesc(e.target.value)}
                   />
+                  {/* ── Price field ── */}
+                  <div style={{ position: "relative" }}>
+                    <span
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#7341a8",
+                        fontWeight: 700,
+                        fontSize: 14,
+                      }}
+                    >
+                      ₱
+                    </span>
+                    <input
+                      className={styles.addInput}
+                      type="number"
+                      placeholder="Price (e.g. 2000)"
+                      value={newSvcPrice}
+                      onChange={(e) => setNewSvcPrice(e.target.value)}
+                      min={0}
+                      style={{ paddingLeft: 28 }}
+                    />
+                  </div>
                 </div>
                 <div className={styles.addFormActions}>
                   <button
@@ -628,6 +790,7 @@ export default function AdminClinic() {
                       setShowAddSvc(false);
                       setNewSvcTitle("");
                       setNewSvcDesc("");
+                      setNewSvcPrice("");
                     }}
                   >
                     Cancel
@@ -639,19 +802,22 @@ export default function AdminClinic() {
               </div>
             )}
 
+            {/* ── Services List ── */}
             <div className={styles.servicesList}>
               {services.map((svc) => {
                 const expanded = expandedIds.includes(svc.id);
                 const addingPurp = addPurposeFor === svc.id;
+
                 return (
                   <div
                     key={svc.id}
                     className={`${styles.serviceCard} ${!svc.available ? styles.serviceCardDisabled : ""}`}
                   >
+                    {/* Service Row */}
                     <div className={styles.serviceCardHeader}>
                       <div className={styles.serviceCardLeft}>
                         <div className={styles.serviceIconBubble}>
-                          {svc.id === "0" ? (
+                          {svc.isPsych ? (
                             <FaBrain size={14} color="#fff" />
                           ) : (
                             <FaClinicMedical size={14} color="#fff" />
@@ -702,7 +868,8 @@ export default function AdminClinic() {
                       </div>
                     </div>
 
-                    {(svc.subServices.length > 0 || svc.id === "1") && (
+                    {/* ── Purposes accordion — ONLY for Psychological Assessment ── */}
+                    {svc.isPsych && (
                       <>
                         <div className={styles.subToggleBar}>
                           <button
@@ -721,13 +888,16 @@ export default function AdminClinic() {
                               );
                               setShowAddSvc(false);
                               setNewPurpose("");
+                              setNewPurposePrice("");
                             }}
                           >
                             <FiPlus size={12} /> Add Purpose
                           </button>
                         </div>
+
                         {expanded && (
                           <div className={styles.subServicesList}>
+                            {/* Purpose rows */}
                             {svc.subServices.map((sub) => (
                               <div
                                 key={sub.id}
@@ -781,8 +951,13 @@ export default function AdminClinic() {
                                 </div>
                               </div>
                             ))}
+
+                            {/* Add Purpose inline form */}
                             {addingPurp ? (
-                              <div className={styles.addPurposeRow}>
+                              <div
+                                className={styles.addPurposeRow}
+                                style={{ flexDirection: "column", gap: 8 }}
+                              >
                                 <input
                                   className={styles.addInput}
                                   style={{ flex: 1 }}
@@ -798,15 +973,44 @@ export default function AdminClinic() {
                                     if (e.key === "Escape") {
                                       setAddPurposeFor(null);
                                       setNewPurpose("");
+                                      setNewPurposePrice("");
                                     }
                                   }}
                                 />
+                                {/* ── Price field for purpose ── */}
+                                <div style={{ position: "relative" }}>
+                                  <span
+                                    style={{
+                                      position: "absolute",
+                                      left: 12,
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      color: "#7341a8",
+                                      fontWeight: 700,
+                                      fontSize: 14,
+                                    }}
+                                  >
+                                    ₱
+                                  </span>
+                                  <input
+                                    className={styles.addInput}
+                                    type="number"
+                                    placeholder="Price (e.g. 1500)"
+                                    value={newPurposePrice}
+                                    onChange={(e) =>
+                                      setNewPurposePrice(e.target.value)
+                                    }
+                                    min={0}
+                                    style={{ paddingLeft: 28 }}
+                                  />
+                                </div>
                                 <div className={styles.addFormActions}>
                                   <button
                                     className={styles.addCancelBtn}
                                     onClick={() => {
                                       setAddPurposeFor(null);
                                       setNewPurpose("");
+                                      setNewPurposePrice("");
                                     }}
                                   >
                                     Cancel
@@ -827,6 +1031,7 @@ export default function AdminClinic() {
                                     setAddPurposeFor(svc.id);
                                     setShowAddSvc(false);
                                     setNewPurpose("");
+                                    setNewPurposePrice("");
                                   }}
                                 >
                                   <FiPlus size={13} /> Add Assessment Purpose
@@ -861,7 +1066,7 @@ export default function AdminClinic() {
       </div>
 
       {/* ══════════════════════════════
-          MODAL
+          CLINIC MODAL
       ══════════════════════════════ */}
       {showModal && (
         <div className={styles.backdrop}>
@@ -967,7 +1172,6 @@ export default function AdminClinic() {
                   />
                 </div>
 
-                {/* Clinic Image */}
                 <Field label="Clinic Image">
                   <div>
                     <ImgPreview
@@ -1100,7 +1304,6 @@ export default function AdminClinic() {
                   </div>
                 </div>
 
-                {/* QR Code */}
                 <Field label="Payment QR Code">
                   <div>
                     <ImgPreview

@@ -1,156 +1,303 @@
 <?php
+// app/Http/Controllers/AppointmentController.php
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AppointmentController extends Controller
 {
-    /**
-     * GET /admin/appointments
-     */
+    /* ══════════════════════════════════════════════
+       GET /appointments  (admin sees all, client sees own)
+    ══════════════════════════════════════════════ */
     public function index(Request $request): JsonResponse
     {
-        $query = Appointment::with([
-            'patient:id,firstName,lastName,email,contactNo',
-            'doctor:id,firstName,lastName',
-        ]);
+        try {
+            $user = Auth::user();
 
-        if ($date = $request->get('date')) {
-            $query->whereDate('appointment_date', $date);
+            $query = Appointment::with(['patient', 'doctor', 'bookedBy'])
+                ->orderByDesc('appointment_date')
+                ->orderByDesc('start_time');
+
+            if ($user->role === 'Client') {
+                $query->where('booked_by_user_id', $user->id);
+            }
+
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+            if ($request->filled('date')) {
+                $query->whereDate('appointment_date', $request->date);
+            }
+
+            return response()->json(['data' => $query->get()]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
         }
-
-        if ($type = $request->get('type')) {
-            $query->where('type', $type);
-        }
-
-        if ($status = $request->get('status')) {
-            $query->where('status', $status);
-        }
-
-        if ($doctorId = $request->get('doctor_id')) {
-            $query->where('doctor_id', $doctorId);
-        }
-
-        $appointments = $query->orderBy('appointment_date')
-                              ->orderBy('appointment_time')
-                              ->get();
-
-        return response()->json([
-            'success' => true,
-            'data'    => $appointments->map(fn($a) => $this->formatAppointment($a)),
-        ]);
     }
 
-    /**
-     * POST /admin/appointments
-     */
+    /* ══════════════════════════════════════════════
+       POST /appointments  — book an appointment
+    ══════════════════════════════════════════════ */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'patient_id'       => 'required|exists:users,id',
-            'doctor_id'        => 'nullable|exists:users,id',
-            'appointment_date' => 'required|date|after_or_equal:today',
-            'appointment_time' => 'required|date_format:H:i',
-            'type'             => 'required|in:online,physical',
-            'reason'           => 'nullable|string|max:500',
-            'notes'            => 'nullable|string',
+        $validator = Validator::make($request->all(), [
+            /* ── Patient ── */
+            'patient_id'               => ['nullable', 'exists:patients,patient_id'],
+            'patient_firstName'        => ['required_without:patient_id', 'string', 'max:100'],
+            'patient_lastName'         => ['required_without:patient_id', 'string', 'max:100'],
+            'patient_middleInitial'    => ['nullable', 'string', 'max:5'],
+            'patient_dob'              => ['nullable', 'date'],
+            'patient_sex'              => ['nullable', 'in:male,female,other'],
+            'patient_civilStatus'      => ['nullable', 'in:single,married,widowed,divorced,separated'],
+            'patient_classification'   => ['nullable', 'in:PWD,Senior Citizen,Regular'],
+            'patient_contactNo'        => ['nullable', 'string', 'max:20'],
+            'patient_email'            => ['nullable', 'email', 'max:191'],
+            'patient_address'          => ['nullable', 'string'],
+
+            /* ── Informant ── */
+            'informant_name'           => ['nullable', 'string', 'max:200'],
+            'informant_relation'       => ['nullable', 'string', 'max:100'],
+
+            /* ── Schedule ── */
+            'appointment_date'         => ['required', 'date', 'after_or_equal:today'],
+            'start_time'               => ['required', 'date_format:H:i'],
+            'end_time'                 => ['required', 'date_format:H:i', 'after:start_time'],
+            'visit_type'               => ['required', 'in:onsite,virtual'],
+
+            /* ── Service ── */
+            'reason_for_consultation'  => ['nullable', 'string', 'max:500'],
+            'service_type'             => ['nullable', 'string', 'max:100'],
+            'pae_purpose'              => ['nullable', 'string', 'max:200'],
+
+            /* ── Payment ── */
+            'payment_status'           => ['nullable', 'in:paid,not_paid,probono'],
+
+            /* ── Receipts (multiple) ── */
+            'receipts'                 => ['nullable', 'array', 'max:10'],
+            'receipts.*'               => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+
+            /* ── Doctor ── */
+            'doctor_user_id'           => ['nullable', 'exists:users,id'],
         ]);
 
-        $appointment = Appointment::create([
-            ...$validated,
-            'status' => Appointment::STATUS_PENDING,
-        ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
 
-        $appointment->load(['patient:id,firstName,lastName', 'doctor:id,firstName,lastName']);
+        DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Appointment created successfully.',
-            'data'    => $this->formatAppointment($appointment),
-        ], 201);
+        $receiptPaths = [];
+
+        try {
+            $user = Auth::user();
+
+            /* ── 1. Resolve or create patient ── */
+            if ($request->filled('patient_id')) {
+                // ✅ FIXED: use the correct PK column name
+                $patient = Patient::where('patient_id', $request->patient_id)->firstOrFail();
+            } else {
+                $isSelfBooking = !$request->filled('informant_name');
+
+                $patient = Patient::create([
+                    'user_id'               => ($isSelfBooking && $user->role === 'Client') ? $user->id : null,
+                    'firstName'             => $request->patient_firstName,
+                    'lastName'              => $request->patient_lastName,
+                    'middleInitial'         => $request->patient_middleInitial,
+                    'dob'                   => $request->patient_dob,
+                    'sex'                   => $request->patient_sex,
+                    'civilStatus'           => $request->patient_civilStatus,
+                    'patientClassification' => $request->patient_classification ?? 'Regular',
+                    'contactNo'             => $request->patient_contactNo,
+                    'email'                 => $request->patient_email,
+                    'address'               => $request->patient_address,
+                ]);
+            }
+
+            /* ── 2. Upload all receipt files ── */
+            if ($request->hasFile('receipts')) {
+                foreach ($request->file('receipts') as $file) {
+                    $receiptPaths[] = $file->store('appointments/receipts', 'public');
+                }
+            }
+
+            /* ── 3. Create appointment ── */
+            $appointment = Appointment::create([
+                'booked_by_user_id'       => $user->id,
+                'patient_id'              => $patient->patient_id,
+                'informant_name'          => $request->informant_name,
+                'informant_relation'      => $request->informant_relation,
+                'doctor_user_id'          => $request->doctor_user_id,
+                'appointment_date'        => $request->appointment_date,
+                'start_time'              => $request->start_time,
+                'end_time'                => $request->end_time,
+                'visit_type'              => $request->visit_type,
+                'reason_for_consultation' => $request->reason_for_consultation,
+                'service_type'            => $request->service_type,
+                'pae_purpose'             => $request->pae_purpose,
+                'payment_status'          => $request->payment_status ?? 'not_paid',
+                'receipt_paths'           => $receiptPaths,
+                'status'                  => 'pending',
+            ]);
+
+            DB::commit();
+
+            // ✅ FIXED: eager load using appointment_id so relations resolve correctly
+            return response()->json([
+                'message' => 'Appointment created successfully.',
+                'data'    => Appointment::with(['patient', 'doctor', 'bookedBy'])
+                                ->find($appointment->appointment_id),
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            foreach ($receiptPaths as $path) {
+                Storage::disk('public')->delete($path);
+            }
+
+            return response()->json([
+                'message' => 'Failed to create appointment.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
-    /**
-     * GET /admin/appointments/{id}
-     */
-    public function show(Appointment $appointment): JsonResponse
+    /* ══════════════════════════════════════════════
+       GET /appointments/{id}
+    ══════════════════════════════════════════════ */
+    public function show(int $id): JsonResponse
     {
-        $appointment->load(['patient', 'doctor']);
+        try {
+            // ✅ FIXED: query by appointment_id explicitly
+            $appt = Appointment::with(['patient', 'doctor', 'bookedBy'])
+                ->where('appointment_id', $id)
+                ->firstOrFail();
 
-        return response()->json([
-            'success' => true,
-            'data'    => $this->formatAppointment($appointment),
-        ]);
+            $user = Auth::user();
+            if ($user->role === 'Client' && $appt->booked_by_user_id !== $user->id) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
+
+            return response()->json(['data' => $appt]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Appointment not found.'], 404);
+        }
     }
 
-    /**
-     * PUT /admin/appointments/{id}
-     */
-    public function update(Request $request, Appointment $appointment): JsonResponse
+    /* ══════════════════════════════════════════════
+       PUT /appointments/{id}
+    ══════════════════════════════════════════════ */
+    public function update(Request $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'doctor_id'           => 'nullable|exists:users,id',
-            'appointment_date'    => 'sometimes|date',
-            'appointment_time'    => 'sometimes|date_format:H:i',
-            'type'                => 'sometimes|in:online,physical',
-            'status'              => 'sometimes|in:pending,confirmed,completed,cancelled,no_show',
-            'reason'              => 'nullable|string|max:500',
-            'notes'               => 'nullable|string',
-            'cancellation_reason' => 'nullable|string|max:500',
+        // ✅ FIXED: find by appointment_id explicitly
+        $appt = Appointment::where('appointment_id', $id)->first();
+        if (!$appt) {
+            return response()->json(['message' => 'Appointment not found.'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'status'         => ['nullable', 'in:pending,confirmed,completed,cancelled,no_show'],
+            'doctor_user_id' => ['nullable', 'exists:users,id'],
+            'payment_status' => ['nullable', 'in:paid,not_paid,probono'],
+            'notes'          => ['nullable', 'string'],
+            'receipts'       => ['nullable', 'array', 'max:10'],
+            'receipts.*'     => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
 
-        $appointment->update($validated);
-        $appointment->load(['patient:id,firstName,lastName', 'doctor:id,firstName,lastName']);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed.', 'errors' => $validator->errors()], 422);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Appointment updated successfully.',
-            'data'    => $this->formatAppointment($appointment),
-        ]);
+        try {
+            $appt->fill($request->only([
+                'status', 'doctor_user_id', 'payment_status',
+                'notes', 'visit_type', 'appointment_date',
+                'start_time', 'end_time',
+            ]));
+
+            // Append new receipt files to existing ones
+            if ($request->hasFile('receipts')) {
+                $existing = $appt->receipt_paths ?? [];
+                foreach ($request->file('receipts') as $file) {
+                    $existing[] = $file->store('appointments/receipts', 'public');
+                }
+                $appt->receipt_paths = $existing;
+            }
+
+            $appt->save();
+
+            return response()->json([
+                'message' => 'Appointment updated.',
+                'data'    => Appointment::with(['patient', 'doctor', 'bookedBy'])
+                                ->find($appt->appointment_id),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
-    /**
-     * DELETE /admin/appointments/{id}
-     */
-    public function destroy(Appointment $appointment): JsonResponse
+    /* ══════════════════════════════════════════════
+       DELETE /appointments/{id}  (soft delete)
+    ══════════════════════════════════════════════ */
+    public function destroy(int $id): JsonResponse
     {
-        $appointment->delete();
+        $appt = Appointment::where('appointment_id', $id)->first();
+        if (!$appt) {
+            return response()->json(['message' => 'Appointment not found.'], 404);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Appointment deleted successfully.',
-        ]);
+        try {
+            $appt->delete();
+            return response()->json(['message' => 'Appointment cancelled.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
-    // ── Helper ──
-    private function formatAppointment(Appointment $a): array
-    {
-        return [
-            'id'                  => $a->id,
-            'patient_id'          => $a->patient_id,
-            'patient'             => $a->patient
-                                        ? $a->patient->firstName . ' ' . $a->patient->lastName
-                                        : null,
-            'patient_email'       => $a->patient?->email,
-            'patient_contact'     => $a->patient?->contactNo,
-            'doctor_id'           => $a->doctor_id,
-            'doctor'              => $a->doctor
-                                        ? 'Dr. ' . $a->doctor->firstName . ' ' . $a->doctor->lastName
-                                        : 'Unassigned',
-            'appointment_date'    => $a->appointment_date?->toDateString(),
-            'appointment_time'    => $a->appointment_time,
-            'type'                => $a->type,
-            'status'              => $a->status,
-            'reason'              => $a->reason,
-            'notes'               => $a->notes,
-            'cancellation_reason' => $a->cancellation_reason,
-            'created_at'          => $a->created_at,
-            'updated_at'          => $a->updated_at,
-        ];
-    }
+    /* ══════════════════════════════════════════════
+       GET /patients  — for dropdowns
+    // ══════════════════════════════════════════════ */
+    // public function patientList(): JsonResponse
+    // {
+    //     try {
+    //         $patients = Patient::select('patient_id', 'firstName', 'lastName', 'middleInitial', 'contactNo')
+    //             ->where('is_active', true)
+    //             ->orderBy('lastName')
+    //             ->get();
+
+    //         return response()->json(['data' => $patients]);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage()], 500);
+    //     }
+    // }
+
+    // /* ══════════════════════════════════════════════
+    //    GET /doctors  — for admin dropdown
+    // ══════════════════════════════════════════════ */
+    // public function doctorList(): JsonResponse
+    // {
+    //     try {
+    //         $doctors = User::select('id', 'firstName', 'lastName', 'middleInitial')
+    //             ->where('role', 'Doctor')
+    //             ->where('is_active', true)
+    //             ->orderBy('lastName')
+    //             ->get();
+
+    //         return response()->json(['data' => $doctors]);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['message' => $e->getMessage()], 500);
+    //     }
+    // }
 }

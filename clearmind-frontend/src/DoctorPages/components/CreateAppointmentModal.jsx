@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import {
   FiX,
@@ -9,180 +9,323 @@ import {
   FiTrash2,
   FiCheck,
   FiChevronRight,
+  FiEye,
+  FiZoomIn,
+  FiZoomOut,
+  FiMaximize2,
+  FiPlus,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
 
-/* ─────────────────────────────────────────────────────────────────
-   Data
-───────────────────────────────────────────────────────────────── */
-const PATIENT_LIST = [
-  { id: 1, firstName: "Maria", lastName: "Santos", mi: "C" },
-  { id: 2, firstName: "Juan", lastName: "dela Cruz", mi: "R" },
-  { id: 3, firstName: "Ana", lastName: "Reyes", mi: "L" },
-  { id: 4, firstName: "Carlo", lastName: "Mendoza", mi: "B" },
-  { id: 5, firstName: "Lucia", lastName: "Garcia", mi: "T" },
-  { id: 6, firstName: "Mark", lastName: "Torres", mi: "A" },
-  { id: 7, firstName: "Sofia", lastName: "Flores", mi: "M" },
-  { id: 8, firstName: "Jose", lastName: "Villanueva", mi: "P" },
-];
+/* ─────────────────────────────────────────────────────────
+   Config
+───────────────────────────────────────────────────────── */
+const API_BASE = "http://localhost:8000/api";
+const getToken = () => localStorage.getItem("token");
 
-const DOCTOR_LIST = [
-  {
-    id: 1,
-    firstName: "Dr. Maria",
-    lastName: "Santos",
-    mi: "C",
-    specialty: "Psychotherapy",
-  },
-  {
-    id: 2,
-    firstName: "Dr. Juan",
-    lastName: "dela Cruz",
-    mi: "R",
-    specialty: "Assessment",
-  },
-  {
-    id: 3,
-    firstName: "Dr. Ana",
-    lastName: "Reyes",
-    mi: "L",
-    specialty: "Counseling",
-  },
-  {
-    id: 4,
-    firstName: "Dr. Carlo",
-    lastName: "Mendoza",
-    mi: "B",
-    specialty: "Therapy",
-  },
-  {
-    id: 5,
-    firstName: "Dr. Lucia",
-    lastName: "Garcia",
-    mi: "T",
-    specialty: "Assessment",
-  },
-];
-
-const SERVICES = [
-  {
-    id: "0",
-    title: "Psychotherapy and Counseling",
-    description: "",
-  },
-  {
-    id: "1",
-    title: "Psychological Assessment and Evaluation",
-    description: "",
-  },
-];
-
-const PAE_SERVICES = [
-  { id: "0", title: "VAWC Purpose", description: "", available: true },
-  {
-    id: "1",
-    title: "Adoption or Other Legal Purposes",
-    description: "",
-    available: true,
-  },
-  {
-    id: "2",
-    title: "School / Academic Support",
-    description: "",
-    available: true,
-  },
-  { id: "3", title: "Work-related Purpose", description: "", available: true },
-  {
-    id: "4",
-    title: "Pre-Employment Purpose",
-    description: "",
-    available: true,
-  },
-  {
-    id: "5",
-    title: "Emotional Support Animal (ESA) Certification",
-    description: "",
-    available: true,
-  },
-  {
-    id: "6",
-    title: "Mental Health Certification",
-    description: "",
-    available: true,
-  },
-];
-
-/* ─────────────────────────────────────────────────────────────────
-   Dropdown Component (reusable for Patient & Doctor)
-───────────────────────────────────────────────────────────────── */
-function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null);
-  const ref = useRef(null);
-
-  const filtered = items.filter((item) =>
-    `${item.firstName} ${item.mi}. ${item.lastName}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
-  );
+/* ─────────────────────────────────────────────────────────
+   ImagePreviewModal  — full-screen lightbox
+───────────────────────────────────────────────────────── */
+function ImagePreviewModal({ file, src, onClose }) {
+  const [zoom, setZoom] = useState(1);
+  const [dragging, setDragging] = useState(false);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const contentRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (e.key === "Escape") onClose();
+      if (e.key === "+" || e.key === "=") setZoom((z) => Math.min(z + 0.25, 4));
+      if (e.key === "-") setZoom((z) => Math.max(z - 0.25, 0.5));
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    const handleWheel = (e) => {
+      e.preventDefault();
+      setZoom((z) => Math.max(0.5, Math.min(4, z - e.deltaY * 0.001)));
+    };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
   }, []);
 
-  const handleSelect = (item) => {
-    setSelected(item);
-    setQuery("");
-    setOpen(false);
-    if (onSelect) onSelect(item);
+  const handleMouseDown = (e) => {
+    if (zoom <= 1) return;
+    setDragging(true);
+    setStartPos({ x: e.clientX - pos.x, y: e.clientY - pos.y });
+  };
+  const handleMouseMove = (e) => {
+    if (!dragging) return;
+    setPos({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+  };
+  const handleMouseUp = () => setDragging(false);
+  const resetView = () => {
+    setZoom(1);
+    setPos({ x: 0, y: 0 });
   };
 
-  const displayName = selected
-    ? `${selected.firstName} ${selected.mi}. ${selected.lastName}`
-    : "";
+  const isPdf = file?.type === "application/pdf";
 
-  const triggerStyle = {
+  const toolbarBtnStyle = {
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "6px",
+    color: "#ccc",
+    cursor: "pointer",
+    padding: "6px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: "10px 13px",
-    borderRadius: "9px",
-    border: open ? "1.5px solid #4D227C" : "1.5px solid #e2d5f5",
-    fontSize: "13px",
-    backgroundColor: "#fff",
-    cursor: "pointer",
-    color: selected ? "#333" : "#aaa",
-    boxSizing: "border-box",
-    userSelect: "none",
-    fontFamily: "inherit",
-    boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
-    transition: "border 0.2s, box-shadow 0.2s",
+    justifyContent: "center",
   };
 
   return (
-    <div ref={ref} style={{ position: "relative", width: "100%" }}>
-      {label && (
-        <label
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 999999,
+        backgroundColor: "rgba(0,0,0,0.92)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      {/* Toolbar */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "52px",
+          background: "rgba(0,0,0,0.7)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 16px",
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <FiFile style={{ color: "#aaa", flexShrink: 0 }} />
+          <span
+            style={{
+              color: "#fff",
+              fontSize: "13px",
+              fontWeight: "600",
+              maxWidth: "280px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {file?.name}
+          </span>
+          <span style={{ color: "#666", fontSize: "11px" }}>
+            {file?.size ? `(${(file.size / 1024).toFixed(1)} KB)` : ""}
+          </span>
+        </div>
+
+        {!isPdf && (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <button
+              style={toolbarBtnStyle}
+              onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
+              title="Zoom out (-)"
+            >
+              <FiZoomOut size={15} />
+            </button>
+            <span
+              style={{
+                color: "#ccc",
+                fontSize: "12px",
+                minWidth: "38px",
+                textAlign: "center",
+              }}
+            >
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              style={toolbarBtnStyle}
+              onClick={() => setZoom((z) => Math.min(4, z + 0.25))}
+              title="Zoom in (+)"
+            >
+              <FiZoomIn size={15} />
+            </button>
+            <button
+              style={toolbarBtnStyle}
+              onClick={resetView}
+              title="Reset view"
+            >
+              <FiMaximize2 size={15} />
+            </button>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
           style={{
-            fontSize: "11px",
-            fontWeight: "700",
-            color: "#4D227C",
-            textTransform: "uppercase",
-            letterSpacing: "0.7px",
-            marginBottom: "8px",
-            display: "block",
-            fontFamily: "inherit",
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: "8px",
+            color: "#fff",
+            cursor: "pointer",
+            padding: "7px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {label}
-        </label>
+          <FiX size={17} />
+        </button>
+      </div>
+
+      {/* Image / PDF area */}
+      <div
+        ref={contentRef}
+        style={{
+          marginTop: "52px",
+          flex: 1,
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default",
+          userSelect: "none",
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {isPdf ? (
+          <iframe
+            src={src}
+            style={{
+              width: "90vw",
+              height: "calc(100vh - 76px)",
+              border: "none",
+              borderRadius: "8px",
+            }}
+            title="PDF preview"
+          />
+        ) : (
+          <img
+            src={src}
+            alt={file?.name}
+            draggable={false}
+            style={{
+              maxWidth: zoom <= 1 ? "90vw" : `${zoom * 90}vw`,
+              maxHeight: zoom <= 1 ? "calc(100vh - 76px)" : "none",
+              transform: `translate(${pos.x}px, ${pos.y}px)`,
+              borderRadius: "6px",
+              boxShadow: "0 0 40px rgba(0,0,0,0.5)",
+              transition: dragging ? "none" : "max-width .15s",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+      </div>
+
+      {!isPdf && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "12px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            color: "rgba(255,255,255,0.3)",
+            fontSize: "11px",
+            pointerEvents: "none",
+          }}
+        >
+          Scroll to zoom · Drag to pan · Esc to close
+        </div>
       )}
-      <div onClick={() => setOpen((o) => !o)} style={triggerStyle}>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   PatientSearchDropdown
+───────────────────────────────────────────────────────── */
+function PatientSearchDropdown({ onSelect, value }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const fetchPatients = useCallback(async (searchQuery, signal) => {
+    setLoading(true);
+    try {
+      const qs = searchQuery.trim()
+        ? `&search=${encodeURIComponent(searchQuery)}`
+        : "";
+      const res = await fetch(`${API_BASE}/admin/patients?per_page=20${qs}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+        signal,
+      });
+      const json = await res.json();
+      setPatients(json.data || []);
+    } catch (e) {
+      if (e.name !== "AbortError") console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const ctrl = new AbortController();
+    fetchPatients(query, ctrl.signal);
+    return () => ctrl.abort();
+  }, [open, query, fetchPatients]);
+
+  const displayName = value
+    ? `${value.firstName}${value.middleInitial ? " " + value.middleInitial + "." : ""} ${value.lastName}`
+    : "";
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 13px",
+          borderRadius: "9px",
+          border: open ? "1.5px solid #4D227C" : "1.5px solid #e2d5f5",
+          fontSize: "13px",
+          backgroundColor: "#fff",
+          cursor: "pointer",
+          color: value ? "#333" : "#aaa",
+          boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
+          transition: "border .2s,box-shadow .2s",
+          userSelect: "none",
+        }}
+      >
         <span
           style={{
             overflow: "hidden",
@@ -190,15 +333,15 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
             whiteSpace: "nowrap",
           }}
         >
-          {displayName || placeholder}
+          {displayName || "Select Patient Name"}
         </span>
         <FiChevronDown
           style={{
             flexShrink: 0,
             marginLeft: 8,
             color: "#4D227C",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform .2s",
           }}
         />
       </div>
@@ -213,10 +356,9 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
             backgroundColor: "#fff",
             border: "1px solid #e0d4f5",
             borderRadius: "10px",
-            boxShadow: "0 8px 24px rgba(77,34,124,0.14)",
+            boxShadow: "0 8px 24px rgba(77,34,124,.14)",
             zIndex: 99999,
             overflow: "hidden",
-            fontFamily: "inherit",
           }}
         >
           <div
@@ -233,7 +375,7 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={`Search ${label?.toLowerCase() || "items"}…`}
+              placeholder="Search by name, email, or contact…"
               style={{
                 border: "none",
                 outline: "none",
@@ -241,29 +383,45 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
                 width: "100%",
                 color: "#333",
                 backgroundColor: "transparent",
-                fontFamily: "inherit",
               }}
             />
           </div>
-          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
-            {filtered.length === 0 ? (
+
+          <div style={{ maxHeight: "220px", overflowY: "auto" }}>
+            {loading ? (
               <div
                 style={{
-                  padding: "14px 16px",
+                  padding: "14px",
                   color: "#aaa",
                   fontSize: "13px",
                   textAlign: "center",
                 }}
               >
-                No items found
+                Loading…
+              </div>
+            ) : patients.length === 0 ? (
+              <div
+                style={{
+                  padding: "14px",
+                  color: "#aaa",
+                  fontSize: "13px",
+                  textAlign: "center",
+                }}
+              >
+                No patients found
               </div>
             ) : (
-              filtered.map((item) => {
-                const isActive = selected?.id === item.id;
+              patients.map((p) => {
+                const isActive = value?.patient_id === p.patient_id;
+                const name = `${p.firstName}${p.middleInitial ? " " + p.middleInitial + "." : ""} ${p.lastName}`;
                 return (
                   <div
-                    key={item.id}
-                    onClick={() => handleSelect(item)}
+                    key={p.patient_id}
+                    onClick={() => {
+                      onSelect(p);
+                      setOpen(false);
+                      setQuery("");
+                    }}
                     style={{
                       padding: "10px 16px",
                       fontSize: "13px",
@@ -271,7 +429,362 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
                       color: isActive ? "#4D227C" : "#333",
                       fontWeight: isActive ? "600" : "400",
                       backgroundColor: isActive ? "#f3ecfc" : "transparent",
-                      transition: "background 0.15s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      transition: "background .15s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "#faf7ff";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        backgroundColor: "#4D227C",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(p.firstName || " ")[0]}
+                      {(p.lastName || " ")[0]}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: "600" }}>{name}</div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "#999",
+                          marginTop: "2px",
+                          display: "flex",
+                          gap: "8px",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {p.contactNo && <span>{p.contactNo}</span>}
+                        {p.email && <span>✉ {p.email}</span>}
+                      </div>
+                    </div>
+                    {isActive && (
+                      <FiCheck style={{ color: "#4D227C", flexShrink: 0 }} />
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <div
+            style={{
+              padding: "7px 14px",
+              borderTop: "1px solid #f0eaf8",
+              fontSize: "11px",
+              color: "#bbb",
+              textAlign: "center",
+            }}
+          >
+            Top 20 results — type to search more
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   Row — helper component for PatientInfoCard
+───────────────────────────────────────────────────────── */
+function Row({ label, value }) {
+  return value ? (
+    <div>
+      <span style={{ color: "#888", fontSize: "12px" }}>{label}: </span>
+      <strong style={{ fontSize: "12px" }}>{value}</strong>
+    </div>
+  ) : null;
+}
+
+/* ─────────────────────────────────────────────────────────
+   PatientInfoCard
+───────────────────────────────────────────────────────── */
+function PatientInfoCard({ patient, onClear }) {
+  const age = (() => {
+    if (!patient.dob) return null;
+    const b = new Date(patient.dob);
+    const t = new Date();
+    let a = t.getFullYear() - b.getFullYear();
+    const m = t.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+    return a >= 0 ? a : null;
+  })();
+
+  return (
+    <div
+      style={{
+        background: "#f5f0fb",
+        border: "1.5px solid #d4bbf0",
+        borderRadius: "10px",
+        padding: "14px 16px",
+        marginTop: "10px",
+        position: "relative",
+      }}
+    >
+      <button
+        onClick={onClear}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          background: "none",
+          border: "1px solid #c4a8e8",
+          borderRadius: "6px",
+          cursor: "pointer",
+          color: "#7c3aed",
+          fontSize: "11px",
+          padding: "3px 8px",
+          fontWeight: "600",
+        }}
+      >
+        Change
+      </button>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            backgroundColor: "#4D227C",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "14px",
+            fontWeight: "700",
+            flexShrink: 0,
+          }}
+        >
+          {(patient.firstName || " ")[0]}
+          {(patient.lastName || " ")[0]}
+        </div>
+        <div>
+          <div
+            style={{ fontWeight: "700", color: "#2d1254", fontSize: "14px" }}
+          >
+            {patient.firstName}
+            {patient.middleInitial
+              ? " " + patient.middleInitial + "."
+              : ""}{" "}
+            {patient.lastName}
+          </div>
+          <div style={{ fontSize: "11px", color: "#7c3aed" }}>
+            Patient ID #{patient.patient_id}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "5px 20px",
+        }}
+      >
+        <Row label="Age" value={age !== null ? `${age} years old` : null} />
+        <Row label="DOB" value={patient.dob} />
+        <Row label="Sex" value={patient.sex} />
+        <Row label="Civil Status" value={patient.civilStatus} />
+        <Row label="Contact" value={patient.contactNo} />
+        <Row label="Classification" value={patient.patientClassification} />
+        {patient.email && (
+          <div style={{ gridColumn: "1/-1" }}>
+            <Row label="Email" value={patient.email} />
+          </div>
+        )}
+        {patient.address && (
+          <div style={{ gridColumn: "1/-1" }}>
+            <Row label="Address" value={patient.address} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   DoctorDropdown
+───────────────────────────────────────────────────────── */
+function DoctorDropdown({ onSelect, value }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [doctors, setDoctors] = useState([]);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const fetchDoctors = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/doctors/list`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      const json = await res.json();
+      setDoctors(json.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    fetchDoctors();
+  }, [open, fetchDoctors]);
+
+  const filtered = doctors.filter((d) =>
+    `${d.firstName} ${d.lastName}`.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  const displayName = value
+    ? `${value.firstName}${value.middleInitial ? " " + value.middleInitial + "." : ""} ${value.lastName}`
+    : "";
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <label
+        style={{
+          fontSize: "11px",
+          fontWeight: "700",
+          color: "#4D227C",
+          textTransform: "uppercase",
+          letterSpacing: "0.7px",
+          marginBottom: "8px",
+          display: "block",
+        }}
+      >
+        Assigned Doctor
+      </label>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "10px 13px",
+          borderRadius: "9px",
+          border: open ? "1.5px solid #4D227C" : "1.5px solid #e2d5f5",
+          fontSize: "13px",
+          backgroundColor: "#fff",
+          cursor: "pointer",
+          color: value ? "#333" : "#aaa",
+          boxShadow: open ? "0 0 0 3px rgba(77,34,124,.1)" : "none",
+          transition: "all .2s",
+          userSelect: "none",
+        }}
+      >
+        <span>{displayName || "Select Assigned Doctor"}</span>
+        <FiChevronDown
+          style={{
+            color: "#4D227C",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform .2s",
+          }}
+        />
+      </div>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff",
+            border: "1px solid #e0d4f5",
+            borderRadius: "10px",
+            boxShadow: "0 8px 24px rgba(77,34,124,.14)",
+            zIndex: 99999,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              padding: "10px 12px",
+              borderBottom: "1px solid #f0eaf8",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FiSearch style={{ color: "#aaa" }} />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search doctor…"
+              style={{
+                border: "none",
+                outline: "none",
+                fontSize: "13px",
+                width: "100%",
+                backgroundColor: "transparent",
+              }}
+            />
+          </div>
+          <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div
+                style={{
+                  padding: "14px",
+                  color: "#aaa",
+                  fontSize: "13px",
+                  textAlign: "center",
+                }}
+              >
+                No doctors found
+              </div>
+            ) : (
+              filtered.map((d) => {
+                const isActive = value?.id === d.id;
+                return (
+                  <div
+                    key={d.id}
+                    onClick={() => {
+                      onSelect(d);
+                      setOpen(false);
+                      setQuery("");
+                    }}
+                    style={{
+                      padding: "10px 16px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      color: isActive ? "#4D227C" : "#333",
+                      fontWeight: isActive ? "600" : "400",
+                      backgroundColor: isActive ? "#f3ecfc" : "transparent",
                       display: "flex",
                       alignItems: "center",
                       gap: "10px",
@@ -287,8 +800,8 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
                   >
                     <div
                       style={{
-                        width: "28px",
-                        height: "28px",
+                        width: "30px",
+                        height: "30px",
                         borderRadius: "50%",
                         backgroundColor: "#4D227C",
                         color: "#fff",
@@ -297,38 +810,20 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
                         justifyContent: "center",
                         fontSize: "11px",
                         fontWeight: "700",
-                        flexShrink: 0,
                       }}
                     >
-                      {item.firstName[0]}
-                      {item.lastName[0]}
+                      {(d.firstName || " ")[0]}
+                      {(d.lastName || " ")[0]}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ lineHeight: 1.3 }}>
-                        {item.firstName} {item.mi}. {item.lastName}
-                      </span>
-                      {item.specialty && (
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#999",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {item.specialty}
-                        </div>
-                      )}
+                    <div>
+                      {d.firstName}{" "}
+                      {d.middleInitial ? d.middleInitial + ". " : ""}
+                      {d.lastName}
                     </div>
                     {isActive && (
-                      <span
-                        style={{
-                          marginLeft: "auto",
-                          color: "#4D227C",
-                          fontSize: "16px",
-                        }}
-                      >
-                        ✓
-                      </span>
+                      <FiCheck
+                        style={{ marginLeft: "auto", color: "#4D227C" }}
+                      />
                     )}
                   </div>
                 );
@@ -341,23 +836,9 @@ function CustomDropdown({ placeholder, items, onSelect, selectedId, label }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   PatientDropdown (for backward compatibility)
-───────────────────────────────────────────────────────────────── */
-function PatientDropdown({ onSelect }) {
-  return (
-    <CustomDropdown
-      placeholder="Select Patient Name"
-      items={PATIENT_LIST}
-      onSelect={onSelect}
-      label=""
-    />
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────
-   ServiceCard — with integrated subtitle for selected purpose
-───────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────
+   ServiceCard
+───────────────────────────────────────────────────────── */
 function ServiceCard({
   service,
   selected,
@@ -365,39 +846,35 @@ function ServiceCard({
   accent = "#4D227C",
   subtitle = null,
 }) {
-  const isSelected = selected === service.id;
+  const isSel = selected === service.id;
   return (
     <div
       onClick={() => onClick(service.id)}
       style={{
-        border: isSelected ? `2px solid ${accent}` : "1.5px solid #ddd",
+        border: isSel ? `2px solid ${accent}` : "1.5px solid #ddd",
         borderRadius: "10px",
         padding: "14px 16px",
         cursor: "pointer",
-        background: isSelected ? "#f5f0fb" : "#fff",
-        transition: "all 0.15s",
+        background: isSel ? "#f5f0fb" : "#fff",
+        transition: "all .15s",
         display: "flex",
         alignItems: "flex-start",
         gap: "14px",
-        position: "relative",
       }}
     >
-      {/* Radio circle */}
       <div
         style={{
           width: "20px",
           height: "20px",
           borderRadius: "50%",
-          border: isSelected ? `6px solid ${accent}` : "2px solid #bbb",
+          border: isSel ? `6px solid ${accent}` : "2px solid #bbb",
           flexShrink: 0,
           background: "#fff",
-          transition: "all 0.15s",
+          transition: "all .15s",
           boxSizing: "border-box",
           marginTop: "2px",
         }}
       />
-
-      {/* Title and Subtitle */}
       <div
         style={{
           flex: 1,
@@ -406,33 +883,18 @@ function ServiceCard({
           gap: "6px",
         }}
       >
-        <span
-          style={{
-            fontSize: "13.5px",
-            fontWeight: "400",
-            color: "#555",
-            fontFamily: "inherit",
-          }}
-        >
+        <span style={{ fontSize: "13.5px", color: "#555" }}>
           {service.title}
         </span>
-        {/* Subtitle: Selected purpose */}
         {subtitle && (
           <span
-            style={{
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#1d6fa4",
-              fontFamily: "inherit",
-            }}
+            style={{ fontSize: "12px", fontWeight: "600", color: "#1d6fa4" }}
           >
             ✓ {subtitle}
           </span>
         )}
       </div>
-
-      {/* Check badge — only when selected */}
-      {isSelected && (
+      {isSel && (
         <div
           style={{
             width: "22px",
@@ -443,7 +905,6 @@ function ServiceCard({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            marginTop: "2px",
           }}
         >
           <FiCheck size={12} color="#fff" />
@@ -453,105 +914,306 @@ function ServiceCard({
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────
+   EMPTY FORM
+───────────────────────────────────────────────────────── */
+const EMPTY_FORM = {
+  informant_name: "",
+  informant_relation: "",
+  appointment_date: "",
+  start_time: "",
+  end_time: "",
+  visit_type: "onsite",
+  reason_for_consultation: "",
+  service_type: "",
+  pae_purpose: "",
+  payment_status: "not_paid",
+};
+
+/* ─────────────────────────────────────────────────────────
+   ReceiptItem — single row in the multi-upload list
+───────────────────────────────────────────────────────── */
+function ReceiptItem({ entry, onRemove, onPreview }) {
+  const isImage = entry.file.type.startsWith("image/");
+  return (
+    <div className="receipt-preview-wrap" style={{ marginBottom: "8px" }}>
+      {/* Thumbnail */}
+      {isImage ? (
+        <img
+          src={entry.url}
+          alt="receipt preview"
+          className="receipt-thumb-img"
+          onClick={() => onPreview(entry)}
+        />
+      ) : (
+        <div className="receipt-thumb-pdf">
+          <FiFile size={22} color="#9c7dd4" />
+        </div>
+      )}
+
+      {/* File name + size */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: "13px",
+            fontWeight: "600",
+            color: "#333",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {entry.file.name}
+        </div>
+        <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>
+          {(entry.file.size / 1024).toFixed(1)} KB
+        </div>
+      </div>
+
+      {/* View button */}
+      <button className="receipt-view-btn" onClick={() => onPreview(entry)}>
+        <FiEye size={13} /> View
+      </button>
+
+      {/* Remove button */}
+      <button
+        className="receipt-remove-btn"
+        onClick={() => onRemove(entry.id)}
+        title="Remove file"
+      >
+        <FiTrash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    CreateAppointmentModal
-───────────────────────────────────────────────────────────────── */
+───────────────────────────────────────────────────────── */
 function CreateAppointmentModal({
   isOpen,
   onClose,
-  onAdd,
+  onSuccess,
   showReceipt = false,
   showAssignedDoctor = false,
+  isAdmin = false,
 }) {
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-  });
-  const [dob, setDob] = useState("");
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedPAE, setSelectedPAE] = useState(null);
-  const [showPAEPanel, setShowPAEPanel] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [receiptFile, setReceiptFile] = useState(null);
+  const [selectedService, setSelectedService] = useState("");
+  const [showPAEPanel, setShowPAEPanel] = useState(false);
+
+  // ── Multi-receipt state ──
+  // Each entry: { id: string, file: File, url: string }
+  const [receiptEntries, setReceiptEntries] = useState([]);
+  const [previewEntry, setPreviewEntry] = useState(null); // entry currently in lightbox
+
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const [services, setServices] = useState([]);
+  const [paePurposes, setPaePurposes] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
+
   const receiptInputRef = useRef(null);
 
-  const isPAE = selectedService === "1";
+  const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
 
-  /* Get the title of selected PAE purpose */
-  const getSelectedPAETitle = () => {
-    if (!selectedPAE) return null;
-    const pae = PAE_SERVICES.find((p) => p.id === selectedPAE);
-    return pae?.title || null;
+  // Cleanup all object URLs on unmount
+  useEffect(() => {
+    return () => {
+      receiptEntries.forEach((e) => URL.revokeObjectURL(e.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Add one or more files ── */
+  const addReceiptFiles = (files) => {
+    const newEntries = Array.from(files).map((file) => ({
+      id: `${Date.now()}-${Math.random()}`,
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setReceiptEntries((prev) => [...prev, ...newEntries]);
   };
 
-  /* Auto-compute age */
-  const computedAge = (() => {
-    if (!dob) return "";
-    const birth = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-    return age >= 0 ? age : "";
-  })();
+  /* ── Remove a single entry by id ── */
+  const removeReceiptEntry = (id) => {
+    setReceiptEntries((prev) => {
+      const entry = prev.find((e) => e.id === id);
+      if (entry) URL.revokeObjectURL(entry.url);
+      // Close lightbox if we're removing the file currently previewed
+      if (previewEntry?.id === id) setPreviewEntry(null);
+      return prev.filter((e) => e.id !== id);
+    });
+  };
 
-  /* Auto end time = start + 1 hr */
-  const handleStartTimeChange = (e) => {
-    const startTime = e.target.value;
-    let endTime = "";
-    if (startTime) {
-      const [h, m] = startTime.split(":").map(Number);
-      endTime = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  /* ── Remove all receipts ── */
+  const clearAllReceipts = () => {
+    receiptEntries.forEach((e) => URL.revokeObjectURL(e.url));
+    setReceiptEntries([]);
+    setPreviewEntry(null);
+    if (receiptInputRef.current) receiptInputRef.current.value = "";
+  };
+
+  // ── Fetch services when modal opens ──
+  const fetchServices = useCallback(async () => {
+    setServicesLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/services`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      const json = await res.json();
+      const data = json.data || [];
+
+      const mapped = data
+        .filter((s) => s.is_available === 1 || s.is_available === true)
+        .map((s) => ({
+          id: s.service_name,
+          title: s.service_name,
+          isPsych: s.service_name
+            .toLowerCase()
+            .includes("psychological assessment"),
+          purposes: (s.purposes || [])
+            .filter((p) => p.is_active === 1 || p.is_active === true)
+            .map((p) => p.purpose_name),
+        }));
+
+      setServices(mapped);
+
+      const psych = mapped.find((s) => s.isPsych);
+      if (psych) setPaePurposes(psych.purposes);
+    } catch (e) {
+      console.error("Failed to fetch services:", e);
+    } finally {
+      setServicesLoading(false);
     }
-    setNewEvent({ ...newEvent, startTime, endTime });
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) fetchServices();
+  }, [isOpen, fetchServices]);
+
+  const handleStartTime = (e) => {
+    const t = e.target.value;
+    let end = "";
+    if (t) {
+      const [h, m] = t.split(":").map(Number);
+      end = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+    }
+    setForm((f) => ({ ...f, start_time: t, end_time: end }));
   };
 
   const handleServiceSelect = (id) => {
     setSelectedService(id);
-    if (id !== "1") {
-      setSelectedPAE(null);
+    set("service_type", id);
+    const svc = services.find((s) => s.id === id);
+    if (!svc?.isPsych) {
+      set("pae_purpose", "");
       setShowPAEPanel(false);
     } else {
       setShowPAEPanel(true);
     }
   };
 
-  /* When PAE purpose selected, close panel and show subtitle */
-  const handlePAESelect = (id) => {
-    setSelectedPAE(id);
-    setShowPAEPanel(false); // Close panel after selection
-  };
-
-  const handleAdd = () => {
-    if (
-      !newEvent.title ||
-      !newEvent.date ||
-      !newEvent.startTime ||
-      !newEvent.endTime
-    ) {
-      alert("Please complete all required fields");
+  /* ── Submit ── */
+  async function handleSubmit() {
+    setErrors({});
+    const errs = {};
+    if (!selectedPatient) errs.patient = "Please select a patient.";
+    if (!form.appointment_date) errs.appointment_date = "Date is required.";
+    if (!form.start_time) errs.start_time = "Start time is required.";
+    if (Object.keys(errs).length) {
+      setErrors(errs);
       return;
     }
-    const start = new Date(`${newEvent.date}T${newEvent.startTime}`);
-    const end = new Date(`${newEvent.date}T${newEvent.endTime}`);
-    onAdd({
-      title: newEvent.title,
-      start,
-      end,
-      allDay: false,
-      assignedDoctor: selectedDoctor,
+
+    setSubmitting(true);
+    const fd = new FormData();
+    fd.append("patient_id", selectedPatient.patient_id);
+    if (form.informant_name.trim()) {
+      fd.append("informant_name", form.informant_name.trim());
+      fd.append("informant_relation", form.informant_relation.trim());
+    }
+    fd.append("appointment_date", form.appointment_date);
+    fd.append("start_time", form.start_time);
+    fd.append("end_time", form.end_time);
+    fd.append("visit_type", form.visit_type);
+    fd.append("reason_for_consultation", form.reason_for_consultation);
+    fd.append("service_type", form.service_type);
+    if (form.pae_purpose) fd.append("pae_purpose", form.pae_purpose);
+    fd.append("payment_status", form.payment_status);
+    if (selectedDoctor) fd.append("doctor_user_id", selectedDoctor.id);
+
+    // ── Append every receipt file as receipts[] ──
+    receiptEntries.forEach((entry) => {
+      fd.append("receipts[]", entry.file);
     });
-    onClose();
-    setNewEvent({ title: "", date: "", startTime: "", endTime: "" });
-    setDob("");
-    setSelectedService(null);
-    setSelectedPAE(null);
-    setShowPAEPanel(false);
+
+    const url = isAdmin
+      ? `${API_BASE}/admin/appointments`
+      : `${API_BASE}/appointments`;
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+        body: fd,
+      });
+      const text = await res.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        alert(`Server error ${res.status}\n${text.slice(0, 300)}`);
+        return;
+      }
+
+      if (!res.ok) {
+        if (result.errors) setErrors(result.errors);
+        else alert(result.message || `Error ${res.status}`);
+        return;
+      }
+      if (onSuccess) onSuccess(result.data);
+      handleClose();
+    } catch (e) {
+      alert("Network error: " + e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleClose() {
+    setForm(EMPTY_FORM);
+    setSelectedPatient(null);
     setSelectedDoctor(null);
-    setReceiptFile(null);
-  };
+    setSelectedService("");
+    setShowPAEPanel(false);
+    clearAllReceipts();
+    setErrors({});
+    onClose();
+  }
+
+  const Err = ({ field }) =>
+    errors[field] ? (
+      <span
+        style={{
+          fontSize: "11px",
+          color: "#e53e3e",
+          marginTop: "3px",
+          display: "block",
+        }}
+      >
+        {errors[field]}
+      </span>
+    ) : null;
 
   const LabeledInput = ({ label, disabled, children }) => (
     <div className={styles.labeledField}>
@@ -566,65 +1228,48 @@ function CreateAppointmentModal({
 
   if (!isOpen) return null;
 
+  const isPAE =
+    services.find((s) => s.id === selectedService)?.isPsych ?? false;
+  const showReceiptSection = showReceipt || form.payment_status === "paid";
+
   return (
     <>
       <style>{`
-        .tos-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: #4D227C;
-          text-transform: uppercase;
-          letter-spacing: 0.7px;
-          margin: 0 0 10px;
-          font-family: inherit;
-        }
-        .tos-cards {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        /* PAE sub-panel — matches screenshot light blue box */
-        .tos-pae-panel {
-          margin-top: 10px;
-          padding: 14px;
-          background: #e8f4fb;
-          border: 1.5px solid #c5dff0;
-          border-radius: 10px;
-          animation: paeSlideIn 0.2s ease;
-        }
-        @keyframes paeSlideIn {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .tos-pae-header {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11px;
-          font-weight: 700;
-          color: #1d6fa4;
-          text-transform: uppercase;
-          letter-spacing: 0.7px;
-          margin: 0 0 10px;
-          font-family: inherit;
-        }
-        .tos-pae-cards {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          max-height: 280px;
-          overflow-y: auto;
-          padding-right: 4px;
-        }
-        .tos-pae-cards::-webkit-scrollbar { width: 6px; }
-        .tos-pae-cards::-webkit-scrollbar-track { background: #d0e8f5; border-radius: 10px; }
-        .tos-pae-cards::-webkit-scrollbar-thumb { background: #4D227C; border-radius: 10px; }
-        .tos-pae-cards { scrollbar-color: #4D227C #d0e8f5; scrollbar-width: thin; }
-        /* PAE cards get white bg inside the blue panel */
-        .tos-pae-cards > div {
-          background: #fff !important;
-        }
+        .tos-label{font-size:11px;font-weight:700;color:#4D227C;text-transform:uppercase;letter-spacing:.7px;margin:0 0 10px}
+        .tos-cards{display:flex;flex-direction:column;gap:8px}
+        .tos-pae-panel{margin-top:8px;padding:14px;background:#e8f4fb;border:1.5px solid #c5dff0;border-radius:10px;animation:paeIn .2s ease}
+        @keyframes paeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+        .tos-pae-header{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#1d6fa4;text-transform:uppercase;letter-spacing:.7px;margin:0 0 10px}
+        .tos-pae-cards{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;padding-right:4px}
+        .tos-pae-cards::-webkit-scrollbar{width:6px}
+        .tos-pae-cards::-webkit-scrollbar-track{background:#d0e8f5;border-radius:10px}
+        .tos-pae-cards::-webkit-scrollbar-thumb{background:#4D227C;border-radius:10px}
+        .tos-pae-item{padding:11px 14px;border-radius:9px;cursor:pointer;font-size:13px;color:#333;background:#fff;border:1.5px solid #dde;transition:all .15s;display:flex;align-items:center;gap:10px}
+        .tos-pae-item:hover{border-color:#1d6fa4;background:#f0f8ff}
+        .tos-pae-item.sel{border-color:#1d6fa4;background:#e0f2fe;color:#1d6fa4;font-weight:600}
+
+        /* Receipt preview row */
+        .receipt-preview-wrap{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2d5f5;border-radius:10px;background:#faf7ff;width:100%;box-sizing:border-box}
+        .receipt-thumb-img{width:52px;height:52px;object-fit:cover;border-radius:7px;border:1px solid #ddd;flex-shrink:0;cursor:zoom-in}
+        .receipt-thumb-pdf{width:52px;height:52px;border-radius:7px;border:1px solid #ddd;background:#f0ebfa;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .receipt-view-btn{display:flex;align-items:center;gap:5px;font-size:12px;color:#4D227C;background:none;border:1px solid #c4a8e8;border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:600;white-space:nowrap;transition:background .15s}
+        .receipt-view-btn:hover{background:#f3ecfc}
+        .receipt-remove-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0;background:none;border:1px solid #f0d0d0;border-radius:6px;cursor:pointer;color:#e53e3e;transition:background .15s}
+        .receipt-remove-btn:hover{background:#fff0f0}
+
+        /* Add more button */
+        .receipt-add-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed #c4a8e8;border-radius:10px;background:none;color:#4D227C;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
+        .receipt-add-more-btn:hover{background:#f5f0fb;border-color:#4D227C}
       `}</style>
+
+      {/* Lightbox */}
+      {previewEntry && (
+        <ImagePreviewModal
+          file={previewEntry.file}
+          src={previewEntry.url}
+          onClose={() => setPreviewEntry(null)}
+        />
+      )}
 
       <div className={styles.backdrop}>
         <div className={styles.modal}>
@@ -633,19 +1278,21 @@ function CreateAppointmentModal({
             <h2 className={styles.headerTitle}>Create Appointment</h2>
             <div className={styles.headerRight}>
               <span className={styles.headerDate}>
-                {newEvent.date
-                  ? format(new Date(newEvent.date + "T00:00:00"), "MMM d, yyyy")
+                {form.appointment_date
+                  ? format(
+                      new Date(form.appointment_date + "T00:00:00"),
+                      "MMM d, yyyy",
+                    )
                   : format(new Date(), "MMM d, yyyy")}
               </span>
-              <button className={styles.closeBtn} onClick={onClose}>
+              <button className={styles.closeBtn} onClick={handleClose}>
                 <FiX />
               </button>
             </div>
           </div>
 
-          {/* Scrollable Body */}
           <div className={styles.body}>
-            {/* ▸ Patient Information */}
+            {/* ══ PATIENT ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Patient Information</h4>
 
@@ -653,131 +1300,35 @@ function CreateAppointmentModal({
                 <input
                   className={styles.input}
                   placeholder="Reason for Consultation"
+                  value={form.reason_for_consultation}
+                  onChange={(e) =>
+                    set("reason_for_consultation", e.target.value)
+                  }
                 />
               </div>
 
               <div className={styles.fieldRow}>
-                <PatientDropdown
-                  onSelect={(p) => console.log("Selected:", p)}
-                />
-              </div>
-
-              <div className={styles.grid2}>
-                <input
-                  className={styles.input}
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                />
-                <input
-                  className={styles.input}
-                  type="text"
-                  disabled
-                  readOnly
-                  value={computedAge !== "" ? `${computedAge} years old` : ""}
-                  placeholder="Age"
-                />
-              </div>
-
-              <div className={styles.grid3}>
-                <select className={styles.select}>
-                  <option value="">Select Sex</option>
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Other</option>
-                </select>
-                <input
-                  className={styles.input}
-                  placeholder="Patient Contact No."
-                />
-                <select className={styles.select}>
-                  <option value="">Civil Status</option>
-                  <option>Single</option>
-                  <option>Married</option>
-                  <option>Annulled</option>
-                  <option>Separated</option>
-                  <option>Widow / Widower</option>
-                  <option>Living-In</option>
-                </select>
-              </div>
-
-              <div className={styles.grid2}>
-                <input
-                  className={styles.input}
-                  placeholder="Full Name of Informant (if not the client)"
-                />
-                <input
-                  className={styles.input}
-                  placeholder="Relation to the Patient"
-                />
-              </div>
-
-              <div className={styles.fieldRow}>
-                <input className={styles.input} placeholder="Address" />
-              </div>
-
-              <div className={styles.radioSection}>
-                <div className={styles.radioGroup}>
-                  <p className={styles.radioGroupLabel}>Patient Type</p>
-                  <div className={styles.radioRow}>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="ptype"
-                        value="existing"
-                        className={styles.radioInput}
-                      />{" "}
-                      Existing Patient
-                    </label>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="ptype"
-                        value="new"
-                        className={styles.radioInput}
-                      />{" "}
-                      New Patient
-                    </label>
-                  </div>
-                </div>
-                <div className={styles.radioGroup}>
-                  <p className={styles.radioGroupLabel}>
-                    Patient Classification
-                  </p>
-                  <div className={styles.radioRow}>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="class"
-                        value="pwd"
-                        className={styles.radioInput}
-                      />{" "}
-                      PWD
-                    </label>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="class"
-                        value="senior"
-                        className={styles.radioInput}
-                      />{" "}
-                      Senior Citizen
-                    </label>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        name="class"
-                        value="regular"
-                        className={styles.radioInput}
-                      />{" "}
-                      Regular
-                    </label>
-                  </div>
-                </div>
+                {!selectedPatient ? (
+                  <>
+                    <PatientSearchDropdown
+                      value={selectedPatient}
+                      onSelect={(p) => {
+                        setSelectedPatient(p);
+                        setErrors((e) => ({ ...e, patient: null }));
+                      }}
+                    />
+                    <Err field="patient" />
+                  </>
+                ) : (
+                  <PatientInfoCard
+                    patient={selectedPatient}
+                    onClear={() => setSelectedPatient(null)}
+                  />
+                )}
               </div>
             </div>
 
-            {/* ▸ Consultation Schedule */}
+            {/* ══ SCHEDULE ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Consultation Schedule</h4>
 
@@ -786,26 +1337,26 @@ function CreateAppointmentModal({
                   <input
                     className={styles.input}
                     type="date"
-                    value={newEvent.date}
+                    value={form.appointment_date}
                     min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, date: e.target.value })
-                    }
+                    onChange={(e) => set("appointment_date", e.target.value)}
                   />
+                  <Err field="appointment_date" />
                 </LabeledInput>
                 <LabeledInput label="Start Time">
                   <input
                     className={styles.input}
                     type="time"
-                    value={newEvent.startTime}
-                    onChange={handleStartTimeChange}
+                    value={form.start_time}
+                    onChange={handleStartTime}
                   />
+                  <Err field="start_time" />
                 </LabeledInput>
                 <LabeledInput label="End Time" disabled>
                   <input
                     className={styles.input}
                     type="time"
-                    value={newEvent.endTime}
+                    value={form.end_time}
                     readOnly
                     placeholder="--:--"
                   />
@@ -818,24 +1369,22 @@ function CreateAppointmentModal({
               >
                 <p className={styles.radioGroupLabel}>Visit Type</p>
                 <div className={styles.radioRow}>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="visit"
-                      value="onsite"
-                      className={styles.radioInput}
-                    />{" "}
-                    Onsite Consultation
-                  </label>
-                  <label className={styles.radioLabel}>
-                    <input
-                      type="radio"
-                      name="visit"
-                      value="virtual"
-                      className={styles.radioInput}
-                    />{" "}
-                    Virtual Consultation
-                  </label>
+                  {[
+                    ["onsite", "Onsite Consultation"],
+                    ["virtual", "Virtual Consultation"],
+                  ].map(([val, lbl]) => (
+                    <label key={val} className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="visit_type"
+                        value={val}
+                        className={styles.radioInput}
+                        checked={form.visit_type === val}
+                        onChange={() => set("visit_type", val)}
+                      />{" "}
+                      {lbl}
+                    </label>
+                  ))}
                 </div>
               </div>
 
@@ -843,63 +1392,118 @@ function CreateAppointmentModal({
 
               {/* ── Type of Service ── */}
               <p className="tos-label">Type of Service</p>
-              <div className="tos-cards">
-                {SERVICES.map((svc) => (
-                  <div key={svc.id}>
-                    <ServiceCard
-                      service={svc}
-                      selected={selectedService}
-                      onClick={handleServiceSelect}
-                      accent="#4D227C"
-                      subtitle={
-                        svc.id === "1" && selectedPAE
-                          ? getSelectedPAETitle()
-                          : null
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
 
-              {/* ── PAE Purpose sub-panel (opens when PAE selected, closes after selection) ── */}
-              {isPAE && showPAEPanel && (
-                <div className="tos-pae-panel">
-                  <p className="tos-pae-header">
-                    <FiChevronRight size={13} /> Purpose of Assessment
-                  </p>
-                  <div className="tos-pae-cards">
-                    {PAE_SERVICES.map((pae) => (
+              {servicesLoading ? (
+                <p
+                  style={{ color: "#aaa", fontSize: "13px", padding: "10px 0" }}
+                >
+                  Loading services…
+                </p>
+              ) : services.length === 0 ? (
+                <p
+                  style={{ color: "#aaa", fontSize: "13px", padding: "10px 0" }}
+                >
+                  No services available.
+                </p>
+              ) : (
+                <div className="tos-cards">
+                  {services.map((svc) => (
+                    <div key={svc.id}>
                       <ServiceCard
-                        key={pae.id}
-                        service={pae}
-                        selected={selectedPAE}
-                        onClick={handlePAESelect}
-                        accent="#1d6fa4"
+                        service={svc}
+                        selected={selectedService}
+                        onClick={handleServiceSelect}
+                        accent="#4D227C"
+                        subtitle={
+                          svc.isPsych && form.pae_purpose
+                            ? form.pae_purpose
+                            : null
+                        }
                       />
-                    ))}
-                  </div>
+
+                      {svc.isPsych && isPAE && showPAEPanel && (
+                        <div className="tos-pae-panel">
+                          <p className="tos-pae-header">
+                            <FiChevronRight size={13} /> Purpose of Assessment
+                          </p>
+                          <div className="tos-pae-cards">
+                            {paePurposes.length === 0 ? (
+                              <p style={{ color: "#aaa", fontSize: "13px" }}>
+                                No purposes available.
+                              </p>
+                            ) : (
+                              paePurposes.map((title) => (
+                                <div
+                                  key={title}
+                                  className={`tos-pae-item ${form.pae_purpose === title ? "sel" : ""}`}
+                                  onClick={() => {
+                                    set("pae_purpose", title);
+                                    setShowPAEPanel(false);
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: "18px",
+                                      height: "18px",
+                                      borderRadius: "50%",
+                                      border:
+                                        form.pae_purpose === title
+                                          ? "6px solid #1d6fa4"
+                                          : "2px solid #bbb",
+                                      flexShrink: 0,
+                                      boxSizing: "border-box",
+                                    }}
+                                  />
+                                  {title}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {svc.isPsych && isPAE && !showPAEPanel && (
+                        <button
+                          onClick={() => setShowPAEPanel(true)}
+                          style={{
+                            marginTop: "8px",
+                            fontSize: "12px",
+                            color: "#1d6fa4",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          {form.pae_purpose
+                            ? "Change purpose of assessment"
+                            : "Select purpose of assessment"}
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Assigned Doctor Dropdown (only in admin) */}
-              {showAssignedDoctor && (
-                <div className={styles.fieldRow}>
-                  <br></br>
-                  <CustomDropdown
-                    placeholder="Select Assigned Doctor"
-                    items={DOCTOR_LIST}
+              {(showAssignedDoctor || isAdmin) && (
+                <div className={styles.fieldRow} style={{ marginTop: "16px" }}>
+                  <DoctorDropdown
+                    value={selectedDoctor}
                     onSelect={setSelectedDoctor}
-                    label="Assigned Doctor"
                   />
                 </div>
               )}
             </div>
 
-            {/* ▸ Payment Status */}
+            {/* ══ PAYMENT ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Payment Status</h4>
               <div className={styles.fieldRow}>
-                <select className={styles.select}>
+                <select
+                  className={styles.select}
+                  value={form.payment_status}
+                  onChange={(e) => set("payment_status", e.target.value)}
+                >
                   <option value="">Select Payment Status</option>
                   <option value="paid">Paid</option>
                   <option value="not_paid">Not Paid</option>
@@ -907,59 +1511,117 @@ function CreateAppointmentModal({
                 </select>
               </div>
 
-              {showReceipt && (
+              {showReceiptSection && (
                 <>
-                  <div className={styles.uploadLabel}>Upload Receipt</div>
+                  {/* Header row: label + count badge */}
                   <div
-                    className={styles.uploadZone}
-                    onClick={() => receiptInputRef.current?.click()}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files[0];
-                      if (file) setReceiptFile(file);
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "10px",
                     }}
                   >
-                    <input
-                      ref={receiptInputRef}
-                      type="file"
-                      accept="image/*,application/pdf"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) setReceiptFile(file);
-                      }}
-                    />
-                    {receiptFile ? (
-                      <div className={styles.uploadedFile}>
-                        <FiFile className={styles.uploadedFileIcon} />
-                        <span className={styles.uploadedFileName}>
-                          {receiptFile.name}
+                    <div className={styles.uploadLabel} style={{ margin: 0 }}>
+                      Upload Receipt{receiptEntries.length > 1 ? "s" : ""}
+                    </div>
+                    {receiptEntries.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span style={{ fontSize: "11px", color: "#888" }}>
+                          {receiptEntries.length} file
+                          {receiptEntries.length > 1 ? "s" : ""} selected
                         </span>
                         <button
-                          className={styles.uploadedFileRemove}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setReceiptFile(null);
-                            if (receiptInputRef.current)
-                              receiptInputRef.current.value = "";
+                          onClick={clearAllReceipts}
+                          style={{
+                            fontSize: "11px",
+                            color: "#e53e3e",
+                            background: "none",
+                            border: "1px solid #f0d0d0",
+                            borderRadius: "6px",
+                            padding: "2px 8px",
+                            cursor: "pointer",
+                            fontWeight: "600",
                           }}
                         >
-                          <FiTrash2 />
+                          Remove all
                         </button>
                       </div>
-                    ) : (
+                    )}
+                  </div>
+
+                  {/* Hidden file input — allows multiple */}
+                  <input
+                    ref={receiptInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    multiple
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      if (e.target.files?.length)
+                        addReceiptFiles(e.target.files);
+                      // Reset so same file can be re-added if removed
+                      e.target.value = "";
+                    }}
+                  />
+
+                  {/* List of uploaded files */}
+                  {receiptEntries.length > 0 && (
+                    <div style={{ marginBottom: "4px" }}>
+                      {receiptEntries.map((entry) => (
+                        <ReceiptItem
+                          key={entry.id}
+                          entry={entry}
+                          onRemove={removeReceiptEntry}
+                          onPreview={setPreviewEntry}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Drop zone (shown when no files) OR "Add more" button (shown when files exist) */}
+                  {receiptEntries.length === 0 ? (
+                    <div
+                      className={styles.uploadZone}
+                      onClick={() => receiptInputRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (e.dataTransfer.files?.length)
+                          addReceiptFiles(e.dataTransfer.files);
+                      }}
+                    >
                       <div className={styles.uploadPlaceholder}>
                         <FiUpload className={styles.uploadIcon} />
                         <span className={styles.uploadText}>
                           Click or drag &amp; drop to upload receipt
                         </span>
                         <span className={styles.uploadHint}>
-                          Supports JPG, PNG, PDF
+                          Supports JPG, PNG, PDF · Multiple files allowed
                         </span>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <button
+                      className="receipt-add-more-btn"
+                      onClick={() => receiptInputRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (e.dataTransfer.files?.length)
+                          addReceiptFiles(e.dataTransfer.files);
+                      }}
+                    >
+                      <FiPlus size={14} />
+                      Add more receipts
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -967,11 +1629,19 @@ function CreateAppointmentModal({
 
           {/* Footer */}
           <div className={styles.footer}>
-            <button className={styles.btnCancel} onClick={onClose}>
+            <button
+              className={styles.btnCancel}
+              onClick={handleClose}
+              disabled={submitting}
+            >
               Cancel
             </button>
-            <button className={styles.btnAdd} onClick={handleAdd}>
-              Add Appointment
+            <button
+              className={styles.btnAdd}
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? "Saving…" : "Add Appointment"}
             </button>
           </div>
         </div>
