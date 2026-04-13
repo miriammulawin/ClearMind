@@ -128,13 +128,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user->email_verified_at) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account has not been verified. Please check your email for the OTP.',
-            ], 403);
-        }
-
+    if (!$user->email_verified_at && $user->role === 'Client') {
+    return response()->json([
+        'success' => false,
+        'message' => 'Your account has not been verified. Please check your email for the OTP.',
+    ], 403);
+}
         if (!$user->is_active) {
             return response()->json([
                 'success' => false,
