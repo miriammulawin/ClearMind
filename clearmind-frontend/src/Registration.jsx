@@ -32,6 +32,7 @@ function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    address: "",
   });
 
   const handleChange = (e) => {
@@ -74,6 +75,10 @@ function Register() {
     ) {
       newErrors.password =
         "Password must be at least 6 characters, include 1 uppercase letter, 1 number, and 1 special character";
+    }
+
+    if (!form.address.trim()) {
+      newErrors.address = "Address is required";
     }
 
     if (!form.confirmPassword) {
@@ -128,6 +133,7 @@ function Register() {
         email: form.email,
         password: form.password,
         password_confirmation: form.confirmPassword,
+        address: form.address,
       });
       const data = response.data;
       if (data.success) {
@@ -170,6 +176,7 @@ function Register() {
           ...(e.contactNo && { contact: e.contactNo[0] }),
           ...(e.email && { email: e.email[0] }),
           ...(e.password && { password: e.password[0] }),
+          ...(e.address && { address: e.address[0] }),
         });
         setServerError(null);
       } else {
@@ -548,6 +555,18 @@ function Register() {
                       className={`form-control ${styles.input} ${errors.email ? styles.inputError : ""}`}
                       placeholder="Email Address *"
                       value={form.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className={styles.formRow}>
+                  <div className={styles.formCol} style={{ width: "100%" }}>
+                    <input
+                      type="text"
+                      name="address"
+                      className={`form-control ${styles.input} ${errors.address ? styles.inputError : ""}`}
+                      placeholder="Address *"
+                      value={form.address}
                       onChange={handleChange}
                     />
                   </div>
