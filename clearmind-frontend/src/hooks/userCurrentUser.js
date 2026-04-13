@@ -21,14 +21,14 @@
 //     contactNo, email, homeAddress, profilePic
 //   }
 
-import { useMemo } from 'react';
-import { mockUser } from '../MockData/MockUser'; // ← only this line changes when going live
+import { useMemo } from "react";
+import { mockUser } from "../MockData/MockUser"; // ← only this line changes when going live
 
 function computeAge(dateOfBirth) {
   if (!dateOfBirth) return null;
   const today = new Date();
-  const dob   = new Date(dateOfBirth);
-  let age     = today.getFullYear() - dob.getFullYear();
+  const dob = new Date(dateOfBirth);
+  let age = today.getFullYear() - dob.getFullYear();
   const hasHadBirthdayThisYear =
     today.getMonth() > dob.getMonth() ||
     (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
@@ -37,39 +37,43 @@ function computeAge(dateOfBirth) {
 }
 
 function computeInitials(firstName, lastName) {
-  const f = (firstName  || '').charAt(0).toUpperCase();
-  const l = (lastName || '').charAt(0).toUpperCase();
-  return `${f}${l}` || '??';
+  const f = (firstName || "").charAt(0).toUpperCase();
+  const l = (lastName || "").charAt(0).toUpperCase();
+  return `${f}${l}` || "??";
 }
 
 export function useCurrentUser() {
   // Swap `mockUser` for your real auth/user object and nothing else changes.
   const raw = mockUser;
 
-  return useMemo(() => ({
-    // — identifiers —
-    id:               raw.id,
+  return useMemo(
+    () => ({
+      // — identifiers —
+      id: raw.id,
 
-    // — name helpers —
-    firstName:        raw.firstName,
-    middleName:       raw.middleName,
-    lastName:         raw.lastName,
-    fullName:         `${raw.firstName} ${raw.lastName}`,
-    initials:         computeInitials(raw.firstName, raw.lastName),
+      // — name helpers —
+      firstName: raw.firstName,
+      middleName: raw.middleName,
+      lastName: raw.lastName,
+      fullName: `${raw.firstName} ${raw.lastName}`,
+      initials: computeInitials(raw.firstName, raw.lastName),
 
-    // — demographics —
-    dateOfBirth:      raw.dateOfBirth,
-    age:              computeAge(raw.dateOfBirth),
-    sex:              raw.sex,
-    genderIdentity:   raw.genderIdentity,
-    preferredPronouns:raw.preferredPronouns,
+      // — demographics —
+      dateOfBirth: raw.dateOfBirth,
+      age: computeAge(raw.dateOfBirth),
+      sex: raw.sex,
+      civilStatus: raw.civilStatus,
+      genderIdentity: raw.genderIdentity,
+      preferredPronouns: raw.preferredPronouns,
 
-    // — contact —
-    contactNo:        raw.contactNo,
-    email:            raw.email,
-    homeAddress:      raw.homeAddress,
+      // — contact —
+      contactNo: raw.contactNo,
+      email: raw.email,
+      homeAddress: raw.homeAddress,
 
-    // — avatar —
-    profilePic:       raw.profilePic || null,
-  }), [raw]);
+      // — avatar —
+      profilePic: raw.profilePic || null,
+    }),
+    [raw],
+  );
 }

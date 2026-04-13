@@ -1,0 +1,481 @@
+/* ─── PAGE LAYOUT ─────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  background: #f4f0fb;
+  font-family:
+    "Segoe UI",
+    system-ui,
+    -apple-system,
+    sans-serif;
+}
+
+/* ─── LEFT PANEL ─────────────────────────────────────────── */
+.leftPanel {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #3a2a6e 0%, #6b46c1 60%, #9f7aea 100%);
+}
+
+@media (min-width: 900px) {
+  .leftPanel {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex: 0 0 42%;
+    max-width: 42%;
+    padding: 2.5rem;
+  }
+}
+
+.leftOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(30, 15, 60, 0.18) 0%,
+    rgba(30, 15, 60, 0.55) 100%
+  );
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.sparkle {
+  position: absolute;
+}
+
+.leftContent {
+  position: relative;
+  z-index: 2;
+}
+
+.tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 4px 14px 4px 10px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 1.1rem;
+}
+
+.taglineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c4b5fd;
+  flex-shrink: 0;
+}
+
+.heroTitle {
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.28;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.heroAccent {
+  background: linear-gradient(90deg, #e9d5ff, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroDesc {
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.65;
+  margin: 0 0 1.5rem;
+  max-width: 340px;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.pillDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c4b5fd;
+  flex-shrink: 0;
+}
+
+/* ─── RIGHT PANEL / CARD ─────────────────────────────────── */
+.card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 1.5rem;
+  background: #fff;
+  overflow-y: auto;
+}
+
+@media (min-width: 900px) {
+  .card {
+    padding: 3rem 3.5rem;
+    align-items: flex-start;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
+.logo {
+  width: 64px;
+  height: auto;
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+/* ─── STEP INDICATOR ─────────────────────────────────────── */
+.stepRow {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 6px;
+}
+
+.step {
+  height: 3px;
+  border-radius: 2px;
+  flex: 1;
+  background: #e9d5ff;
+}
+
+.stepDone {
+  background: #7c3aed;
+}
+
+.stepActive {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+
+.stepLabel {
+  font-size: 0.75rem;
+  color: #9f7aea;
+  font-weight: 500;
+  margin: 0 0 1.4rem;
+  letter-spacing: 0.01em;
+}
+
+/* ─── HEADINGS ───────────────────────────────────────────── */
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0 0 10px;
+  line-height: 1.55;
+}
+
+.emailBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  color: #6d28d9;
+  font-weight: 500;
+  margin-bottom: 1.75rem;
+  word-break: break-all;
+}
+
+/* ─── OTP INPUT ROW ──────────────────────────────────────── */
+.otpRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0.6rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+.otpBox {
+  flex: 1;
+  min-width: 0;
+  height: 58px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  color: #1a1a2e;
+  background: #fafafa;
+  outline: none;
+  caret-color: transparent;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    box-shadow 0.15s;
+}
+
+.otpBox:focus {
+  border-color: #7c3aed;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.otpBoxFilled {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+
+.otpBoxError {
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.otpBoxDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── ERROR ──────────────────────────────────────────────── */
+.errorMsg {
+  font-size: 0.82rem;
+  color: #ef4444;
+  min-height: 20px;
+  margin-bottom: 0.75rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* ─── TIMER / RESEND ─────────────────────────────────────── */
+.timerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 1.25rem;
+}
+
+.timerLabel {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.timerValue {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.expiredLabel {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.resendBtn {
+  background: none;
+  border: none;
+  font-size: 0.82rem;
+  color: #9ca3af;
+  cursor: not-allowed;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+
+.resendActive {
+  color: #7c3aed;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.resendActive:hover {
+  color: #5b21b6;
+}
+
+/* ─── VERIFY BUTTON ──────────────────────────────────────── */
+.verifyBtn {
+  width: 100%;
+  max-width: 360px;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed 0%, #9f7aea 100%);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition:
+    opacity 0.15s,
+    transform 0.1s;
+  margin-bottom: 1.1rem;
+}
+
+.verifyBtn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.verifyBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.verifyBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ─── SPINNER ────────────────────────────────────────────── */
+.spinnerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── BACK LINK ──────────────────────────────────────────── */
+.backLink {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-align: center;
+  width: 100%;
+  max-width: 360px;
+}
+
+.backLinkBold {
+  color: #7c3aed;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backLinkBold:hover {
+  text-decoration: underline;
+}
+
+/* ─── SUCCESS STATE ──────────────────────────────────────── */
+.successState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 360px;
+  padding: 1rem 0;
+  text-align: center;
+}
+
+.successIconWrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #dcfce7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.successTitle {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+
+.successDesc {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 4px;
+  background: #e9d5ff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  border-radius: 4px;
+  animation: fillBar 2.4s ease-in-out forwards;
+}
+
+@keyframes fillBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

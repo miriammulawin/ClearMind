@@ -61,6 +61,7 @@ return new class extends Migration
             // Auth
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
+            $table->string('email_verification_code')->nullable();
             $table->string('password');
 
             // Role
@@ -93,6 +94,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
+        $table->dropColumn('email_verification_code');
         Schema::dropIfExists('sessions');
     }
 };

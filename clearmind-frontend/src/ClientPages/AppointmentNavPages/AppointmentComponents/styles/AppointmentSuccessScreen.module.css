@@ -1,0 +1,213 @@
+/* ─── AppointmentSuccessScreen.module.css ─── */
+
+/* ── Wrapper (full page) ── */
+.wrapper {
+  position: fixed;
+  inset: 0;
+  background-color: #f4f0fa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2rem);
+  z-index: 1000;
+}
+
+/* ── Toast ── */
+.toastWrapper {
+  position: fixed;
+  top: clamp(12px, 3vw, 20px);
+  right: clamp(12px, 3vw, 20px);
+  z-index: 1100;
+}
+
+.toast {
+  background: #fff !important;
+  border: 1.5px solid #22c55e !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.18) !important;
+  min-width: 260px;
+}
+
+.toastIcon {
+  color: var(--bs-success);
+  font-size: clamp(14px, 3vw, 16px);
+  margin-right: 6px;
+  flex-shrink: 0;
+  animation: pulse 0.4s ease;
+}
+
+.toastBody {
+  display: flex;
+  align-items: center;
+  font-size: clamp(12px, 3vw, 14px);
+  font-weight: 600;
+  color: var(--bs-success);
+  padding: clamp(10px, 2.5vw, 14px) clamp(14px, 3vw, 18px);
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 15px;
+  border-bottom: 3px solid #5b2c91;
+  box-shadow: 0 2px 10px rgba(91, 44, 145, 0.07);
+  padding: clamp(28px, 6vw, 48px) clamp(16px, 4vw, 24px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 14px);
+}
+
+/* ── Icon ── */
+.successIcon {
+  font-size: clamp(2.4rem, 8vw, 3.5rem);
+  color: var(--bs-success);
+  background: var(--bs-success-bg-subtle);
+  border: 2px solid var(--bs-success-border-subtle);
+  border-radius: 50%;
+  width: clamp(80px, 18vw, 110px);
+  height: clamp(80px, 18vw, 110px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation:
+    bounceIn 0.6s ease,
+    pulse 1.8s ease 0.6s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes spinIn {
+  0% {
+    transform: rotate(-180deg) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Title ── */
+.successTitle {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+}
+
+/* ── Message ── */
+.successMsg {
+  color: #718096;
+  font-size: clamp(12px, 3vw, 14px);
+  max-width: 380px;
+  margin: 0;
+  line-height: 1.65;
+}
+
+/* ── Ref Badge ── */
+.refBadge {
+  display: inline-block;
+  background: #f3eeff;
+  color: #5b2c91;
+  border-radius: 30px;
+  padding: 5px 20px;
+  font-weight: 700;
+  font-size: clamp(11px, 2.5vw, 13px);
+  letter-spacing: 0.5px;
+}
+
+/* ── Pending Note ── */
+.pendingNote {
+  background: #fff8e6;
+  border: 1.5px solid #e8a234;
+  border-radius: 10px;
+  padding: clamp(10px, 2.5vw, 14px) clamp(14px, 3vw, 20px);
+  font-size: clamp(11px, 2.5vw, 13px);
+  color: #7a5000;
+  max-width: 400px;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btnRow {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(8px, 2vw, 12px);
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Back Button ── */
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #5b2c91;
+  border: 1.5px solid #c4aee8;
+  border-radius: clamp(6px, 1.5vw, 9px);
+  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  font-size: clamp(0.82rem, 2.2vw, 0.92rem);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  margin-top: clamp(4px, 1vw, 8px);
+}
+.backBtn:hover {
+  border-color: #5b2c91;
+  background: #f3eeff;
+}
+
+.viewBtn {
+  margin-top: clamp(4px, 1vw, 8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #5b2c91;
+  color: #fff;
+  border: none;
+  border-radius: clamp(6px, 1.5vw, 9px);
+  padding: clamp(0.6rem, 2vw, 0.8rem) clamp(1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  font-size: clamp(0.82rem, 2.2vw, 0.92rem);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.viewBtn:hover {
+  background: #4a2273;
+}
+
+/* ── update responsive ── */
+@media (max-width: 576px) {
+  .btnRow {
+    flex-direction: column;
+  }
+  .backBtn,
+  .viewBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Responsive ── */
+/* @media (max-width: 576px) {
+  .backBtn {
+    width: 100%;
+    justify-content: center;
+  }
+} */

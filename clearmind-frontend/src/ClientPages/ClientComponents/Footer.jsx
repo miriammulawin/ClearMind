@@ -6,34 +6,34 @@ import { FaCalendarCheck } from "react-icons/fa";
 import { AiFillMessage } from "react-icons/ai";
 import { BiSolidUserCircle } from "react-icons/bi";
 
-
 // Routes where the footer should be completely hidden
-const HIDDEN_ON = [
-  "/client/appointment/set-appointment-form"
-];
+const HIDDEN_ON = ["/client/appointment/set-appointment-form"];
 
 function ClientFooter() {
   const navigate = useNavigate();
   const location = useLocation();
 
   // Fully unmount footer on these pages so it can't receive any touches
-  if (HIDDEN_ON.some(path => location.pathname.startsWith(path))) {
+  if (HIDDEN_ON.some((path) => location.pathname.startsWith(path))) {
     return null;
   }
 
   const menus = [
-    { name: "Home",         icon: <GoHomeFill />,        path: "/client/home" },
-    { name: "Appointments", icon: <FaCalendarCheck />,   path: "/client/appointment" },
-    { name: "Messages",     icon: <AiFillMessage />,     path: "/client/messages" },
-    { name: "Profile",      icon: <BiSolidUserCircle />, path: "/client/profile" },
+    { name: "Home", icon: <GoHomeFill />, path: "/client/home" },
+    {
+      name: "Appointments",
+      icon: <FaCalendarCheck />,
+      path: "/client/appointment",
+    },
+    { name: "Messages", icon: <AiFillMessage />, path: "/client/messages" },
+    { name: "Profile", icon: <BiSolidUserCircle />, path: "/client/account" },
   ];
 
   const isActive = (menuPath) => {
     const current = location.pathname;
     if (current === menuPath) return true;
     return (
-      current.startsWith(menuPath + "/") ||
-      current.startsWith(menuPath + "?")
+      current.startsWith(menuPath + "/") || current.startsWith(menuPath + "?")
     );
   };
 

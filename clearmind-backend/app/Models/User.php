@@ -54,11 +54,14 @@ class User extends Authenticatable
         'role',
         'address',
         'is_active',
+        'email_verified_at',  
+        'email_verification_code',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_code',
     ];
 
     protected $casts = [

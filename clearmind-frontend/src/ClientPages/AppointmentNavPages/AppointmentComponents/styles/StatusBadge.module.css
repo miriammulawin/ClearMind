@@ -1,0 +1,63 @@
+/* =============================================
+   StatusBadge.module.css
+   ============================================= */
+
+.statusBadge {
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Pending - soft yellow */
+.badgePending {
+  background-color: #fff5b5;
+  color: rgb(130, 130, 130);
+}
+
+/* Confirmed - soft blue */
+.badgeConfirmed {
+  background-color: #a8bffd;
+  color: white;
+}
+
+/* Rescheduled - soft orange */
+.badgeRescheduled {
+  background-color: #FFCE99;
+  color: white;
+}
+
+/* Completed - soft green */
+.badgeCompleted {
+  background-color: #94caa1;
+  color: white;
+}
+
+/* Cancelled - soft red */
+.badgeCancelled {
+  background-color: #f97b88;
+  color: white;
+}
+
+/* =============================================
+   Responsive
+   ============================================= */
+@media (max-width: 575px) {
+  .statusBadge {
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 374px) {
+  .statusBadge {
+    padding: 4px 7px;
+    font-size: 0.58rem;
+  }
+}

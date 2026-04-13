@@ -12,10 +12,15 @@ use App\Http\Controllers\ClinicController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AssessmentPurposeController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 // ── Public Auth Routes ────────────────────────────────────────────
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
+Route::post('/reset-password',  [ResetPasswordController::class, 'reset']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
 // ── Protected Routes ──────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

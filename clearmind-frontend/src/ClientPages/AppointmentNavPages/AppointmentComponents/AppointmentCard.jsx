@@ -2,15 +2,9 @@ import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { FaVideo, FaClinicMedical } from 'react-icons/fa';
 import styles from './styles/AppointmentCard.module.css';
+import StatusBadge from './StatusBadge';
+import SessionProgressBar from './SessionProgressBar';
 
-// All badge colors are handled purely via CSS module — no Bootstrap bg variant needed
-const STATUS_CONFIG = {
-  Pending:     { label: 'Pending' },
-  Confirmed:   { label: 'Confirmed' },
-  Rescheduled: { label: 'Rescheduled' },
-  Completed:   { label: 'Completed' },
-  Cancelled:   { label: 'Cancelled' },
-};
 
 const getDayOfWeek = (dateString) => {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -26,20 +20,42 @@ const getAppointmentIcon = (type) => {
 };
 
 const AppointmentCard = ({ appointment, onViewDetails }) => {
-  const { id, status, time, date, type, serviceType, doctor } = appointment;
+  const {
+    id, referenceNumber, status, time, date,
+    type, serviceType, doctor,
+    programId, sessionNumber, totalSessions, progressionStatus,
+  } = appointment;
 
-  const statusConfig = STATUS_CONFIG[status] || { label: status };
+  const isPartOfProgram = !!programId;
 
   return (
     <Card className={styles.appointmentCard}>
       <Card.Body>
-        {/* Status Badge — color driven entirely by CSS module class */}
-        <span className={`${styles.statusBadge} ${styles[`badge${status}`]}`}>
-          {statusConfig.label}
-        </span>
+        {/* Status Badge */}
+        <StatusBadge status={status} className={styles.statusBadgePosition} />
 
         <div className={styles.appointmentDetails}>
           <div className={styles.appointmentInfo}>
+
+            {/* Session Indicator — only shown for program appointments */}
+            {isPartOfProgram && (
+            <div className={styles.sessionIndicatorRow}>
+              <SessionProgressBar
+                variant="mini"
+                sessionNumber={sessionNumber}
+                totalSessions={totalSessions}
+                progressionStatus={progressionStatus}
+                showLegend={false}
+              />
+            </div>
+            )}
+
+            {/* Reference Number */}
+            <div className={styles.infoRow}>
+              <span className={styles.label}>Ref #:</span>
+              <span className={styles.value}>{referenceNumber}</span>
+            </div>
+
             {/* Time */}
             <div className={styles.infoRow}>
               <span className={styles.label}>Time:</span>
@@ -73,6 +89,7 @@ const AppointmentCard = ({ appointment, onViewDetails }) => {
               <span className={styles.label}>Assigned Doctor:</span>
               <span className={`${styles.value} ${styles.doctorName}`}>{doctor}</span>
             </div>
+
           </div>
 
           {/* View Details Button */}

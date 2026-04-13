@@ -104,7 +104,7 @@ function Login() {
 
   return (
     <>
-      {/* ✅ TERMS MODAL */}
+      {/* TERMS MODAL */}
       <TermsModal
         isOpen={showTerms}
         onClose={() => setShowTerms(false)}
@@ -187,6 +187,15 @@ function Login() {
                         }
                       >
                         {showPassword ? <FaEye /> : <FaEyeSlash />}
+                      </span>
+                    </div>
+
+                    <div className="forgot-wrapper">
+                      <span
+                        className="forgot-link"
+                        onClick={() => navigate("/forgot-password")}
+                      >
+                        Forgot Password?
                       </span>
                     </div>
                   </Form.Group>
