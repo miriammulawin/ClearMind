@@ -22,7 +22,7 @@ class AuthController extends Controller
             'genderIdentity'   => 'nullable|in:female,male,transgender,trans_woman,trans_man,non_binary,genderqueer,gender_fluid,agender,bigender,two_spirit,intersex,pangender,prefer_not',
             'preferredPronoun' => 'nullable|in:he_him,she_her,they_them,other',
             'customPronoun'    => 'nullable|required_if:preferredPronoun,other|string|max:100',
-            'contactNo'        => 'required|string|max:20',
+            'contactNo'        => 'required|string|max:20',       
             'email'            => 'required|email|unique:users,email',
             'password'         => ['required', 'confirmed', Password::min(6)],
             'address'          => 'nullable|string|max:255',
@@ -128,13 +128,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (!$user->email_verified_at) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account has not been verified. Please check your email for the OTP.',
-            ], 403);
-        }
-
+    if (!$user->email_verified_at && $user->role === 'Client') {
+    return response()->json([
+        'success' => false,
+        'message' => 'Your account has not been verified. Please check your email for the OTP.',
+    ], 403);
+}
         if (!$user->is_active) {
             return response()->json([
                 'success' => false,
