@@ -513,10 +513,11 @@ function Register() {
                         onChange={handleChange}
                       >
                         <option value="" disabled>
-                          Patient Type *
+                          Patient Classification *
                         </option>
-                        <option value="new">New</option>
-                        <option value="existing">Existing</option>
+                        <option value="pwd">PWD</option>
+                        <option value="seniorcitizen">Senior Citizen</option>
+                        <option value="regular">Regular</option>
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
