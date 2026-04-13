@@ -17,14 +17,11 @@ import {
 } from "react-icons/fi";
 import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
 
-/* ─────────────────────────────────────────────────────────
-   Config
-───────────────────────────────────────────────────────── */
 const API_BASE = "http://localhost:8000/api";
 const getToken = () => localStorage.getItem("token");
 
 /* ─────────────────────────────────────────────────────────
-   ImagePreviewModal  — full-screen lightbox
+   ImagePreviewModal
 ───────────────────────────────────────────────────────── */
 function ImagePreviewModal({ file, src, onClose }) {
   const [zoom, setZoom] = useState(1);
@@ -99,7 +96,6 @@ function ImagePreviewModal({ file, src, onClose }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Toolbar */}
       <div
         style={{
           position: "absolute",
@@ -134,7 +130,6 @@ function ImagePreviewModal({ file, src, onClose }) {
             {file?.size ? `(${(file.size / 1024).toFixed(1)} KB)` : ""}
           </span>
         </div>
-
         {!isPdf && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <button
@@ -170,7 +165,6 @@ function ImagePreviewModal({ file, src, onClose }) {
             </button>
           </div>
         )}
-
         <button
           onClick={onClose}
           style={{
@@ -188,7 +182,6 @@ function ImagePreviewModal({ file, src, onClose }) {
         </button>
       </div>
 
-      {/* Image / PDF area */}
       <div
         ref={contentRef}
         style={{
@@ -235,7 +228,6 @@ function ImagePreviewModal({ file, src, onClose }) {
           />
         )}
       </div>
-
       {!isPdf && (
         <div
           style={{
@@ -386,7 +378,6 @@ function PatientSearchDropdown({ onSelect, value }) {
               }}
             />
           </div>
-
           <div style={{ maxHeight: "220px", overflowY: "auto" }}>
             {loading ? (
               <div
@@ -503,7 +494,7 @@ function PatientSearchDropdown({ onSelect, value }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Row — helper component for PatientInfoCard
+   PatientInfoCard
 ───────────────────────────────────────────────────────── */
 function Row({ label, value }) {
   return value ? (
@@ -514,9 +505,6 @@ function Row({ label, value }) {
   ) : null;
 }
 
-/* ─────────────────────────────────────────────────────────
-   PatientInfoCard
-───────────────────────────────────────────────────────── */
 function PatientInfoCard({ patient, onClear }) {
   const age = (() => {
     if (!patient.dob) return null;
@@ -557,7 +545,6 @@ function PatientInfoCard({ patient, onClear }) {
       >
         Change
       </button>
-
       <div
         style={{
           display: "flex",
@@ -599,7 +586,6 @@ function PatientInfoCard({ patient, onClear }) {
           </div>
         </div>
       </div>
-
       <div
         style={{
           display: "grid",
@@ -715,7 +701,6 @@ function DoctorDropdown({ onSelect, value }) {
           }}
         />
       </div>
-
       {open && (
         <div
           style={{
@@ -915,29 +900,12 @@ function ServiceCard({
 }
 
 /* ─────────────────────────────────────────────────────────
-   EMPTY FORM
-───────────────────────────────────────────────────────── */
-const EMPTY_FORM = {
-  informant_name: "",
-  informant_relation: "",
-  appointment_date: "",
-  start_time: "",
-  end_time: "",
-  visit_type: "onsite",
-  reason_for_consultation: "",
-  service_type: "",
-  pae_purpose: "",
-  payment_status: "not_paid",
-};
-
-/* ─────────────────────────────────────────────────────────
-   ReceiptItem — single row in the multi-upload list
+   ReceiptItem
 ───────────────────────────────────────────────────────── */
 function ReceiptItem({ entry, onRemove, onPreview }) {
   const isImage = entry.file.type.startsWith("image/");
   return (
     <div className="receipt-preview-wrap" style={{ marginBottom: "8px" }}>
-      {/* Thumbnail */}
       {isImage ? (
         <img
           src={entry.url}
@@ -950,8 +918,6 @@ function ReceiptItem({ entry, onRemove, onPreview }) {
           <FiFile size={22} color="#9c7dd4" />
         </div>
       )}
-
-      {/* File name + size */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
@@ -969,13 +935,9 @@ function ReceiptItem({ entry, onRemove, onPreview }) {
           {(entry.file.size / 1024).toFixed(1)} KB
         </div>
       </div>
-
-      {/* View button */}
       <button className="receipt-view-btn" onClick={() => onPreview(entry)}>
         <FiEye size={13} /> View
       </button>
-
-      {/* Remove button */}
       <button
         className="receipt-remove-btn"
         onClick={() => onRemove(entry.id)}
@@ -986,6 +948,23 @@ function ReceiptItem({ entry, onRemove, onPreview }) {
     </div>
   );
 }
+
+/* ─────────────────────────────────────────────────────────
+   EMPTY FORM
+───────────────────────────────────────────────────────── */
+const EMPTY_FORM = {
+  informant_name: "",
+  informant_relation: "",
+  appointment_date: "",
+  start_time: "",
+  end_time: "",
+  visit_type: "onsite",
+  reason_for_consultation: "",
+  service_type: "",
+  pae_purpose: "",
+  payment_status: "not_paid",
+  reference_number: "",
+};
 
 /* ─────────────────────────────────────────────────────────
    CreateAppointmentModal
@@ -1003,24 +982,17 @@ function CreateAppointmentModal({
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedService, setSelectedService] = useState("");
   const [showPAEPanel, setShowPAEPanel] = useState(false);
-
-  // ── Multi-receipt state ──
-  // Each entry: { id: string, file: File, url: string }
   const [receiptEntries, setReceiptEntries] = useState([]);
-  const [previewEntry, setPreviewEntry] = useState(null); // entry currently in lightbox
-
+  const [previewEntry, setPreviewEntry] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-
   const [services, setServices] = useState([]);
   const [paePurposes, setPaePurposes] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
 
   const receiptInputRef = useRef(null);
-
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
 
-  // Cleanup all object URLs on unmount
   useEffect(() => {
     return () => {
       receiptEntries.forEach((e) => URL.revokeObjectURL(e.url));
@@ -1028,7 +1000,6 @@ function CreateAppointmentModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ── Add one or more files ── */
   const addReceiptFiles = (files) => {
     const newEntries = Array.from(files).map((file) => ({
       id: `${Date.now()}-${Math.random()}`,
@@ -1038,18 +1009,15 @@ function CreateAppointmentModal({
     setReceiptEntries((prev) => [...prev, ...newEntries]);
   };
 
-  /* ── Remove a single entry by id ── */
   const removeReceiptEntry = (id) => {
     setReceiptEntries((prev) => {
       const entry = prev.find((e) => e.id === id);
       if (entry) URL.revokeObjectURL(entry.url);
-      // Close lightbox if we're removing the file currently previewed
       if (previewEntry?.id === id) setPreviewEntry(null);
       return prev.filter((e) => e.id !== id);
     });
   };
 
-  /* ── Remove all receipts ── */
   const clearAllReceipts = () => {
     receiptEntries.forEach((e) => URL.revokeObjectURL(e.url));
     setReceiptEntries([]);
@@ -1057,7 +1025,6 @@ function CreateAppointmentModal({
     if (receiptInputRef.current) receiptInputRef.current.value = "";
   };
 
-  // ── Fetch services when modal opens ──
   const fetchServices = useCallback(async () => {
     setServicesLoading(true);
     try {
@@ -1084,7 +1051,6 @@ function CreateAppointmentModal({
         }));
 
       setServices(mapped);
-
       const psych = mapped.find((s) => s.isPsych);
       if (psych) setPaePurposes(psych.purposes);
     } catch (e) {
@@ -1115,18 +1081,19 @@ function CreateAppointmentModal({
     if (!svc?.isPsych) {
       set("pae_purpose", "");
       setShowPAEPanel(false);
-    } else {
-      setShowPAEPanel(true);
-    }
+    } else setShowPAEPanel(true);
   };
 
-  /* ── Submit ── */
   async function handleSubmit() {
     setErrors({});
     const errs = {};
     if (!selectedPatient) errs.patient = "Please select a patient.";
     if (!form.appointment_date) errs.appointment_date = "Date is required.";
     if (!form.start_time) errs.start_time = "Start time is required.";
+    if (form.payment_status === "paid" && !form.reference_number.trim()) {
+      errs.reference_number =
+        "Reference number is required when payment is paid.";
+    }
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
@@ -1147,9 +1114,9 @@ function CreateAppointmentModal({
     fd.append("service_type", form.service_type);
     if (form.pae_purpose) fd.append("pae_purpose", form.pae_purpose);
     fd.append("payment_status", form.payment_status);
+    if (form.reference_number.trim())
+      fd.append("reference_number", form.reference_number.trim());
     if (selectedDoctor) fd.append("doctor_user_id", selectedDoctor.id);
-
-    // ── Append every receipt file as receipts[] ──
     receiptEntries.forEach((entry) => {
       fd.append("receipts[]", entry.file);
     });
@@ -1247,8 +1214,6 @@ function CreateAppointmentModal({
         .tos-pae-item{padding:11px 14px;border-radius:9px;cursor:pointer;font-size:13px;color:#333;background:#fff;border:1.5px solid #dde;transition:all .15s;display:flex;align-items:center;gap:10px}
         .tos-pae-item:hover{border-color:#1d6fa4;background:#f0f8ff}
         .tos-pae-item.sel{border-color:#1d6fa4;background:#e0f2fe;color:#1d6fa4;font-weight:600}
-
-        /* Receipt preview row */
         .receipt-preview-wrap{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2d5f5;border-radius:10px;background:#faf7ff;width:100%;box-sizing:border-box}
         .receipt-thumb-img{width:52px;height:52px;object-fit:cover;border-radius:7px;border:1px solid #ddd;flex-shrink:0;cursor:zoom-in}
         .receipt-thumb-pdf{width:52px;height:52px;border-radius:7px;border:1px solid #ddd;background:#f0ebfa;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -1256,13 +1221,17 @@ function CreateAppointmentModal({
         .receipt-view-btn:hover{background:#f3ecfc}
         .receipt-remove-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0;background:none;border:1px solid #f0d0d0;border-radius:6px;cursor:pointer;color:#e53e3e;transition:background .15s}
         .receipt-remove-btn:hover{background:#fff0f0}
-
-        /* Add more button */
         .receipt-add-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed #c4a8e8;border-radius:10px;background:none;color:#4D227C;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
         .receipt-add-more-btn:hover{background:#f5f0fb;border-color:#4D227C}
+
+        /* Reference number box */
+        .ref-box{background:#fff8e1;border:1.5px solid #fde68a;border-radius:10px;padding:14px 16px;margin-top:12px;animation:paeIn .2s ease}
+        .ref-box-label{font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;display:block}
+        .ref-box-input{width:100%;padding:10px 13px;border-radius:8px;border:1.5px solid #fde68a;font-size:13px;font-family:inherit;color:#333;box-sizing:border-box;background:#fffdf0;outline:none;transition:border .2s}
+        .ref-box-input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.15)}
+        .ref-box-hint{font-size:11px;color:#b45309;margin-top:5px;display:block}
       `}</style>
 
-      {/* Lightbox */}
       {previewEntry && (
         <ImagePreviewModal
           file={previewEntry.file}
@@ -1295,7 +1264,6 @@ function CreateAppointmentModal({
             {/* ══ PATIENT ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Patient Information</h4>
-
               <div className={styles.fieldRow}>
                 <input
                   className={styles.input}
@@ -1306,7 +1274,6 @@ function CreateAppointmentModal({
                   }
                 />
               </div>
-
               <div className={styles.fieldRow}>
                 {!selectedPatient ? (
                   <>
@@ -1331,7 +1298,6 @@ function CreateAppointmentModal({
             {/* ══ SCHEDULE ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Consultation Schedule</h4>
-
               <div className={styles.grid3}>
                 <LabeledInput label="Date">
                   <input
@@ -1390,9 +1356,7 @@ function CreateAppointmentModal({
 
               <hr className={styles.divider} />
 
-              {/* ── Type of Service ── */}
               <p className="tos-label">Type of Service</p>
-
               {servicesLoading ? (
                 <p
                   style={{ color: "#aaa", fontSize: "13px", padding: "10px 0" }}
@@ -1420,7 +1384,6 @@ function CreateAppointmentModal({
                             : null
                         }
                       />
-
                       {svc.isPsych && isPAE && showPAEPanel && (
                         <div className="tos-pae-panel">
                           <p className="tos-pae-header">
@@ -1461,7 +1424,6 @@ function CreateAppointmentModal({
                           </div>
                         </div>
                       )}
-
                       {svc.isPsych && isPAE && !showPAEPanel && (
                         <button
                           onClick={() => setShowPAEPanel(true)}
@@ -1502,7 +1464,10 @@ function CreateAppointmentModal({
                 <select
                   className={styles.select}
                   value={form.payment_status}
-                  onChange={(e) => set("payment_status", e.target.value)}
+                  onChange={(e) => {
+                    set("payment_status", e.target.value);
+                    if (e.target.value !== "paid") set("reference_number", "");
+                  }}
                 >
                   <option value="">Select Payment Status</option>
                   <option value="paid">Paid</option>
@@ -1511,15 +1476,33 @@ function CreateAppointmentModal({
                 </select>
               </div>
 
+              {/* ── Reference Number — only shown when Paid ── */}
+              {form.payment_status === "paid" && (
+                <div className="ref-box">
+                  <span className="ref-box-label">🔖 Reference Number</span>
+                  <input
+                    className="ref-box-input"
+                    type="text"
+                    placeholder="e.g. GCash ref: 1234567890"
+                    value={form.reference_number}
+                    onChange={(e) => set("reference_number", e.target.value)}
+                  />
+                  {errors.reference_number && <Err field="reference_number" />}
+                  <span className="ref-box-hint">
+                    Enter the GCash / bank transaction reference number.
+                  </span>
+                </div>
+              )}
+
               {showReceiptSection && (
                 <>
-                  {/* Header row: label + count badge */}
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       marginBottom: "10px",
+                      marginTop: "12px",
                     }}
                   >
                     <div className={styles.uploadLabel} style={{ margin: 0 }}>
@@ -1556,7 +1539,6 @@ function CreateAppointmentModal({
                     )}
                   </div>
 
-                  {/* Hidden file input — allows multiple */}
                   <input
                     ref={receiptInputRef}
                     type="file"
@@ -1566,12 +1548,10 @@ function CreateAppointmentModal({
                     onChange={(e) => {
                       if (e.target.files?.length)
                         addReceiptFiles(e.target.files);
-                      // Reset so same file can be re-added if removed
                       e.target.value = "";
                     }}
                   />
 
-                  {/* List of uploaded files */}
                   {receiptEntries.length > 0 && (
                     <div style={{ marginBottom: "4px" }}>
                       {receiptEntries.map((entry) => (
@@ -1585,7 +1565,6 @@ function CreateAppointmentModal({
                     </div>
                   )}
 
-                  {/* Drop zone (shown when no files) OR "Add more" button (shown when files exist) */}
                   {receiptEntries.length === 0 ? (
                     <div
                       className={styles.uploadZone}
@@ -1618,8 +1597,7 @@ function CreateAppointmentModal({
                           addReceiptFiles(e.dataTransfer.files);
                       }}
                     >
-                      <FiPlus size={14} />
-                      Add more receipts
+                      <FiPlus size={14} /> Add more receipts
                     </button>
                   )}
                 </>

@@ -39,11 +39,12 @@ return new class extends Migration
             ])->nullable();
 
                 // Additional patient-specific info
-           $table->enum('civilStatus', ['Single', 'Married', 'Widowed', 'Divorced', 'Separated'])->nullable();
+                   $table->enum('civilStatus', [
+                    'Single', 'Married', 'Widowed', 'Divorced', 'Separated'
+                ])->nullable();
             $table->enum('patientType', ['existing', 'new'])->default('new');
             $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->default('Regular');
 
-            
             // Preferred Pronouns
             $table->enum('preferredPronoun', [
                 'he_him',
@@ -94,7 +95,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
-        $table->dropColumn('email_verification_code');
         Schema::dropIfExists('sessions');
     }
 };
