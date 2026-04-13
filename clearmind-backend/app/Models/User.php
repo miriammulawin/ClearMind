@@ -39,26 +39,26 @@ class User extends Authenticatable
     const PRONOUN_THEY_THEM = 'they_them';
     const PRONOUN_OTHER     = 'other';
 
-    protected $fillable = [
-        'firstName',
-        'lastName',
-        'middleInitial',
-        'dob',
-        'sex',
-        'genderIdentity',
-        'preferredPronoun',
-        'customPronoun',
-        'contactNo',
-        'email',
-        'password',
-        'role',
-        'address',
-        'civilStatus',
-        'patientClassification',
-        'is_active',
-        'email_verified_at',  
-        'email_verification_code',
-    ];
+   protected $fillable = [
+    'firstName',
+    'lastName',
+    'middleInitial',
+    'dob',
+    'sex',
+    'genderIdentity',
+    'preferredPronoun',
+    'customPronoun',
+    'contactNo',
+    'civilStatus',
+    'patientClassification',
+    'address',
+    'email',
+    'password',
+    'role',
+    'is_active',
+    'email_verified_at',
+    'email_verification_code',
+];
 
     protected $hidden = [
         'password',
