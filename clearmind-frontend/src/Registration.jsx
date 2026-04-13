@@ -529,7 +529,7 @@ function Register() {
                         </option>
                         <option value="PWD">PWD</option>
                         <option value="Senior Citizen">Senior Citizen</option>
-                        <option value="Solo Parent">Solo Parent</option>
+                        <option value="Regular">Regular</option>
                       </select>
                       <FiChevronDown className={styles.selectArrow} />
                     </div>
