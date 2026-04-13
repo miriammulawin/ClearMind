@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me',      [AuthController::class, 'me']);
+    Route::put('/me',      [AuthController::class, 'updateProfile']);
 
     // ── Shared lookup lists (Client + Admin both need these) ──────
     Route::get('patients/list', [PatientController::class, 'all']);     // dropdown for appointment modal

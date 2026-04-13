@@ -45,7 +45,6 @@ return new class extends Migration
             $table->enum('patientType', ['existing', 'new'])->default('new');
             $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->default('Regular');
 
-            
             // Preferred Pronouns
             $table->enum('preferredPronoun', [
                 'he_him',
@@ -96,7 +95,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
-        $table->dropColumn('email_verification_code');
         Schema::dropIfExists('sessions');
     }
 };

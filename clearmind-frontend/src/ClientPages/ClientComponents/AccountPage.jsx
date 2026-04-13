@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Card, ListGroup, Modal, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../ClientStyle/AccountPage.css";
 import { LuHandHeart } from "react-icons/lu";
@@ -13,16 +13,65 @@ import { FaCamera } from "react-icons/fa";
 import { Image } from "react-bootstrap";
 import logo_login from "../../assets/CMPS_Logo.png";
 import ProfileAvatar from "./ProfileAvatar";
-import { mockUser } from "../../MockData/MockUser";
+import axiosClient from "../../axiosClient";
 
-export default function AccountPage({ userData, onEditClick }) {
+export default function AccountPage({ onEditClick }) {
+  const context = useOutletContext() || {};
+  const { user: contextUser, setIsEditOpen } = context;
+
+  const [localUser, setLocalUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Always prefer contextUser; sync it into localUser whenever it changes
+  useEffect(() => {
+    if (contextUser) {
+      setLocalUser(contextUser);
+      setLoading(false);
+    }
+  }, [contextUser]); // re-runs every time parent updates user state
+
+  // ✅ Only fetch independently if there's no context at all
+  useEffect(() => {
+    if (contextUser !== undefined) return; // context exists, skip fetch
+
+    axiosClient
+      .get("/me")
+      .then((response) => {
+        if (response.data.success) setLocalUser(response.data.data);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch user:", err);
+        setError("Failed to load profile.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const user = localUser;
+
+  const capitalize = (str) => {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
+  const getDisplayName = () => {
+    if (!user) return "";
+    const first = capitalize(user.firstName);
+    const last = capitalize(user.lastName);
+    const middle =
+      user.middleInitial && user.middleInitial !== "N/A"
+        ? `${user.middleInitial.toUpperCase()}. `
+        : "";
+    return `${first} ${middle}${last}`;
+  };
 
   const handleLogoutClick = () => setShowLogoutModal(true);
   const handleCloseModal = () => setShowLogoutModal(false);
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     setShowLogoutModal(false);
     navigate("/login");
   };
@@ -30,6 +79,11 @@ export default function AccountPage({ userData, onEditClick }) {
   const handleMenuClick = (item) => {
     if (item.action) item.action();
     else if (item.link) navigate(item.link);
+  };
+
+  const handleEditOpen = () => {
+    if (setIsEditOpen) setIsEditOpen(true);
+    else if (onEditClick) onEditClick();
   };
 
   const menuItems = [
@@ -55,50 +109,64 @@ export default function AccountPage({ userData, onEditClick }) {
   return (
     <div className="profile-page-container">
       <Container fluid className="p-0 profile-container">
-        {/* Profile Header */}
         <div className="profile-header">
           <h5 className="profile-title">PROFILE</h5>
         </div>
 
-        {/* User Info Card */}
         <div className="user-info-section">
           <Card className="user-info-card">
             <Card.Body
               className="user-info-body"
               onClick={() => navigate("/client/account/profile-page")}
             >
-              {/* Avatar — clicking opens Edit Modal */}
-              <div className="user-avatar-wrapper" onClick={onEditClick}>
-                <ProfileAvatar
-                  firstName={userData.firstName}
-                  lastName={userData.lastName}
-                  profilePic={userData.profilePic}
-                  size={52}
-                />
-                <div className="avatar-edit-btn">
-                  <FaCamera size={10} />
+              {loading ? (
+                <div className="user-details">
+                  <p className="text-muted">Loading profile...</p>
                 </div>
-              </div>
+              ) : error ? (
+                <div className="user-details">
+                  <p className="text-danger">{error}</p>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="user-avatar-wrapper"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditOpen();
+                    }}
+                  >
+                    <ProfileAvatar
+                      firstName={capitalize(user?.firstName)}
+                      lastName={capitalize(user?.lastName)}
+                      profilePic={user?.profilePic || null}
+                      size={52}
+                    />
+                    <div className="avatar-edit-btn">
+                      <FaCamera size={10} />
+                    </div>
+                  </div>
 
-              <div className="user-details">
-                <h5 className="user-name">
-                  {userData.firstName}{" "}
-                  {userData.middleName && userData.middleName !== "N/A"
-                    ? `${userData.middleName[0]}. `
-                    : ""}
-                  {userData.lastName}
-                </h5>
-                <p className="user-email">{userData.email}</p>
-              </div>
+                  <div className="user-details">
+                    <h5 className="user-name">{getDisplayName()}</h5>
+                    <p className="user-email">{user?.email}</p>
+                  </div>
 
-              <button className="edit-button" onClick={onEditClick}>
-                <FaRegEdit />
-              </button>
+                  <button
+                    className="edit-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditOpen();
+                    }}
+                  >
+                    <FaRegEdit />
+                  </button>
+                </>
+              )}
             </Card.Body>
           </Card>
         </div>
 
-        {/* Menu Items */}
         <div className="menu-section">
           <Card className="menu-card">
             <ListGroup variant="flush">
@@ -121,7 +189,6 @@ export default function AccountPage({ userData, onEditClick }) {
           </Card>
         </div>
 
-        {/* Branding Footer */}
         <div className="branding-section">
           <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
           <div className="branding-logo">
@@ -132,7 +199,6 @@ export default function AccountPage({ userData, onEditClick }) {
         </div>
       </Container>
 
-      {/* Logout Modal */}
       <Modal
         show={showLogoutModal}
         onHide={handleCloseModal}
