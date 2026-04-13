@@ -31,6 +31,7 @@ import AdminAppointment from "./AdminPages/AdminAppointment";
 import AdminBilling from "./AdminPages/AdminBilling";
 import AdminPatientProfile from "./AdminPages/AdminPatientProfile";
 
+import ClientLayout from "./ClientPages/ClientLayout";
 import ClientHome from "./ClientPages/ClientHome";
 import ClientAppointment from "./ClientPages/ClientAppointment";
 import ServicesTab from "./ClientPages/AppointmentNavPages/ServicesTab";
@@ -51,6 +52,7 @@ import PACSetAppointmentForm from "./ClientPages/AppointmentNavPages/PaCAssesmen
 import PAEAppointment from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/PAaEAppointment";
 import PAaESetAppointmentForm from "./ClientPages/AppointmentNavPages/PAaEAssesmentPages/AppointmentForm/PAaESetAppoitnmentForm";
 import VerifyOtp from "./VerifyOtp";
+
 function App() {
   return (
     <>
@@ -62,6 +64,7 @@ function App() {
           <Route path="/register" element={<Registration />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
+
           {/* ── Admin Routes ────────────────────────────────── */}
           <Route
             path="/admin/dashboard"
@@ -202,99 +205,61 @@ function App() {
             }
           />
 
-          {/* ── Client Routes ────────────────────────────────── */}
+          {/* ── Client Routes (all wrapped in ClientLayout) ── */}
           <Route
-            path="/client/home"
+            path="/client"
             element={
               <ProtectedRoute role="Client">
-                <ClientHome />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/client/appointment"
-            element={
-              <ProtectedRoute role="Client">
-                <ClientAppointment />
+                <ClientLayout /> {/* ✅ ClientLayout wraps ALL client routes */}
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="services" replace />} />
-            <Route path="services" element={<ServicesTab />} />
+            <Route path="home" element={<ClientHome />} />
+
+            <Route path="appointment" element={<ClientAppointment />}>
+              <Route index element={<Navigate to="services" replace />} />
+              <Route path="services" element={<ServicesTab />} />
+              <Route
+                path="psychotherapy-and-counseling"
+                element={<PACAppointment />}
+              >
+                <Route
+                  path="set-appointment-form"
+                  element={<PACSetAppointmentForm />}
+                />
+              </Route>
+              <Route
+                path="psychological-assessment"
+                element={<PAEAppointment />}
+              >
+                <Route
+                  path="set-appointment-form"
+                  element={<PAaESetAppointmentForm />}
+                />
+              </Route>
+              <Route path="pending" element={<PendingTab />} />
+              <Route path="upcoming" element={<ScheduleTab />} />
+              <Route path="sessions" element={<SessionsTab />} />
+              <Route path="history" element={<HistoryTab />} />
+              <Route path="upcoming/:id" element={<AppointmentDetails />} />
+              <Route path="details/:id" element={<AppointmentDetails />} />
+            </Route>
+
+            <Route path="messages" element={<ClientMessages />} />
+
+            {/* ✅ AccountPage now receives context from ClientLayout */}
+            <Route path="account" element={<ClientAccount />}>
+              <Route path="profile-page" element={<ProfilePage />} />
+            </Route>
+
+            <Route path="help" element={<Help />} />
             <Route
-              path="psychotherapy-and-counseling"
-              element={<PACAppointment />}
-            >
-              <Route
-                path="set-appointment-form"
-                element={<PACSetAppointmentForm />}
-              />
-            </Route>
-            <Route path="psychological-assessment" element={<PAEAppointment />}>
-              <Route
-                path="set-appointment-form"
-                element={<PAaESetAppointmentForm />}
-              />
-            </Route>
-            <Route path="pending" element={<PendingTab />} />
-            <Route path="upcoming" element={<ScheduleTab />} />
-            <Route path="sessions" element={<SessionsTab />} />
-            <Route path="history" element={<HistoryTab />} />
-            <Route path="upcoming/:id" element={<AppointmentDetails />} />
-            <Route path="details/:id" element={<AppointmentDetails />} />
+              path="terms-and-conditions"
+              element={<TermsAndConditions />}
+            />
+            <Route path="privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="about" element={<About />} />
           </Route>
-          <Route
-            path="/client/messages"
-            element={
-              <ProtectedRoute role="Client">
-                <ClientMessages />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/client/account"
-            element={
-              <ProtectedRoute role="Client">
-                <ClientAccount />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="profile-page" element={<ProfilePage />} />
-          </Route>
-
-          <Route
-            path="/client/help"
-            element={
-              <ProtectedRoute role="Client">
-                <Help />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/client/terms-and-conditions"
-            element={
-              <ProtectedRoute role="Client">
-                <TermsAndConditions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/client/privacy-policy"
-            element={
-              <ProtectedRoute role="Client">
-                <PrivacyPolicy />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/client/about"
-            element={
-              <ProtectedRoute role="Client">
-                <About />
-              </ProtectedRoute>
-            }
-          />
 
           {/* ── Catch-all ───────────────────────────────────── */}
           <Route path="*" element={<Navigate to="/" replace />} />

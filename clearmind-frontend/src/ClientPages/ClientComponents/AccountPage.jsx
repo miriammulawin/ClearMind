@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Container, Card, ListGroup, Modal, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../ClientStyle/AccountPage.css";
 import { LuHandHeart } from "react-icons/lu";
@@ -16,20 +16,31 @@ import ProfileAvatar from "./ProfileAvatar";
 import axiosClient from "../../axiosClient";
 
 export default function AccountPage({ onEditClick }) {
-  const [user, setUser] = useState(null);
-  
+  const context = useOutletContext() || {};
+  const { user: contextUser, setIsEditOpen } = context;
+
+  const [localUser, setLocalUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ Always prefer contextUser; sync it into localUser whenever it changes
   useEffect(() => {
+    if (contextUser) {
+      setLocalUser(contextUser);
+      setLoading(false);
+    }
+  }, [contextUser]); // re-runs every time parent updates user state
+
+  // ✅ Only fetch independently if there's no context at all
+  useEffect(() => {
+    if (contextUser !== undefined) return; // context exists, skip fetch
+
     axiosClient
       .get("/me")
       .then((response) => {
-        if (response.data.success) {
-          setUser(response.data.data);
-        }
+        if (response.data.success) setLocalUser(response.data.data);
       })
       .catch((err) => {
         console.error("Failed to fetch user:", err);
@@ -37,6 +48,8 @@ export default function AccountPage({ onEditClick }) {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const user = localUser;
 
   const capitalize = (str) => {
     if (!str) return "";
@@ -58,7 +71,6 @@ export default function AccountPage({ onEditClick }) {
   const handleCloseModal = () => setShowLogoutModal(false);
 
   const handleLogout = () => {
-    // Clear token on logout
     localStorage.removeItem("token");
     setShowLogoutModal(false);
     navigate("/login");
@@ -67,6 +79,11 @@ export default function AccountPage({ onEditClick }) {
   const handleMenuClick = (item) => {
     if (item.action) item.action();
     else if (item.link) navigate(item.link);
+  };
+
+  const handleEditOpen = () => {
+    if (setIsEditOpen) setIsEditOpen(true);
+    else if (onEditClick) onEditClick();
   };
 
   const menuItems = [
@@ -92,12 +109,10 @@ export default function AccountPage({ onEditClick }) {
   return (
     <div className="profile-page-container">
       <Container fluid className="p-0 profile-container">
-        {/* Profile Header */}
         <div className="profile-header">
           <h5 className="profile-title">PROFILE</h5>
         </div>
 
-        {/* User Info Card */}
         <div className="user-info-section">
           <Card className="user-info-card">
             <Card.Body
@@ -114,12 +129,11 @@ export default function AccountPage({ onEditClick }) {
                 </div>
               ) : (
                 <>
-                  {/* Avatar */}
                   <div
                     className="user-avatar-wrapper"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onEditClick && onEditClick();
+                      handleEditOpen();
                     }}
                   >
                     <ProfileAvatar
@@ -133,7 +147,6 @@ export default function AccountPage({ onEditClick }) {
                     </div>
                   </div>
 
-                  {/* User Details */}
                   <div className="user-details">
                     <h5 className="user-name">{getDisplayName()}</h5>
                     <p className="user-email">{user?.email}</p>
@@ -143,7 +156,7 @@ export default function AccountPage({ onEditClick }) {
                     className="edit-button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onEditClick && onEditClick();
+                      handleEditOpen();
                     }}
                   >
                     <FaRegEdit />
@@ -154,7 +167,6 @@ export default function AccountPage({ onEditClick }) {
           </Card>
         </div>
 
-        {/* Menu Items */}
         <div className="menu-section">
           <Card className="menu-card">
             <ListGroup variant="flush">
@@ -177,7 +189,6 @@ export default function AccountPage({ onEditClick }) {
           </Card>
         </div>
 
-        {/* Branding Footer */}
         <div className="branding-section">
           <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
           <div className="branding-logo">
@@ -188,7 +199,6 @@ export default function AccountPage({ onEditClick }) {
         </div>
       </Container>
 
-      {/* Logout Modal */}
       <Modal
         show={showLogoutModal}
         onHide={handleCloseModal}
