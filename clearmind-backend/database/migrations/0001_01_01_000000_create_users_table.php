@@ -39,7 +39,9 @@ return new class extends Migration
             ])->nullable();
 
                 // Additional patient-specific info
-            $table->enum('civilStatus', ['single', 'married', 'widowed', 'divorced', 'separated'])->nullable();
+                   $table->enum('civilStatus', [
+                    'Single', 'Married', 'Widowed', 'Divorced', 'Separated'
+                ])->nullable();
             $table->enum('patientType', ['existing', 'new'])->default('new');
             $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->default('Regular');
 
@@ -52,11 +54,9 @@ return new class extends Migration
                 'other'
             ])->nullable();
 
-            $table->enum('civilStatus', [
-                    'Single', 'Married', 'Widowed', 'Divorced', 'Separated'
-                ])->nullable();
 
-          $table->enum('patientClassification', ['PWD', 'Senior Citizen', 'Regular'])->nullable();
+
+     
             
             // For custom pronouns (when preferredPronoun = 'other')
             $table->string('customPronoun', 100)->nullable();

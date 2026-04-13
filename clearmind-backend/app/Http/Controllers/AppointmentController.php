@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/AppointmentController.php
 
 namespace App\Http\Controllers;
 
@@ -16,13 +15,12 @@ use Illuminate\Support\Facades\Validator;
 class AppointmentController extends Controller
 {
     /* ══════════════════════════════════════════════
-       GET /appointments  (admin sees all, client sees own)
+       GET /appointments
     ══════════════════════════════════════════════ */
     public function index(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
-
+            $user  = Auth::user();
             $query = Appointment::with(['patient', 'doctor', 'bookedBy'])
                 ->orderByDesc('appointment_date')
                 ->orderByDesc('start_time');
@@ -45,12 +43,11 @@ class AppointmentController extends Controller
     }
 
     /* ══════════════════════════════════════════════
-       POST /appointments  — book an appointment
+       POST /appointments
     ══════════════════════════════════════════════ */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            /* ── Patient ── */
             'patient_id'               => ['nullable', 'exists:patients,patient_id'],
             'patient_firstName'        => ['required_without:patient_id', 'string', 'max:100'],
             'patient_lastName'         => ['required_without:patient_id', 'string', 'max:100'],
@@ -62,30 +59,19 @@ class AppointmentController extends Controller
             'patient_contactNo'        => ['nullable', 'string', 'max:20'],
             'patient_email'            => ['nullable', 'email', 'max:191'],
             'patient_address'          => ['nullable', 'string'],
-
-            /* ── Informant ── */
             'informant_name'           => ['nullable', 'string', 'max:200'],
             'informant_relation'       => ['nullable', 'string', 'max:100'],
-
-            /* ── Schedule ── */
             'appointment_date'         => ['required', 'date', 'after_or_equal:today'],
             'start_time'               => ['required', 'date_format:H:i'],
             'end_time'                 => ['required', 'date_format:H:i', 'after:start_time'],
             'visit_type'               => ['required', 'in:onsite,virtual'],
-
-            /* ── Service ── */
             'reason_for_consultation'  => ['nullable', 'string', 'max:500'],
             'service_type'             => ['nullable', 'string', 'max:100'],
             'pae_purpose'              => ['nullable', 'string', 'max:200'],
-
-            /* ── Payment ── */
             'payment_status'           => ['nullable', 'in:paid,not_paid,probono'],
-
-            /* ── Receipts (multiple) ── */
+            'reference_number'         => ['nullable', 'string', 'max:100'],
             'receipts'                 => ['nullable', 'array', 'max:10'],
             'receipts.*'               => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-
-            /* ── Doctor ── */
             'doctor_user_id'           => ['nullable', 'exists:users,id'],
         ]);
 
@@ -97,7 +83,6 @@ class AppointmentController extends Controller
         }
 
         DB::beginTransaction();
-
         $receiptPaths = [];
 
         try {
@@ -105,11 +90,9 @@ class AppointmentController extends Controller
 
             /* ── 1. Resolve or create patient ── */
             if ($request->filled('patient_id')) {
-                // ✅ FIXED: use the correct PK column name
                 $patient = Patient::where('patient_id', $request->patient_id)->firstOrFail();
             } else {
                 $isSelfBooking = !$request->filled('informant_name');
-
                 $patient = Patient::create([
                     'user_id'               => ($isSelfBooking && $user->role === 'Client') ? $user->id : null,
                     'firstName'             => $request->patient_firstName,
@@ -125,14 +108,26 @@ class AppointmentController extends Controller
                 ]);
             }
 
-            /* ── 2. Upload all receipt files ── */
+            /* ── 2. Upload receipt files ── */
             if ($request->hasFile('receipts')) {
                 foreach ($request->file('receipts') as $file) {
                     $receiptPaths[] = $file->store('appointments/receipts', 'public');
                 }
             }
 
-            /* ── 3. Create appointment ── */
+            /* ── 3. Determine reference number ──
+               - If frontend sent one (manual entry), use it
+               - If payment_status = paid and none provided, auto-generate
+               - Otherwise null
+            ── */
+            $referenceNumber = null;
+            if ($request->filled('reference_number')) {
+                $referenceNumber = $request->reference_number;
+            } elseif ($request->payment_status === 'paid') {
+                $referenceNumber = Appointment::generateReferenceNumber();
+            }
+
+            /* ── 4. Create appointment ── */
             $appointment = Appointment::create([
                 'booked_by_user_id'       => $user->id,
                 'patient_id'              => $patient->patient_id,
@@ -148,12 +143,12 @@ class AppointmentController extends Controller
                 'pae_purpose'             => $request->pae_purpose,
                 'payment_status'          => $request->payment_status ?? 'not_paid',
                 'receipt_paths'           => $receiptPaths,
+                'reference_number'        => $referenceNumber,
                 'status'                  => 'pending',
             ]);
 
             DB::commit();
 
-            // ✅ FIXED: eager load using appointment_id so relations resolve correctly
             return response()->json([
                 'message' => 'Appointment created successfully.',
                 'data'    => Appointment::with(['patient', 'doctor', 'bookedBy'])
@@ -162,11 +157,9 @@ class AppointmentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-
             foreach ($receiptPaths as $path) {
                 Storage::disk('public')->delete($path);
             }
-
             return response()->json([
                 'message' => 'Failed to create appointment.',
                 'error'   => $e->getMessage(),
@@ -180,7 +173,6 @@ class AppointmentController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            // ✅ FIXED: query by appointment_id explicitly
             $appt = Appointment::with(['patient', 'doctor', 'bookedBy'])
                 ->where('appointment_id', $id)
                 ->firstOrFail();
@@ -201,23 +193,26 @@ class AppointmentController extends Controller
     ══════════════════════════════════════════════ */
     public function update(Request $request, int $id): JsonResponse
     {
-        // ✅ FIXED: find by appointment_id explicitly
         $appt = Appointment::where('appointment_id', $id)->first();
         if (!$appt) {
             return response()->json(['message' => 'Appointment not found.'], 404);
         }
 
         $validator = Validator::make($request->all(), [
-            'status'         => ['nullable', 'in:pending,confirmed,completed,cancelled,no_show'],
-            'doctor_user_id' => ['nullable', 'exists:users,id'],
-            'payment_status' => ['nullable', 'in:paid,not_paid,probono'],
-            'notes'          => ['nullable', 'string'],
-            'receipts'       => ['nullable', 'array', 'max:10'],
-            'receipts.*'     => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'status'           => ['nullable', 'in:pending,confirmed,completed,cancelled,no_show'],
+            'doctor_user_id'   => ['nullable', 'exists:users,id'],
+            'payment_status'   => ['nullable', 'in:paid,not_paid,probono'],
+            'reference_number' => ['nullable', 'string', 'max:100'],
+            'notes'            => ['nullable', 'string'],
+            'receipts'         => ['nullable', 'array', 'max:10'],
+            'receipts.*'       => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Validation failed.', 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $validator->errors(),
+            ], 422);
         }
 
         try {
@@ -227,7 +222,14 @@ class AppointmentController extends Controller
                 'start_time', 'end_time',
             ]));
 
-            // Append new receipt files to existing ones
+            // Handle reference number on update
+            if ($request->filled('reference_number')) {
+                $appt->reference_number = $request->reference_number;
+            } elseif ($request->payment_status === 'paid' && empty($appt->reference_number)) {
+                $appt->reference_number = Appointment::generateReferenceNumber();
+            }
+
+            // Append new receipt files
             if ($request->hasFile('receipts')) {
                 $existing = $appt->receipt_paths ?? [];
                 foreach ($request->file('receipts') as $file) {
@@ -249,7 +251,7 @@ class AppointmentController extends Controller
     }
 
     /* ══════════════════════════════════════════════
-       DELETE /appointments/{id}  (soft delete)
+       DELETE /appointments/{id}
     ══════════════════════════════════════════════ */
     public function destroy(int $id): JsonResponse
     {
@@ -265,39 +267,4 @@ class AppointmentController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-
-    /* ══════════════════════════════════════════════
-       GET /patients  — for dropdowns
-    // ══════════════════════════════════════════════ */
-    // public function patientList(): JsonResponse
-    // {
-    //     try {
-    //         $patients = Patient::select('patient_id', 'firstName', 'lastName', 'middleInitial', 'contactNo')
-    //             ->where('is_active', true)
-    //             ->orderBy('lastName')
-    //             ->get();
-
-    //         return response()->json(['data' => $patients]);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['message' => $e->getMessage()], 500);
-    //     }
-    // }
-
-    // /* ══════════════════════════════════════════════
-    //    GET /doctors  — for admin dropdown
-    // ══════════════════════════════════════════════ */
-    // public function doctorList(): JsonResponse
-    // {
-    //     try {
-    //         $doctors = User::select('id', 'firstName', 'lastName', 'middleInitial')
-    //             ->where('role', 'Doctor')
-    //             ->where('is_active', true)
-    //             ->orderBy('lastName')
-    //             ->get();
-
-    //         return response()->json(['data' => $doctors]);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['message' => $e->getMessage()], 500);
-    //     }
-    // }
 }
