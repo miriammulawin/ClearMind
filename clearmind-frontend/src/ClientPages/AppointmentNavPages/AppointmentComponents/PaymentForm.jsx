@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Form } from "react-bootstrap";
-import styles from "../../../ClientStyle/PaymentForm.module.css";
-import sampleQr from "../../../../assets/sample_qr_ara.jpg";
-import { useCurrentUser } from "../../../../hooks/userCurrentUser";
+import styles from "./styles/PaymentForm.module.css";
+import sampleQr from "../../../assets/sample_qr_ara.jpg";
+import { useCurrentUser } from "../../../hooks/userCurrentUser";
 
 /**
  * PaymentForm  –  Step 3 body
@@ -21,6 +21,7 @@ const PaymentForm = ({
   qrImages = { gcash: sampleQr, bankTransfer: sampleQr },
   bookingPolicyAgreed = false,
   onOpenBookingPolicy = () => {},
+  hideDatetime = false,
 }) => {
   const user = useCurrentUser();
 
@@ -163,10 +164,12 @@ const PaymentForm = ({
             <span className={styles.summaryKey}>Assigned Doctor:</span>
             <span className={styles.summaryVal}>{doctorData?.name || "—"}</span>
           </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Date and Time:</span>
-            <span className={styles.summaryVal}>{dateTimeDisplay}</span>
-          </div>
+          {!hideDatetime && (
+            <div className={styles.summaryRow}>
+              <span className={styles.summaryKey}>Date and Time:</span>
+              <span className={styles.summaryVal}>{dateTimeDisplay}</span>
+            </div>
+          )}
           <div className={styles.summaryRow}>
             <span className={styles.summaryKey}>Visit Type:</span>
             <span className={styles.summaryVal}>{visitType}</span>
@@ -272,16 +275,158 @@ const PaymentForm = ({
 
         <div className={styles.summaryDivider} />
 
-        {/* ── Reason ── */}
+        {/* ── Reason / Extra Fields ── */}
         <div className={styles.summaryGroup}>
-          <div className={styles.summaryGroupTitle}>
-            Reason for Consultation
-          </div>
-          <p className={styles.summaryReason}>
-            {profileData.reason && profileData.reason.trim()
-              ? profileData.reason
-              : "—"}
-          </p>
+          {/* Pre-Employment */}
+          {profileData.extraField === "preEmployment" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>Employment Details</div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>Employer / Company:</span>
+                <span className={styles.summaryVal}>
+                  {profileData.employerName || "—"}
+                </span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>
+                  Purpose of Assessment:
+                </span>
+                <span className={styles.summaryVal}>
+                  {profileData.assessmentPurpose || "—"}
+                </span>
+              </div>
+            </>
+          ) : /* ESA */
+          profileData.extraField === "esa" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>ESA Details</div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>Travel Type:</span>
+                <span className={styles.summaryVal}>
+                  {profileData.travelType || "—"}
+                </span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>Existing Diagnosis:</span>
+                <span className={styles.summaryVal}>
+                  {profileData.hasDiagnosis === true
+                    ? "Yes"
+                    : profileData.hasDiagnosis === false
+                      ? "No"
+                      : "—"}
+                </span>
+              </div>
+              {profileData.hasDiagnosis === true && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryKey}>Diagnosis File:</span>
+                  <span className={styles.summaryVal}>
+                    {profileData.diagnosisFile || "—"}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : /* Internship */
+          profileData.extraField === "internship" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>Internship Details</div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>School / University:</span>
+                <span className={styles.summaryVal}>
+                  {profileData.schoolName || "—"}
+                </span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span className={styles.summaryKey}>Program / Course:</span>
+                <span className={styles.summaryVal}>
+                  {profileData.program || "—"}
+                </span>
+              </div>
+            </>
+          ) : profileData.extraField === "legalType" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>
+                Reason for Consultation
+              </div>
+              <p className={styles.summaryReason}>
+                {profileData.reason || "—"}
+              </p>
+              {profileData.legalType && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryKey}>Legal Case Type:</span>
+                  <span className={styles.summaryVal}>
+                    {profileData.legalType}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : profileData.extraField === "school" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>
+                Reason for Consultation
+              </div>
+              <p className={styles.summaryReason}>
+                {profileData.reason || "—"}
+              </p>
+              {profileData.school && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryKey}>
+                    School / Institution:
+                  </span>
+                  <span className={styles.summaryVal}>
+                    {profileData.school}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : profileData.extraField === "company" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>
+                Reason for Consultation
+              </div>
+              <p className={styles.summaryReason}>
+                {profileData.reason || "—"}
+              </p>
+              {profileData.company && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryKey}>Company / Employer:</span>
+                  <span className={styles.summaryVal}>
+                    {profileData.company}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : profileData.extraField === "institution" ? (
+            <>
+              <div className={styles.summaryGroupTitle}>
+                Reason for Consultation
+              </div>
+              <p className={styles.summaryReason}>
+                {profileData.reason || "—"}
+              </p>
+              {profileData.institution && (
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryKey}>
+                    Institution / Purpose:
+                  </span>
+                  <span className={styles.summaryVal}>
+                    {profileData.institution}
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Default — show Reason */
+            <>
+              <div className={styles.summaryGroupTitle}>
+                Reason for Consultation
+              </div>
+              <p className={styles.summaryReason}>
+                {profileData.reason && profileData.reason.trim()
+                  ? profileData.reason
+                  : "—"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 

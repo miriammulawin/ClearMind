@@ -1,0 +1,270 @@
+/* DoctorCard.module.css
+   Extracted from PACSetAppointment.module.css
+   Contains only styles relevant to the DoctorCard component
+─────────────────────────────────────────────────────────────── */
+
+/* ── Card ── */
+.doctorCard {
+  border: 2px solid #5b2c91;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  background-color: white;
+  margin-bottom: clamp(8px, 2vw, 15px);
+}
+
+.cardBody {
+  padding: clamp(1rem, 4vw, 2rem);
+}
+
+/* ── Header ── */
+.doctorHeader {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  flex-wrap: wrap;
+}
+
+.doctorAvatar {
+  flex-shrink: 0;
+}
+
+.avatarIcon {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  color: #5b2c91;
+}
+
+.doctorInfo {
+  flex: 1;
+}
+
+.doctorName {
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 700;
+  color: #5b2c91;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.doctorCredentials {
+  font-size: clamp(0.68rem, 1.8vw, 0.78rem);
+  color: #718096;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.doctorCardSelected {
+  border: 2px solid #6f42c1;
+  box-shadow: 0 0 0 3px rgba(111, 66, 193, 0.15);
+}
+
+.radioIndicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid;
+  flex-shrink: 0;
+  margin-right: 8px;
+  transition: all 0.2s ease;
+}
+
+.radioSelected {
+  border-color: #6f42c1;
+  background-color: #6f42c1;
+  box-shadow: inset 0 0 0 3px white; /* inner white dot */
+}
+
+.radioUnselected {
+  border-color: #adb5bd;
+  background-color: transparent;
+}
+.doctorCardCompact {
+  cursor: pointer;
+}
+/* Compact -- for ChooseRPm */
+.doctorCardCompact .doctorHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Push VIEW PROFILE button to the far right */
+.doctorCardCompact .btnViewProfile {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Consultation Availability ── */
+.consultationAvailability {
+  background-color: #f0e6ff;
+  padding: clamp(0.5rem, 2vw, 0.75rem);
+  border-radius: 10px;
+  margin-top: clamp(0.5rem, 2vw, 0.75rem);
+}
+
+.availabilityLabel {
+  color: #5b2c91;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  margin: 0 0 0.5rem 0;
+}
+
+.availabilityDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.availabilityItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+}
+
+.iconSmall {
+  color: #5b2c91;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+}
+
+.consultationIcon {
+  color: #5b2c91;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+}
+
+/* ── Earliest Schedule ── */
+.earliestSchedule {
+  border-top: 1px solid #e2e8f0;
+  padding-top: clamp(0.5rem, 2vw, 0.75rem);
+  margin-top: clamp(0.5rem, 2vw, 0.75rem);
+}
+
+.scheduleLabel {
+  color: #718096;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  margin: 0 0 0.5rem 0;
+}
+
+.scheduleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #5b2c91;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+}
+
+.scheduleTime {
+  color: #4a5568;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+  margin: 0;
+}
+
+.scheduleFee {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+  margin: 0;
+}
+
+/* ── Selected state (RPm variant) ── */
+.doctorCardSelected {
+  border-color: #4a2273;
+  background-color: #f3eeff;
+  box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.15);
+}
+
+/* ── RPm avatar (initials circle) ── */
+.rpmAvatar {
+  flex-shrink: 0;
+  width: clamp(38px, 8vw, 48px);
+  height: clamp(38px, 8vw, 48px);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7b5ea7 0%, #5b2c91 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  font-weight: 700;
+}
+
+/* ── RPm role label ── */
+.rpmRoleLabel {
+  font-size: clamp(0.65rem, 1.8vw, 0.72rem);
+  color: #9b8ab0;
+  margin: 2px 0 0 0;
+  font-style: italic;
+}
+
+/* ── RPm checkmark ── */
+.rpmCheck {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #5b2c91;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  align-self: center;
+}
+
+/* ── Actions ── */
+.cardActions {
+  display: flex;
+  gap: clamp(0.5rem, 2vw, 0.75rem);
+  margin-top: clamp(0.75rem, 2vw, 1rem);
+  flex-wrap: wrap;
+}
+
+.btnViewProfile,
+.btnBookAppointment {
+  flex: 1;
+  min-width: 120px;
+  border-radius: 20px;
+  padding: clamp(0.4rem, 1.5vw, 0.5rem);
+  font-weight: 600;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btnViewProfile {
+  border: 2px solid #5b2c91;
+  color: #5b2c91;
+  background-color: white;
+}
+
+.btnViewProfile:hover {
+  background-color: #f0e6ff;
+  color: #5b2c91;
+  border-color: #5b2c91;
+}
+
+.btnBookAppointment {
+  border: 2px solid #5b2c91;
+  background-color: #5b2c91;
+  color: white;
+}
+
+.btnBookAppointment:hover {
+  background-color: #4a2273;
+  border-color: #4a2273;
+  color: white;
+}

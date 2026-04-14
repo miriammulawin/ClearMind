@@ -1,33 +1,19 @@
 .client-appointment-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
 }
 
 .sticky-header {
+  position: sticky;
   flex-shrink: 0;
+  z-index: 99;
   top: 0;
-  z-index: 1000;
+  z-index: 99;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .tab-content-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  background-color: transparent;
-}
-
-.sticky-footer {
-  flex-shrink: 0;
-  bottom: 0;
-  z-index: 1000;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Optional: Add smooth scrolling */
-.tab-content-wrapper {
+  padding: 0px 15px 100px;
   scroll-behavior: smooth;
 }

@@ -1,15 +1,11 @@
 import React, { useState } from "react";
 import { flushSync } from "react-dom";
-import { Container, Card, Button } from "react-bootstrap";
+import { Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import {
-  FaVideo,
-  FaClinicMedical,
-  FaCalendarCheck,
-  FaUserCircle,
-  FaArrowLeft,
-} from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
+
 import MOCK_DOCTORS from "../../../MockData/MockDoctors.js";
+import DoctorCard from "../AppointmentComponents/DoctorCard.jsx";
 import DoctorProfile from "../AppointmentComponents/DoctorProfile.jsx";
 import ServiceAlert from "../AppointmentComponents/ServiceAlert.jsx";
 import styles from "./style/PACSetAppointment.module.css";
@@ -38,21 +34,6 @@ const PACAppointment = () => {
   const [activeSpecialist, setActiveSpecialist] = useState("Psychologist");
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
 
-  const getConsultationIcon = (mode) =>
-    mode === "Online" ? (
-      <FaVideo className={styles.consultationIcon} />
-    ) : (
-      <FaClinicMedical className={styles.consultationIcon} />
-    );
-
-  const formatScheduleDays = (days) => {
-    if (days.length === 1) return days[0];
-    if (days.length === 2) return days.join(" & ");
-    const lastDay = days[days.length - 1];
-    const otherDays = days.slice(0, -1).join(", ");
-    return `${otherDays} & ${lastDay}`;
-  };
-
   const handleViewProfile = (doctorId) => {
     setSelectedDoctor(doctorId);
     setSelectedDate(null);
@@ -65,9 +46,7 @@ const PACAppointment = () => {
     if (doctor) {
       navigate(
         "/client/appointment/psychotherapy-and-counseling/set-appointment-form",
-        {
-          state: { doctor, selectedService },
-        },
+        { state: { doctor, selectedService } },
       );
     }
   };
@@ -92,7 +71,6 @@ const PACAppointment = () => {
     });
   };
 
-  // Filter doctors by specialist role
   const filteredDoctors = activeSpecialist
     ? MOCK_DOCTORS.filter((d) =>
         d.title
@@ -222,78 +200,12 @@ const PACAppointment = () => {
               </p>
             ) : (
               filteredDoctors.map((doctor) => (
-                <Card key={doctor.id} className={styles.doctorCard}>
-                  <Card.Body className={styles.cardBody}>
-                    <div className={styles.doctorHeader}>
-                      <div className={styles.doctorAvatar}>
-                        <FaUserCircle className={styles.avatarIcon} />
-                      </div>
-                      <div className={styles.doctorInfo}>
-                        <h6 className={styles.doctorName}>{doctor.name}</h6>
-                        <p className={styles.doctorCredentials}>
-                          {doctor.credentials}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={styles.consultationAvailability}>
-                      <p className={styles.availabilityLabel}>
-                        Consultation Availability
-                      </p>
-                      <div className={styles.availabilityDetails}>
-                        <div className={styles.availabilityItem}>
-                          <FaCalendarCheck className={styles.iconSmall} />
-                          <span>
-                            {formatScheduleDays(doctor.schedule.days)}
-                          </span>
-                        </div>
-                        <div className={styles.availabilityItem}>
-                          {getConsultationIcon(doctor.consultationMode)}
-                          <span>{doctor.consultationType}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={styles.earliestSchedule}>
-                      <p className={styles.scheduleLabel}>
-                        Earliest Available Schedule
-                      </p>
-                      <div className={styles.scheduleInfo}>
-                        <div className={styles.scheduleItem}>
-                          {getConsultationIcon(doctor.consultationMode)}
-                          <span>{doctor.consultationType}</span>
-                        </div>
-                        <p className={styles.scheduleTime}>
-                          {doctor.availability[0]?.day},{" "}
-                          {doctor.availability[0]?.slots.find(
-                            (s) => s.available,
-                          )?.time || "N/A"}
-                        </p>
-                        <p className={styles.scheduleFee}>
-                          Fee: ₱
-                          {doctor.consultationFees.initialConsultation.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`${styles.cardActions} mt-3`}>
-                      <Button
-                        variant="outline-purple"
-                        className={styles.btnViewProfile}
-                        onClick={() => handleViewProfile(doctor.id)}
-                      >
-                        VIEW PROFILE
-                      </Button>
-                      <Button
-                        variant="purple"
-                        className={styles.btnBookAppointment}
-                        onClick={() => handleSetAppointment(doctor.id)}
-                      >
-                        SET APPOINTMENT
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
+                <DoctorCard
+                  key={doctor.id}
+                  doctor={doctor}
+                  onViewProfile={handleViewProfile}
+                  onSetAppointment={handleSetAppointment}
+                />
               ))
             )}
           </div>

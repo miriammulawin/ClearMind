@@ -11,8 +11,10 @@ const formatFeeLabel = (key) =>
     .replace(/^./, (c) => c.toUpperCase())
     .trim();
 
-const DoctorProfile = ({ doctorData, onBookAppointment }) => {
+const DoctorProfile = ({ doctorData, onBookAppointment, onBack }) => {
   const navigate = useNavigate();
+  console.log("DoctorProfile doctorData:", doctorData);
+  if (!doctorData) return null;
 
   const handleBookAppointment = () => {
     if (onBookAppointment) onBookAppointment();
@@ -43,6 +45,11 @@ const DoctorProfile = ({ doctorData, onBookAppointment }) => {
 
   return (
     <div className={styles.bookingView}>
+      {onBack && (
+        <button type="button" onClick={onBack} className={styles.btnBack}>
+          ← Back
+        </button>
+      )}
       <Card className={`${styles.profileCard} mb-4`}>
         <Card.Body className={styles.cardBody}>
           {/* Header */}

@@ -1,76 +1,100 @@
-import React, { useState } from 'react';
-import { Container, Dropdown, Button, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { FaCalendarTimes, FaFilter, FaSort } from 'react-icons/fa';
-import { MOCK_APPOINTMENTS } from '../../MockData/MockAppointment';
-import SessionCard from './AppointmentComponents/SessionCard';
-import styles from './styles/SessionsTab.module.css';
+import React, { useState } from "react";
+import { Container, Dropdown, Button, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { FaCalendarTimes, FaFilter, FaSort } from "react-icons/fa";
+import { MOCK_APPOINTMENTS } from "../../MockData/MockAppointment";
+import SessionCard from "./AppointmentComponents/SessionCard";
+import styles from "./styles/SessionsTab.module.css";
+import BookNextSession from "./AppointmentComponents/BookNextSession";
 
 const PREFIX_LABEL = {
-  PAC: 'Psychotherapy & Counseling',
-  PAE: 'Psychological Assessment & Evaluation',
+  PAC: "Psychotherapy & Counseling",
+  PAE: "Psychological Assessment & Evaluation",
 };
 
 const getPrefix = (referenceNumber) => {
-  if (!referenceNumber) return 'OTHER';
-  if (referenceNumber.startsWith('PAC')) return 'PAC';
-  if (referenceNumber.startsWith('PAE')) return 'PAE';
-  return 'OTHER';
+  if (!referenceNumber) return "OTHER";
+  if (referenceNumber.startsWith("PAC")) return "PAC";
+  if (referenceNumber.startsWith("PAE")) return "PAE";
+  return "OTHER";
 };
 
 const SessionsTab = () => {
   const navigate = useNavigate();
-
-  const [selectedStatus, setSelectedStatus] = useState('All');
-  const [sortOrder, setSortOrder]           = useState('Newest First');
+  const [bookingSession, setBookingSession] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [sortOrder, setSortOrder] = useState("Newest First");
   const [showDateFilter, setShowDateFilter] = useState(false);
-  const [startDate, setStartDate]           = useState('');
-  const [endDate, setEndDate]               = useState('');
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  const statusOptions = ['All', 'Pending', 'Confirmed', 'Rescheduled', 'Completed', 'Cancelled'];
-  const sortOptions   = ['Newest First', 'Oldest First'];
+  const statusOptions = [
+    "All",
+    "Pending",
+    "Confirmed",
+    "Rescheduled",
+    "Completed",
+    "Cancelled",
+  ];
+  const sortOptions = ["Newest First", "Oldest First"];
+
+  const handleBookNext = (appointment) => {
+    navigate("/client/appointment/sessions/book-next", {
+      state: { appointment },
+    });
+  };
 
   const getEmptyMessage = (status) => {
     const messages = {
-      All:         'You have no sessions yet.',
-      Pending:     'You have no pending sessions.',
-      Confirmed:   'You have no confirmed sessions.',
-      Rescheduled: 'You have no rescheduled sessions.',
-      Completed:   'You have no completed sessions.',
-      Cancelled:   'You have no cancelled sessions.',
+      All: "You have no sessions yet.",
+      Pending: "You have no pending sessions.",
+      Confirmed: "You have no confirmed sessions.",
+      Rescheduled: "You have no rescheduled sessions.",
+      Completed: "You have no completed sessions.",
+      Cancelled: "You have no cancelled sessions.",
     };
-    return messages[status] || 'You have no sessions.';
+    return messages[status] || "You have no sessions.";
   };
 
   const handleViewDetails = (appointmentId) => {
     navigate(`/client/appointment/sessions/${appointmentId}`, {
-      state: { from: 'sessions' },
+      state: { from: "sessions" },
     });
   };
 
   const handleClearDates = () => {
-    setStartDate('');
-    setEndDate('');
+    setStartDate("");
+    setEndDate("");
   };
 
-  // ── Step 1: filter & sort — only program appointments ──────────────────
-  const filteredAndSorted = MOCK_APPOINTMENTS
-    .filter((apt) => !!apt.programId)  // exclude standalones
+  if (bookingSession) {
+    return (
+      <BookNextSession
+        appointment={bookingSession}
+        onBack={() => setBookingSession(null)}
+        onSuccess={() => {
+          setBookingSession(null);
+          alert("Session request submitted! Admin will confirm your schedule.");
+        }}
+      />
+    );
+  }
+
+  const filteredAndSorted = MOCK_APPOINTMENTS.filter((apt) => !!apt.programId)
     .filter((apt) =>
-      selectedStatus === 'All' ? true : apt.status === selectedStatus
+      selectedStatus === "All" ? true : apt.status === selectedStatus,
     )
     .filter((apt) => {
       if (!startDate && !endDate) return true;
       const aptDate = new Date(apt.date);
-      const from    = startDate ? new Date(startDate) : null;
-      const to      = endDate   ? new Date(endDate)   : null;
+      const from = startDate ? new Date(startDate) : null;
+      const to = endDate ? new Date(endDate) : null;
       if (from && aptDate < from) return false;
-      if (to   && aptDate > to)   return false;
+      if (to && aptDate > to) return false;
       return true;
     })
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  // ── Step 2: group by programId ─────────────────────────────────────────
   const grouped = filteredAndSorted.reduce((acc, apt) => {
     const key = apt.programId;
     if (!acc[key]) acc[key] = [];
@@ -78,28 +102,23 @@ const SessionsTab = () => {
     return acc;
   }, {});
 
-  // ── Step 3: order groups by sortOrder ──────────────────────────────────
   const groupEntries = Object.entries(grouped).sort(([, aptsA], [, aptsB]) => {
     const latestA = new Date(aptsA[aptsA.length - 1].date);
     const latestB = new Date(aptsB[aptsB.length - 1].date);
-    return sortOrder === 'Newest First'
-      ? latestB - latestA
-      : latestA - latestB;
+    return sortOrder === "Newest First" ? latestB - latestA : latestA - latestB;
   });
 
   return (
     <Container className={`py-4 ${styles.sessionsContainer}`}>
-
-      {/* ── Header ── */}
       <div className={styles.headerSection}>
         <h5 className={styles.titleSessions}>MY SESSIONS</h5>
 
-        {/* ── Filters Row ── */}
         <div className={styles.filtersGroup}>
-
-          {/* Status Dropdown */}
           <Dropdown className={styles.statusDropdownSessions}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-status">
+            <Dropdown.Toggle
+              variant="outline-purple"
+              id="dropdown-sessions-status"
+            >
               {selectedStatus}
             </Dropdown.Toggle>
             <Dropdown.Menu>
@@ -115,9 +134,11 @@ const SessionsTab = () => {
             </Dropdown.Menu>
           </Dropdown>
 
-          {/* Sort Dropdown */}
           <Dropdown className={styles.sortDropdownSessions}>
-            <Dropdown.Toggle variant="outline-purple" id="dropdown-sessions-sort">
+            <Dropdown.Toggle
+              variant="outline-purple"
+              id="dropdown-sessions-sort"
+            >
               <FaSort className="me-1" />
               {sortOrder}
             </Dropdown.Toggle>
@@ -134,17 +155,15 @@ const SessionsTab = () => {
             </Dropdown.Menu>
           </Dropdown>
 
-          {/* Date Filter Toggle */}
           <Button
             className={styles.dateFilterToggle}
             onClick={() => setShowDateFilter((prev) => !prev)}
           >
             <FaFilter className="me-1" />
-            {showDateFilter ? 'Hide Dates' : 'Filter by Date'}
+            {showDateFilter ? "Hide Dates" : "Filter by Date"}
           </Button>
         </div>
 
-        {/* ── Date Range Filter Panel ── */}
         {showDateFilter && (
           <div className={styles.dateRangeFilter}>
             <Row className="g-2 align-items-end">
@@ -167,7 +186,10 @@ const SessionsTab = () => {
                 />
               </Col>
               <Col xs={12} sm={2}>
-                <Button className={styles.clearDateBtn} onClick={handleClearDates}>
+                <Button
+                  className={styles.clearDateBtn}
+                  onClick={handleClearDates}
+                >
                   Clear
                 </Button>
               </Col>
@@ -176,7 +198,6 @@ const SessionsTab = () => {
         )}
       </div>
 
-      {/* ── Sessions List ── */}
       <div className={styles.sessionsListWrapper}>
         {groupEntries.length === 0 ? (
           <div className={styles.noSessions}>
@@ -193,12 +214,12 @@ const SessionsTab = () => {
                 groupLabel={PREFIX_LABEL[prefix] || prefix}
                 appointments={apts}
                 onViewDetails={handleViewDetails}
+                onBookNext={handleBookNext}
               />
             );
           })
         )}
       </div>
-
     </Container>
   );
 };

@@ -1,23 +1,14 @@
-import { useState } from "react";
-import { Container, Card, Row, Col, Form, Button, Image } from "react-bootstrap";
-import ClientHeader from "./ClientComponents/Header";
-import ClientFooter from "./ClientComponents/Footer";
 import MessagingApp from "./ClientComponents/MessageBody";
+import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 
 function ClientMessages() {
-    const [isInChat, setIsInChat] = useState(false);
+  const { setIsInChat } = useOutletContext();
+  const handleChatStateChange = (showChat) => {
+    setIsInChat(showChat);
+  };
 
-    const handleChatStateChange = (showChat) => {
-        setIsInChat(showChat);
-    };
-
-    return (
-        <div>
-            {!isInChat && <ClientHeader />}
-            <MessagingApp onChatStateChange={handleChatStateChange} />
-            {!isInChat && <ClientFooter />}
-        </div>
-    );
+  return <MessagingApp onChatStateChange={setIsInChat} />;
 }
 
 export default ClientMessages;

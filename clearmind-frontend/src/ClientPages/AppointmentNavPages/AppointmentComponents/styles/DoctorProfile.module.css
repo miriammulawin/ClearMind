@@ -25,6 +25,19 @@
   background: #4a2273;
 }
 
+.btnBack {
+  background: none;
+  border: none;
+  color: #6f42c1;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.btnBack:hover {
+  text-decoration: underline;
+}
 /* ─────────────────────────────────────────
    PROFILE CARD
 ───────────────────────────────────────── */

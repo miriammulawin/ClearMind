@@ -1,0 +1,228 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+.appointmentServicesContainer {
+  max-width: 768px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  padding-bottom: 2rem;
+}
+
+.servicesHeading {
+  color: #4e237c;
+  font-weight: bold;
+  margin: 25px;
+  font-size: 1.5rem;
+}
+
+.appointmentServicesContainer :global(.accordion-item) {
+  border: none !important;
+  border-bottom: 3px solid #4e237c !important;
+  border-radius: 15px !important;
+  margin-bottom: 12px !important;
+  overflow: hidden;
+}
+
+.accordionHeaderCustom {
+  padding: 12px 16px;
+}
+
+.accordionTitle {
+  color: #4e237c;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.accordionBodyCustom {
+  background-color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.serviceDescription {
+  color: #495057;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.continueButton {
+  background-color: #4e237c !important;
+  max-width: min-content;
+  border: none !important;
+  border-radius: 20px !important;
+  padding: 10px 32px !important;
+  font-weight: bold !important;
+  width: 100%;
+  font-size: 14px !important;
+  cursor: pointer;
+  color: white !important;
+  transition: background-color 0.3s ease !important;
+  box-shadow: none !important;
+}
+
+.continueButton:hover {
+  background-color: #5b2c91 !important;
+  color: white !important;
+}
+
+.continueButton:active,
+.continueButton:focus,
+.continueButton:focus-visible {
+  background-color: #4e237c !important;
+  color: white !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.bottomNavigation {
+  background-color: white;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-around;
+  padding: 12px 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Bootstrap accordion overrides via :global */
+:global(.accordion-button:not(.collapsed)) {
+  background-color: #f0ebf8 !important;
+  color: #2d1b69 !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+:global(.accordion-button:focus) {
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+:global(.accordion-button:active) {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+:global(.accordion-button) {
+  box-shadow: none !important;
+  border: none !important;
+  transition: background-color 0.3s ease !important;
+}
+
+:global(.accordion-item) {
+  box-shadow: none !important;
+}
+
+:global(.accordion-item:focus-within) {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+:global(.accordion-collapse) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .appointmentServicesContainer {
+    margin: auto;
+    max-width: 450px;
+  }
+
+  .servicesHeading {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+
+  .accordionHeaderCustom {
+    padding: 10px 12px;
+  }
+
+  .accordionTitle {
+    font-size: 16px;
+  }
+
+  .accordionBodyCustom {
+    padding: 16px 12px;
+  }
+
+  .serviceDescription {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+
+  .continueButton {
+    padding: 12px 24px !important;
+    font-size: 13px !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (max-width: 376px) {
+  .servicesHeading {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+
+  .accordionTitle {
+    font-size: 16px;
+  }
+
+  .serviceDescription {
+    font-size: 14px;
+  }
+
+  .continueButton {
+    padding: 10px 20px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 767px) {
+  .servicesHeading {
+    font-size: 1.4rem;
+  }
+
+  .accordionTitle {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 768px) {
+  .appointmentServicesContainer {
+    margin: 0 auto;
+  }
+
+  .servicesHeading {
+    font-size: 1.75rem;
+  }
+
+  .accordionTitle {
+    font-size: 15px;
+  }
+
+  .continueButton {
+    font-size: 15px !important;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .servicesHeading {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+
+  .bottomNavigation {
+    padding: 6px 0;
+  }
+}
+
+@supports (padding: max(0px)) {
+  .bottomNavigation {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}

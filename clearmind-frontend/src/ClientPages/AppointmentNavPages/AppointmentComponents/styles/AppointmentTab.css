@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 .tab-navigation-wrapper {
   background: var(--bs-white);
@@ -11,7 +11,6 @@
 /* Custom Tab Styling */
 .custom-tabs {
   gap: 20px;
-
 }
 
 .custom-tabs .nav-item {
@@ -20,23 +19,22 @@
 }
 
 .custom-tabs .nav-link {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   border: none;
   font-size: 17px !important;
-  color: #8B7BA8;
+  color: #8b7ba8;
 }
 
 .custom-tabs .nav-item:hover {
-  color: #5B2C91 !important;
+  color: #5b2c91 !important;
   background: #e0d5f5;
-
 }
 
 .custom-tabs .nav-link.active {
-  color:#5B2C91;
+  color: #5b2c91;
   background: transparent;
   border: none;
-  border-bottom: 3px solid #5B2C91 !important;
+  border-bottom: 4px solid #5b2c91 !important;
   font-weight: 700;
   font-size: 20px !important;
   padding: none;
@@ -85,7 +83,7 @@
 @media (max-width: 575px) {
   .custom-tabs .nav-link {
     padding: 10px 12px;
-    font-size: 15px ;
+    font-size: 15px;
   }
   .custom-tabs {
     display: flex;
@@ -94,23 +92,16 @@
     white-space: nowrap;
   }
   .custom-tabs::-webkit-scrollbar {
-   display: none;
+    display: none;
   }
-
 }
-
 
 @media (min-width: 375px) {
   .custom-tabs {
-  gap: 0px;
-  
+    gap: 0px;
   }
 
   .custom-tabs .nav-link {
     padding: 20px;
-  
   }
-
-  
-
 }

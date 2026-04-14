@@ -1,36 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-.upcoming-container {
-  font-family: 'Poppins', sans-serif;
+.upcomingContainer {
+  font-family: "Poppins", sans-serif;
   max-width: 768px;
   margin: 0 auto;
-  height: calc(100vh - 200px); 
+  height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;
   /* overflow: hidden; */
 }
 
-.header-section {
-  flex-shrink: 0; 
+.headerSection {
+  flex-shrink: 0;
 }
 
-.title-upcoming {
-  color: #5B2C91; 
+.titleUpcoming {
+  color: #5b2c91;
   font-weight: 700;
   font-size: 1.4rem;
   margin: 0;
 }
 
 /* Status Dropdown */
-.status-dropdown {
+.statusDropdown {
   display: flex;
   align-items: center;
 }
 
-.status-dropdown .dropdown-toggle {
-  border: 2px solid #5B2C91;
+.statusDropdown :global(.dropdown-toggle) {
+  border: 2px solid #5b2c91;
   color: white;
-  background: #5B2C91;
+  background: #5b2c91;
   border-radius: 10px;
   padding: 6px 20px;
   font-weight: bold;
@@ -38,37 +38,37 @@
   min-width: 140px;
 }
 
-.status-dropdown .dropdown-toggle:hover,
-.status-dropdown .dropdown-toggle:focus {
-  background-color: #5B2C91;
+.statusDropdown :global(.dropdown-toggle):hover,
+.statusDropdown :global(.dropdown-toggle):focus {
+  background-color: #5b2c91;
   color: white;
-  border-color: #5B2C91;
+  border-color: #5b2c91;
 }
 
-.status-dropdown .dropdown-menu {
-  border: 2px solid #5B2C91;
+.statusDropdown :global(.dropdown-menu) {
+  border: 2px solid #5b2c91;
   border-radius: 12px;
   padding: 0.5rem 0;
   min-width: 140px;
 }
 
-.status-dropdown .dropdown-item {
-  color: #5B2C91;
+.statusDropdown :global(.dropdown-item) {
+  color: #5b2c91;
   font-weight: 500;
   padding: 0.5rem 1rem;
 }
 
-.status-dropdown .dropdown-item:hover {
+.statusDropdown :global(.dropdown-item):hover {
   background-color: #f0e6ff;
 }
 
-.status-dropdown .dropdown-item.active {
-  background-color: #5B2C91;
+.statusDropdown :global(.dropdown-item.active) {
+  background-color: #5b2c91;
   color: white;
 }
 
 /* Appointments List - SCROLLABLE */
-.appointments-list {
+.appointmentsList {
   margin: 5px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -78,30 +78,30 @@
 }
 
 /* Custom Scrollbar */
-.appointments-list::-webkit-scrollbar {
+.appointmentsList::-webkit-scrollbar {
   width: 8px;
 }
 
-.appointments-list::-webkit-scrollbar-track {
+.appointmentsList::-webkit-scrollbar-track {
   background: #f0e6ff;
   border-radius: 10px;
 }
 
-.appointments-list::-webkit-scrollbar-thumb {
-  background: #5B2C91;
+.appointmentsList::-webkit-scrollbar-thumb {
+  background: #5b2c91;
   border-radius: 10px;
 }
 
-.appointments-list::-webkit-scrollbar-thumb:hover {
+.appointmentsList::-webkit-scrollbar-thumb:hover {
   background: #4a2273;
 }
 
 /* No Appointments State */
-.no-appointments {
+.noAppointments {
   background-color: white;
   height: 95%;
   border-radius: 25px;
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -110,37 +110,37 @@
   padding: 2rem;
 }
 
-.no-appointments .calendar-icon {
+.noAppointments .calendarIcon {
   font-size: 4rem;
   margin-bottom: 1rem;
   opacity: 0.5;
 }
 
-.no-appointments p {
+.noAppointments p {
   font-size: 1rem;
   margin: 0;
 }
 
 /* Appointment Card */
-.appointment-card {
+.appointmentCard {
   background-color: white;
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   border-radius: 20px;
   margin-bottom: 15px;
   transition: box-shadow 0.3s ease;
   position: relative;
 }
 
-.appointment-card:hover {
+.appointmentCard:hover {
   box-shadow: 0 4px 12px rgba(91, 44, 145, 0.15);
 }
 
-.appointment-card .card-body {
+.appointmentCard :global(.card-body) {
   padding: 1.25rem;
 }
 
 /* Status Badge on Upper Right - Base Style */
-.status-badge-upcoming {
+.statusBadgeUpcoming {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -152,184 +152,184 @@
   letter-spacing: 0.5px;
 }
 
-/* Custom Blue for Confirmed - rgb(30, 58, 138) = #1E3A8A */
-.bg-info {
+/* Custom Blue for Confirmed */
+.bgInfo {
   background-color: #a8bffd !important;
   color: white !important;
 }
 
-/* Custom Yellow for Pending - #EDC200 */
-.bg-warning {
+/* Custom Yellow for Pending */
+.bgWarning {
   background-color: #fff5b5 !important;
   color: rgb(130, 130, 130) !important;
 }
 
-/* Custom Orange for Rescheduled - retain original */
-.bg-orange {
-  background-color: #FFCE99 !important;
+/* Custom Orange for Rescheduled */
+.bgOrange {
+  background-color: #ffce99 !important;
   color: white !important;
 }
 
-.appointment-details {
+.appointmentDetails {
   display: flex;
   flex-direction: column;
 }
 
-.appointment-info {
+.appointmentInfo {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.info-row {
+.infoRow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.info-row .label {
+.infoRow .label {
   color: #6c757d;
   font-weight: 500;
   min-width: 130px;
 }
 
-.info-row .value {
-  color: #5B2C91;
+.infoRow .value {
+  color: #5b2c91;
   font-weight: 600;
 }
 
-.info-row .date-value {
-  color: #5B2C91;
+.infoRow .dateValue {
+  color: #5b2c91;
   font-weight: 600;
 }
 
-.hr-upcoming {
+.hrUpcoming {
   border: 2px solid #694c95;
 }
 
-.info-row .service-type {
+.infoRow .serviceType {
   background-color: #f0e6ff;
-  border: 2px solid #5B2C91;
-  color: #5B2C91;
+  border: 2px solid #5b2c91;
+  color: #5b2c91;
   padding: 4px 16px;
   border-radius: 15px;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-.info-row .doctor-name {
-  color: #5B2C91;
+.infoRow .doctorName {
+  color: #5b2c91;
   font-weight: 600;
 }
 
-.consultation-type {
-  color: #5B2C91;
+.consultationType {
+  color: #5b2c91;
   border-radius: 8px;
-  font-weight: 500;
-  width: fit-content;
   font-weight: 700;
+  width: fit-content;
 }
 
-.appointment-icon {
+.appointmentIcon {
   margin-right: 6px;
   font-size: 1rem;
 }
 
-.view-details-btn {
-  border: 2px solid #5B2C91;
+.viewDetailsBtn {
+  border: 2px solid #5b2c91;
   color: white;
   border-radius: 20px;
   padding: 8px 24px;
   font-weight: 600;
-  background: #5B2C91;
+  background: #5b2c91;
   align-self: flex-end;
   transition: all 0.3s ease;
 }
 
-.view-details-btn:hover {
+.viewDetailsBtn:hover {
   background-color: #f0e6ff;
-  color: #5B2C91;
-  border: 2px solid #5B2C91;
+  color: #5b2c91;
+  border: 2px solid #5b2c91;
 }
 
 /* Responsive Design */
 @media (max-width: 577px) {
-  .header-section{
+  .headerSection {
     flex-direction: row !important;
   }
-  .upcoming-container {
+
+  .upcomingContainer {
     padding: 1rem;
   }
 
-  .title-upcoming {
+  .titleUpcoming {
     font-size: 1.3rem;
   }
 
-  .status-dropdown .dropdown-toggle {
+  .statusDropdown :global(.dropdown-toggle) {
     font-size: 0.9rem;
     padding: 5px 15px;
     min-width: 120px;
   }
-  
-  .appointment-details {
+
+  .appointmentDetails {
     gap: 1rem;
   }
 
-  .appointment-card .card-body {
+  .appointmentCard :global(.card-body) {
     padding: 1rem;
   }
 
-  .status-badge-upcoming {
+  .statusBadgeUpcoming {
     top: 10px;
     right: 10px;
     padding: 5px 12px;
     font-size: 0.7rem;
   }
 
-  .info-row {
+  .infoRow {
     font-size: 0.85rem;
     flex-wrap: wrap;
   }
 
-  .info-row .label {
+  .infoRow .label {
     min-width: 110px;
     font-size: 0.8rem;
   }
 
-  .consultation-type {
+  .consultationType {
     font-size: 0.85rem;
     padding: 6px 10px;
   }
 
-  .view-details-btn {
+  .viewDetailsBtn {
     font-size: 0.85rem;
     padding: 6px 20px;
     width: 100%;
   }
 
-  .appointments-list {
+  .appointmentsList {
     height: 100%;
   }
 
-  .no-appointments {
+  .noAppointments {
     max-height: auto;
   }
 
-  .no-appointments .calendar-icon {
+  .noAppointments .calendarIcon {
     font-size: 3rem;
   }
 
-  .no-appointments p {
+  .noAppointments p {
     font-size: 0.9rem;
     text-align: center;
   }
 
-  .appointments-list {
+  .appointmentsList {
     padding-right: 4px;
     height: auto;
   }
 
-  .appointments-list::-webkit-scrollbar {
+  .appointmentsList::-webkit-scrollbar {
     width: 6px;
   }
 }
