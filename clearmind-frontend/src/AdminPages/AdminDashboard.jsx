@@ -4,7 +4,13 @@ import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminDashboard.module.css";
 import { FaClinicMedical, FaBullhorn, FaTrash, FaEdit } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
-import { FiX, FiMessageSquare, FiFlag, FiEye } from "react-icons/fi";
+import {
+  FiX,
+  FiMessageSquare,
+  FiFlag,
+  FiEye,
+  FiAlertTriangle,
+} from "react-icons/fi";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
 
@@ -37,6 +43,39 @@ ChartJS.register(
 ───────────────────────────────────────────────────────── */
 const REFRESH_MS = 60_000;
 
+/* ─── Toast Styles ─── */
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
+
 const audienceMeta = {
   all: {
     label: "Everyone",
@@ -66,6 +105,67 @@ const formatDate = (date) => {
     year: "numeric",
   });
 };
+
+function confirmToast(message, onConfirm) {
+  toast(
+    (t) => (
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          minWidth: 260,
+          alignItems: "flex-start",
+        }}
+      >
+        <FiAlertTriangle size={18} style={{ color: "#b91c1c" }} />
+
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 600, fontSize: "0.9rem" }}>{message}</p>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              style={{
+                padding: "5px 12px",
+                borderRadius: 6,
+                border: "1px solid #ddd",
+                background: "#f9f9f9",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                onConfirm();
+              }}
+              style={{
+                padding: "5px 12px",
+                borderRadius: 6,
+                border: "none",
+                background: "#dc2626",
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    ),
+    { duration: Infinity },
+  );
+}
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -212,7 +312,7 @@ function AdminDashboard() {
       setInactivePatients(rows.filter((p) => !p.is_active).length);
     } catch (err) {
       console.error("fetchPatients:", err);
-      toast.error("Failed to load patients");
+      toast.error("Failed to load patients", toastError);
       setPatients([]);
     } finally {
       setTableLoading(false);
@@ -264,7 +364,7 @@ function AdminDashboard() {
       setMonthlyData(monthly);
     } catch (err) {
       console.error("fetchAppointments:", err);
-      toast.error("Failed to load appointments");
+      toast.error("Failed to load appointments", toastError);
     }
   }, []);
 
@@ -278,7 +378,7 @@ function AdminDashboard() {
       setAnnouncements(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.error("fetchAnnouncements:", err);
-      toast.error("Failed to load announcements");
+      toast.error("Failed to load announcements", toastError);
     } finally {
       setAnnouncementsLoading(false);
     }
@@ -361,31 +461,35 @@ function AdminDashboard() {
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === editingId ? (data.data ?? data) : a)),
         );
-        toast.success("Announcement updated!");
+        toast.success("Announcement updated!", toastSuccess);
       } else {
         const { data } = await axiosClient.post("/admin/announcements", form);
         setAnnouncements((prev) => [data.data ?? data, ...prev]);
-        toast.success("Announcement posted!");
+        toast.success("Announcement posted!", toastSuccess);
       }
       setShowModal(false);
     } catch (err) {
       console.error("handleSave:", err);
-      toast.error(err.response?.data?.message ?? "Failed to save announcement");
+      toast.error(
+        err.response?.data?.message ?? "Failed to save announcement",
+        toastError,
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this announcement?")) return;
-    try {
-      await axiosClient.delete(`/admin/announcements/${id}`);
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast.success("Announcement deleted.");
-    } catch (err) {
-      console.error("handleDelete:", err);
-      toast.error("Failed to delete announcement");
-    }
+  const handleDelete = (id) => {
+    confirmToast("Delete this announcement?", async () => {
+      try {
+        await axiosClient.delete(`/admin/announcements/${id}`);
+        setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+        toast.success("Announcement deleted.", toastSuccess);
+      } catch (err) {
+        console.error("handleDelete:", err);
+        toast.error("Failed to delete announcement", toastError);
+      }
+    });
   };
 
   /* ══════════════════════════════════════════════
@@ -635,9 +739,6 @@ function AdminDashboard() {
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
-                  
-            
-
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <IoVideocam className={styles.appointmentIcon} />
@@ -658,8 +759,6 @@ function AdminDashboard() {
                         {todayPhysical !== 1 ? "s" : ""}
                       </p>
                     </div>
-
-              
                   </div>
                 </div>
               </div>

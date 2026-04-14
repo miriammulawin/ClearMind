@@ -13,10 +13,45 @@ import {
 import { FaClinicMedical, FaBrain } from "react-icons/fa";
 import { TiVideo } from "react-icons/ti";
 import styles from "./AdminStyle/AdminClinic.module.css";
+import toast from "react-hot-toast";
+import { FiAlertTriangle } from "react-icons/fi";
 
 /* ─── Config ─── */
 const API_BASE = "http://localhost:8000/api/admin";
 const getToken = () => localStorage.getItem("token");
+
+/* ─── Toast Styles ─── */
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
 
 /* ─── Defaults ─── */
 const DEFAULT_SCHEDULE = {
@@ -266,11 +301,11 @@ export default function AdminClinic() {
   /* ── submit clinic ── */
   async function handleSubmit() {
     if (!form.name.trim()) {
-      alert("Clinic name is required.");
+      toast.error("Clinic name is required.", toastError);
       return;
     }
     if (!form.confirm) {
-      alert("Please tick the confirmation checkbox.");
+      toast.error("Please click the confirmation checkbox.", toastError);
       return;
     }
 
@@ -310,17 +345,17 @@ export default function AdminClinic() {
       try {
         result = JSON.parse(text);
       } catch {
-        alert(`Server error ${res.status}.\n\n${text.slice(0, 400)}`);
+        toast.error(`Server error ${res.status}.`, toastError);
         return;
       }
 
       if (!res.ok) {
-        if (result.errors)
-          alert(
-            "Validation errors:\n" +
-              Object.values(result.errors).flat().join("\n"),
-          );
-        else alert(result.message || `Error ${res.status}`);
+        if (result.errors) {
+          const messages = Object.values(result.errors).flat().join("\n");
+          toast.error(messages, toastError);
+        } else {
+          toast.error(result.message || `Error ${res.status}`, toastError);
+        }
         return;
       }
 
@@ -328,35 +363,132 @@ export default function AdminClinic() {
       setClinics((p) =>
         isEdit ? p.map((c) => (c.id === editId ? mapped : c)) : [...p, mapped],
       );
+      toast.success(
+        isEdit
+          ? "Clinic updated successfully!"
+          : "Clinic created successfully!",
+        toastSuccess,
+      );
       setShowModal(false);
     } catch (e) {
-      alert("Network error — make sure Laravel is running.\n" + e.message);
+      toast.error("Network error — make sure Laravel is running.", toastError);
     } finally {
       setSubmitting(false);
     }
   }
 
-  /* ── delete clinic ── */
-  async function handleDelete(id) {
-    if (!confirm("Delete this clinic?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/clinics/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
+  function confirmToast(message, onConfirm) {
+    toast(
+      (t) => (
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            minWidth: 260,
+            alignItems: "flex-start",
+          }}
+        >
+          {/* ICON */}
+          <FiAlertTriangle
+            size={20}
+            style={{ color: "#b91c1c", marginTop: 2 }}
+          />
+
+          {/* CONTENT */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              flex: 1,
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                color: "#3b1f5e",
+              }}
+            >
+              {message}
+            </span>
+
+            <div
+              style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+            >
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: 6,
+                  border: "1px solid #d1c4e9",
+                  background: "#f3eefb",
+                  color: "#6b3fa0",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: "0.82rem",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  onConfirm();
+                }}
+                style={{
+                  padding: "5px 14px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#b91c1c",
+                  color: "#fff",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: "0.82rem",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      ),
+      {
+        duration: Infinity,
+        style: {
+          background: "#fff",
+          border: "1px solid #e9d5ff",
+          borderRadius: 10,
+          boxShadow: "0 4px 16px rgba(91,35,153,0.13)",
+          padding: "14px 16px",
         },
-      });
-      if (res.ok) setClinics((p) => p.filter((c) => c.id !== id));
-      else {
-        const j = await res.json().catch(() => ({}));
-        alert(j.message || `Delete failed (${res.status})`);
-      }
-    } catch {
-      alert("Network error during delete.");
-    }
+      },
+    );
   }
 
+  async function handleDelete(id) {
+    confirmToast("Delete this clinic?", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/clinics/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            Accept: "application/json",
+          },
+        });
+        if (res.ok) {
+          setClinics((p) => p.filter((c) => c.id !== id));
+          toast.success("Clinic deleted successfully.", toastSuccess);
+        } else {
+          const j = await res.json().catch(() => ({}));
+          toast.error(j.message || `Delete failed (${res.status})`, toastError);
+        }
+      } catch {
+        toast.error("Network error during delete.", toastError);
+      }
+    });
+  }
   /* ────────────────────────────────
      SERVICE CRUD
   ──────────────────────────────── */
@@ -403,8 +535,9 @@ export default function AdminClinic() {
       setNewSvcDesc("");
       setNewSvcPrice("");
       setShowAddSvc(false);
+      toast.success("Service added successfully.", toastSuccess);
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message, toastError);
     }
   }
 
@@ -437,22 +570,23 @@ export default function AdminClinic() {
     }
   }
 
-  /* delete service */
   async function delSvc(id) {
-    if (!confirm("Delete this service?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/services/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      setServices((s) => s.filter((x) => x.id !== id));
-    } catch (e) {
-      alert(e.message);
-    }
+    confirmToast("Delete this service?", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/services/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            Accept: "application/json",
+          },
+        });
+        if (!res.ok) throw new Error("Delete failed");
+        setServices((s) => s.filter((x) => x.id !== id));
+        toast.success("Service deleted successfully.", toastSuccess);
+      } catch (e) {
+        toast.error(e.message, toastError);
+      }
+    });
   }
 
   /* ────────────────────────────────
@@ -503,8 +637,9 @@ export default function AdminClinic() {
       setNewPurpose("");
       setNewPurposePrice("");
       setAddPurposeFor(null);
+      toast.success("Assessment purpose added.", toastSuccess);
     } catch (e) {
-      alert(e.message);
+      toast.error(e.message, toastError);
     }
   }
 
@@ -550,28 +685,32 @@ export default function AdminClinic() {
     }
   }
 
-  /* delete purpose */
   async function delSub(sId, subId) {
-    if (!confirm("Delete this purpose?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) throw new Error("Delete failed");
-      setServices((s) =>
-        s.map((x) =>
-          x.id === sId
-            ? { ...x, subServices: x.subServices.filter((b) => b.id !== subId) }
-            : x,
-        ),
-      );
-    } catch (e) {
-      alert(e.message);
-    }
+    confirmToast("Delete this purpose?", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            Accept: "application/json",
+          },
+        });
+        if (!res.ok) throw new Error("Delete failed");
+        setServices((s) =>
+          s.map((x) =>
+            x.id === sId
+              ? {
+                  ...x,
+                  subServices: x.subServices.filter((b) => b.id !== subId),
+                }
+              : x,
+          ),
+        );
+        toast.success("Purpose deleted successfully.", toastSuccess);
+      } catch (e) {
+        toast.error(e.message, toastError);
+      }
+    });
   }
 
   const togExp = (id) =>
@@ -757,7 +896,6 @@ export default function AdminClinic() {
                     value={newSvcDesc}
                     onChange={(e) => setNewSvcDesc(e.target.value)}
                   />
-                  {/* ── Price field ── */}
                   <div style={{ position: "relative" }}>
                     <span
                       style={{
@@ -977,7 +1115,6 @@ export default function AdminClinic() {
                                     }
                                   }}
                                 />
-                                {/* ── Price field for purpose ── */}
                                 <div style={{ position: "relative" }}>
                                   <span
                                     style={{
@@ -1056,7 +1193,7 @@ export default function AdminClinic() {
             >
               <button
                 className={styles.btnSubmit}
-                onClick={() => alert("Services saved!")}
+                onClick={() => toast.success("Services saved!", toastSuccess)}
               >
                 Save Services
               </button>

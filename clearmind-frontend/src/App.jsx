@@ -56,7 +56,7 @@ import VerifyOtp from "./VerifyOtp";
 function App() {
   return (
     <>
-      <Toaster position="top-center" />
+      <Toaster position="top-center" containerStyle={{ zIndex: 99999 }} />
       <Router>
         <Routes>
           {/* ── Public ─────────────────────────────────────── */}
