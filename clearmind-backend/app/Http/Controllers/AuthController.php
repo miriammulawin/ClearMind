@@ -179,6 +179,7 @@ class AuthController extends Controller
 
     private function userPayload(User $user): array
     {
+        $doctor = $user->doctor; 
         return [
             'id'                => $user->id,
             'firstName'         => $user->firstName,
@@ -199,6 +200,14 @@ class AuthController extends Controller
             'is_active'         => $user->is_active,
             'email_verified_at' => $user->email_verified_at,
             'created_at'        => $user->created_at,
+
+             // ── Doctor-specific (null for Admin/Client) ──
+            'prcLicenseNo'      => $doctor->license_number ?? null,
+            'prcNumber'         => $doctor->prc_number ?? null,
+            'professionalTitle' => $doctor->professional_title ?? null,
+            'profilePicture'    => $doctor && $doctor->profile_picture
+                                ? asset('storage/' . $doctor->profile_picture)
+                                : null,
         ];
     }
     // for client
