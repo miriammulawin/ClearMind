@@ -3,17 +3,50 @@ import { FiLogOut, FiSearch, FiX } from "react-icons/fi";
 import { AiFillMessage } from "react-icons/ai";
 import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import toast from "react-hot-toast";
 import axiosClient from "../axiosClient";
 
 import styles from "./AdminStyle/AdminTopNavbar.module.css";
 import "./AdminStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
+
 function AdminTopNavbar({ activeMenu }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const [notifications, setNotifications] = useState([
     {
@@ -60,55 +93,42 @@ function AdminTopNavbar({ activeMenu }) {
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     try {
-      const result = await Swal.fire({
-        title: "Are you sure?",
-        text: "You will be logged out.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "Yes, logout",
-        cancelButtonText: "Cancel",
-        reverseButtons: true,
-      });
+      await axiosClient.post("/logout");
 
-      if (result.isConfirmed) {
-        await axiosClient.post("/logout");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
 
-        Swal.fire({
-          icon: "success",
-          title: "Logged out successfully!",
-          showConfirmButton: false,
-          timer: 1500,
-          toast: true,
-          position: "top-end",
-        });
+      setShowLogoutModal(false);
 
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      }
+      toast.success("Logged out successfully!", toastSuccess);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
     } catch (error) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("user");
+      console.error("Logout failed:", error);
 
-    console.error("Logout failed:", error);
-    navigate("/");
+      // Always clear session for safety
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+
+      setShowLogoutModal(false);
+
+      toast.error(
+        error?.response?.data?.message || "Logout failed, session cleared.",
+        toastError,
+      );
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1200);
     }
   };
-
-  const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((notif) =>
-        notif.id === id ? { ...notif, isRead: true } : notif,
-      ),
-    );
-  };
-
+  
   const markAllAsRead = () => {
     setNotifications(
       notifications.map((notif) => ({ ...notif, isRead: true })),
@@ -238,6 +258,44 @@ function AdminTopNavbar({ activeMenu }) {
           )}
         </div>
 
+        {showLogoutModal && (
+          <div
+            className={styles.logoutOverlay}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowLogoutModal(false);
+            }}
+          >
+            <div className={styles.logoutModal}>
+              {/* Icon */}
+              <div className={styles.logoutIconWrap}>
+                <FiLogOut className={styles.logoutIcon} />
+              </div>
+
+              {/* Content */}
+              <div className={styles.logoutContent}>
+                <h2 className={styles.logoutTitle}>Log Out</h2>
+                <p className={styles.logoutDesc}>
+                  Are you sure you want to logout?
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className={styles.logoutActions}>
+                <button
+                  className={styles.cancelBtn}
+                  onClick={() => setShowLogoutModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button className={styles.confirmBtn} onClick={confirmLogout}>
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={styles.searchBox}>
           <input type="text" placeholder="Search" />
           <FiSearch className={styles.searchIcon} />
@@ -246,7 +304,7 @@ function AdminTopNavbar({ activeMenu }) {
         <FiLogOut
           className={styles.topIcon}
           style={{ cursor: "pointer" }}
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
         />
       </div>
 

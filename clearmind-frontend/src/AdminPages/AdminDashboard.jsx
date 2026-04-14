@@ -41,6 +41,7 @@ ChartJS.register(
 /* ─────────────────────────────────────────────────────────
    Constants
 ───────────────────────────────────────────────────────── */
+
 const REFRESH_MS = 60_000;
 
 /* ─── Toast Styles ─── */
@@ -105,67 +106,6 @@ const formatDate = (date) => {
     year: "numeric",
   });
 };
-
-function confirmToast(message, onConfirm) {
-  toast(
-    (t) => (
-      <div
-        style={{
-          display: "flex",
-          gap: 10,
-          minWidth: 260,
-          alignItems: "flex-start",
-        }}
-      >
-        <FiAlertTriangle size={18} style={{ color: "#b91c1c" }} />
-
-        <div style={{ flex: 1 }}>
-          <p style={{ fontWeight: 600, fontSize: "0.9rem" }}>{message}</p>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 8,
-              marginTop: 8,
-            }}
-          >
-            <button
-              onClick={() => toast.dismiss(t.id)}
-              style={{
-                padding: "5px 12px",
-                borderRadius: 6,
-                border: "1px solid #ddd",
-                background: "#f9f9f9",
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                onConfirm();
-              }}
-              style={{
-                padding: "5px 12px",
-                borderRadius: 6,
-                border: "none",
-                background: "#dc2626",
-                color: "#fff",
-                cursor: "pointer",
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    ),
-    { duration: Infinity },
-  );
-}
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -287,6 +227,21 @@ function AdminDashboard() {
     priority: "normal",
     audience: "all",
   });
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
+
+  const openConfirmModal = (message, onConfirm) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => onConfirm);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction) confirmAction();
+    setShowConfirmModal(false);
+  };
 
   /* ══════════════════════════════════════════════
      DATA FETCHING
@@ -480,7 +435,7 @@ function AdminDashboard() {
   };
 
   const handleDelete = (id) => {
-    confirmToast("Delete this announcement?", async () => {
+    openConfirmModal("Delete this announcement?", async () => {
       try {
         await axiosClient.delete(`/admin/announcements/${id}`);
         setAnnouncements((prev) => prev.filter((a) => a.id !== id));
@@ -647,6 +602,46 @@ function AdminDashboard() {
                       + Create Announcement
                     </button>
                   </div>
+
+                  {showConfirmModal && (
+                    <div
+                      className={styles.logoutOverlay}
+                      onClick={(e) => {
+                        if (e.target === e.currentTarget)
+                          setShowConfirmModal(false);
+                      }}
+                    >
+                      <div className={styles.logoutModal}>
+                        {/* Icon */}
+                        <div className={styles.logoutIconWrap}>
+                          <FiAlertTriangle className={styles.logoutIcon} />
+                        </div>
+
+                        {/* Content */}
+                        <div className={styles.logoutContent}>
+                          <h2 className={styles.logoutTitle}>Confirm Action</h2>
+                          <p className={styles.logoutDesc}>{confirmMessage}</p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className={styles.logoutActions}>
+                          <button
+                            className={styles.cancelBtn}
+                            onClick={() => setShowConfirmModal(false)}
+                          >
+                            Cancel
+                          </button>
+
+                          <button
+                            className={styles.confirmBtn}
+                            onClick={handleConfirm}
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {announcementsLoading ? (
                     <div className={styles.noAnnounce}>

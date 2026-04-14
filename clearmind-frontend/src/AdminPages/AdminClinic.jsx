@@ -137,6 +137,21 @@ export default function AdminClinic() {
   const [newPurpose, setNewPurpose] = useState("");
   const [newPurposePrice, setNewPurposePrice] = useState("");
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
+
+  const openConfirmModal = (message, onConfirm) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => onConfirm);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction) confirmAction();
+    setShowConfirmModal(false);
+  };
+
   /* ── fetch on mount ── */
   useEffect(() => {
     fetchClinics();
@@ -377,98 +392,8 @@ export default function AdminClinic() {
     }
   }
 
-  function confirmToast(message, onConfirm) {
-    toast(
-      (t) => (
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            minWidth: 260,
-            alignItems: "flex-start",
-          }}
-        >
-          {/* ICON */}
-          <FiAlertTriangle
-            size={20}
-            style={{ color: "#b91c1c", marginTop: 2 }}
-          />
-
-          {/* CONTENT */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              flex: 1,
-            }}
-          >
-            <span
-              style={{
-                fontWeight: 600,
-                fontSize: "0.9rem",
-                color: "#3b1f5e",
-              }}
-            >
-              {message}
-            </span>
-
-            <div
-              style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
-            >
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                style={{
-                  padding: "5px 14px",
-                  borderRadius: 6,
-                  border: "1px solid #d1c4e9",
-                  background: "#f3eefb",
-                  color: "#6b3fa0",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: "0.82rem",
-                }}
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                  onConfirm();
-                }}
-                style={{
-                  padding: "5px 14px",
-                  borderRadius: 6,
-                  border: "none",
-                  background: "#b91c1c",
-                  color: "#fff",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: "0.82rem",
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      ),
-      {
-        duration: Infinity,
-        style: {
-          background: "#fff",
-          border: "1px solid #e9d5ff",
-          borderRadius: 10,
-          boxShadow: "0 4px 16px rgba(91,35,153,0.13)",
-          padding: "14px 16px",
-        },
-      },
-    );
-  }
-
   async function handleDelete(id) {
-    confirmToast("Delete this clinic?", async () => {
+    openConfirmModal("Delete this clinic?", async () => {
       try {
         const res = await fetch(`${API_BASE}/clinics/${id}`, {
           method: "DELETE",
@@ -571,7 +496,7 @@ export default function AdminClinic() {
   }
 
   async function delSvc(id) {
-    confirmToast("Delete this service?", async () => {
+    openConfirmModal("Delete this service?", async () => {
       try {
         const res = await fetch(`${API_BASE}/services/${id}`, {
           method: "DELETE",
@@ -686,7 +611,7 @@ export default function AdminClinic() {
   }
 
   async function delSub(sId, subId) {
-    confirmToast("Delete this purpose?", async () => {
+    openConfirmModal("Delete this purpose?", async () => {
       try {
         const res = await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
           method: "DELETE",
@@ -773,6 +698,42 @@ export default function AdminClinic() {
               + Create Clinic
             </button>
           </div>
+
+          {showConfirmModal && (
+            <div
+              className={styles.logoutOverlay}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setShowConfirmModal(false);
+              }}
+            >
+              <div className={styles.logoutModal}>
+                {/* Icon */}
+                <div className={styles.logoutIconWrap}>
+                  <FiAlertTriangle className={styles.logoutIcon} />
+                </div>
+
+                {/* Content */}
+                <div className={styles.logoutContent}>
+                  <h2 className={styles.logoutTitle}>Confirm Action</h2>
+                  <p className={styles.logoutDesc}>{confirmMessage}</p>
+                </div>
+
+                {/* Actions */}
+                <div className={styles.logoutActions}>
+                  <button
+                    className={styles.cancelBtn}
+                    onClick={() => setShowConfirmModal(false)}
+                  >
+                    Cancel
+                  </button>
+
+                  <button className={styles.confirmBtn} onClick={handleConfirm}>
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── States ── */}
           {loading && (
