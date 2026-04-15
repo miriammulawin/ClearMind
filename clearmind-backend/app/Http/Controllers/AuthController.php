@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Doctor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -179,7 +180,7 @@ class AuthController extends Controller
 
     private function userPayload(User $user): array
     {
-        $doctor = $user->doctor; 
+        $doctor = Doctor::where('user_id', $user->id)->first();
         return [
             'id'                => $user->id,
             'firstName'         => $user->firstName,
@@ -202,10 +203,10 @@ class AuthController extends Controller
             'created_at'        => $user->created_at,
 
              // ── Doctor-specific (null for Admin/Client) ──
-            'prcLicenseNo'      => $doctor->license_number ?? null,
-            'prcNumber'         => $doctor->prc_number ?? null,
-            'professionalTitle' => $doctor->professional_title ?? null,
-            'profilePicture'    => $doctor && $doctor->profile_picture
+            'prcLicenseNo'      => $doctor?->license_number,
+            'prcNumber'         => $doctor?->prc_number,
+            'professionalTitle' => $doctor?->professional_title,
+            'profilePicture'    => $doctor?->profile_picture
                                 ? asset('storage/' . $doctor->profile_picture)
                                 : null,
         ];

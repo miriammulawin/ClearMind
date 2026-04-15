@@ -34,8 +34,12 @@ function DoctorSideBar() {
 
   // ── Fetch doctor profile ──
   useEffect(() => {
-    const cached = localStorage.getItem("doctorProfile");
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const currentUserId = currentUser?.id;
+    const cacheKey = `doctorProfile_${currentUserId}`;
+    const cached = currentUserId ? localStorage.getItem(cacheKey) : null;
 
+    // Cache is now scoped per user ID — no more stale data from previous logins
     if (cached) {
       setDoctorProfile(JSON.parse(cached));
       setLoadingProfile(false);
@@ -62,11 +66,15 @@ function DoctorSideBar() {
           lastName: data.lastName || "",
           middleInitial: data.middleInitial || "",
           prcLicenseNo: data.prcLicenseNo || "",
-          profilePicture: data.profilePicture || null, // already a full URL from Laravel asset()
+          profilePicture: data.profilePicture || null,
         };
 
         setDoctorProfile(profileData);
-        localStorage.setItem("doctorProfile", JSON.stringify(profileData));
+
+        // Scope the cache key to this user's ID
+        if (currentUserId) {
+          localStorage.setItem(cacheKey, JSON.stringify(profileData));
+        }
       } catch (error) {
         console.error("Error fetching doctor profile:", error);
       } finally {
