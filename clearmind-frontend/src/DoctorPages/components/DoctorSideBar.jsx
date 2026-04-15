@@ -34,22 +34,17 @@ function DoctorSideBar() {
 
   // ── Fetch doctor profile ──
   useEffect(() => {
+    // Clean up any stale cache
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-    const currentUserId = currentUser?.id;
-    const cacheKey = `doctorProfile_${currentUserId}`;
-    const cached = currentUserId ? localStorage.getItem(cacheKey) : null;
-
-    // Cache is now scoped per user ID — no more stale data from previous logins
-    if (cached) {
-      setDoctorProfile(JSON.parse(cached));
-      setLoadingProfile(false);
-      return;
+    if (currentUser?.id) {
+      localStorage.removeItem(`doctorProfile_${currentUser.id}`);
+      localStorage.removeItem("doctorProfile");
     }
 
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:8000/api/me", {
+        const response = await fetch("http://127.0.0.1:8000/api/me", {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -61,20 +56,13 @@ function DoctorSideBar() {
         const json = await response.json();
         const data = json.data;
 
-        const profileData = {
+        setDoctorProfile({
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           middleInitial: data.middleInitial || "",
           prcLicenseNo: data.prcLicenseNo || "",
           profilePicture: data.profilePicture || null,
-        };
-
-        setDoctorProfile(profileData);
-
-        // Scope the cache key to this user's ID
-        if (currentUserId) {
-          localStorage.setItem(cacheKey, JSON.stringify(profileData));
-        }
+        });
       } catch (error) {
         console.error("Error fetching doctor profile:", error);
       } finally {
