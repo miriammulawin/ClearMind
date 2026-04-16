@@ -28,57 +28,71 @@ function AdminSideBar() {
     middleInitial: "",
     contactNo: "",
     email: "",
+    profilePicture: null,
   });
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-useEffect(() => {
-  const cached = localStorage.getItem("adminProfile");
+  useEffect(() => {
+    const cached = localStorage.getItem("adminProfile");
 
-  if (cached) {
-    setAdminProfile(JSON.parse(cached));
-    setLoadingProfile(false);
-    return; // ✅ stop fetching again
-  }
-
-  const fetchProfile = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch profile");
-
-      const json = await response.json();
-      const data = json.data;
-
-      const profileData = {
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        middleInitial: data.middleInitial || "",
-        contactNo: data.contactNo || "",
-        email: data.email || "",
-      };
-
-      setAdminProfile(profileData);
-
-      // ✅ SAVE to localStorage
-      localStorage.setItem("adminProfile", JSON.stringify(profileData));
-    } catch (error) {
-      console.error("Error fetching admin profile:", error);
-    } finally {
+    if (cached) {
+      setAdminProfile(JSON.parse(cached));
       setLoadingProfile(false);
+      return;
     }
-  };
 
-  fetchProfile();
-}, []);
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:8000/api/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch profile");
+
+        const json = await response.json();
+        const data = json.data;
+
+        const profileData = {
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          middleInitial: data.middleInitial || "",
+          contactNo: data.contactNo || "",
+          email: data.email || "",
+          profilePicture: data.profilePicture || null,
+        };
+
+        setAdminProfile(profileData);
+        localStorage.setItem("adminProfile", JSON.stringify(profileData));
+      } catch (error) {
+        console.error("Error fetching admin profile:", error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // 👇 Listen for profile updates from AdminProfile page
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      const cached = localStorage.getItem("adminProfile");
+      if (cached) {
+        setAdminProfile(JSON.parse(cached));
+      }
+    };
+
+    window.addEventListener("adminProfileUpdated", handleProfileUpdate);
+    return () =>
+      window.removeEventListener("adminProfileUpdated", handleProfileUpdate);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -124,15 +138,15 @@ useEffect(() => {
   };
 
   const handleMenuClick = (item) => navigate(item.path);
-const getDisplayName = () => {
-  const { firstName, lastName, middleInitial } = adminProfile;
-  if (!firstName && !lastName) return "Loading...";
-  const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
-  const li = lastName ? `${lastName.charAt(0).toUpperCase()}.` : "";
-  return [firstName, mi + li].filter(Boolean).join(" ");
-};
 
-  // First letter of firstName + first letter of lastName
+  const getDisplayName = () => {
+    const { firstName, lastName, middleInitial } = adminProfile;
+    if (!firstName && !lastName) return "Loading...";
+    const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
+    const li = lastName ? `${lastName.charAt(0).toUpperCase()}.` : "";
+    return [firstName, mi + li].filter(Boolean).join(" ");
+  };
+
   const getInitials = () => {
     const { firstName, lastName } = adminProfile;
     const f = firstName?.charAt(0).toUpperCase() || "";
@@ -152,23 +166,37 @@ const getDisplayName = () => {
           </div>
 
           <div className={styles.profileSection}>
-            {/* Avatar circle with initials */}
             <div className={styles.profilePic}>
               {!loadingProfile && (
-                <span className={styles.profileInitials}>{getInitials()}</span>
+                <>
+                  {adminProfile.profilePicture ? (
+                    <img
+                      src={adminProfile.profilePicture}
+                      alt="Profile"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        borderRadius: "50%",
+                      }}
+                    />
+                  ) : (
+                    <span className={styles.profileInitials}>
+                      {getInitials()}
+                    </span>
+                  )}
+                </>
               )}
             </div>
 
             <div className={styles.profileInfo}>
-              {/* "John M. Doe" format */}
               <h5 className={styles.profileName}>
                 {loadingProfile ? "Loading..." : getDisplayName()}
               </h5>
 
-              {/* Email · Contact */}
               <p className={styles.profileContact}>
                 {loadingProfile
-                  ? "..." 
+                  ? "..."
                   : `${adminProfile.email} · ${adminProfile.contactNo}`}
               </p>
 
