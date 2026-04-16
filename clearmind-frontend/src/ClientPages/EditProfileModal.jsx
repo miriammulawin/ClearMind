@@ -29,7 +29,6 @@ const GENDER_OPTIONS = [
   "Other (specify)",
 ];
 
-// Backend enum → display label
 const normalizeGender = (val) => {
   if (!val) return "";
   const map = {
@@ -51,7 +50,6 @@ const normalizeGender = (val) => {
   return map[val] || val;
 };
 
-// Display label → backend enum value
 const GENDER_TO_BACKEND = {
   Female: "female",
   Male: "male",
@@ -74,14 +72,6 @@ const capitalizeSex = (val) => {
   return val.charAt(0).toUpperCase() + val.slice(1);
 };
 
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
 function EditProfileModal({ isOpen, onClose, onSave }) {
   const [form, setForm] = useState({
     firstName: "",
@@ -102,15 +92,21 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [profilePic, setProfilePic] = useState("");
+
+  // profilePicture = URL string shown in the avatar (either from server or a local blob URL)
+  const [profilePicture, setProfilePicture] = useState("");
+  // profilePicFile = the actual File object selected by the user (null if not changed)
   const [profilePicFile, setProfilePicFile] = useState(null);
+  // profilePicRemoved = true when the user clicked "Remove photo"
   const [profilePicRemoved, setProfilePicRemoved] = useState(false);
+
   const [pronounSelect, setPronounSelect] = useState("");
   const [customPronoun, setCustomPronoun] = useState("");
   const [genderSelect, setGenderSelect] = useState("");
   const [customGender, setCustomGender] = useState("");
   const fileInputRef = useRef(null);
 
+  // ─── Load profile when modal opens ───────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
 
@@ -145,9 +141,11 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
             confirmPassword: "",
           });
 
-          setProfilePic(u.profilePic || "");
+          // ← use profilePicture from the API response
+          setProfilePicture(u.profilePicture || "");
           setProfilePicFile(null);
           setProfilePicRemoved(false);
+
           setPronounSelect(
             isPresetPronoun
               ? u.preferredPronoun
@@ -177,6 +175,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
 
   if (!isOpen) return null;
 
+  // ─── Field handlers ───────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -218,22 +217,24 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
     setForm((prev) => ({ ...prev, genderIdentity: value }));
   };
 
+  // ─── Profile picture handlers ─────────────────────────────────────────────────
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setProfilePic(URL.createObjectURL(file));
-      setProfilePicFile(file);
-      setProfilePicRemoved(false);
-    }
+    if (!file) return;
+    // Show a local preview immediately
+    setProfilePicture(URL.createObjectURL(file));
+    setProfilePicFile(file);
+    setProfilePicRemoved(false);
   };
 
   const handleRemovePhoto = () => {
-    setProfilePic("");
+    setProfilePicture("");
     setProfilePicFile(null);
     setProfilePicRemoved(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ─── Validation ───────────────────────────────────────────────────────────────
   const validate = () => {
     const newErrors = {};
     if (!form.firstName.trim()) newErrors.firstName = "First name is required.";
@@ -249,6 +250,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
     return newErrors;
   };
 
+  // ─── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -258,47 +260,48 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
       return;
     }
 
-    // Use actual custom pronoun text, never the string "other"
     const resolvedPronoun =
       pronounSelect === "other" ? customPronoun : form.preferredPronoun;
 
-    // Payload uses camelCase — matches what the backend expects (same as /me response)
-    const payload = {
-      firstName: form.firstName,
-      middleInitial: form.middleInitial || null,
-      lastName: form.lastName,
-      dob: form.dob,
-      sex: form.sex.toLowerCase(),
-      // Convert display label back to backend enum, or send as-is if custom
-      genderIdentity:
-        GENDER_TO_BACKEND[form.genderIdentity] ?? form.genderIdentity ?? null,
-      civilStatus: form.civilStatus,
-      preferredPronoun: resolvedPronoun || null,
-      contactNo: form.contactNo,
-      email: form.email,
-      address: form.address || null,
-    };
+    // Use FormData so we can send the file as multipart
+    const formData = new FormData();
+    formData.append("_method", "PUT"); // Laravel method spoofing
+    formData.append("firstName", form.firstName);
+    formData.append("middleInitial", form.middleInitial || "");
+    formData.append("lastName", form.lastName);
+    formData.append("dob", form.dob);
+    formData.append("sex", form.sex.toLowerCase());
+    formData.append(
+      "genderIdentity",
+      GENDER_TO_BACKEND[form.genderIdentity] ?? form.genderIdentity ?? "",
+    );
+    formData.append("civilStatus", form.civilStatus);
+    formData.append("preferredPronoun", resolvedPronoun || "");
+    formData.append("contactNo", form.contactNo);
+    formData.append("email", form.email);
+    formData.append("address", form.address || "");
 
-    // Only send password fields if the user typed something
     if (form.password) {
-      payload.password = form.password;
-      payload.password_confirmation = form.confirmPassword;
+      formData.append("password", form.password);
+      formData.append("password_confirmation", form.confirmPassword);
     }
 
-    // Handle profile picture changes
     if (profilePicFile) {
-      try {
-        payload.profilePic = await fileToBase64(profilePicFile);
-      } catch {
-        console.error("Failed to encode image");
-      }
+      // New image selected — attach the raw File
+      formData.append("profilePicture", profilePicFile);
     } else if (profilePicRemoved) {
-      payload.profilePic = null;
+      // User clicked "Remove photo" — tell backend to clear it
+      formData.append("removeProfilePicture", "1");
     }
+    // If neither: no change to the picture, backend keeps existing value
 
     setSaving(true);
     try {
-      const response = await axiosClient.put("/me", payload);
+      // POST + _method=PUT because multipart doesn't work with axios PUT directly
+      const response = await axiosClient.post("/me", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       if (response.data.success) {
         onSave && onSave(response.data.data);
         onClose();
@@ -312,19 +315,24 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
         const laravelErrors = err.response.data.errors || {};
         const mapped = {};
         Object.keys(laravelErrors).forEach((key) => {
-          // Backend returns camelCase keys — only exception is password_confirmation
           const keyMap = { password_confirmation: "confirmPassword" };
           mapped[keyMap[key] || key] = laravelErrors[key][0];
         });
         setErrors(mapped);
       } else {
         console.error("Failed to save profile:", err);
+        // Log more detail to help debug 500s
+        if (err.response) {
+          console.error("Response status:", err.response.status);
+          console.error("Response data:", err.response.data);
+        }
       }
     } finally {
       setSaving(false);
     }
   };
 
+  // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="epm-overlay" onClick={onClose}>
       <div className="epm-modal" onClick={(e) => e.stopPropagation()}>
@@ -336,7 +344,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
             <ProfileAvatar
               firstName={form.firstName}
               lastName={form.lastName}
-              profilePic={profilePic}
+              profilePic={profilePicture}
               size={52}
             />
             <div className="epm-avatar-camera">
@@ -354,7 +362,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
           <div className="epm-header-text">
             <h2 className="epm-title">Edit Profile</h2>
             <p className="epm-subtitle">Update your personal information</p>
-            {profilePic && (
+            {profilePicture && (
               <button
                 type="button"
                 className="epm-remove-photo"
@@ -378,7 +386,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
           </div>
         ) : (
           <form className="epm-form" onSubmit={handleSubmit}>
-            {/* Name Row */}
+            {/* ── Name Row ── */}
             <div className="epm-row">
               <div className="epm-field">
                 <label className="epm-label">
@@ -430,7 +438,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               </div>
             </div>
 
-            {/* DOB & Sex */}
+            {/* ── DOB & Sex ── */}
             <div className="epm-row">
               <div className="epm-field">
                 <label className="epm-label">
@@ -469,7 +477,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               </div>
             </div>
 
-            {/* Civil Status */}
+            {/* ── Civil Status ── */}
             <div className="epm-field">
               <label className="epm-label">
                 Civil Status <span className="epm-req">*</span>
@@ -492,7 +500,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Gender Identity */}
+            {/* ── Gender Identity ── */}
             <div className="epm-field">
               <label className="epm-label">Gender Identity</label>
               <select
@@ -519,7 +527,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Preferred Pronouns */}
+            {/* ── Preferred Pronouns ── */}
             <div className="epm-field">
               <label className="epm-label">Preferred Pronoun/s</label>
               <select
@@ -546,7 +554,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Contact No. */}
+            {/* ── Contact No. ── */}
             <div className="epm-field">
               <label className="epm-label">
                 Contact No. <span className="epm-req">*</span>
@@ -564,7 +572,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Email */}
+            {/* ── Email ── */}
             <div className="epm-field">
               <label className="epm-label">
                 Email <span className="epm-req">*</span>
@@ -582,7 +590,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               )}
             </div>
 
-            {/* Home Address */}
+            {/* ── Home Address ── */}
             <div className="epm-field">
               <label className="epm-label">Home Address</label>
               <textarea
@@ -595,7 +603,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
               />
             </div>
 
-            {/* Change Password */}
+            {/* ── Change Password ── */}
             <div className="epm-divider">
               <span>Change Password (optional)</span>
             </div>

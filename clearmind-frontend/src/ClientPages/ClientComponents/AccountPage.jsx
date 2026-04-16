@@ -25,7 +25,7 @@ export default function AccountPage({ onEditClick }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
-  // ✅ Always prefer contextUser; sync it into localUser whenever it changes
+  // Always prefer contextUser; sync it into localUser whenever it changes
   useEffect(() => {
     if (contextUser) {
       setLocalUser(contextUser);
@@ -33,7 +33,7 @@ export default function AccountPage({ onEditClick }) {
     }
   }, [contextUser]); // re-runs every time parent updates user state
 
-  // ✅ Only fetch independently if there's no context at all
+  // Only fetch independently if there's no context at all
   useEffect(() => {
     if (contextUser !== undefined) return; // context exists, skip fetch
 
@@ -139,7 +139,7 @@ export default function AccountPage({ onEditClick }) {
                     <ProfileAvatar
                       firstName={capitalize(user?.firstName)}
                       lastName={capitalize(user?.lastName)}
-                      profilePic={user?.profilePic || null}
+                      profilePic={user?.profilePicture || null}
                       size={52}
                     />
                     <div className="avatar-edit-btn">

@@ -53,6 +53,9 @@ return new class extends Migration
                 'other'
             ])->nullable();
 
+            // profile picture 
+            $table->string('profilePicture')->nullable();
+
             // For custom pronouns (when preferredPronoun = 'other')
             $table->string('customPronoun', 100)->nullable();
             
@@ -73,6 +76,7 @@ return new class extends Migration
 
             $table->rememberToken();
             $table->timestamps();
+            
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -94,6 +98,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
+        $table->dropColumn('profilePicture');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
