@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaPen,
   FaPhone,
@@ -11,20 +11,29 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import ProfileAvatar from "./ProfileAvatar";
-import EditProfileModal from "./EditProfileModal";
 import styles from "../ClientStyle/ProfilePage.module.css";
 import { useOutletContext, useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { userData, onSave } = useOutletContext();
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [user, setUser] = useState(userData);
+  const context = useOutletContext() || {};
+  const { user: contextUser, setIsEditOpen } = context;
 
-  const handleSave = (updatedData) => {
-    setUser(updatedData);
-    onSave?.(updatedData);
-  };
+  const [user, setUser] = useState(null);
+
+  // ✅ Watch the full contextUser object so any save in ClientAccount
+  //    automatically flows down and re-renders this page
+  useEffect(() => {
+    if (contextUser) setUser(contextUser);
+  }, [contextUser]);
+
+  if (!user) {
+    return (
+      <div style={{ textAlign: "center", padding: "3rem" }}>
+        <p className="text-muted">Loading profile...</p>
+      </div>
+    );
+  }
 
   const computeAge = (dob) => {
     if (!dob) return null;
@@ -45,7 +54,22 @@ const ProfilePage = () => {
     });
   };
 
-  const age = computeAge(user?.dateOfBirth);
+  const normalizePronouns = (val) => {
+    if (!val) return null;
+    const map = {
+      he_him: "He/Him",
+      she_her: "She/Her",
+      they_them: "They/Them",
+    };
+    return map[val] || val;
+  };
+
+  const capitalize = (val) => {
+    if (!val) return null;
+    return val.charAt(0).toUpperCase() + val.slice(1);
+  };
+
+  const age = computeAge(user?.dob);
 
   const InfoRow = ({ icon: Icon, label, value }) => (
     <div className={styles.infoRow}>
@@ -61,20 +85,25 @@ const ProfilePage = () => {
 
   return (
     <div className={styles.pageWrapper}>
-      {/* ── Hero / Avatar Section ── */}
       <div className={styles.heroSection}>
         <div className={styles.heroOverlay} />
         <div className={styles.avatarWrapper}>
           <ProfileAvatar
             firstName={user?.firstName}
             lastName={user?.lastName}
-            profilePic={user?.profilePic}
+            profilePic={user?.profilePicture}
             size={88}
           />
         </div>
         <div className={styles.heroInfo}>
           <h1 className={styles.heroName}>
-            {[user?.firstName, user?.middleName, user?.lastName]
+            {[
+              user?.firstName,
+              user?.middleInitial && user.middleInitial !== "N/A"
+                ? `${user.middleInitial}.`
+                : null,
+              user?.lastName,
+            ]
               .filter(Boolean)
               .join(" ") || "—"}
           </h1>
@@ -82,10 +111,14 @@ const ProfilePage = () => {
             {user?.civilStatus && (
               <span className={styles.badge}>{user.civilStatus}</span>
             )}
-            {user?.sex && <span className={styles.badge}>{user.sex}</span>}
-            {user?.preferredPronouns && (
+            {user?.sex && (
+              <span className={styles.badge}>{capitalize(user.sex)}</span>
+            )}
+            {(user?.preferredPronoun || user?.displayPronoun) && (
               <span className={styles.badgeOutline}>
-                {user.preferredPronouns}
+                {normalizePronouns(
+                  user.displayPronoun || user.preferredPronoun,
+                )}
               </span>
             )}
           </div>
@@ -96,14 +129,17 @@ const ProfilePage = () => {
         >
           <FaArrowLeft /> Back
         </button>
-        <button className={styles.editBtn} onClick={() => setIsEditOpen(true)}>
+
+        {/* ✅ Opens the modal in ClientAccount via context — no local modal */}
+        <button
+          className={styles.editBtn}
+          onClick={() => setIsEditOpen && setIsEditOpen(true)}
+        >
           <FaPen size={13} /> Edit Profile
         </button>
       </div>
 
-      {/* ── Cards ── */}
       <div className={styles.cardsWrapper}>
-        {/* Personal Information */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <FaUser className={styles.cardHeaderIcon} />
@@ -113,14 +149,18 @@ const ProfilePage = () => {
             <InfoRow
               icon={FaCalendarAlt}
               label="Date of Birth"
-              value={`${formatDate(user?.dateOfBirth)}${age !== null ? ` (${age} yrs old)` : ""}`}
+              value={`${formatDate(user?.dob)}${age !== null ? ` (${age} yrs old)` : ""}`}
             />
-            <InfoRow icon={FaVenusMars} label="Sex" value={user?.sex} />
+            <InfoRow
+              icon={FaVenusMars}
+              label="Sex"
+              value={capitalize(user?.sex)}
+            />
             {user?.genderIdentity && (
               <InfoRow
                 icon={FaVenusMars}
                 label="Gender Identity"
-                value={user.genderIdentity}
+                value={capitalize(user.genderIdentity)}
               />
             )}
             <InfoRow
@@ -131,7 +171,6 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Contact Information */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <FaPhone className={styles.cardHeaderIcon} />
@@ -147,19 +186,13 @@ const ProfilePage = () => {
             <InfoRow
               icon={FaMapMarkerAlt}
               label="Home Address"
-              value={user?.homeAddress}
+              value={user?.address}
             />
           </div>
         </div>
       </div>
 
-      {/* ── Edit Modal ── */}
-      <EditProfileModal
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        userData={user}
-        onSave={handleSave}
-      />
+      {/*  No EditProfileModal here — it lives in ClientAccount only */}
     </div>
   );
 };

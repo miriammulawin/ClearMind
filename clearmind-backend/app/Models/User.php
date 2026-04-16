@@ -58,6 +58,7 @@ class User extends Authenticatable
     'is_active',
     'email_verified_at',
     'email_verification_code',
+    'profilePicture',
 ];
 
     protected $hidden = [
@@ -71,6 +72,12 @@ class User extends Authenticatable
         'password'          => 'hashed',
         'is_active'         => 'boolean',
     ];
+
+    public function getProfilePicAttribute($value): ?string
+{
+    if (!$value) return null;
+    return asset('storage/' . $value);
+}
 
     // ── Relationships ─────────────────────────────────────────────────
 
