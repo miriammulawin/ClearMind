@@ -11,22 +11,21 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import ProfileAvatar from "./ProfileAvatar";
-import EditProfileModal from "./EditProfileModal";
 import styles from "../ClientStyle/ProfilePage.module.css";
 import { useOutletContext, useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
   const context = useOutletContext() || {};
-  const { user: contextUser } = context;
+  const { user: contextUser, setIsEditOpen } = context;
 
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // Only sync from context on mount (or when contextUser first becomes available)
+  // ✅ Watch the full contextUser object so any save in ClientAccount
+  //    automatically flows down and re-renders this page
   useEffect(() => {
     if (contextUser) setUser(contextUser);
-  }, [contextUser?.id]); // depend on ID only — avoids overwriting after save
+  }, [contextUser]);
 
   if (!user) {
     return (
@@ -35,11 +34,6 @@ const ProfilePage = () => {
       </div>
     );
   }
-
-  // After save, update local user state — modal closes itself
-  const handleSave = (updatedData) => {
-    setUser(updatedData);
-  };
 
   const computeAge = (dob) => {
     if (!dob) return null;
@@ -135,7 +129,12 @@ const ProfilePage = () => {
         >
           <FaArrowLeft /> Back
         </button>
-        <button className={styles.editBtn} onClick={() => setIsEditOpen(true)}>
+
+        {/* ✅ Opens the modal in ClientAccount via context — no local modal */}
+        <button
+          className={styles.editBtn}
+          onClick={() => setIsEditOpen && setIsEditOpen(true)}
+        >
           <FaPen size={13} /> Edit Profile
         </button>
       </div>
@@ -193,11 +192,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      <EditProfileModal
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        onSave={handleSave}
-      />
+      {/*  No EditProfileModal here — it lives in ClientAccount only */}
     </div>
   );
 };

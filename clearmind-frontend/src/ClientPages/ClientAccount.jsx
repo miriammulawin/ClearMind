@@ -1,10 +1,9 @@
-// ClientAccount.jsx
 import { useState, useEffect } from "react";
 import "./ClientStyle/ClientProfile.css";
 import ClientHeader from "./ClientComponents/Header";
 import ClientFooter from "./ClientComponents/Footer";
 import AccountPage from "./ClientComponents/AccountPage";
-import EditProfileModal from "./ClientComponents/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
 import { Outlet, useLocation } from "react-router-dom";
 import axiosClient from "../axiosClient";
 
@@ -29,7 +28,7 @@ function ClientAccount() {
 
   // ── Called by EditProfileModal after a successful save ───────────────────────
   const handleSave = (updatedData) => {
-    setUserData(updatedData); // updatedData comes from backend response
+    setUserData(updatedData); // update the single source of truth
     setIsModalOpen(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -54,7 +53,13 @@ function ClientAccount() {
             <p className="text-muted">Loading...</p>
           </div>
         ) : isProfilePage ? (
-          <Outlet context={{ user: userData, setIsEditOpen: setIsModalOpen }} />
+          // ✅ Pass user, the modal opener, and handleSave down via context
+          <Outlet
+            context={{
+              user: userData,
+              setIsEditOpen: setIsModalOpen,
+            }}
+          />
         ) : (
           <AccountPage
             userData={userData}
@@ -67,6 +72,7 @@ function ClientAccount() {
         <ClientFooter />
       </div>
 
+      {/* Single EditProfileModal — only lives here */}
       <EditProfileModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
