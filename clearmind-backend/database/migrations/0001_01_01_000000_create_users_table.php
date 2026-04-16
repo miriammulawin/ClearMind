@@ -52,7 +52,7 @@ return new class extends Migration
                 'they_them',
                 'other'
             ])->nullable();
-            
+
             // For custom pronouns (when preferredPronoun = 'other')
             $table->string('customPronoun', 100)->nullable();
             

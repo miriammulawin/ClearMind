@@ -1,10 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminDashboard.module.css";
 import { FaClinicMedical, FaBullhorn, FaTrash, FaEdit } from "react-icons/fa";
 import { IoVideocam } from "react-icons/io5";
-import { FiX, FiMessageSquare, FiFlag, FiEye } from "react-icons/fi";
+import {
+  FiX,
+  FiMessageSquare,
+  FiFlag,
+  FiEye,
+  FiAlertTriangle,
+  FiChevronDown,
+} from "react-icons/fi";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
 
@@ -37,6 +44,38 @@ ChartJS.register(
 ───────────────────────────────────────────────────────── */
 const REFRESH_MS = 60_000;
 
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
+
 const audienceMeta = {
   all: {
     label: "Everyone",
@@ -57,6 +96,12 @@ const audienceMeta = {
     border: "#6EE7B7",
   },
 };
+
+const audienceOptions = [
+  { value: "all", label: "Everyone" },
+  { value: "clients", label: "Clients Only" },
+  { value: "doctors", label: "Doctors Only" },
+];
 
 const formatDate = (date) => {
   if (!date) return "—";
@@ -93,9 +138,6 @@ const formatTime = (timeStr) => {
   });
 };
 
-/**
- * Normalize a Patient record from GET /admin/patients
- */
 function normalizePatient(p) {
   return {
     id: p.patient_id,
@@ -115,11 +157,6 @@ function normalizePatient(p) {
   };
 }
 
-/**
- * Normalize an Appointment record from GET /admin/appointments
- * rawDate preserves the original "YYYY-MM-DD" string for reliable
- * today-filtering without any timezone conversion issues.
- */
 function normalizeAppointment(a) {
   const patient = a.patient ?? {};
   const doctor = a.doctor ?? null;
@@ -130,7 +167,7 @@ function normalizeAppointment(a) {
   return {
     id: a.appointment_id,
     patient: patientName,
-    rawDate: a.appointment_date ?? null, // "YYYY-MM-DD" — used for today filter & monthly chart
+    rawDate: a.appointment_date ?? null,
     date: formatDate(a.appointment_date),
     time: formatTime(a.start_time),
     endTime: a.end_time ? formatTime(a.end_time) : null,
@@ -144,38 +181,164 @@ function normalizeAppointment(a) {
 }
 
 /* ─────────────────────────────────────────────────────────
+   Custom Audience Dropdown (stays inside modal, no overflow)
+───────────────────────────────────────────────────────── */
+function AudienceDropdown({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = audienceMeta[value] ?? audienceMeta.all;
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative", userSelect: "none" }}>
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "8px",
+          width: "100%",
+          padding: "9px 14px",
+          borderRadius: "8px",
+          border: `1.5px solid ${selected.color}`,
+          backgroundColor: selected.bg,
+          color: selected.color,
+          fontWeight: 600,
+          fontSize: "14px",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          transition: "all 0.15s",
+          minWidth: "160px",
+        }}
+      >
+        <span>{selected.label}</span>
+        <FiChevronDown
+          size={14}
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s",
+            flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {/* Dropdown list — renders ABOVE the button if near bottom */}
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            backgroundColor: "#fff",
+            border: "1.5px solid #e0d6f0",
+            borderRadius: "10px",
+            boxShadow: "0 8px 24px rgba(77,34,124,0.15)",
+            overflow: "hidden",
+          }}
+        >
+          {audienceOptions.map((opt) => {
+            const meta = audienceMeta[opt.value];
+            const isSelected = value === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  width: "100%",
+                  padding: "10px 14px",
+                  border: "none",
+                  backgroundColor: isSelected ? meta.bg : "transparent",
+                  color: isSelected ? meta.color : "#374151",
+                  fontWeight: isSelected ? 700 : 500,
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected)
+                    e.currentTarget.style.backgroundColor = "#f9f5ff";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected)
+                    e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                {/* Color dot */}
+                <span
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    backgroundColor: meta.color,
+                    flexShrink: 0,
+                  }}
+                />
+                {opt.label}
+                {isSelected && (
+                  <span style={{ marginLeft: "auto", fontSize: "12px" }}>
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
    Component
 ───────────────────────────────────────────────────────── */
 function AdminDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
 
-  /* ── Stats (derived from patients + appointments) ── */
   const [activePatients, setActivePatients] = useState(0);
   const [inactivePatients, setInactivePatients] = useState(0);
   const [monthlyData, setMonthlyData] = useState(Array(12).fill(0));
 
-  /* ── Today's appointments (Confirmed only) ── */
   const [todayTotal, setTodayTotal] = useState(0);
   const [todayOnline, setTodayOnline] = useState(0);
   const [todayPhysical, setTodayPhysical] = useState(0);
 
-  /* ── Pending consultation requests ── */
   const [totalPendingRequests, setTotalPendingRequests] = useState(0);
   const [pendingAppointments, setPendingAppointments] = useState([]);
 
-  /* ── Patients table ── */
   const [patients, setPatients] = useState([]);
   const [tableLoading, setTableLoading] = useState(true);
 
-  /* ── Search / filter ── */
   const [searchTerm, setSearchTerm] = useState("");
   const [genderFilter, setGenderFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PATIENTS_PER_PAGE = 10;
 
-  /* ── Announcements ── */
   const [announcements, setAnnouncements] = useState([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -188,14 +351,25 @@ function AdminDashboard() {
     audience: "all",
   });
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
+
+  const openConfirmModal = (message, onConfirm) => {
+    setConfirmMessage(message);
+    setConfirmAction(() => onConfirm);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction) confirmAction();
+    setShowConfirmModal(false);
+  };
+
   /* ══════════════════════════════════════════════
      DATA FETCHING
   ══════════════════════════════════════════════ */
 
-  /**
-   * GET /admin/patients?per_page=200
-   * Derives active/inactive counts for the Pie chart.
-   */
   const fetchPatients = useCallback(async () => {
     try {
       setTableLoading(true);
@@ -206,25 +380,17 @@ function AdminDashboard() {
         normalizePatient,
       );
       setPatients(rows);
-
-      // Always derive counts so the Pie chart is always accurate
       setActivePatients(rows.filter((p) => p.is_active).length);
       setInactivePatients(rows.filter((p) => !p.is_active).length);
     } catch (err) {
       console.error("fetchPatients:", err);
-      toast.error("Failed to load patients");
+      toast.error("Failed to load patients", toastError);
       setPatients([]);
     } finally {
       setTableLoading(false);
     }
   }, []);
 
-  /**
-   * GET /admin/appointments
-   * Today counts only include appointments with status "Confirmed".
-   * Uses rawDate ("YYYY-MM-DD") for reliable today comparison —
-   * avoids timezone issues that occur when re-parsing a formatted date string.
-   */
   const fetchAppointments = useCallback(async () => {
     try {
       const { data } = await axiosClient.get("/admin/appointments");
@@ -232,11 +398,9 @@ function AdminDashboard() {
         normalizeAppointment,
       );
 
-      // Build today string in local time as "YYYY-MM-DD"
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-      // Today's CONFIRMED appointments only
       const todays = all.filter(
         (a) =>
           a.rawDate &&
@@ -247,29 +411,28 @@ function AdminDashboard() {
       setTodayOnline(todays.filter((a) => a.visitType === "virtual").length);
       setTodayPhysical(todays.filter((a) => a.visitType === "onsite").length);
 
-      // Pending consultations widget (all dates, pending status)
       const pending = all.filter((a) =>
         ["pending", "Pending"].includes(a.status),
       );
       setPendingAppointments(pending);
       setTotalPendingRequests(pending.length);
 
-      // Monthly data for Bar chart — all statuses, use rawDate
       const monthly = Array(12).fill(0);
       all.forEach((a) => {
         if (!a.rawDate) return;
-        const m = new Date(a.rawDate).getMonth(); // 0-based
+        const m = new Date(a.rawDate).getMonth();
         if (m >= 0 && m < 12) monthly[m]++;
       });
       setMonthlyData(monthly);
     } catch (err) {
       console.error("fetchAppointments:", err);
-      toast.error("Failed to load appointments");
+      toast.error("Failed to load appointments", toastError);
     }
   }, []);
 
   /**
-   * GET /admin/announcements
+   * Admin fetches ALL announcements via /admin/announcements.
+   * Doctors/clients fetch via /announcements (role-filtered by backend).
    */
   const fetchAnnouncements = useCallback(async () => {
     try {
@@ -278,13 +441,12 @@ function AdminDashboard() {
       setAnnouncements(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
       console.error("fetchAnnouncements:", err);
-      toast.error("Failed to load announcements");
+      toast.error("Failed to load announcements", toastError);
     } finally {
       setAnnouncementsLoading(false);
     }
   }, []);
 
-  /* Initial load + periodic refresh */
   useEffect(() => {
     fetchPatients();
     fetchAppointments();
@@ -297,7 +459,6 @@ function AdminDashboard() {
     return () => clearInterval(interval);
   }, [fetchPatients, fetchAppointments, fetchAnnouncements]);
 
-  /* Clock tick */
   useEffect(() => {
     const t = setInterval(() => setToday(new Date()), 60_000);
     return () => clearInterval(t);
@@ -361,31 +522,35 @@ function AdminDashboard() {
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === editingId ? (data.data ?? data) : a)),
         );
-        toast.success("Announcement updated!");
+        toast.success("Announcement updated!", toastSuccess);
       } else {
         const { data } = await axiosClient.post("/admin/announcements", form);
         setAnnouncements((prev) => [data.data ?? data, ...prev]);
-        toast.success("Announcement posted!");
+        toast.success("Announcement posted!", toastSuccess);
       }
       setShowModal(false);
     } catch (err) {
       console.error("handleSave:", err);
-      toast.error(err.response?.data?.message ?? "Failed to save announcement");
+      toast.error(
+        err.response?.data?.message ?? "Failed to save announcement",
+        toastError,
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this announcement?")) return;
-    try {
-      await axiosClient.delete(`/admin/announcements/${id}`);
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast.success("Announcement deleted.");
-    } catch (err) {
-      console.error("handleDelete:", err);
-      toast.error("Failed to delete announcement");
-    }
+  const handleDelete = (id) => {
+    openConfirmModal("Delete this announcement?", async () => {
+      try {
+        await axiosClient.delete(`/admin/announcements/${id}`);
+        setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+        toast.success("Announcement deleted.", toastSuccess);
+      } catch (err) {
+        console.error("handleDelete:", err);
+        toast.error("Failed to delete announcement", toastError);
+      }
+    });
   };
 
   /* ══════════════════════════════════════════════
@@ -485,6 +650,7 @@ function AdminDashboard() {
       datalabels: {
         color: "#ffffff",
         font: { family: "Poppins, sans-serif", size: 14 },
+        formatter: (v) => (v > 0 ? v : ""),
       },
       tooltip: {
         bodyFont: { family: "Poppins, sans-serif" },
@@ -543,6 +709,41 @@ function AdminDashboard() {
                       + Create Announcement
                     </button>
                   </div>
+
+                  {/* Confirm modal */}
+                  {showConfirmModal && (
+                    <div
+                      className={styles.logoutOverlay}
+                      onClick={(e) => {
+                        if (e.target === e.currentTarget)
+                          setShowConfirmModal(false);
+                      }}
+                    >
+                      <div className={styles.logoutModal}>
+                        <div className={styles.logoutIconWrap}>
+                          <FiAlertTriangle className={styles.logoutIcon} />
+                        </div>
+                        <div className={styles.logoutContent}>
+                          <h2 className={styles.logoutTitle}>Confirm Action</h2>
+                          <p className={styles.logoutDesc}>{confirmMessage}</p>
+                        </div>
+                        <div className={styles.logoutActions}>
+                          <button
+                            className={styles.cancelBtn}
+                            onClick={() => setShowConfirmModal(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className={styles.confirmBtn}
+                            onClick={handleConfirm}
+                          >
+                            Confirm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {announcementsLoading ? (
                     <div className={styles.noAnnounce}>
@@ -635,9 +836,6 @@ function AdminDashboard() {
                   </div>
                   <hr />
                   <div className={styles.cardBody}>
-                  
-            
-
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <IoVideocam className={styles.appointmentIcon} />
@@ -647,7 +845,6 @@ function AdminDashboard() {
                         {todayOnline} Appointment{todayOnline !== 1 ? "s" : ""}
                       </p>
                     </div>
-
                     <div className={styles.appointmentItems}>
                       <div className={styles.appointmentIconText}>
                         <FaClinicMedical className={styles.appointmentIcon} />
@@ -658,8 +855,6 @@ function AdminDashboard() {
                         {todayPhysical !== 1 ? "s" : ""}
                       </p>
                     </div>
-
-              
                   </div>
                 </div>
               </div>
@@ -696,7 +891,6 @@ function AdminDashboard() {
                                   style={{
                                     backgroundColor:
                                       idx % 2 === 0 ? "#ffffff" : "#faf7ff",
-                                    transition: "background 0.15s",
                                     cursor: "default",
                                   }}
                                   onMouseEnter={(e) =>
@@ -708,7 +902,6 @@ function AdminDashboard() {
                                       idx % 2 === 0 ? "#ffffff" : "#faf7ff")
                                   }
                                 >
-                                  {/* Patient name */}
                                   <td
                                     style={{
                                       padding: "10px 12px",
@@ -753,8 +946,6 @@ function AdminDashboard() {
                                       </span>
                                     </div>
                                   </td>
-
-                                  {/* Service */}
                                   <td
                                     style={{
                                       padding: "10px 12px",
@@ -790,8 +981,6 @@ function AdminDashboard() {
                                       </div>
                                     )}
                                   </td>
-
-                                  {/* Date badge */}
                                   <td
                                     style={{
                                       padding: "10px 12px",
@@ -819,7 +1008,6 @@ function AdminDashboard() {
                               ))}
                           </tbody>
                         </table>
-
                         {pendingAppointments.length > 5 && (
                           <div
                             style={{
@@ -1057,7 +1245,13 @@ function AdminDashboard() {
           className={styles.modalOverlay}
           onClick={() => setShowModal(false)}
         >
-          <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.modalLg}
+            onClick={(e) => e.stopPropagation()}
+            /* Ensure the modal itself clips overflow so the custom
+               dropdown renders on top via z-index, not outside */
+            style={{ overflow: "visible" }}
+          >
             <div className={styles.modalProfileHeader}>
               <button
                 className={styles.profileCloseBtn}
@@ -1080,6 +1274,7 @@ function AdminDashboard() {
 
             <div className={styles.modalBody}>
               <div className={styles.modalContentCard}>
+                {/* Title */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>
                     <FiMessageSquare size={11} style={{ marginRight: 5 }} />
@@ -1095,6 +1290,8 @@ function AdminDashboard() {
                     }
                   />
                 </div>
+
+                {/* Message */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel}>Message</label>
                   <textarea
@@ -1107,8 +1304,12 @@ function AdminDashboard() {
                     rows={4}
                   />
                 </div>
+
                 <div className={styles.modalDivider} />
+
+                {/* Priority + Audience row */}
                 <div className={styles.fieldRowTwo}>
+                  {/* Priority toggle */}
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>
                       <FiFlag size={11} style={{ marginRight: 5 }} />
@@ -1121,14 +1322,12 @@ function AdminDashboard() {
                           label: "Normal",
                           color: "#4D227C",
                           bg: "#f0ebf8",
-                          border: "#d8cce8",
                         },
                         {
                           value: "high",
                           label: "Urgent",
                           color: "#dc2626",
                           bg: "#fff0f0",
-                          border: "#fecaca",
                         },
                       ].map((opt) => (
                         <button
@@ -1156,29 +1355,17 @@ function AdminDashboard() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Audience — custom dropdown (no native <select>) */}
                   <div className={styles.fieldGroup}>
                     <label className={styles.fieldLabel}>
                       <FiEye size={11} style={{ marginRight: 5 }} />
                       Visible To
                     </label>
-                    <div className={styles.audienceSelectWrapper}>
-                      <select
-                        className={styles.audienceSelect}
-                        value={form.audience}
-                        onChange={(e) =>
-                          setForm({ ...form, audience: e.target.value })
-                        }
-                        style={{
-                          borderColor: audienceMeta[form.audience]?.color,
-                          color: audienceMeta[form.audience]?.color,
-                          backgroundColor: audienceMeta[form.audience]?.bg,
-                        }}
-                      >
-                        <option value="all">Everyone</option>
-                        <option value="clients">Clients Only</option>
-                        <option value="doctors">Doctors Only</option>
-                      </select>
-                    </div>
+                    <AudienceDropdown
+                      value={form.audience}
+                      onChange={(val) => setForm({ ...form, audience: val })}
+                    />
                   </div>
                 </div>
               </div>

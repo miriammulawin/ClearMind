@@ -16,9 +16,43 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
+import toast, { Toaster } from "react-hot-toast";
 
 const API_BASE = "http://localhost:8000/api";
 const getToken = () => localStorage.getItem("token");
+
+/* ─── Toast Styles ─── */
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
 
 /* ─────────────────────────────────────────────────────────
    ImagePreviewModal
@@ -1079,6 +1113,9 @@ function CreateAppointmentModal({
     if (!form.start_time) errs.start_time = "Start time is required.";
     if (Object.keys(errs).length) {
       setErrors(errs);
+
+      toast.error("Please fill out all required fields.", toastError);
+
       return;
     }
 
@@ -1126,7 +1163,7 @@ function CreateAppointmentModal({
       try {
         result = JSON.parse(text);
       } catch {
-        alert(`Server error ${res.status}\n${text.slice(0, 300)}`);
+        toast.error(`Server error ${res.status}`, toastError);
         return;
       }
 
@@ -1140,7 +1177,7 @@ function CreateAppointmentModal({
       setSuccessData(result.data);
       if (onSuccess) onSuccess(result.data);
     } catch (e) {
-      alert("Network error: " + e.message);
+      toast.error("Network error. Please try again.", toastError);
     } finally {
       setSubmitting(false);
     }

@@ -12,21 +12,28 @@ class AnnouncementController extends Controller
     /* ────────────────────────────────────────────────
      * GET /api/admin/announcements
      * ──────────────────────────────────────────────── */
-    public function index(Request $request)
-    {
-        $query = Announcement::where('is_active', true)->latest();
+  public function index(Request $request)
+{
+    $user = $request->user();
 
-        if ($request->filled('audience') && $request->audience !== 'all') {
-            $query->whereIn('audience', [$request->audience, 'all']);
-        }
+    $announcements = Announcement::where('is_active', true)
+        ->where(function ($q) use ($user) {
+            $q->where('audience', 'all');
+            if ($user->role === 'Doctor') {
+                $q->orWhere('audience', 'doctors');
+            }
+            if ($user->role === 'Client') {
+                $q->orWhere('audience', 'clients');
+            }
+            if ($user->role === 'Admin') {
+                $q->orWhere('audience', 'doctors')->orWhere('audience', 'clients');
+            }
+        })
+        ->latest()
+        ->get();
 
-        $announcements = $query->get()->map(fn(Announcement $a) => $this->format($a));
-
-        return response()->json([
-            'success' => true,
-            'data'    => $announcements,
-        ]);
-    }
+    return response()->json(['data' => $announcements]);
+}
 
     /* ────────────────────────────────────────────────
      * POST /api/admin/announcements

@@ -3,13 +3,14 @@ import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/ManageAccounts.module.css";
 import { FiX } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
   const [showViewModal, setShowViewModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formErrors, setFormErrors] = useState({});
+  const [formErrors, setFormErrors] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +56,6 @@ function ManageAccounts() {
         return;
       }
 
-      // Map API response to the shape the table expects
       const mapped = result.data.map((user) => ({
         doctors_id: user.doctor?.doctor_id ?? user.id,
         user_id: user.id,
@@ -124,13 +124,83 @@ function ManageAccounts() {
       contactNo: "",
       address: "",
     });
-    setFormErrors({});
+    setFormErrors([]);
     setShowCreateModal(true);
+  };
+
+  const validateForm = () => {
+    const errors = [];
+
+    if (!formData.firstName.trim())
+      errors.push({ field: "firstName", message: "First name is required." });
+
+    if (!formData.lastName.trim())
+      errors.push({ field: "lastName", message: "Last name is required." });
+
+    if (!formData.sex)
+      errors.push({ field: "sex", message: "Sex is required." });
+
+    if (!formData.dob)
+      errors.push({ field: "dob", message: "Date of birth is required." });
+
+    if (!formData.email.trim()) {
+      errors.push({ field: "email", message: "Email address is required." });
+    } else if (
+      !formData.email.includes("@") ||
+      !formData.email.endsWith(".com")
+    ) {
+      errors.push({
+        field: "email",
+        message: "Email must contain '@' and end with '.com'.",
+      });
+    }
+
+    if (!formData.contactNo.trim()) {
+      errors.push({
+        field: "contactNo",
+        message: "Contact number is required.",
+      });
+    } else if (!/^09\d{9}$/.test(formData.contactNo)) {
+      errors.push({
+        field: "contactNo",
+        message:
+          "Contact number must start with '09' and be exactly 11 digits.",
+      });
+    }
+
+    if (!formData.address.trim())
+      errors.push({ field: "address", message: "Address is required." });
+
+    return errors;
   };
 
   const handleCreateAccount = async () => {
     setIsSubmitting(true);
-    setFormErrors({});
+
+    const errors = validateForm();
+
+    const hasEmptyFields = errors.some((e) =>
+      e.message.toLowerCase().includes("required"),
+    );
+    const hasFormatErrors = errors.some(
+      (e) => !e.message.toLowerCase().includes("required"),
+    );
+
+    if (errors.length > 0) {
+      if (hasEmptyFields) {
+        // Single consolidated message for any empty field
+        setFormErrors([{ field: "all", message: "All fields are required." }]);
+        setTimeout(() => setFormErrors([]), 2400);
+      } else if (hasFormatErrors) {
+        // Individual format errors shown one by one
+        setFormErrors(errors);
+        setTimeout(() => setFormErrors([]), errors.length * 400 + 2000);
+      }
+      setIsSubmitting(false);
+      return;
+    }
+
+    setFormErrors([]);
 
     try {
       const response = await fetch("http://localhost:8000/api/admin/doctors", {
@@ -145,19 +215,41 @@ function ManageAccounts() {
       const result = await response.json();
 
       if (!response.ok) {
-        setFormErrors(result.errors || {});
+        const serverErrors = Object.entries(result.errors || {}).flatMap(
+          ([field, messages]) =>
+            messages.map((message) => ({ field, message })),
+        );
+        setFormErrors(serverErrors);
+        setTimeout(() => setFormErrors([]), serverErrors.length * 400 + 2000);
         return;
       }
 
       if (result.is_existing) {
-        alert(
+        toast.error(
           `Account already exists. Credentials email has been resent to ${formData.email}.`,
+          {
+            duration: 1500,
+            style: {
+              background: "#FDECEA",
+              border: "1px solid #F5C6CB",
+              color: "#C62828",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              textAlign: "center",
+              maxWidth: "320px",
+              borderRadius: "10px",
+              boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+            },
+            iconTheme: {
+              primary: "#C62828",
+              secondary: "#FDECEA",
+            },
+          },
         );
         setShowCreateModal(false);
         return;
       }
 
-      // Append new doctor to table
       setUsers((prev) => [
         ...prev,
         {
@@ -188,7 +280,22 @@ function ManageAccounts() {
         },
       ]);
 
-      alert(`Account created! Credentials sent to ${formData.email}.`);
+      toast.success(`Account created! Credentials sent to ${formData.email}.`, {
+        duration: 1500,
+        style: {
+          background: "#E2F7E3",
+          border: "1px solid #91C793",
+          color: "#2E7D32",
+          fontWeight: 600,
+          fontSize: "0.95rem",
+          textAlign: "center",
+          maxWidth: "320px",
+          borderRadius: "10px",
+          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+        },
+        iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+      });
+
       setShowCreateModal(false);
     } catch (err) {
       console.error("Network error:", err);
@@ -310,36 +417,38 @@ function ManageAccounts() {
                     First Name
                     <input
                       type="text"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "firstName" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       placeholder="e.g. Maria"
                       value={formData.firstName}
                       onChange={(e) =>
                         setFormData({ ...formData, firstName: e.target.value })
                       }
                     />
-                    {formErrors.firstName && (
-                      <span style={{ color: "red", fontSize: "12px" }}>
-                        {formErrors.firstName[0]}
-                      </span>
-                    )}
                   </label>
 
                   <label className={styles.formLabel}>
                     Last Name
                     <input
                       type="text"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "lastName" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       placeholder="e.g. Santos"
                       value={formData.lastName}
                       onChange={(e) =>
                         setFormData({ ...formData, lastName: e.target.value })
                       }
                     />
-                    {formErrors.lastName && (
-                      <span style={{ color: "red", fontSize: "12px" }}>
-                        {formErrors.lastName[0]}
-                      </span>
-                    )}
                   </label>
 
                   <label className={styles.formLabel}>
@@ -362,7 +471,13 @@ function ManageAccounts() {
                   <label className={styles.formLabel}>
                     Sex
                     <select
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "sex" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       value={formData.sex}
                       onChange={(e) =>
                         setFormData({ ...formData, sex: e.target.value })
@@ -378,7 +493,13 @@ function ManageAccounts() {
                     Date of Birth
                     <input
                       type="date"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "dob" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       value={formData.dob}
                       onChange={(e) =>
                         setFormData({ ...formData, dob: e.target.value })
@@ -390,25 +511,32 @@ function ManageAccounts() {
                     Email Address
                     <input
                       type="email"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "email" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       placeholder="doctor@email.com"
                       value={formData.email}
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
                     />
-                    {formErrors.email && (
-                      <span style={{ color: "red", fontSize: "12px" }}>
-                        {formErrors.email[0]}
-                      </span>
-                    )}
                   </label>
 
                   <label className={`${styles.formLabel} ${styles.col2}`}>
                     Contact Number
                     <input
                       type="tel"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "contactNo" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       placeholder="e.g. 09123456789"
                       value={formData.contactNo}
                       onChange={(e) =>
@@ -421,7 +549,13 @@ function ManageAccounts() {
                     Address
                     <input
                       type="text"
-                      className={styles.formInput}
+                      className={`${styles.formInput} ${
+                        formErrors.some(
+                          (e) => e.field === "address" || e.field === "all",
+                        )
+                          ? styles.inputError
+                          : ""
+                      }`}
                       placeholder="e.g. Quezon City"
                       value={formData.address}
                       onChange={(e) =>
@@ -429,6 +563,19 @@ function ManageAccounts() {
                       }
                     />
                   </label>
+                </div>
+
+                {/* ── Animated error messages ── */}
+                <div className={styles.errorContainer}>
+                  {formErrors.map((err, index) => (
+                    <div
+                      key={`${err.field}-${index}`}
+                      className={styles.errorText}
+                      style={{ animationDelay: `${index * 0.35}s` }}
+                    >
+                      {err.message}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
