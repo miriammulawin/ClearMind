@@ -1,8 +1,20 @@
-import { useState } from "react";
-import { FiPlus, FiTrash2, FiClock, FiCalendar } from "react-icons/fi";
+import { useState, useEffect, useCallback } from "react";
+import {
+  FiPlus,
+  FiTrash2,
+  FiClock,
+  FiCalendar,
+  FiAlertCircle,
+  FiEdit2,
+} from "react-icons/fi";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
-import AddScheduleModal from "./components/AddScheduleModal";
+import SetScheduleModal from "./components/SetScheduleModal";
+import axios from "axios";
+
+// ──────────────────────────────────────────────────────────────────────
+// Constants
+// ──────────────────────────────────────────────────────────────────────
 
 const DAYS_OF_WEEK = [
   "Monday",
@@ -14,167 +26,417 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
-const INITIAL_SCHEDULE = {
-  Monday: [
-    { startTime: "09:00", endTime: "12:00", clinicType: "physical" },
-    { startTime: "13:00", endTime: "17:00", clinicType: "online" },
-  ],
-  Tuesday: [{ startTime: "10:00", endTime: "13:00", clinicType: "physical" }],
-  Wednesday: [
-    { startTime: "09:00", endTime: "12:00", clinicType: "physical" },
-    { startTime: "14:00", endTime: "17:00", clinicType: "online" },
-  ],
-  Thursday: [{ startTime: "10:00", endTime: "14:00", clinicType: "physical" }],
-  Friday: [
-    { startTime: "09:00", endTime: "12:00", clinicType: "online" },
-    { startTime: "13:00", endTime: "15:00", clinicType: "physical" },
-  ],
-  Saturday: [{ startTime: "09:00", endTime: "12:00", clinicType: "physical" }],
-  Sunday: [],
+const DAY_NAME_TO_NUM = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+const DAY_NUM_TO_NAME = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+};
+
+// ──────────────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────────────
+const buildScheduleState = (data = []) => {
+  const state = {};
+  DAYS_OF_WEEK.forEach((d) => (state[d] = null));
+
+  data.forEach((s) => {
+    const dayName = DAY_NUM_TO_NAME[s.day_num]; // ✅ FIX HERE
+
+   if (!dayName || !Object.prototype.hasOwnProperty.call(state, dayName))
+     return;
+
+    state[dayName] = {
+      id: s.schedule_id,
+      startTime: s.start_time?.slice(0, 5),
+      endTime: s.end_time?.slice(0, 5),
+      slotType: s.slot_type,
+    };
+  });
+
+  return state;
+};
+const buildBulkPayload = (schedule) => {
+  const schedules = [];
+  DAYS_OF_WEEK.forEach((dayName) => {
+    const entry = schedule[dayName];
+    if (!entry || !entry.startTime || !entry.endTime) return;
+    schedules.push({
+      day_of_week: DAY_NAME_TO_NUM[dayName],
+      start_time: entry.startTime,
+      end_time: entry.endTime,
+      slot_type: entry.slotType || "physical",
+    });
+  });
+  return { schedules };
 };
 
 const formatTime = (time) => {
   if (!time) return "—";
   const [hours, minutes] = time.split(":");
-  const hour = parseInt(hours);
+  const hour = parseInt(hours, 10);
   return `${hour % 12 || 12}:${minutes} ${hour >= 12 ? "PM" : "AM"}`;
 };
 
-function SlotBadge({ clinicType }) {
-  const isOnline = clinicType === "online";
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        padding: "2px 10px",
-        borderRadius: 10,
-        backgroundColor: isOnline ? "#e0f0ff" : "#ede7f6",
-        color: isOnline ? "#1e6091" : "#4D227C",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {isOnline ? "Online" : "Physical"}
-    </span>
-  );
-}
+const slotTypeLabel = (type) => {
+  if (type === "both") return "Online & Physical";
+  if (type === "online") return "Online";
+  return "Physical";
+};
+
+const slotTypeColor = (type) => {
+  if (type === "both")
+    return { bg: "#e8f4fd", color: "#1a6091", border: "#bee3f8" };
+  if (type === "online")
+    return { bg: "#e0f0ff", color: "#1e6091", border: "#bee3f8" };
+  return { bg: "#ede7f6", color: "#4D227C", border: "#d8c8f0" };
+};
+
+// ──────────────────────────────────────────────────────────────────────
+// Main Component
+// ──────────────────────────────────────────────────────────────────────
 
 function DoctorSchedule() {
-  // Locked to "Appointment" — sidebar always highlights it on this page.
-  // Passing a no-op setter prevents sidebar clicks from unhighlighting it.
   const activeMenu = "Appointment";
   const setActiveMenu = () => {};
 
-  const [schedule, setSchedule] = useState(INITIAL_SCHEDULE);
+  const [schedule, setSchedule] = useState(() => {
+    const s = {};
+    DAYS_OF_WEEK.forEach((d) => (s[d] = null));
+    return s;
+  });
+  const [doctorId, setDoctorId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deletingDay, setDeletingDay] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleDeleteSlot = (day, slotIdx) =>
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: prev[day].filter((_, i) => i !== slotIdx),
-    }));
+const fetchSchedule = useCallback(async (dId) => {
+  try {
+    setError(null);
 
-  const handleScheduleSave = (mergedSchedule) => setSchedule(mergedSchedule);
+    const token = localStorage.getItem("token");
 
-  const daysWithSlots = DAYS_OF_WEEK.filter((d) => schedule[d]?.length > 0);
-  const totalSlots = DAYS_OF_WEEK.reduce(
-    (acc, d) => acc + (schedule[d]?.length ?? 0),
-    0,
+    const res = await axios.get(
+      `http://localhost:8000/api/doctors/${dId}/schedules`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    );
+
+    const grouped = res.data?.data?.schedule ?? [];
+
+    console.log("RAW SCHEDULE:", grouped);
+
+    setSchedule(buildScheduleState(grouped));
+  } catch (err) {
+    setError("Failed to load schedule. Please refresh.");
+    console.error("Schedule fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+
+  
+  // ── Init: load doctor profile → get doctor_id ────────────────────
+  useEffect(() => {
+    const init = async () => {
+      try {
+      const token = localStorage.getItem("token");
+
+      const profileRes = await fetch(
+        "http://localhost:8000/api/doctor/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      if (!profileRes.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const json = await profileRes.json();
+      const profileData = json.data;
+     
+
+        // doctor_id is now returned directly from the fixed DoctorController
+        const id =
+          profileData?.doctor_id ??
+          profileData?.doctor?.doctor_id ??
+          profileRes.data?.doctor_id ??
+          null;
+
+        if (!id) {
+          console.error(
+            "Profile response shape:",
+            JSON.stringify(profileRes.data, null, 2),
+          );
+          throw new Error("doctor_id not found in profile response");
+        }
+
+        setDoctorId(id);
+        await fetchSchedule(id);
+      } catch (err) {
+        setError(
+          err.message.includes("doctor_id not found")
+            ? "Doctor profile is not set up yet. Please complete your profile first."
+            : "Failed to load doctor profile. Please refresh.",
+        );
+        setLoading(false);
+        console.error("Profile fetch error:", err);
+      }
+    };
+    init();
+  }, [fetchSchedule]);
+
+  // ── Delete one day ────────────────────────────────────────────────
+  const handleDeleteDay = async (dayName) => {
+    const entry = schedule[dayName];
+    if (!entry?.id || !doctorId) return;
+
+    if (!window.confirm(`Remove schedule for ${dayName}?`)) return;
+
+    const backup = entry;
+    setSchedule((prev) => ({ ...prev, [dayName]: null }));
+    setDeletingDay(dayName);
+
+    try {
+      await axios.delete(`/api/doctors/${doctorId}/schedules/${entry.id}`);
+    } catch (err) {
+      setSchedule((prev) => ({ ...prev, [dayName]: backup }));
+      setError("Failed to remove schedule. Please try again.");
+      console.error("Delete error:", err);
+    } finally {
+      setDeletingDay(null);
+    }
+  };
+
+  
+
+ const handleScheduleSave = async (mergedSchedule) => {
+   if (!doctorId) {
+     setError("Doctor profile not loaded.");
+     return;
+   }
+
+   setSaving(true);
+   setError(null);
+
+   const payload = buildBulkPayload(mergedSchedule);
+   if (!payload.schedules.length) {
+     setSaving(false);
+     return;
+   }
+
+   try {
+     const token = localStorage.getItem("token"); // ✅ ADD THIS
+
+     await axios.post(
+       `http://localhost:8000/api/doctors/${doctorId}/schedules/bulk`,
+       payload,
+       {
+         headers: {
+           Authorization: `Bearer ${token}`,
+           Accept: "application/json",
+         },
+       },
+     );
+
+     await fetchSchedule(doctorId);
+     setModalOpen(false);
+   } catch (err) {
+     const msg = err.response?.data?.message || "Failed to save schedule.";
+     setError(msg);
+     console.error("Save error:", err);
+   } finally {
+     setSaving(false);
+   }
+ };
+
+  // ── Derived ───────────────────────────────────────────────────────
+  const activeDays = DAYS_OF_WEEK.filter((d) => schedule[d] !== null);
+  const onlineDays = activeDays.filter((d) =>
+    ["online", "both"].includes(schedule[d]?.slotType),
+  );
+  const physicalDays = activeDays.filter((d) =>
+    ["physical", "both"].includes(schedule[d]?.slotType),
   );
 
+  // ── Render ────────────────────────────────────────────────────────
   return (
     <>
       <style>{`
         .schedule-page {
-          background: #ffffff;
-         
-          box-sizing: border-box;
+          background: #f9f7ff;
           min-height: 100%;
+          padding: 24px;
+          box-sizing: border-box;
         }
         .schedule-header {
           display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 12px; margin-bottom: 28px;
+          flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
         }
-        .schedule-header h1 {
-          margin: 0; font-size: clamp(20px, 3vw, 28px);
+        .schedule-header-left h1 {
+          margin: 0 0 2px; font-size: clamp(20px, 3vw, 26px);
           font-weight: 800; color: #4D227C;
+        }
+        .schedule-header-left p {
+          margin: 0; font-size: 13px; color: #9e84c2;
         }
         .btn-add-schedule {
           display: flex; align-items: center; gap: 6px;
-          padding: 10px 20px; border-radius: 8px; border: none;
+          padding: 10px 22px; border-radius: 10px; border: none;
           background: #4D227C; color: #fff; font-weight: 700;
-          font-size: clamp(13px, 1.8vw, 14px); cursor: pointer;
-          transition: background 0.2s; font-family: inherit; white-space: nowrap;
+          font-size: 14px; cursor: pointer;
+          transition: background 0.2s, transform 0.15s;
+          font-family: inherit; white-space: nowrap;
+          box-shadow: 0 4px 14px rgba(77,34,124,0.3);
         }
-        .btn-add-schedule:hover { background: #3a1860; }
+        .btn-add-schedule:hover:not(:disabled) {
+          background: #3a1860; transform: translateY(-1px);
+        }
+        .btn-add-schedule:disabled {
+          background: #9e84c2; cursor: not-allowed; box-shadow: none;
+        }
 
-        .stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
+        .error-banner {
+          display: flex; align-items: center; gap: 8px;
+          background: #fff0f0; border: 1px solid #fca5a5;
+          border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+          color: #b91c1c; font-size: 13px; font-weight: 500;
+        }
+        .error-dismiss {
+          margin-left: auto; background: none; border: none;
+          color: #b91c1c; cursor: pointer; font-weight: 700; font-size: 16px;
+        }
+
+        .stats-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
         .stat-card {
-          display: flex; align-items: center; gap: 12px;
-          background: #fff; border-radius: 10px; padding: 14px 20px;
-          border: 1px solid #e0d4f5; flex: 1; min-width: 140px;
-          box-shadow: 0 2px 8px rgba(77,34,124,0.06);
-        }
-        .stat-icon {
-          width: 40px; height: 40px; border-radius: 10px;
-          background: #ede7f6; display: flex; align-items: center;
-          justify-content: center; color: #4D227C; flex-shrink: 0;
-        }
-        .stat-label { font-size: 12px; color: #888; font-weight: 500; margin-bottom: 2px; }
-        .stat-value { font-size: 22px; font-weight: 800; color: #4D227C; }
-
-        .schedule-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 16px;
-        }
-        .day-card {
-          background: #fff; border-radius: 12px; overflow: hidden;
-          border: 1px solid #e0d4f5;
+          display: flex; align-items: center; gap: 14px;
+          background: #fff; border-radius: 12px; padding: 16px 20px;
+          border: 1.5px solid #e8dff5; flex: 1; min-width: 130px;
           box-shadow: 0 2px 8px rgba(77,34,124,0.06);
           transition: box-shadow 0.2s;
         }
-        .day-card:hover { box-shadow: 0 6px 20px rgba(77,34,124,0.12); }
+        .stat-card:hover { box-shadow: 0 6px 20px rgba(77,34,124,0.12); }
+        .stat-icon {
+          width: 42px; height: 42px; border-radius: 12px;
+          background: #ede7f6; display: flex; align-items: center;
+          justify-content: center; color: #4D227C; flex-shrink: 0;
+        }
+        .stat-label {
+          font-size: 11px; color: #999; font-weight: 600;
+          text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+        }
+        .stat-value { font-size: 26px; font-weight: 800; color: #4D227C; line-height: 1; }
+
+        .schedule-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 16px;
+        }
+
+        .day-card {
+          background: #fff; border-radius: 14px; overflow: hidden;
+          border: 1.5px solid #e8dff5;
+          box-shadow: 0 2px 8px rgba(77,34,124,0.06);
+          transition: box-shadow 0.2s, transform 0.15s;
+        }
+        .day-card:hover {
+          box-shadow: 0 8px 24px rgba(77,34,124,0.12);
+          transform: translateY(-2px);
+        }
         .day-card-header {
-          background: #4D227C; color: #fff; padding: 12px 16px;
+          background-color: #4D227C;
+          color: #fff; padding: 14px 18px;
           display: flex; align-items: center; justify-content: space-between;
         }
-        .day-card-header span { font-weight: 700; font-size: clamp(13px,1.8vw,15px); }
-        .day-card-body { padding: 12px 16px; }
+        .day-card-header-left { display: flex; align-items: center; gap: 10px; }
+        .day-name { font-weight: 800; font-size: 15px; }
+        .day-card-body { padding: 16px 18px; }
+        .hours-row {
+          display: flex; align-items: center; gap: 10px;
+          margin-bottom: 12px;
+        }
+        .hours-icon {
+          width: 36px; height: 36px; border-radius: 10px;
+          background: #f4f0fd; display: flex; align-items: center;
+          justify-content: center; color: #4D227C; flex-shrink: 0;
+        }
+        .hours-text { font-size: 18px; font-weight: 800; color: #2d2040; }
+        .hours-sub { font-size: 11px; color: #9e84c2; font-weight: 500; margin-top: 1px; }
 
-        .slot-row {
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: nowrap; gap: 8px; padding: 8px 10px;
-          border-radius: 8px; margin-bottom: 6px;
-          background: #faf7ff; border: 1px solid #ede7f6; transition: background 0.15s;
+        .type-badge {
+          display: inline-flex; align-items: center; gap: 5px;
+          font-size: 12px; font-weight: 700; padding: 4px 12px;
+          border-radius: 20px; border: 1.5px solid;
         }
-        .slot-row:last-child { margin-bottom: 0; }
-        .slot-row:hover { background: #f3ecff; }
-        .slot-info {
-          display: flex; align-items: center; flex-wrap: wrap;
-          gap: 6px; min-width: 0; flex: 1;
+        .day-actions { display: flex; gap: 8px; }
+        .btn-icon {
+          padding: 6px 8px; border-radius: 8px; border: none;
+          cursor: pointer; display: flex; align-items: center;
+          transition: all 0.15s; font-size: 14px;
         }
-        .slot-time { font-size: clamp(12px,1.6vw,13px); font-weight: 500; color: #333; white-space: nowrap; }
+        .btn-edit  { background: rgba(255,255,255,0.2); color: #fff; }
+        .btn-edit:hover { background: rgba(255,255,255,0.35); }
+        .btn-delete { background: rgba(255,255,255,0.15); color: #fecaca; }
+        .btn-delete:hover { background: rgba(239,68,68,0.3); color: #fff; }
+        .btn-delete:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .empty-day {
-          padding: 16px; text-align: center; color: #bbb;
-          font-size: 13px; font-style: italic;
+        .empty-day-card {
+          background: #fff; border-radius: 14px; overflow: hidden;
+          border: 1.5px dashed #d8c8f0;
+          transition: all 0.2s; cursor: pointer;
         }
-        .delete-slot-btn {
-          padding: 4px 7px; border-radius: 6px; border: none;
-          background: #fff0f0; color: #e53e3e; cursor: pointer;
-          display: flex; align-items: center; flex-shrink: 0;
-          transition: background 0.15s;
+        .empty-day-card:hover {
+          border-color: #4D227C; background: #faf7ff;
+          box-shadow: 0 4px 16px rgba(77,34,124,0.1);
         }
-        .delete-slot-btn:hover { background: #ffe0e0; }
+        .empty-day-inner {
+          padding: 24px 18px; text-align: center;
+          color: #b8a8d8; font-size: 13px;
+        }
+        .empty-day-name {
+          font-weight: 800; font-size: 15px; color: #9e84c2; margin-bottom: 8px;
+        }
+        .empty-day-hint { font-size: 12px; color: #c4b5e8; margin-top: 6px; }
+
+        .loading-state { text-align: center; padding: 60px 20px; color: #9e84c2; }
+        .loading-spinner {
+          width: 36px; height: 36px; border: 3px solid #ede7f6;
+          border-top-color: #4D227C; border-radius: 50%;
+          animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .empty-state { text-align: center; padding: 60px 20px; color: #999; }
         .empty-state h3 { color: #4D227C; margin-bottom: 8px; font-size: 20px; }
         .empty-state p  { font-size: 14px; margin: 0 0 20px; }
 
         @media (max-width: 600px) {
-          .schedule-page  { padding: 20px 14px; }
+          .schedule-page  { padding: 16px; }
           .schedule-grid  { grid-template-columns: 1fr; }
+          .stats-row      { flex-direction: column; }
         }
       `}</style>
 
@@ -184,158 +446,228 @@ function DoctorSchedule() {
         <div className="doctor-main">
           <DoctorTopNavbar activeMenu={activeMenu} />
 
-          <div className="doctor-content" style={{ padding: "20px" }}>
+          <div className="doctor-content">
             <div className="schedule-page">
-              {/* Page Header — subtitle removed */}
+              {/* Header */}
               <div className="schedule-header">
-                <h1>Weekly Schedule</h1>
+                <div className="schedule-header-left">
+                  <h1>Weekly Schedule</h1>
+                  <p>Set your available working hours for each day</p>
+                </div>
                 <button
                   className="btn-add-schedule"
                   onClick={() => setModalOpen(true)}
+                  disabled={loading || saving || !doctorId}
                 >
-                  <FiPlus size={16} /> Add Schedule
+                  <FiPlus size={15} />
+                  {saving
+                    ? "Saving…"
+                    : activeDays.length > 0
+                      ? "Edit Schedule"
+                      : "Set Schedule"}
                 </button>
               </div>
 
-              {/* Stats */}
-              <div className="stats-row">
-                <div className="stat-card">
-                  <div className="stat-icon">
-                    <FiCalendar size={18} />
-                  </div>
-                  <div>
-                    <div className="stat-label">Active Days</div>
-                    <div className="stat-value">{daysWithSlots.length}</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon">
-                    <FiClock size={18} />
-                  </div>
-                  <div>
-                    <div className="stat-label">Total Slots</div>
-                    <div className="stat-value">{totalSlots}</div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div
-                    className="stat-icon"
-                    style={{ background: "#e0f0ff", color: "#1e6091" }}
-                  >
-                    <FiClock size={18} />
-                  </div>
-                  <div>
-                    <div className="stat-label">Online Slots</div>
-                    <div className="stat-value" style={{ color: "#1e6091" }}>
-                      {DAYS_OF_WEEK.reduce(
-                        (acc, d) =>
-                          acc +
-                          (schedule[d]?.filter((s) => s.clinicType === "online")
-                            .length ?? 0),
-                        0,
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon">
-                    <FiClock size={18} />
-                  </div>
-                  <div>
-                    <div className="stat-label">Physical Slots</div>
-                    <div className="stat-value">
-                      {DAYS_OF_WEEK.reduce(
-                        (acc, d) =>
-                          acc +
-                          (schedule[d]?.filter(
-                            (s) => s.clinicType === "physical",
-                          ).length ?? 0),
-                        0,
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Schedule Grid */}
-              {totalSlots === 0 ? (
-                <div className="empty-state">
-                  <FiCalendar
-                    size={48}
-                    style={{ color: "#c4b5e8", marginBottom: 16 }}
-                  />
-                  <h3>No Schedule Yet</h3>
-                  <p>
-                    Click "Add Schedule" to set up your weekly availability.
-                  </p>
+              {/* Error banner */}
+              {error && (
+                <div className="error-banner">
+                  <FiAlertCircle size={16} />
+                  {error}
                   <button
-                    className="btn-add-schedule"
-                    onClick={() => setModalOpen(true)}
+                    className="error-dismiss"
+                    onClick={() => setError(null)}
                   >
-                    <FiPlus size={16} /> Add Schedule
+                    ✕
                   </button>
                 </div>
+              )}
+
+              {/* Loading */}
+              {loading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner" />
+                  Loading your schedule…
+                </div>
               ) : (
-                <div className="schedule-grid">
-                  {DAYS_OF_WEEK.map((day) => (
-                    <div key={day} className="day-card">
-                      <div className="day-card-header">
-                        <span>{day}</span>
-                        <span
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 600,
-                            opacity: 0.85,
-                            background: "rgba(255,255,255,0.15)",
-                            padding: "2px 10px",
-                            borderRadius: 20,
-                          }}
-                        >
-                          {schedule[day]?.length ?? 0} slot
-                          {schedule[day]?.length !== 1 ? "s" : ""}
-                        </span>
+                <>
+                  {/* Stats */}
+                  <div className="stats-row">
+                    <div className="stat-card">
+                      <div className="stat-icon">
+                        <FiCalendar size={18} />
                       </div>
-                      <div className="day-card-body">
-                        {!schedule[day]?.length ? (
-                          <div className="empty-day">No slots scheduled</div>
-                        ) : (
-                          schedule[day].map((slot, idx) => (
-                            <div key={idx} className="slot-row">
-                              <div className="slot-info">
-                                <span className="slot-time">
-                                  {formatTime(slot.startTime)} –{" "}
-                                  {formatTime(slot.endTime)}
-                                </span>
-                                <SlotBadge clinicType={slot.clinicType} />
-                              </div>
-                              {/* Delete button — always beside, never wraps below */}
-                              <button
-                                className="delete-slot-btn"
-                                onClick={() => handleDeleteSlot(day, idx)}
-                                title="Remove slot"
-                                style={{ flexShrink: 0 }}
-                              >
-                                <FiTrash2 size={13} />
-                              </button>
-                            </div>
-                          ))
-                        )}
+                      <div>
+                        <div className="stat-label">Active Days</div>
+                        <div className="stat-value">{activeDays.length}</div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="stat-card">
+                      <div
+                        className="stat-icon"
+                        style={{ background: "#e0f0ff", color: "#1e6091" }}
+                      >
+                        <FiClock size={18} />
+                      </div>
+                      <div>
+                        <div className="stat-label">Online</div>
+                        <div
+                          className="stat-value"
+                          style={{ color: "#1e6091" }}
+                        >
+                          {onlineDays.length}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-icon">
+                        <FiClock size={18} />
+                      </div>
+                      <div>
+                        <div className="stat-label">Physical</div>
+                        <div className="stat-value">{physicalDays.length}</div>
+                      </div>
+                    </div>
+                    <div className="stat-card">
+                      <div
+                        className="stat-icon"
+                        style={{ background: "#e8f4e8", color: "#276749" }}
+                      >
+                        <FiClock size={18} />
+                      </div>
+                      <div>
+                        <div className="stat-label">Days Off</div>
+                        <div
+                          className="stat-value"
+                          style={{ color: "#276749" }}
+                        >
+                          {7 - activeDays.length}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Empty state */}
+                  {activeDays.length === 0 ? (
+                    <div className="empty-state">
+                      <FiCalendar
+                        size={48}
+                        style={{ color: "#c4b5e8", marginBottom: 16 }}
+                      />
+                      <h3>No Schedule Yet</h3>
+                      <p>
+                        Set your working hours so patients know when you're
+                        available.
+                      </p>
+                      <button
+                        className="btn-add-schedule"
+                        onClick={() => setModalOpen(true)}
+                        disabled={!doctorId}
+                      >
+                        <FiPlus size={15} /> Set Schedule
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="schedule-grid">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const entry = schedule[day];
+                        const colors = entry
+                          ? slotTypeColor(entry.slotType)
+                          : null;
+
+                        if (!entry) {
+                          return (
+                            <div
+                              key={day}
+                              className="empty-day-card"
+                              onClick={() => setModalOpen(true)}
+                              title={`Add schedule for ${day}`}
+                            >
+                              <div className="empty-day-inner">
+                                <div className="empty-day-name">{day}</div>
+                                <FiPlus
+                                  size={20}
+                                  style={{ color: "#c4b5e8" }}
+                                />
+                                <div className="empty-day-hint">
+                                  Click to add hours
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div key={day} className="day-card">
+                            <div className="day-card-header">
+                              <div className="day-card-header-left">
+                                <span className="day-name">{day}</span>
+                              </div>
+                              <div className="day-actions">
+                                <button
+                                  className="btn-icon btn-edit"
+                                  onClick={() => setModalOpen(true)}
+                                  title="Edit"
+                                >
+                                  <FiEdit2 size={13} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-delete"
+                                  onClick={() => handleDeleteDay(day)}
+                                  disabled={deletingDay === day}
+                                  title="Remove"
+                                >
+                                  <FiTrash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="day-card-body">
+                              <div className="hours-row">
+                                <div className="hours-icon">
+                                  <FiClock size={16} />
+                                </div>
+                                <div>
+                                  <div className="hours-text">
+                                    {formatTime(entry.startTime)} –{" "}
+                                    {formatTime(entry.endTime)}
+                                  </div>
+                                  <div className="hours-sub">
+                                    Available hours
+                                  </div>
+                                </div>
+                              </div>
+                              <span
+                                className="type-badge"
+                                style={{
+                                  background: colors.bg,
+                                  color: colors.color,
+                                  borderColor: colors.border,
+                                }}
+                              >
+                                {entry.slotType === "online" }
+                                {entry.slotType === "physical"}
+                                {entry.slotType === "both"}{" "}
+                                {slotTypeLabel(entry.slotType)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Schedule Modal */}
-      <AddScheduleModal
+      <SetScheduleModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         savedSchedule={schedule}
         onSave={handleScheduleSave}
+        saving={saving}
       />
     </>
   );

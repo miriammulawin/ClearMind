@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Doctor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,13 +17,21 @@ class DoctorController extends Controller
 {
     // ──────────────────────────────────────────────
     // GET /api/doctor/profile
-    // View own profile
+    // View own profile (includes doctor record with doctor_id)
     // ──────────────────────────────────────────────
     public function profile(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        // Load the linked doctor record so doctor_id is available
+        $doctor = Doctor::where('user_id', $user->id)->first();
+
         return response()->json([
             'success' => true,
-            'data'    => $request->user(),
+            'data'    => array_merge($user->toArray(), [
+                'doctor_id' => $doctor?->doctor_id,
+                'doctor'    => $doctor,
+            ]),
         ]);
     }
 
@@ -44,10 +53,15 @@ class DoctorController extends Controller
 
         $user->update($validated);
 
+        $doctor = Doctor::where('user_id', $user->id)->first();
+
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully.',
-            'data'    => $user->fresh(),
+            'data'    => array_merge($user->fresh()->toArray(), [
+                'doctor_id' => $doctor?->doctor_id,
+                'doctor'    => $doctor,
+            ]),
         ]);
     }
 
