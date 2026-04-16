@@ -31,24 +31,24 @@ function ImagePreviewModal({ file, src, onClose }) {
   const contentRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => {
+    const h = (e) => {
       if (e.key === "Escape") onClose();
       if (e.key === "+" || e.key === "=") setZoom((z) => Math.min(z + 0.25, 4));
       if (e.key === "-") setZoom((z) => Math.max(z - 0.25, 0.5));
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
   }, [onClose]);
 
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
-    const handleWheel = (e) => {
+    const onWheel = (e) => {
       e.preventDefault();
       setZoom((z) => Math.max(0.5, Math.min(4, z - e.deltaY * 0.001)));
     };
-    el.addEventListener("wheel", handleWheel, { passive: false });
-    return () => el.removeEventListener("wheel", handleWheel);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
   const handleMouseDown = (e) => {
@@ -65,10 +65,8 @@ function ImagePreviewModal({ file, src, onClose }) {
     setZoom(1);
     setPos({ x: 0, y: 0 });
   };
-
   const isPdf = file?.type === "application/pdf";
-
-  const toolbarBtnStyle = {
+  const toolbarBtn = {
     background: "rgba(255,255,255,0.08)",
     border: "1px solid rgba(255,255,255,0.15)",
     borderRadius: "6px",
@@ -133,9 +131,8 @@ function ImagePreviewModal({ file, src, onClose }) {
         {!isPdf && (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <button
-              style={toolbarBtnStyle}
+              style={toolbarBtn}
               onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
-              title="Zoom out (-)"
             >
               <FiZoomOut size={15} />
             </button>
@@ -150,17 +147,12 @@ function ImagePreviewModal({ file, src, onClose }) {
               {Math.round(zoom * 100)}%
             </span>
             <button
-              style={toolbarBtnStyle}
+              style={toolbarBtn}
               onClick={() => setZoom((z) => Math.min(4, z + 0.25))}
-              title="Zoom in (+)"
             >
               <FiZoomIn size={15} />
             </button>
-            <button
-              style={toolbarBtnStyle}
-              onClick={resetView}
-              title="Reset view"
-            >
+            <button style={toolbarBtn} onClick={resetView}>
               <FiMaximize2 size={15} />
             </button>
           </div>
@@ -181,7 +173,6 @@ function ImagePreviewModal({ file, src, onClose }) {
           <FiX size={17} />
         </button>
       </div>
-
       <div
         ref={contentRef}
         style={{
@@ -219,7 +210,7 @@ function ImagePreviewModal({ file, src, onClose }) {
             style={{
               maxWidth: zoom <= 1 ? "90vw" : `${zoom * 90}vw`,
               maxHeight: zoom <= 1 ? "calc(100vh - 76px)" : "none",
-              transform: `translate(${pos.x}px, ${pos.y}px)`,
+              transform: `translate(${pos.x}px,${pos.y}px)`,
               borderRadius: "6px",
               boxShadow: "0 0 40px rgba(0,0,0,0.5)",
               transition: dragging ? "none" : "max-width .15s",
@@ -265,12 +256,10 @@ function PatientSearchDropdown({ onSelect, value }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const fetchPatients = useCallback(async (searchQuery, signal) => {
+  const fetchPatients = useCallback(async (q, signal) => {
     setLoading(true);
     try {
-      const qs = searchQuery.trim()
-        ? `&search=${encodeURIComponent(searchQuery)}`
-        : "";
+      const qs = q.trim() ? `&search=${encodeURIComponent(q)}` : "";
       const res = await fetch(`${API_BASE}/admin/patients?per_page=20${qs}`, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
@@ -337,7 +326,6 @@ function PatientSearchDropdown({ onSelect, value }) {
           }}
         />
       </div>
-
       {open && (
         <div
           style={{
@@ -504,18 +492,16 @@ function Row({ label, value }) {
     </div>
   ) : null;
 }
-
 function PatientInfoCard({ patient, onClear }) {
   const age = (() => {
     if (!patient.dob) return null;
-    const b = new Date(patient.dob);
-    const t = new Date();
+    const b = new Date(patient.dob),
+      t = new Date();
     let a = t.getFullYear() - b.getFullYear();
     const m = t.getMonth() - b.getMonth();
     if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
     return a >= 0 ? a : null;
   })();
-
   return (
     <div
       style={{
@@ -647,14 +633,12 @@ function DoctorDropdown({ onSelect, value }) {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
-    fetchDoctors();
+    if (open) fetchDoctors();
   }, [open, fetchDoctors]);
 
   const filtered = doctors.filter((d) =>
     `${d.firstName} ${d.lastName}`.toLowerCase().includes(query.toLowerCase()),
   );
-
   const displayName = value
     ? `${value.firstName}${value.middleInitial ? " " + value.middleInitial + "." : ""} ${value.lastName}`
     : "";
@@ -951,6 +935,8 @@ function ReceiptItem({ entry, onRemove, onPreview }) {
 
 /* ─────────────────────────────────────────────────────────
    EMPTY FORM
+   payment_reference = user-entered GCash/bank ref (optional)
+   appointment_ref   = auto-generated by backend (not in form)
 ───────────────────────────────────────────────────────── */
 const EMPTY_FORM = {
   informant_name: "",
@@ -963,7 +949,7 @@ const EMPTY_FORM = {
   service_type: "",
   pae_purpose: "",
   payment_status: "not_paid",
-  reference_number: "",
+  payment_reference: "", // GCash/bank ref — only relevant when paid
 };
 
 /* ─────────────────────────────────────────────────────────
@@ -990,6 +976,9 @@ function CreateAppointmentModal({
   const [paePurposes, setPaePurposes] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
 
+  /* Success modal state — shows generated appointment_ref */
+  const [successData, setSuccessData] = useState(null);
+
   const receiptInputRef = useRef(null);
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
 
@@ -1001,12 +990,12 @@ function CreateAppointmentModal({
   }, []);
 
   const addReceiptFiles = (files) => {
-    const newEntries = Array.from(files).map((file) => ({
+    const entries = Array.from(files).map((file) => ({
       id: `${Date.now()}-${Math.random()}`,
       file,
       url: URL.createObjectURL(file),
     }));
-    setReceiptEntries((prev) => [...prev, ...newEntries]);
+    setReceiptEntries((prev) => [...prev, ...entries]);
   };
 
   const removeReceiptEntry = (id) => {
@@ -1036,7 +1025,6 @@ function CreateAppointmentModal({
       });
       const json = await res.json();
       const data = json.data || [];
-
       const mapped = data
         .filter((s) => s.is_available === 1 || s.is_available === true)
         .map((s) => ({
@@ -1049,7 +1037,6 @@ function CreateAppointmentModal({
             .filter((p) => p.is_active === 1 || p.is_active === true)
             .map((p) => p.purpose_name),
         }));
-
       setServices(mapped);
       const psych = mapped.find((s) => s.isPsych);
       if (psych) setPaePurposes(psych.purposes);
@@ -1090,16 +1077,13 @@ function CreateAppointmentModal({
     if (!selectedPatient) errs.patient = "Please select a patient.";
     if (!form.appointment_date) errs.appointment_date = "Date is required.";
     if (!form.start_time) errs.start_time = "Start time is required.";
-    if (form.payment_status === "paid" && !form.reference_number.trim()) {
-      errs.reference_number =
-        "Reference number is required when payment is paid.";
-    }
     if (Object.keys(errs).length) {
       setErrors(errs);
       return;
     }
 
     setSubmitting(true);
+
     const fd = new FormData();
     fd.append("patient_id", selectedPatient.patient_id);
     if (form.informant_name.trim()) {
@@ -1114,12 +1098,15 @@ function CreateAppointmentModal({
     fd.append("service_type", form.service_type);
     if (form.pae_purpose) fd.append("pae_purpose", form.pae_purpose);
     fd.append("payment_status", form.payment_status);
-    if (form.reference_number.trim())
-      fd.append("reference_number", form.reference_number.trim());
+
+    // payment_reference — only send when paid and user typed something
+    if (form.payment_status === "paid" && form.payment_reference.trim()) {
+      fd.append("payment_reference", form.payment_reference.trim());
+    }
+
     if (selectedDoctor) fd.append("doctor_user_id", selectedDoctor.id);
-    receiptEntries.forEach((entry) => {
-      fd.append("receipts[]", entry.file);
-    });
+    receiptEntries.forEach((entry) => fd.append("receipts[]", entry.file));
+    // NOTE: appointment_ref is NOT sent — auto-generated by the backend model
 
     const url = isAdmin
       ? `${API_BASE}/admin/appointments`
@@ -1148,8 +1135,10 @@ function CreateAppointmentModal({
         else alert(result.message || `Error ${res.status}`);
         return;
       }
+
+      // Show success modal with the auto-generated appointment_ref
+      setSuccessData(result.data);
       if (onSuccess) onSuccess(result.data);
-      handleClose();
     } catch (e) {
       alert("Network error: " + e.message);
     } finally {
@@ -1165,6 +1154,7 @@ function CreateAppointmentModal({
     setShowPAEPanel(false);
     clearAllReceipts();
     setErrors({});
+    setSuccessData(null);
     onClose();
   }
 
@@ -1199,6 +1189,19 @@ function CreateAppointmentModal({
     services.find((s) => s.id === selectedService)?.isPsych ?? false;
   const showReceiptSection = showReceipt || form.payment_status === "paid";
 
+  /* ─── Determine preview label for the ref number format ─── */
+  const refPreview = (() => {
+    if (!form.service_type) return null;
+    const lower = form.service_type.toLowerCase();
+    const prefix =
+      lower.includes("psychological assessment") ||
+      lower.includes("assessment and evaluation")
+        ? "PAE"
+        : "PAC";
+    const date = form.appointment_date || "YYYY-MM-DD";
+    return `${prefix}-${date}-XXXX`;
+  })();
+
   return (
     <>
       <style>{`
@@ -1223,15 +1226,9 @@ function CreateAppointmentModal({
         .receipt-remove-btn:hover{background:#fff0f0}
         .receipt-add-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed #c4a8e8;border-radius:10px;background:none;color:#4D227C;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
         .receipt-add-more-btn:hover{background:#f5f0fb;border-color:#4D227C}
-
-        /* Reference number box */
-        .ref-box{background:#fff8e1;border:1.5px solid #fde68a;border-radius:10px;padding:14px 16px;margin-top:12px;animation:paeIn .2s ease}
-        .ref-box-label{font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;display:block}
-        .ref-box-input{width:100%;padding:10px 13px;border-radius:8px;border:1.5px solid #fde68a;font-size:13px;font-family:inherit;color:#333;box-sizing:border-box;background:#fffdf0;outline:none;transition:border .2s}
-        .ref-box-input:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,0.15)}
-        .ref-box-hint{font-size:11px;color:#b45309;margin-top:5px;display:block}
       `}</style>
 
+      {/* ── Image Preview Modal ── */}
       {previewEntry && (
         <ImagePreviewModal
           file={previewEntry.file}
@@ -1240,9 +1237,242 @@ function CreateAppointmentModal({
         />
       )}
 
+      {/* ── SUCCESS MODAL — shows appointment_ref from server ── */}
+      {successData && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 999998,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              padding: "32px 28px",
+              maxWidth: "420px",
+              width: "100%",
+              boxShadow: "0 24px 64px rgba(77,34,124,0.25)",
+              textAlign: "center",
+              animation: "paeIn .25s ease",
+            }}
+          >
+            {/* Checkmark */}
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "50%",
+                background: "#dcfce7",
+                border: "2px solid #bbf7d0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <FiCheck size={26} color="#15803d" />
+            </div>
+            <h3
+              style={{
+                margin: "0 0 6px",
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#1a1a2e",
+                fontFamily: "Poppins,sans-serif",
+              }}
+            >
+              Appointment Created!
+            </h3>
+            <p
+              style={{
+                margin: "0 0 20px",
+                fontSize: "13px",
+                color: "#666",
+                fontFamily: "Poppins,sans-serif",
+              }}
+            >
+              The appointment has been successfully saved.
+            </p>
+
+            {/* Appointment Reference Number */}
+            <div
+              style={{
+                background: "#f5f0fb",
+                border: "1.5px solid #d4b8f0",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "#4D227C",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  marginBottom: "8px",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                📋 Appointment Reference No.
+              </div>
+              <div
+                style={{
+                  fontSize: "22px",
+                  fontWeight: 700,
+                  color: "#4D227C",
+                  letterSpacing: "0.05em",
+                  fontFamily: "'Courier New',monospace",
+                }}
+              >
+                {successData.appointment_ref || "—"}
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#888",
+                  marginTop: "6px",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                {successData.appointment_ref?.startsWith("PAE")
+                  ? "Psychological Assessment & Evaluation"
+                  : "Psychotherapy & Counseling"}
+              </div>
+            </div>
+
+            {/* Payment reference if paid */}
+            {successData.payment_reference && (
+              <div
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "10px",
+                  padding: "12px 16px",
+                  marginBottom: "16px",
+                  textAlign: "left",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    color: "#15803d",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    marginBottom: "4px",
+                    fontFamily: "Poppins,sans-serif",
+                  }}
+                >
+                  💳 Payment Reference
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "#166534",
+                    fontFamily: "'Courier New',monospace",
+                  }}
+                >
+                  {successData.payment_reference}
+                </div>
+              </div>
+            )}
+
+            {/* Quick info */}
+            <div
+              style={{
+                textAlign: "left",
+                background: "#faf7ff",
+                borderRadius: "10px",
+                padding: "12px 16px",
+                marginBottom: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                <strong>Patient:</strong>{" "}
+                {[successData.patient?.firstName, successData.patient?.lastName]
+                  .filter(Boolean)
+                  .join(" ") || "—"}
+              </div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                <strong>Date:</strong> {successData.appointment_date || "—"}
+              </div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                <strong>Time:</strong> {successData.start_time || "—"} –{" "}
+                {successData.end_time || "—"}
+              </div>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#555",
+                  fontFamily: "Poppins,sans-serif",
+                }}
+              >
+                <strong>Service:</strong> {successData.service_type || "—"}
+              </div>
+            </div>
+
+            <button
+              onClick={handleClose}
+              style={{
+                width: "100%",
+                padding: "11px",
+                background: "#4D227C",
+                color: "#fff",
+                border: "none",
+                borderRadius: "10px",
+                fontSize: "14px",
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "Poppins,sans-serif",
+                transition: "background .15s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#3d1870")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "#4D227C")
+              }
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.backdrop}>
         <div className={styles.modal}>
-          {/* Header */}
+          {/* ── Header ── */}
           <div className={styles.header}>
             <h2 className={styles.headerTitle}>Create Appointment</h2>
             <div className={styles.headerRight}>
@@ -1356,6 +1586,59 @@ function CreateAppointmentModal({
 
               <hr className={styles.divider} />
 
+              {/* ── Appointment Ref Preview ── */}
+              {refPreview && (
+                <div
+                  style={{
+                    background: "#f5f0fb",
+                    border: "1px solid #d4b8f0",
+                    borderRadius: "9px",
+                    padding: "10px 14px",
+                    marginBottom: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>📋</span>
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#4D227C",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        fontFamily: "Poppins,sans-serif",
+                      }}
+                    >
+                      Appointment Ref No. Preview
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#4D227C",
+                        fontFamily: "'Courier New',monospace",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {refPreview}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#888",
+                        marginTop: "1px",
+                        fontFamily: "Poppins,sans-serif",
+                      }}
+                    >
+                      Auto-generated when appointment is saved
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <p className="tos-label">Type of Service</p>
               {servicesLoading ? (
                 <p
@@ -1466,7 +1749,7 @@ function CreateAppointmentModal({
                   value={form.payment_status}
                   onChange={(e) => {
                     set("payment_status", e.target.value);
-                    if (e.target.value !== "paid") set("reference_number", "");
+                    if (e.target.value !== "paid") set("payment_reference", "");
                   }}
                 >
                   <option value="">Select Payment Status</option>
@@ -1476,21 +1759,69 @@ function CreateAppointmentModal({
                 </select>
               </div>
 
-              {/* ── Reference Number — only shown when Paid ── */}
+              {/* Payment Reference — only shown when Paid (separate from appointment_ref) */}
               {form.payment_status === "paid" && (
-                <div className="ref-box">
-                  <span className="ref-box-label">🔖 Reference Number</span>
+                <div
+                  style={{
+                    background: "#fff8e1",
+                    border: "1.5px solid #fde68a",
+                    borderRadius: "10px",
+                    padding: "14px 16px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      color: "#92400e",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: "8px",
+                      fontFamily: "Poppins,sans-serif",
+                    }}
+                  >
+                    💳 Payment Reference Number
+                  </div>
                   <input
-                    className="ref-box-input"
                     type="text"
-                    placeholder="e.g. GCash ref: 1234567890"
-                    value={form.reference_number}
-                    onChange={(e) => set("reference_number", e.target.value)}
+                    placeholder="GCash / bank transaction reference (optional)"
+                    value={form.payment_reference}
+                    onChange={(e) => set("payment_reference", e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 13px",
+                      borderRadius: "8px",
+                      border: "1.5px solid #fde68a",
+                      fontSize: "13px",
+                      fontFamily: "Poppins,sans-serif",
+                      color: "#333",
+                      boxSizing: "border-box",
+                      background: "#fffdf0",
+                      outline: "none",
+                      transition: "border .2s",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.border = "1.5px solid #f59e0b";
+                      e.target.style.boxShadow =
+                        "0 0 0 3px rgba(245,158,11,0.15)";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.border = "1.5px solid #fde68a";
+                      e.target.style.boxShadow = "none";
+                    }}
                   />
-                  {errors.reference_number && <Err field="reference_number" />}
-                  <span className="ref-box-hint">
-                    Enter the GCash / bank transaction reference number.
-                  </span>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#b45309",
+                      marginTop: "5px",
+                      fontFamily: "Poppins,sans-serif",
+                    }}
+                  >
+                    This is the GCash/bank ref. The appointment reference number
+                    (PAC/PAE-...) is auto-generated separately.
+                  </div>
                 </div>
               )}
 
@@ -1538,7 +1869,6 @@ function CreateAppointmentModal({
                       </div>
                     )}
                   </div>
-
                   <input
                     ref={receiptInputRef}
                     type="file"
@@ -1551,7 +1881,6 @@ function CreateAppointmentModal({
                       e.target.value = "";
                     }}
                   />
-
                   {receiptEntries.length > 0 && (
                     <div style={{ marginBottom: "4px" }}>
                       {receiptEntries.map((entry) => (
@@ -1564,7 +1893,6 @@ function CreateAppointmentModal({
                       ))}
                     </div>
                   )}
-
                   {receiptEntries.length === 0 ? (
                     <div
                       className={styles.uploadZone}
@@ -1605,7 +1933,7 @@ function CreateAppointmentModal({
             </div>
           </div>
 
-          {/* Footer */}
+          {/* ── Footer ── */}
           <div className={styles.footer}>
             <button
               className={styles.btnCancel}
