@@ -35,8 +35,16 @@ return new class extends Migration
             $table->enum('payment_status', ['paid', 'not_paid', 'probono'])->default('not_paid');
             $table->json('receipt_paths')->nullable();
 
-            // ── Reference number — generated only when payment_status = paid ──
-            $table->string('reference_number', 100)->nullable()->unique();
+            // ── APPOINTMENT REFERENCE NUMBER ─────────────────────────────
+            // Always auto-generated on creation.
+            // Format: PAC-YYYY-MM-DD-XXXX  (Psychotherapy/Counseling)
+            //         PAE-YYYY-MM-DD-XXXX  (Psychological Assessment & Evaluation)
+            $table->string('appointment_ref', 100)->nullable()->unique();
+
+            // ── PAYMENT REFERENCE NUMBER ─────────────────────────────────
+            // Optional — entered by user (GCash ref, bank ref, etc.)
+            // Only relevant when payment_status = 'paid'
+            $table->string('payment_reference', 100)->nullable();
 
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'])
                   ->default('pending');

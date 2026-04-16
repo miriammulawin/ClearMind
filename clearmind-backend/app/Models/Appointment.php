@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class Appointment extends Model
 {
@@ -29,7 +28,8 @@ class Appointment extends Model
         'pae_purpose',
         'payment_status',
         'receipt_paths',
-        'reference_number',
+        'appointment_ref',      // always auto-generated — PAC/PAE-YYYY-MM-DD-XXXX
+        'payment_reference',    // optional — user-entered GCash/bank ref number
         'status',
         'notes',
     ];
@@ -41,47 +41,113 @@ class Appointment extends Model
 
     protected $appends = ['receipt_urls'];
 
-    // ── Auto-generate reference number when payment is paid ──
+    /* ══════════════════════════════════════════════════════════════════
+       Boot hooks
+    ══════════════════════════════════════════════════════════════════ */
     protected static function booted(): void
     {
+        // Always generate an appointment_ref on every new appointment
         static::creating(function (Appointment $appt) {
-            if ($appt->payment_status === 'paid' && empty($appt->reference_number)) {
-                $appt->reference_number = self::generateReferenceNumber();
+            if (empty($appt->appointment_ref)) {
+                $appt->appointment_ref = self::generateAppointmentRef(
+                    $appt->service_type,
+                    $appt->appointment_date
+                        ? (is_string($appt->appointment_date)
+                            ? $appt->appointment_date
+                            : $appt->appointment_date->format('Y-m-d'))
+                        : now()->format('Y-m-d')
+                );
             }
         });
 
+        // If service_type changes on an existing appointment, regenerate the ref
         static::updating(function (Appointment $appt) {
-            // Also generate if payment_status changes to paid later
-            if ($appt->isDirty('payment_status') &&
-                $appt->payment_status === 'paid' &&
-                empty($appt->reference_number)) {
-                $appt->reference_number = self::generateReferenceNumber();
+            if ($appt->isDirty('service_type')) {
+                $appt->appointment_ref = self::generateAppointmentRef(
+                    $appt->service_type,
+                    $appt->appointment_date
+                        ? (is_string($appt->appointment_date)
+                            ? $appt->appointment_date
+                            : $appt->appointment_date->format('Y-m-d'))
+                        : now()->format('Y-m-d')
+                );
             }
         });
     }
 
-    /**
-     * Generates a unique reference number: REF-YYYYMMDD-XXXXXX
-     */
-    public static function generateReferenceNumber(): string
-    {
-        do {
-            $ref = 'REF-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
-        } while (self::where('reference_number', $ref)->exists());
+    /* ══════════════════════════════════════════════════════════════════
+       generateAppointmentRef
+       ──────────────────────────────────────────────────────────────
+       Generates a unique appointment reference number.
+
+       Format: PREFIX-YYYY-MM-DD-XXXX
+         PREFIX  → PAE  (Psychological Assessment & Evaluation)
+                 → PAC  (Psychotherapy / Counseling — default)
+         DATE    → appointment_date in YYYY-MM-DD
+         XXXX    → zero-padded sequential count per prefix+date
+    ══════════════════════════════════════════════════════════════════ */
+    public static function generateAppointmentRef(
+        ?string $serviceType,
+        ?string $date = null
+    ): string {
+        $date   = $date ?? now()->format('Y-m-d');
+        $prefix = self::prefixFromService($serviceType);
+
+        // Count all existing (including soft-deleted) refs for this prefix+date
+        $pattern = "{$prefix}-{$date}-%";
+        $count   = self::withTrashed()
+                       ->where('appointment_ref', 'like', $pattern)
+                       ->count();
+
+        $seq = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+        $ref = "{$prefix}-{$date}-{$seq}";
+
+        // Race-condition safety: keep incrementing if ref already exists
+        while (self::withTrashed()->where('appointment_ref', $ref)->exists()) {
+            $count++;
+            $seq = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
+            $ref = "{$prefix}-{$date}-{$seq}";
+        }
 
         return $ref;
     }
 
+    /* ──────────────────────────────────────────────────────────────
+       Determine PAE or PAC prefix from service type string
+    ────────────────────────────────────────────────────────────── */
+    public static function prefixFromService(?string $serviceType): string
+    {
+        if (empty($serviceType)) return 'PAC';
+
+        $lower = strtolower($serviceType);
+
+        if (
+            str_contains($lower, 'psychological assessment') ||
+            str_contains($lower, 'assessment and evaluation') ||
+            str_contains($lower, 'pae')
+        ) {
+            return 'PAE';
+        }
+
+        return 'PAC';
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       Accessor — full public URLs for receipt files
+    ══════════════════════════════════════════════════════════════════ */
     public function getReceiptUrlsAttribute(): array
     {
         if (empty($this->receipt_paths)) return [];
+
         return array_map(
             fn($path) => Storage::disk('public')->url($path),
             $this->receipt_paths
         );
     }
 
-    /* ── Relationships ── */
+    /* ══════════════════════════════════════════════════════════════════
+       Relationships
+    ══════════════════════════════════════════════════════════════════ */
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');
