@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiEdit, FiMenu } from "react-icons/fi";
 import { FaCalendarDays } from "react-icons/fa6";
@@ -8,10 +8,19 @@ import { RiDashboardFill } from "react-icons/ri";
 import styles from "../../AdminPages/AdminStyle/AdminSideBar.module.css";
 import logo from "../../assets/CMPS_Logo.png";
 
+const STORAGE_BASE = "http://127.0.0.1:8000/storage/";
+
+// ── Builds a full image URL, avoids double-prefixing ──
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return STORAGE_BASE + path;
+};
+
 function DoctorSideBar() {
-  const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem("doctorSidebarCollapsed") === "true";
-  });
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem("doctorSidebarCollapsed") === "true"
+  );
 
   const [tooltip, setTooltip] = useState({
     text: "",
@@ -27,51 +36,79 @@ function DoctorSideBar() {
     prcLicenseNo: "",
     profilePicture: null,
   });
+
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  // ── Fetch doctor profile ──
+  // ── Fetch fresh data from /api/me ──
+  const fetchProfile = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://127.0.0.1:8000/api/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch profile");
+
+      const json = await response.json();
+      const data  = json.data;
+
+      setDoctorProfile({
+        firstName:      data.firstName      || "",
+        lastName:       data.lastName       || "",
+        middleInitial:  data.middleInitial  || "",
+        prcLicenseNo:   data.prcLicenseNo   || "",
+        profilePicture: resolveImageUrl(data.profilePicture),
+      });
+    } catch (error) {
+      console.error("Error fetching doctor profile:", error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
+
+  // ── On mount: clear stale cache then fetch ──
   useEffect(() => {
-    // Clean up any stale cache
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     if (currentUser?.id) {
       localStorage.removeItem(`doctorProfile_${currentUser.id}`);
       localStorage.removeItem("doctorProfile");
     }
+    fetchProfile();
+  }, [fetchProfile]);
 
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://127.0.0.1:8000/api/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch profile");
-
-        const json = await response.json();
-        const data = json.data;
-
+  // ── Real-time listener: fired by AccountSetupModal / profile page
+  //    after a successful save — no browser refresh needed ──
+  useEffect(() => {
+    const handleProfileUpdated = (e) => {
+      if (e.detail) {
+        // Use the payload directly — zero extra network call
         setDoctorProfile({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
-          middleInitial: data.middleInitial || "",
-          prcLicenseNo: data.prcLicenseNo || "",
-          profilePicture: data.profilePicture || null,
+          firstName:      e.detail.firstName      || "",
+          lastName:       e.detail.lastName       || "",
+          middleInitial:  e.detail.middleInitial  || "",
+          prcLicenseNo:   e.detail.prcLicenseNo   || "",
+          // Always resolve to full URL so <img> renders immediately
+          profilePicture: resolveImageUrl(e.detail.profilePicture),
         });
-      } catch (error) {
-        console.error("Error fetching doctor profile:", error);
-      } finally {
         setLoadingProfile(false);
+      } else {
+        // Fallback: re-fetch from backend
+        fetchProfile();
       }
     };
 
-    fetchProfile();
-  }, []);
+    window.addEventListener("doctorProfileUpdated", handleProfileUpdated);
+    return () => window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
+  }, [fetchProfile]);
 
   // ── Auto-collapse on small screens ──
   useEffect(() => {
@@ -87,23 +124,11 @@ function DoctorSideBar() {
   }, []);
 
   const menus = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
-    {
-      name: "Appointment",
-      icon: <FaCalendarDays />,
-      path: "/doctor/appointment",
-    },
-    {
-      name: "Schedule",
-      icon: <BsCalendarCheckFill />,
-      path: "/doctor/schedule",
-    },
-    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
-    {
-      name: "My Profile",
-      icon: <BiSolidUserCircle />,
-      path: "/doctor/profile",
-    },
+    { name: "Dashboard",  icon: <RiDashboardFill />,     path: "/doctor/dashboard"  },
+    { name: "Appointment",icon: <FaCalendarDays />,       path: "/doctor/appointment"},
+    { name: "Schedule",   icon: <BsCalendarCheckFill />,  path: "/doctor/schedule"   },
+    { name: "Patients",   icon: <BsPersonLinesFill />,    path: "/doctor/patient"    },
+    { name: "My Profile", icon: <BiSolidUserCircle />,    path: "/doctor/profile"    },
   ];
 
   const toggleCollapsed = (e) => {
@@ -119,60 +144,92 @@ function DoctorSideBar() {
 
   const getDisplayName = () => {
     const { firstName, lastName, middleInitial } = doctorProfile;
-    if (!firstName && !lastName) return "Loading...";
-    const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
+    if (!firstName && !lastName) return "...";
+    const mi = middleInitial
+      ? `${middleInitial.charAt(0).toUpperCase()}.`
+      : "";
     return [firstName, mi, lastName].filter(Boolean).join(" ");
   };
 
   const getInitials = () => {
-    const { firstName, lastName } = doctorProfile;
-    const f = firstName?.charAt(0).toUpperCase() || "";
-    const l = lastName?.charAt(0).toUpperCase() || "";
+    const f = doctorProfile.firstName?.charAt(0).toUpperCase() || "";
+    const l = doctorProfile.lastName?.charAt(0).toUpperCase()  || "";
     return f + l || "?";
   };
+
+  // ── Shimmer block ──
+  const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
+    <span
+      style={{
+        display:         "block",
+        width,
+        height,
+        borderRadius,
+        background:
+          "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
+        backgroundSize:  "200% 100%",
+        animation:       "sidebarShimmer 1.4s infinite",
+      }}
+    />
+  );
 
   return (
     <>
       <div
-        className={`${styles.sidebarContainer} ${collapsed ? styles.collapsed : ""}`}
+        className={`${styles.sidebarContainer} ${
+          collapsed ? styles.collapsed : ""
+        }`}
       >
         <div className={styles.sidebar}>
+
+          {/* ── Header ── */}
           <div className={styles.sidebarHeader}>
             <img src={logo} alt="Logo" className={styles.sidebarLogo} />
             <FiMenu className={styles.menuIcon} onClick={toggleCollapsed} />
           </div>
 
+          {/* ── Profile Section ── */}
           <div className={styles.profileSection}>
-            {/* Profile picture or initials fallback */}
+
+            {/* Avatar */}
             <div className={styles.profilePic}>
-              {!loadingProfile &&
-                (doctorProfile.profilePicture ? (
-                  <img
-                    src={doctorProfile.profilePicture}
-                    alt="Profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      borderRadius: "50%",
-                    }}
-                  />
-                ) : (
-                  <span className={styles.profileInitials}>
-                    {getInitials()}
-                  </span>
-                ))}
+              {loadingProfile ? (
+                <Shimmer width="100%" height="100%" borderRadius="50%" />
+              ) : doctorProfile.profilePicture ? (
+                <img
+                  key={doctorProfile.profilePicture}   // key forces re-render on URL change
+                  src={doctorProfile.profilePicture}
+                  alt="Profile"
+                  style={{
+                    width:        "100%",
+                    height:       "100%",
+                    objectFit:    "cover",
+                    borderRadius: "50%",
+                  }}
+                />
+              ) : (
+                <span className={styles.profileInitials}>{getInitials()}</span>
+              )}
             </div>
 
+            {/* Name + PRC */}
             <div className={styles.profileInfo}>
               <h5 className={styles.profileName}>
-                {loadingProfile ? "Loading..." : getDisplayName()}
+                {loadingProfile ? (
+                  <Shimmer width="80%" height="12px" />
+                ) : (
+                  getDisplayName()
+                )}
               </h5>
+
               <p className={styles.profileContact}>
-                {loadingProfile
-                  ? "..."
-                  : `PRC License No.: ${doctorProfile.prcLicenseNo || "N/A"}`}
+                {loadingProfile ? (
+                  <Shimmer width="65%" height="10px" />
+                ) : (
+                  `PRC License No.: ${doctorProfile.prcLicenseNo || "N/A"}`
+                )}
               </p>
+
               <FiEdit
                 className={styles.editIcon}
                 onClick={(e) => {
@@ -184,6 +241,7 @@ function DoctorSideBar() {
             </div>
           </div>
 
+          {/* ── Menu ── */}
           <div className={styles.sidebarMenu}>
             {menus.map((item) => (
               <div
@@ -196,9 +254,9 @@ function DoctorSideBar() {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
-                    text: item.name,
-                    x: rect.right + 10,
-                    y: rect.top + rect.height / 2,
+                    text:    item.name,
+                    x:       rect.right + 10,
+                    y:       rect.top + rect.height / 2,
                     visible: true,
                   });
                 }}
@@ -211,9 +269,11 @@ function DoctorSideBar() {
               </div>
             ))}
           </div>
+
         </div>
       </div>
 
+      {/* ── Collapsed tooltip ── */}
       {tooltip.visible && (
         <div
           className={styles.tooltipOverlay}
@@ -222,6 +282,14 @@ function DoctorSideBar() {
           {tooltip.text}
         </div>
       )}
+
+      {/* ── Shimmer keyframe (injected once) ── */}
+      <style>{`
+        @keyframes sidebarShimmer {
+          0%   { background-position:  200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
     </>
   );
 }

@@ -578,10 +578,13 @@ function MultiFileInput({
 }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
-  const objUrls = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
-useEffect(() => {
-  return () => objUrls.forEach((u) => URL.revokeObjectURL(u));
-}, [objUrls]);
+  const objUrls = useMemo(
+    () => files.map((f) => URL.createObjectURL(f)),
+    [files],
+  );
+  useEffect(() => {
+    return () => objUrls.forEach((u) => URL.revokeObjectURL(u));
+  }, [objUrls]);
 
   const isImg = (src) =>
     /\.(jpg|jpeg|png|gif|webp)$/i.test(src) || src?.startsWith("blob:");
@@ -868,12 +871,17 @@ function Thumb({ src, name, isNew, onView, onRemove, isImg }) {
 function ProfilePictureInput({ file, existingUrl, onChange }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(false);
-  const objUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const objUrl = useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file],
+  );
   const [hovered, setHovered] = useState(false);
 
-useEffect(() => {
-  return () => { if (objUrl) URL.revokeObjectURL(objUrl); };
-}, [objUrl]);
+  useEffect(() => {
+    return () => {
+      if (objUrl) URL.revokeObjectURL(objUrl);
+    };
+  }, [objUrl]);
 
   const src = objUrl || (existingUrl ? STORAGE_BASE + existingUrl : null);
 
@@ -1414,6 +1422,29 @@ function AccountSetupModal({ showModal, onClose }) {
       setProfilePicFile(null);
       setCompleted((p) => new Set([...p, step]));
       await loadProfile();
+
+      // ← renamed from `const res` to avoid duplicate declaration
+      const profileRes = await fetch(`${API_BASE}/doctor/profile`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          Accept: "application/json",
+        },
+      });
+      const { data } = await profileRes.json();
+
+      window.dispatchEvent(
+        new CustomEvent("doctorProfileUpdated", {
+          detail: {
+            firstName: data.firstName || data.first_name || "",
+            lastName: data.lastName || data.last_name || "",
+            middleInitial: data.middleInitial || data.middle_initial || "",
+            // AFTER — /api/doctor/profile returns snake_case, /api/me returns camelCase
+            prcLicenseNo: data.prcLicenseNo || data.prc_number || "",
+            profilePicture: data.profilePicture || data.profile_picture || null,
+          },
+        }),
+      );
+
       // Move to password step
       setStep(STEPS.findIndex((s) => s.key === "security"));
     } catch (e) {
