@@ -178,40 +178,54 @@ class AuthController extends Controller
             'data'    => $this->userPayload($request->user()),
         ]);
     }
-
-   private function userPayload(User $user): array
+private function userPayload(User $user): array
 {
     $doctor = Doctor::where('user_id', $user->id)->first();
+
+    // Helper: safely build asset URL without double-prefixing
+    $assetUrl = function (?string $path): ?string {
+        if (!$path) return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path; // already full URL
+        }
+        $clean = ltrim($path, '/');
+        $clean = preg_replace('#^storage/#', '', $clean); // strip leading storage/ if present
+        return asset('storage/' . $clean);
+    };
+
+    // Doctor's profile_picture takes priority over User's profilePicture
+    $profilePicture = $doctor?->profile_picture
+        ? $assetUrl($doctor->profile_picture)
+        : $assetUrl($user->profilePicture);
+
     return [
-        'id'                => $user->id,
-        'firstName'         => $user->firstName,
-        'lastName'          => $user->lastName,
-        'middleInitial'     => $user->middleInitial,
-        'fullName'          => $user->full_name,
-        'dob'               => $user->dob,
-        'sex'               => $user->sex,
-        'genderIdentity'    => $user->genderIdentity,
-        'preferredPronoun'  => $user->preferredPronoun,
-        'displayPronoun'    => $user->display_pronoun,
-        'contactNo'         => $user->contactNo,
-        'civilStatus'       => $user->civilStatus,
-        'PatientClassification' => $user->patientClassification,
-        'email'             => $user->email,
-        'address'           => $user->address,
-        'role'              => $user->role,
-        'is_active'         => $user->is_active,
-        'email_verified_at' => $user->email_verified_at,
-        'created_at'        => $user->created_at,
+        'id'                    => $user->id,
+        'firstName'             => $user->firstName,
+        'lastName'              => $user->lastName,
+        'middleInitial'         => $user->middleInitial,
+        'fullName'              => $user->fullName,
+        'dob'                   => $user->dob,
+        'sex'                   => $user->sex,
+        'genderIdentity'        => $user->genderIdentity,
+        'preferredPronoun'      => $user->preferredPronoun,
+        'displayPronoun'        => $user->display_pronoun,
+        'contactNo'             => $user->contactNo,
+        'civilStatus'           => $user->civilStatus,
+        'patientClassification' => $user->patientClassification,
+        'email'                 => $user->email,
+        'address'               => $user->address,
+        'role'                  => $user->role,
+        'is_active'             => $user->is_active,
+        'email_verified_at'     => $user->email_verified_at,
+        'created_at'            => $user->created_at,
 
-        // ── Profile picture from User model ──
-        'profilePicture'    => $user->profilePicture
-                            ? asset('storage/' . $user->profilePicture)
-                            : null,
+        // ── Profile picture: Doctor's first, then User's ──
+        'profilePicture'        => $profilePicture,
 
-        // ── Doctor-specific (null for Admin/Client) ──
-        'prcLicenseNo'      => $doctor?->license_number,
-        'prcNumber'         => $doctor?->prc_number,
-        'professionalTitle' => $doctor?->professional_title,
+        // ── Doctor-specific fields (null for Admin/Client) ──
+        'prcLicenseNo'          => $doctor?->license_number,
+        'prcNumber'             => $doctor?->prc_number,
+        'professionalTitle'     => $doctor?->professional_title,
     ];
 }
     // for client
