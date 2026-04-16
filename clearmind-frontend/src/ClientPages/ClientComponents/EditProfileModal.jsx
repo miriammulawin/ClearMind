@@ -60,7 +60,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
 
     setLoading(true);
     axiosClient
-      .get("/api/me")
+      .get("/me")
       .then((response) => {
         if (response.data.success) {
           const u = response.data.data;
@@ -82,7 +82,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
             genderIdentity: isPresetGender ? u.genderIdentity : "other",
             customGender: !isPresetGender ? u.genderIdentity : "",
             preferredPronoun: isPresetPronoun ? u.preferredPronoun : "other",
-            customPronoun: !isPresetPronoun ? u.customPronoun || "" : "",
+            customPronoun: !isPresetPronoun ? u.preferredPronoun || "" : "",
             contactNo: u.contactNo || "",
             email: u.email || "",
             address: u.address || "",
@@ -91,13 +91,13 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
             noMiddleName: !u.middleInitial,
           });
 
-          setProfilePic(u.profilePic || "");
+          //  Fix: API returns "profilePicture", not "profilePic"
+          setProfilePic(u.profilePicture || "");
         }
       })
       .catch((err) => console.error("Failed to load profile:", err))
       .finally(() => setLoading(false));
   }, [isOpen]);
-
   if (!isOpen) return null;
 
   // --- Handlers ---
@@ -185,7 +185,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
 
     setSaving(true);
     try {
-      const response = await axiosClient.put("/api/me", payload);
+      const response = await axiosClient.put("/me", payload);
       if (response.data.success) {
         onSave && onSave(response.data.data);
         onClose();
@@ -237,7 +237,7 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
           <div className="epm-header-text">
             <h2 className="epm-title">Edit Profile</h2>
             <p className="epm-subtitle">
-              Change/Upload your profile picture here.
+              Change/Upload your profile picture heres.
             </p>
             {profilePic && (
               <button
@@ -296,22 +296,6 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
                   disabled={form.noMiddleName}
                   style={{ opacity: form.noMiddleName ? 0.5 : 1 }}
                 />
-                <label className="epm-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={form.noMiddleName || false}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        noMiddleName: e.target.checked,
-                        middleInitial: e.target.checked
-                          ? ""
-                          : prev.middleInitial,
-                      }))
-                    }
-                  />
-                  <span>I don't have a middle name</span>
-                </label>
               </div>
 
               <div className="epm-field">
@@ -558,4 +542,3 @@ function EditProfileModal({ isOpen, onClose, onSave }) {
 }
 
 export default EditProfileModal;
- 

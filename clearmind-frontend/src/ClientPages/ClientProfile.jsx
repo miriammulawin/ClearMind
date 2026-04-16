@@ -16,9 +16,8 @@ function ClientAccount() {
     setUserData(updatedData);
     setIsModalOpen(false);
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000); 
+    setTimeout(() => setShowSuccess(false), 3000);
     console.log("Saved:", updatedData);
-
   };
 
   return (

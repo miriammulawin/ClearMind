@@ -7,7 +7,7 @@ use App\Models\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class AnnouncementController extends Controller
+    class AnnouncementController extends Controller
 {
     /* ────────────────────────────────────────────────
      * GET /api/admin/announcements
