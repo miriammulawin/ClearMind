@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiX,
   FiPlus,
@@ -7,31 +7,113 @@ import {
   FiChevronRight,
   FiEdit,
 } from "react-icons/fi";
+import toast from "react-hot-toast";
 import styles from "../DoctorStyle/Modal.module.css";
+
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
+
+const isValidContact = (value) => /^09\d{9}$/.test(value);
+const isNumericOnly = (value) => /^\d+$/.test(value);
+
+const isValidFile = (file) => {
+  if (!file) return false;
+  const allowed = ["image/jpeg", "image/png", "application/pdf"];
+  return allowed.includes(file.type);
+};
+
+const calculateAge = (dob) => {
+  const today = new Date();
+  const birth = new Date(dob);
+
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
+};
 
 function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   const [formData, setFormData] = useState({
-    firstName: doctorData?.firstName || "",
-    lastName: doctorData?.lastName || "",
-    middleInitial: doctorData?.middleInitial || "",
-    contactNumber: doctorData?.contactNumber || "",
-    address: doctorData?.address || "",
-    dateOfBirth: doctorData?.dateOfBirth || "",
-    age: doctorData?.age || "",
-    gender: doctorData?.gender || "",
-    specialty: doctorData?.specialty || "",
-    practicingSince: doctorData?.practicingSince || "",
-    credentials: doctorData?.credentials || "",
-    licenseNo: doctorData?.licenseNo || "",
-    subspecialty: doctorData?.subspecialty || [],
-    services: doctorData?.services || [],
-    certifications: doctorData?.certifications || [],
-    boardCertImages: doctorData?.certificateImages || [],
-    idPictures: doctorData?.idImages || [],
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
+    contactNumber: "",
+    address: "",
+    dateOfBirth: "",
+    age: "",
+    gender: "",
+    specialty: "",
+    practicingSince: "",
+    credentials: "",
+    licenseNo: "",
+    prcNumber: "",
+    subspecialty: [],
+    services: [],
+    certifications: [],
+    boardCertImages: [],
+    idPictures: [],
   });
 
   const [boardIndex, setBoardIndex] = useState(0);
   const [idIndex, setIdIndex] = useState(0);
+  const originalData = doctorData || {};
+
+  useEffect(() => {
+    if (!doctorData) return;
+    setFormData({
+      firstName: doctorData.firstName || "",
+      lastName: doctorData.lastName || "",
+      middleInitial: doctorData.middleInitial || "",
+      contactNumber: doctorData.contactNumber || "",
+      address: doctorData.address || "",
+      dateOfBirth: doctorData.dateOfBirth || "",
+      age: doctorData.age || "",
+      gender: doctorData.gender || "",
+      specialty: doctorData.specialty || "",
+      practicingSince: doctorData.practicingSince || "",
+      credentials: doctorData.credentials || "",
+      licenseNo: doctorData.licenseNo || "",
+      prcNumber: doctorData.prcNumber || "",
+      subspecialty: doctorData.subspecialty || [],
+      services: doctorData.services || [],
+      certifications: doctorData.certifications || [],
+      boardCertImages: doctorData.certificateImages || [],
+      idPictures: doctorData.idImages || [],
+    });
+  }, [doctorData, show]); // 👈 added `show` so it re-syncs when modal opens
 
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -56,8 +138,11 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   };
 
   const handleAddImage = (field, setIndex) => {
-    setFormData((prev) => ({ ...prev, [field]: [...prev[field], null] }));
-    setIndex(formData[field].length);
+    setFormData((prev) => {
+      const updated = [...(prev[field] || []), null];
+      setIndex(updated.length - 1);
+      return { ...prev, [field]: updated };
+    });
   };
 
   const handleRemoveImage = (field, index, setIndex) => {
@@ -68,16 +153,150 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
   };
 
   const prevImage = (field, setIndex, currentIndex) =>
-    setIndex(currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1);
+    setIndex(
+      currentIndex === 0 ? formData[field].length - 1 : currentIndex - 1,
+    );
 
   const nextImage = (field, setIndex, currentIndex) =>
-    setIndex(currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1);
+    setIndex(
+      currentIndex === formData[field].length - 1 ? 0 : currentIndex + 1,
+    );
 
-  const handleSave = () => {
-    onSave && onSave(formData);
-    onClose();
+  const handleDOBChange = (e) => {
+    const value = e.target.value;
+
+    setFormData((prev) => ({
+      ...prev,
+      dateOfBirth: value,
+      age: calculateAge(value),
+    }));
   };
 
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // VALIDATION
+      if (
+        formData.contactNumber &&
+        formData.contactNumber !== originalData.contactNumber
+      ) {
+        if (!isValidContact(formData.contactNumber)) {
+          toast.error(
+            "Contact number must start with 09 and be 11 digits.",
+            toastError,
+          );
+          return;
+        }
+      }
+
+      if (formData.licenseNo && formData.licenseNo !== originalData.licenseNo) {
+        if (!isNumericOnly(formData.licenseNo)) {
+          toast.error("License Number must be numbers only.", toastError);
+          return;
+        }
+      }
+
+      if (formData.prcNumber && formData.prcNumber !== originalData.prcNumber) {
+        if (!isNumericOnly(formData.prcNumber)) {
+          toast.error("PRC Number must be numbers only.", toastError);
+          return;
+        }
+      }
+
+      const newBoardFile = formData.boardCertImages?.[boardIndex];
+
+      if (newBoardFile && !isValidFile(newBoardFile)) {
+        toast.error("Invalid Board Certification file type.", toastError);
+        return;
+      }
+
+      const newIdFile = formData.idPictures?.[idIndex];
+
+      if (newIdFile && !isValidFile(newIdFile)) {
+        toast.error("Invalid ID Card file type.", toastError);
+        return;
+      }
+      const userPayload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        middleInitial: formData.middleInitial,
+        contactNo: formData.contactNumber,
+        address: formData.address,
+        gender: formData.gender,
+        dob: formData.dateOfBirth,
+        age: formData.age,
+        email: originalData.email,
+      };
+
+      const doctorPayload = {
+        professional_title: formData.credentials,
+        license_number: formData.licenseNo,
+        prc_number: formData.prcNumber,
+        main_specialty: formData.specialty,
+        practicing_since: formData.practicingSince,
+        sub_specializations: formData.subspecialty,
+        services: formData.services,
+        board_cert_names: formData.certifications,
+      };
+
+      if (!token) {
+        toast.error("Session expired. Please login again.", toastError);
+        return;
+      }
+
+      // ── 1. UPDATE USER ─────────────────────
+      const userRes = await fetch("http://localhost:8000/api/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(userPayload),
+      });
+
+      const userData = await userRes.json();
+
+      if (!userRes.ok) {
+        console.log("USER ERROR:", userData);
+        toast.error(userData.message || "User update failed", toastError);
+        return;
+      }
+
+      // ── 2. UPDATE DOCTOR ───────────────────
+      const doctorRes = await fetch(
+        "http://localhost:8000/api/doctor/update-doctor",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(doctorPayload),
+        },
+      );
+
+      const doctorData = await doctorRes.json();
+
+      if (!doctorRes.ok) {
+        console.log("DOCTOR ERROR:", doctorData);
+        toast.error(doctorData.message || "Doctor update failed", toastError);
+        return;
+      }
+
+      toast.success("Profile updated successfully!", toastSuccess);
+
+      onSave?.();
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.", toastError);
+    }
+  };
+
+  // ✅ Guard: don't render anything if show is false
   if (!show) return null;
 
   const renderDynamicField = (field, label) => (
@@ -105,7 +324,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </button>
           </div>
         ))}
-        <button onClick={() => handleAddItem(field)} className={styles["add-btn"]}>
+        <button
+          onClick={() => handleAddItem(field)}
+          className={styles["add-btn"]}
+        >
           <FiPlus /> Add
         </button>
       </div>
@@ -116,12 +338,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
     <div className={styles["modal-section"]}>
       <h4>{label}</h4>
       <div className={styles["carousel-box"]}>
-        {formData[field].length > 0 && formData[field][index] ? (
+        {formData[field]?.length > 0 && formData[field][index] ? (
           <img src={formData[field][index]} alt="" />
         ) : (
           <span>No Images</span>
         )}
-        {formData[field].length > 0 && (
+        {formData[field]?.length > 0 && (
           <>
             <button
               className={`${styles["carousel-btn"]} ${styles["left"]}`}
@@ -143,12 +365,19 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               <input
                 type="file"
                 hidden
-                onChange={(e) => handleImageChange(field, index, e.target.files[0])}
+                onChange={(e) =>
+                  handleImageChange(field, index, e.target.files[0])
+                }
               />
             </label>
             <button
               className={`${styles["carousel-btn"]} ${styles["delete"]}`}
-              style={{ bottom: "10px", right: "10px", top: "auto", transform: "none" }}
+              style={{
+                bottom: "10px",
+                right: "10px",
+                top: "auto",
+                transform: "none",
+              }}
               onClick={() => handleRemoveImage(field, index, setIndex)}
             >
               <FiTrash2 />
@@ -168,8 +397,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
 
   return (
     <div className={styles["profile-modal-overlay"]} onClick={onClose}>
-      <div className={styles["profile-modal-lg"]} onClick={(e) => e.stopPropagation()}>
-
+      <div
+        className={styles["profile-modal-lg"]}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* HEADER */}
         <div className={styles["modal-header"]}>
           <h2>Edit Personal Information</h2>
@@ -180,8 +411,6 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
 
         {/* BODY */}
         <div className={styles["modal-body"]}>
-
-          {/* Personal Information section */}
           <div className={styles["modal-section"]}>
             <h4>Personal Information</h4>
 
@@ -211,11 +440,52 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 />
               </div>
               <div className={styles["input-group"]}>
-                <p className={styles["modal-label"]}>License Number</p>
+                <p className={styles["modal-label"]}>PRC License</p>
                 <input
                   className={styles["modal-input"]}
                   value={formData.licenseNo}
-                  onChange={(e) => handleChange("licenseNo", e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || /^\d+$/.test(value)) {
+                      handleChange("licenseNo", value);
+                    }
+                  }}
+                />
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>PRC Number</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.prcNumber}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || isNumericOnly(value)) {
+                      handleChange("prcNumber", value);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* ✅ Added missing specialty + practicingSince fields */}
+            <div className={styles["grid-2"]}>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Specialty</p>
+                <input
+                  className={styles["modal-input"]}
+                  value={formData.specialty}
+                  onChange={(e) => handleChange("specialty", e.target.value)}
+                />
+              </div>
+              <div className={styles["input-group"]}>
+                <p className={styles["modal-label"]}>Practicing Since</p>
+                <input
+                  type="number"
+                  className={styles["modal-input"]}
+                  value={formData.practicingSince}
+                  onChange={(e) =>
+                    handleChange("practicingSince", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -226,7 +496,13 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 <input
                   className={styles["modal-input"]}
                   value={formData.contactNumber}
-                  onChange={(e) => handleChange("contactNumber", e.target.value)}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/\D/g, ""); // numbers only
+
+                    if (value.length <= 11) {
+                      handleChange("contactNumber", value);
+                    }
+                  }}
                 />
               </div>
               <div className={styles["input-group"]}>
@@ -256,7 +532,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                   type="date"
                   className={styles["modal-input"]}
                   value={formData.dateOfBirth}
-                  onChange={(e) => handleChange("dateOfBirth", e.target.value)}
+                  onChange={handleDOBChange}
                 />
               </div>
             </div>
@@ -274,7 +550,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
             </div>
           </div>
 
-          {renderCarousel("boardCertImages", boardIndex, setBoardIndex, "Board Certifications")}
+          {renderCarousel(
+            "boardCertImages",
+            boardIndex,
+            setBoardIndex,
+            "Board Certifications",
+          )}
           {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
           {renderDynamicField("subspecialty", "Subspecialty")}
           {renderDynamicField("services", "Services")}

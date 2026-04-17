@@ -45,6 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get   ('appointments/{id}', [AppointmentController::class, 'show']);
     Route::delete('appointments/{id}', [AppointmentController::class, 'destroy']);
 
+
+    Route::get('/doctor/profile',          [DoctorProfileController::class, 'show']);
+    Route::post('/doctor/profile/setup',   [DoctorProfileController::class, 'setup']);
+    Route::delete('/doctor/profile/files', [DoctorProfileController::class, 'deleteFile']);
+    Route::put('/doctor/change-password',  [DoctorController::class, 'changePassword']);
+    Route::put('/doctor/update-doctor', [DoctorController::class, 'updateDoctorProfile']);
+Route::put('/doctor/account-security', [DoctorController::class, 'updateAccountSecurity']);
     // ── Doctor profile ────────────────────────────────────────────
     Route::get   ('/doctor/profile',        [DoctorProfileController::class, 'show']);
     Route::post  ('/doctor/profile/setup',  [DoctorProfileController::class, 'setup']);

@@ -1,9 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DoctorSideBar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import EditPersonalInfoModal from "./components/EditPersonalInfoModal";
 import EditAccountSecurityModal from "./components/EditAccountSecurityModal";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+
+const API_BASE = "http://localhost:8000/api";
+const STORAGE_BASE = "http://localhost:8000/storage/";
+const getToken = () => localStorage.getItem("token");
+
+const resolveUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  // strip leading 'storage/' if backend didn't already prepend it
+  const clean = path.startsWith("storage/") ? path.slice(8) : path;
+  return STORAGE_BASE + clean;
+};
 
 function DoctorProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -15,6 +27,7 @@ function DoctorProfile() {
   const [fullscreenType, setFullscreenType] = useState(null);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
     setActiveMenu("My Profile");
@@ -69,52 +82,158 @@ function DoctorProfile() {
       ? doctorData.certificateImages.length
       : doctorData.idImages.length;
 
-  const doctorData = {
-    name: "Jinky C. Malabanan",
-    credentials: "PhD, BPsy, RPm, CHRM, CSHE, CBP",
-    licenseNo: "PRF License No.: PSY-0132455",
-    specialty: "Cognitive Behavioral Therapy",
-    practicingSince: "2011",
-    email: "Example@gmail.com",
+  // ── Live doctor data (replaces the hardcoded object) ──
+  const [doctorData, setDoctorData] = useState({
+    name: "",
+    credentials: "",
+    licenseNo: "",
+    specialty: "",
+    practicingSince: "",
+    email: "",
     password: "************************",
-    bio: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
-    firstName: "Example",
-    lastName: "Example",
-    middleInitial: "Example",
-    contactNumber: "09406929293",
-    address: "123 Rizal Street, Brgy. San Antonio, Quezon City, Metro Manila",
-    dateOfBirth: "Example",
-    age: "45",
-    gender: "Female",
-    subspecialty: [
-      "Psychological First Aid",
-      "Workplace Mental Health (Burn-out and Stress)",
-      "Psychoeducation",
-      "Wellness | Stress Management",
-      "Anxiety | Depression",
-    ],
-    services: [
-      "Family Counseling",
-      "Cognitive Behavioral Therapy",
-      "Neuropsychological Testing",
-      "Psychotherapy",
-      "Psychosocial Counseling",
-    ],
-    certifications: [
-      "Certified Human Resource, Association",
-      "Registered Psychometrician",
-      "Registered Psychologist",
-    ],
-    certificateImages: [
-      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+1",
-      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+2",
-      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=Board+Certificate+3",
-    ],
-    idImages: [
-      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=ID+Card+1",
-      "https://via.placeholder.com/600x400/4D227C/FFFFFF?text=ID+Card+2",
-    ],
+    bio: "",
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
+    contactNumber: "",
+    address: "",
+    dateOfBirth: "",
+    age: "",
+    gender: "",
+    subspecialty: [],
+    services: [],
+    certifications: [],
+    certificateImages: [],
+    idImages: [],
+  });
+
+  const calculateAge = (dob) => {
+    if (!dob) return "";
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    return age.toString();
   };
+
+  const mapProfile = useCallback((d) => {
+    const dob = d.dob || "";
+
+    return {
+      name: d.fullName || `${d.firstName || ""} ${d.lastName || ""}`,
+
+      firstName: d.firstName || "",
+      lastName: d.lastName || "",
+      middleInitial: d.middleInitial || "",
+
+      contactNumber: d.contactNo || "",
+      dateOfBirth: dob,
+      age: calculateAge(dob),
+      gender: d.sex || d.genderIdentity || "",
+      address: d.address || "",
+
+      email: d.email || "",
+      password: "***************",
+
+      credentials: d.professional_title || d.professionalTitle || "",
+      bio: d.description || "",
+      specialty: d.main_specialty || "",
+      practicingSince: d.practicing_since || "",
+
+      licenseNo: d.license_number ? ` ${d.license_number}` : "",
+
+      // ✅ ADD THIS
+      prcNumber: d.prc_number ? ` ${d.prc_number}` : "",
+
+      subspecialty: d.sub_specializations || [],
+      services: d.services || [],
+      certifications: d.board_cert_names || [],
+
+      certificateImages: (d.board_cert_images || []).map(resolveUrl),
+      idImages: (d.id_pictures || []).map(resolveUrl),
+
+      profilePicture: d.profilePicture || resolveUrl(d.profile_picture),
+    };
+  }, []);
+
+  const fetchProfile = useCallback(async () => {
+    setLoadingProfile(true);
+
+    try {
+      const token = getToken();
+
+      // 🔥 FETCH BOTH APIs
+      const [doctorRes, meRes] = await Promise.all([
+        fetch(`${API_BASE}/doctor/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+        fetch(`${API_BASE}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }),
+      ]);
+
+      const doctorJson = await doctorRes.json();
+      const meJson = await meRes.json();
+
+      console.log("DOCTOR:", doctorJson);
+      console.log("ME:", meJson);
+
+      if (!doctorRes.ok || !meRes.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      // 🔥 MERGE DATA HERE
+      const mergedData = {
+        ...doctorJson.data,
+        ...meJson.data,
+      };
+
+      setDoctorData(mapProfile(mergedData));
+    } catch (err) {
+      console.error("Failed to load doctor profile:", err);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, [mapProfile]);
+
+  // ── Initial load ──
+  useEffect(() => {
+    setActiveMenu("My Profile");
+    setProfileTab("Personal Information");
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // ── Real-time update from AccountSetupModal / EditPersonalInfoModal ──
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail) {
+        // Partial fast-update for sidebar fields; then re-fetch for full data
+        fetchProfile();
+      }
+    };
+    window.addEventListener("doctorProfileUpdated", handler);
+    return () => window.removeEventListener("doctorProfileUpdated", handler);
+  }, [fetchProfile]);
+
+  // ── Reset carousel indexes when images change ──
+  useEffect(() => {
+    setCertIndex(0);
+  }, [doctorData.certificateImages.length]);
+  useEffect(() => {
+    setIdIndex(0);
+  }, [doctorData.idImages.length]);
 
   const nextCert = () =>
     setCertIndex((prev) =>
@@ -186,10 +305,23 @@ function DoctorProfile() {
                           backgroundColor: "#F8F9FA",
                         }}
                       >
-                        <i
-                          className="bi bi-person"
-                          style={{ fontSize: "100px", color: "#4D227C" }}
-                        ></i>
+                        {doctorData.profilePicture ? (
+                          <img
+                            src={doctorData.profilePicture}
+                            alt="Profile"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              borderRadius: "12px",
+                            }}
+                          />
+                        ) : (
+                          <i
+                            className="bi bi-person"
+                            style={{ fontSize: "100px", color: "#4D227C" }}
+                          ></i>
+                        )}
                       </div>
                       <h5 className="fw-bold mb-1" style={{ color: "#2D3748" }}>
                         {doctorData.name}
@@ -200,9 +332,18 @@ function DoctorProfile() {
                       >
                         {doctorData.credentials}
                       </p>
-                      <p className="text-muted small mb-0">
-                        {doctorData.licenseNo}
-                      </p>
+                      <div className="mt-2 small text-muted">
+                        {doctorData.licenseNo && (
+                          <div>
+                            <strong>PRC License:</strong> {doctorData.licenseNo}
+                          </div>
+                        )}
+                        {doctorData.prcNumber && (
+                          <div>
+                            <strong>PRC Number:</strong> {doctorData.prcNumber}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -241,21 +382,6 @@ function DoctorProfile() {
                             {tab}
                           </button>
                         ))}
-                        <button
-                          className="btn d-flex align-items-center py-3 px-3 border-0"
-                          style={{
-                            backgroundColor: "transparent",
-                            color: "#2D3748",
-                            borderRadius: "8px",
-                            textAlign: "left",
-                          }}
-                        >
-                          <i
-                            className="bi bi-box-arrow-right me-3"
-                            style={{ color: "#4D227C" }}
-                          ></i>
-                          Logout
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -991,13 +1117,13 @@ function DoctorProfile() {
         show={showPersonalModal}
         onClose={() => setShowPersonalModal(false)}
         doctorData={doctorData}
-        onSave={(updated) => console.log("Saved:", updated)}
+        onSave={fetchProfile}
       />
       <EditAccountSecurityModal
         show={showSecurityModal}
         onClose={() => setShowSecurityModal(false)}
         doctorData={doctorData}
-        onSave={(updated) => console.log("Saved:", updated)}
+        onSave={fetchProfile}
       />
     </div>
   );
