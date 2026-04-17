@@ -48,9 +48,8 @@ class Doctor extends Model
         'id_pictures'          => 'array',
         'services'             => 'array',
     ];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
+public function user()
+{
+    return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+}
 }

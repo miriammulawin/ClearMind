@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FiEdit,
   FiLock,
@@ -6,48 +6,227 @@ import {
   FiLogOut,
   FiSave,
   FiShield,
-  FiUser,
+  FiCamera,
 } from "react-icons/fi";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminProfile.module.css";
+import axiosClient from "../axiosClient";
 
 function AdminProfile() {
   const [activeMenu, setActiveMenu] = useState("My Profile");
   const [activeTab, setActiveTab] = useState("edit");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const picInputRef = useRef(null);
 
   const [profileData, setProfileData] = useState({
-    firstName: "Admin",
-    lastName: "User",
-    birthday: "1990-01-01",
-    name: "Admin101",
-    email: "admin101@gmail.com",
-    contact: "09123456789",
-    address: "123 Main Street, City, Country",
-    profilePic: null,
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
+    birthday: "",
+    sex: "",
+    genderIdentity: "",
+    preferredPronoun: "",
+    email: "",
+    contact: "",
+    address: "",
+    role: "Admin",
+    profilePic: null, // will hold URL string or base64 preview
   });
 
+  // Separate state: the actual File object chosen by the user (if any)
+  const [newPicFile, setNewPicFile] = useState(null);
+
+  const [passwordData, setPasswordData] = useState({
+    current: "",
+    newPass: "",
+    confirm: "",
+  });
+
+  // ── Fetch live profile ────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: json } = await axiosClient.get("/me");
+        const u = json.data;
+
+        setProfileData({
+          firstName: u.firstName ?? "",
+          lastName: u.lastName ?? "",
+          middleInitial: u.middleInitial ?? "",
+          birthday: u.dob ?? "",
+          sex: u.sex ?? "",
+          genderIdentity: u.genderIdentity ?? "",
+          preferredPronoun: u.preferredPronoun ?? "",
+          email: u.email ?? "",
+          contact: u.contactNo ?? "",
+          address: u.address ?? "",
+          role: u.role ?? "Admin",
+          profilePic: u.profilePicture ?? null,
+        });
+
+        syncSidebarCache(u);
+      } catch (err) {
+        console.error(err);
+        setError("Could not load profile. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const syncSidebarCache = (u) => {
+    localStorage.setItem(
+      "adminProfile",
+      JSON.stringify({
+        firstName: u.firstName ?? "",
+        lastName: u.lastName ?? "",
+        middleInitial: u.middleInitial ?? "",
+        contactNo: u.contactNo ?? "",
+        email: u.email ?? "",
+        profilePicture: u.profilePicture ?? null,
+      }),
+    );
+    window.dispatchEvent(new Event("adminProfileUpdated"));
+  };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData((p) => ({ ...p, [name]: value }));
   };
 
-  const handleSaveProfile = () => alert("Profile updated successfully!");
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData((p) => ({ ...p, [name]: value }));
+  };
 
+  /**
+   * When user picks a new picture:
+   * 1. Store the File object so we can upload it on save.
+   * 2. Generate a local base64 preview so the avatar updates immediately.
+   */
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    setNewPicFile(file); // keep the File for FormData upload
+
     const reader = new FileReader();
     reader.onload = () =>
       setProfileData((p) => ({ ...p, profilePic: reader.result }));
     reader.readAsDataURL(file);
   };
 
-  const handleLogout = () => alert("Logging out...");
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      // Laravel method spoofing: POST + _method=PUT so it matches
+      // Route::match(['put','post'], '/me', ...) and accepts file uploads
+      formData.append("_method", "PUT");
 
-  /* Initials avatar fallback */
+      formData.append("firstName", profileData.firstName);
+      formData.append("lastName", profileData.lastName);
+      formData.append("middleInitial", profileData.middleInitial);
+      formData.append("dob", profileData.birthday);
+      formData.append("sex", profileData.sex);
+      formData.append("genderIdentity", profileData.genderIdentity);
+      formData.append("preferredPronoun", profileData.preferredPronoun);
+      formData.append("contactNo", profileData.contact);
+      formData.append("email", profileData.email);
+      formData.append("address", profileData.address);
+
+      // Only attach picture when the user actually chose a new one
+      if (newPicFile) {
+        formData.append("profilePicture", newPicFile);
+      }
+
+      // Route::match(['put','post'], '/me', [AuthController::class, 'update'])
+      const { data: json } = await axiosClient.post("/me", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const u = json.data;
+
+      setProfileData((p) => ({
+        ...p,
+        firstName: u.firstName ?? p.firstName,
+        lastName: u.lastName ?? p.lastName,
+        middleInitial: u.middleInitial ?? p.middleInitial,
+        birthday: u.dob ?? p.birthday,
+        sex: u.sex ?? p.sex,
+        genderIdentity: u.genderIdentity ?? p.genderIdentity,
+        preferredPronoun: u.preferredPronoun ?? p.preferredPronoun,
+        contact: u.contactNo ?? p.contact,
+        email: u.email ?? p.email,
+        address: u.address ?? p.address,
+        // Use the server-returned URL (full path); fall back to current preview
+        profilePic: u.profilePicture ?? p.profilePic,
+      }));
+
+      setNewPicFile(null); // clear staged file after successful save
+      syncSidebarCache(u);
+
+      alert("Profile updated successfully!");
+    } catch (err) {
+      const msg = err.response?.data?.message ?? err.message ?? "Update failed";
+      setError(msg);
+      alert(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (passwordData.newPass !== passwordData.confirm) {
+      alert("New password and confirmation do not match.");
+      return;
+    }
+    try {
+      // Route::match(['put','post'], '/me', [AuthController::class, 'update'])
+      // Must include all required fields alongside the new password
+      await axiosClient.put("/me", {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        dob: profileData.birthday,
+        contactNo: profileData.contact,
+        email: profileData.email,
+        password: passwordData.newPass,
+        password_confirmation: passwordData.confirm,
+      });
+
+      setPasswordData({ current: "", newPass: "", confirm: "" });
+      alert("Password updated successfully!");
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ?? err.message ?? "Password update failed";
+      alert(msg);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axiosClient.post("/logout");
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      localStorage.removeItem("adminProfile");
+      window.location.href = "/";
+    }
+  };
+
+  // ── Derived ───────────────────────────────────────────────────────────────
   const initials =
-    `${profileData.firstName[0] || ""}${profileData.lastName[0] || ""}`.toUpperCase();
+    `${profileData.firstName?.[0] ?? ""}${profileData.lastName?.[0] ?? ""}`.toUpperCase() ||
+    "?";
 
   const navItems = [
     {
@@ -70,8 +249,24 @@ function AdminProfile() {
     },
   ];
 
-  const currentNav = navItems.find((n) => n.key === activeTab) || navItems[0];
+  const currentNav = navItems.find((n) => n.key === activeTab) ?? navItems[0];
 
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="admin-layout">
+        <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
+        <div className="admin-main">
+          <AdminTopNavbar activeMenu={activeMenu} />
+          <div style={{ padding: 40, textAlign: "center", color: "#7341A8" }}>
+            Loading profile…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main render ───────────────────────────────────────────────────────────
   return (
     <div className="admin-layout">
       <Sidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -82,7 +277,6 @@ function AdminProfile() {
           <div className={styles.profileCard}>
             {/* ════════ LEFT PANEL ════════ */}
             <div className={styles.profileLeft}>
-              {/* Avatar */}
               <div className={styles.avatarWrapper}>
                 {profileData.profilePic ? (
                   <img
@@ -107,28 +301,63 @@ function AdminProfile() {
                     {initials}
                   </div>
                 )}
-                <label className={styles.editPicOverlay} title="Change photo">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleProfilePicChange}
-                    style={{ display: "none" }}
-                  />
-                  ✎
-                </label>
+
+                {/* Camera overlay — clicking opens the hidden file input */}
+                <button
+                  className={styles.editPicOverlay}
+                  title="Change photo"
+                  onClick={() => picInputRef.current?.click()}
+                  type="button"
+                >
+                  <FiCamera size={16} />
+                </button>
+
+                {/* Hidden file input — ref-controlled */}
+                <input
+                  ref={picInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePicChange}
+                  style={{ display: "none" }}
+                />
+
+                {/* Small badge when a new pic is staged but not yet saved */}
+                {newPicFile && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: 4,
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      background: "#7341A8",
+                      color: "#fff",
+                      fontSize: 10,
+                      borderRadius: 4,
+                      padding: "2px 6px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Unsaved
+                  </span>
+                )}
               </div>
 
-              {/* Name + email */}
-              <h3 className={styles.leftName}>{profileData.name}</h3>
+              <h3 className={styles.leftName}>
+                {profileData.firstName}
+                {profileData.middleInitial
+                  ? ` ${profileData.middleInitial}.`
+                  : ""}{" "}
+                {profileData.lastName}
+              </h3>
               <p className={styles.leftEmail}>{profileData.email}</p>
 
-              {/* Info chips */}
               <div className={styles.leftChips}>
-                <span className={styles.leftChip}>Admin</span>
-                <span className={styles.leftChip}>{profileData.contact}</span>
+                <span className={styles.leftChip}>{profileData.role}</span>
+                {profileData.contact && (
+                  <span className={styles.leftChip}>{profileData.contact}</span>
+                )}
               </div>
 
-              {/* Navigation */}
               <div className={styles.sideNav}>
                 {navItems.map((item) => (
                   <button
@@ -155,7 +384,6 @@ function AdminProfile() {
 
             {/* ════════ RIGHT PANEL ════════ */}
             <div className={styles.profileRight}>
-              {/* Purple header */}
               <div className={styles.tabHeader}>
                 <div className={styles.tabHeaderIcon}>{currentNav.icon}</div>
                 <div>
@@ -167,6 +395,10 @@ function AdminProfile() {
               {/* ── Edit Profile ── */}
               {activeTab === "edit" && (
                 <div className={styles.tabBody}>
+                  {error && (
+                    <p style={{ color: "red", marginBottom: 12 }}>{error}</p>
+                  )}
+
                   <p className={styles.sectionLabel}>Personal Information</p>
                   <div className={styles.formGrid}>
                     <label className={styles.formLabel}>
@@ -192,6 +424,18 @@ function AdminProfile() {
                       />
                     </label>
                     <label className={styles.formLabel}>
+                      Middle Initial
+                      <input
+                        className={styles.formInput}
+                        type="text"
+                        name="middleInitial"
+                        value={profileData.middleInitial}
+                        onChange={handleInputChange}
+                        placeholder="e.g. A"
+                        maxLength={3}
+                      />
+                    </label>
+                    <label className={styles.formLabel}>
                       Birthday
                       <input
                         className={styles.formInput}
@@ -202,14 +446,28 @@ function AdminProfile() {
                       />
                     </label>
                     <label className={styles.formLabel}>
-                      Username
+                      Sex
+                      <select
+                        className={styles.formInput}
+                        name="sex"
+                        value={profileData.sex}
+                        onChange={handleInputChange}
+                      >
+                        <option value="">Select sex</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                    <label className={styles.formLabel}>
+                      Gender Identity
                       <input
                         className={styles.formInput}
                         type="text"
-                        name="name"
-                        value={profileData.name}
+                        name="genderIdentity"
+                        value={profileData.genderIdentity}
                         onChange={handleInputChange}
-                        placeholder="Enter username"
+                        placeholder="e.g. male, non-binary"
                       />
                     </label>
                   </div>
@@ -258,8 +516,9 @@ function AdminProfile() {
                   <button
                     className={styles.btnSave}
                     onClick={handleSaveProfile}
+                    disabled={saving}
                   >
-                    <FiSave size={15} /> Save Changes
+                    <FiSave size={15} /> {saving ? "Saving…" : "Save Changes"}
                   </button>
                 </div>
               )}
@@ -276,6 +535,9 @@ function AdminProfile() {
                       <input
                         className={styles.formInput}
                         type="password"
+                        name="current"
+                        value={passwordData.current}
+                        onChange={handlePasswordChange}
                         placeholder="Enter current password"
                       />
                     </label>
@@ -284,6 +546,9 @@ function AdminProfile() {
                       <input
                         className={styles.formInput}
                         type="password"
+                        name="newPass"
+                        value={passwordData.newPass}
+                        onChange={handlePasswordChange}
                         placeholder="Enter new password"
                       />
                       <span className={styles.passwordHint}>
@@ -295,12 +560,17 @@ function AdminProfile() {
                       <input
                         className={styles.formInput}
                         type="password"
+                        name="confirm"
+                        value={passwordData.confirm}
+                        onChange={handlePasswordChange}
                         placeholder="Confirm new password"
                       />
                     </label>
                   </div>
-
-                  <button className={styles.btnSave}>
+                  <button
+                    className={styles.btnSave}
+                    onClick={handleUpdatePassword}
+                  >
                     <FiShield size={15} /> Update Password
                   </button>
                 </div>
@@ -330,8 +600,7 @@ function AdminProfile() {
                     ClearMind Psychological Services reserves the right to
                     modify these terms at any time. Continued use of the system
                     following any changes constitutes acceptance of the updated
-                    terms. For questions or concerns regarding these terms,
-                    please contact your system administrator.
+                    terms.
                   </p>
                 </div>
               )}
