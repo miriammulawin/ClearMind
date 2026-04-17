@@ -1,70 +1,160 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
 import styles from "../DoctorStyle/Modal.module.css";
+import toast from "react-hot-toast";
+
+const API_BASE = "http://localhost:8000/api";
+
+const toastSuccess = {
+  duration: 1500,
+  style: {
+    background: "#E2F7E3",
+    border: "1px solid #91C793",
+    color: "#2E7D32",
+    fontWeight: 600,
+    fontSize: "0.95rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
+};
+
+const toastError = {
+  duration: 1500,
+  style: {
+    background: "#FDECEA",
+    border: "1px solid #F5C6CB",
+    color: "#C62828",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    textAlign: "center",
+    maxWidth: "320px",
+    borderRadius: "10px",
+    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+  },
+  iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
 
 function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
-  const [formData, setFormData] = useState({
-    firstName: doctorData?.firstName || "",
-    lastName: doctorData?.lastName || "",
-    middleInitial: doctorData?.middleInitial || "",
-    contactNumber: doctorData?.contactNumber || "",
-    address: doctorData?.address || "",
-    dateOfBirth: doctorData?.dateOfBirth || "",
-    age: doctorData?.age || "",
-    gender: doctorData?.gender || "",
-    specialty: doctorData?.specialty || "",
-    practicingSince: doctorData?.practicingSince || "",
-    credentials: doctorData?.credentials || "",
-    licenseNo: doctorData?.licenseNo || "",
-    subspecialty: doctorData?.subspecialty || [],
-    services: doctorData?.services || [],
-    certifications: doctorData?.certifications || [],
-    boardCertImages: doctorData?.certificateImages || [],
-    idPictures: doctorData?.idImages || [],
-  });
-
-  const [boardIndex, setBoardIndex] = useState(0);
-  const [idIndex, setIdIndex] = useState(0);
-
-  const handleChange = (field, value) =>
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-  const handleAddItem = (field) =>
-    setFormData((prev) => ({ ...prev, [field]: [...prev[field], ""] }));
-
-  const handleRemoveItem = (field, index) =>
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
-    }));
-
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.email) newErrors.email = "Email is required.";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Enter a valid email.";
-    if (formData.newPassword && formData.newPassword.length < 8)
-      newErrors.newPassword = "New password must be at least 8 characters.";
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match.";
-    if (formData.newPassword && !formData.currentPassword)
-      newErrors.currentPassword = "Please enter your current password.";
-    return newErrors;
-  };
-
-  const handleSave = () => {
-    onSave && onSave(formData);
-    onClose();
-  };
-
   if (!show) return null;
 
-  const strength =
-    formData.newPassword.length >= 12
-      ? { label: "✓ Strong password", color: "#16a34a" }
-      : formData.newPassword.length >= 8
-        ? { label: "⚠ Medium strength — try adding symbols", color: "#ca8a04" }
-        : { label: "✗ Too short — minimum 8 characters", color: "#ef4444" };
+  const [formData, setFormData] = useState({
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    newPass: false,
+    confirm: false,
+  });
+
+  useEffect(() => {
+    if (doctorData && show) {
+      setFormData({
+        email: doctorData?.data?.email || doctorData?.email || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    }
+  }, [doctorData, show]);
+
+  const toggleVisibility = (key) => {
+    setShowPasswords((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+
+  const isStrongPassword = (password) =>
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}|:"<>?\[\]\\;',./]).{6,}$/.test(
+      password,
+    );
+
+  const handleSave = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      if (!isValidEmail(formData.email)) {
+        return toast.error("Invalid email format", toastError);
+      }
+
+      const payload = {
+        email: formData.email,
+      };
+
+      if (formData.newPassword?.length > 0) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          return toast.error("Passwords do not match", toastError);
+        }
+
+        if (!formData.currentPassword) {
+          return toast.error("Current password required", toastError);
+        }
+
+        if (!isStrongPassword(formData.newPassword)) {
+          return toast.error(
+            "Password must contain 1 capital letter, 1 number, 1 special character, and 6+ characters",
+            toastError,
+          );
+        }
+
+        payload.current_password = formData.currentPassword;
+        payload.password = formData.newPassword;
+        payload.password_confirmation = formData.confirmPassword;
+      }
+
+      const res = await fetch(`${API_BASE}/doctor/account-security`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return toast.error(data.message || "Update failed", toastError);
+      }
+
+      toast.success("Account updated successfully", toastSuccess);
+
+      window.dispatchEvent(new Event("doctorProfileUpdated"));
+
+      onSave?.(data);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error("Server error", toastError);
+    }
+  };
+
+  const password = formData.newPassword || "";
+
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+{}|:"<>?\[\]\\;',./]/.test(password);
+  const hasMinLength = password.length >= 6;
+
+  const strength = {
+    hasUppercase,
+    hasNumber,
+    hasSpecialChar,
+    hasMinLength,
+  };
 
   const renderPasswordField = (label, field, visKey) => (
     <div className={styles["input-group"]}>
@@ -73,10 +163,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         <input
           type={showPasswords[visKey] ? "text" : "password"}
           className={styles["modal-input"]}
-          style={{
-            paddingRight: "44px",
-            borderColor: errors[field] ? "#ef4444" : undefined,
-          }}
+          style={{ paddingRight: "44px" }}
           value={formData[field]}
           onChange={(e) => handleChange(field, e.target.value)}
           placeholder={`Enter ${label.toLowerCase()}`}
@@ -93,76 +180,11 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
             border: "none",
             cursor: "pointer",
             color: "#4d227c",
-            fontSize: "16px",
-            padding: 0,
-            display: "flex",
-            alignItems: "center",
           }}
         >
-          <FiPlus /> Add
+          {showPasswords[visKey] ? <FiEyeOff /> : <FiEye />}
         </button>
       </div>
-    </div>
-  );
-
-  const renderCarousel = (field, index, setIndex, label) => (
-    <div className={styles["modal-section"]}>
-      <h4>{label}</h4>
-      <div className={styles["carousel-box"]}>
-        {formData[field].length > 0 && formData[field][index] ? (
-          <img src={formData[field][index]} alt="" />
-        ) : (
-          <span>No Images</span>
-        )}
-        {formData[field].length > 0 && (
-          <>
-            <button
-              className={`${styles["carousel-btn"]} ${styles["left"]}`}
-              onClick={() => prevImage(field, setIndex, index)}
-            >
-              <FiChevronLeft />
-            </button>
-            <button
-              className={`${styles["carousel-btn"]} ${styles["right"]}`}
-              onClick={() => nextImage(field, setIndex, index)}
-            >
-              <FiChevronRight />
-            </button>
-            <label
-              className={`${styles["carousel-btn"]} ${styles["edit"]}`}
-              style={{ cursor: "pointer" }}
-            >
-              <FiEdit />
-              <input
-                type="file"
-                hidden
-                onChange={(e) =>
-                  handleImageChange(field, index, e.target.files[0])
-                }
-              />
-            </label>
-            <button
-              className={`${styles["carousel-btn"]} ${styles["delete"]}`}
-              style={{
-                bottom: "10px",
-                right: "10px",
-                top: "auto",
-                transform: "none",
-              }}
-              onClick={() => handleRemoveImage(field, index, setIndex)}
-            >
-              <FiTrash2 />
-            </button>
-          </>
-        )}
-      </div>
-      <button
-        onClick={() => handleAddImage(field, setIndex)}
-        className={styles["add-btn"]}
-        style={{ marginTop: "12px" }}
-      >
-        <FiPlus /> Add Image
-      </button>
     </div>
   );
 
@@ -173,7 +195,6 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         style={{ maxWidth: "520px" }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HEADER */}
         <div className={styles["modal-header"]}>
           <h2>Account Security</h2>
           <button className={styles["close-btn"]} onClick={onClose}>
@@ -181,68 +202,71 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
           </button>
         </div>
 
-        {/* BODY */}
         <div className={styles["modal-body"]}>
-
-          {/* Email section */}
           <div className={styles["modal-section"]}>
             <h4>Account Details</h4>
-            <div className={styles["input-group"]}>
-              <p className={styles["modal-label"]}>Email Address</p>
-              <input
-                type="email"
-                className={styles["modal-input"]}
-                style={{ borderColor: errors.email ? "#ef4444" : undefined }}
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                placeholder="Enter email address"
-              />
-              {errors.email && (
-                <span style={{ fontSize: "12px", color: "#ef4444", marginTop: "4px" }}>
-                  {errors.email}
-                </span>
-              )}
-            </div>
+            <input
+              type="email"
+              className={styles["modal-input"]}
+              value={formData.email}
+              onChange={(e) => handleChange("email", e.target.value)}
+            />
           </div>
 
-          {/* Password section */}
           <div className={styles["modal-section"]}>
             <h4>Change Password</h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {renderPasswordField("Current Password", "currentPassword", "current")}
-              {renderPasswordField("New Password", "newPassword", "newPass")}
 
-              {formData.newPassword && (
-                <span style={{ fontSize: "11px", color: strength.color, marginTop: "-6px" }}>
-                  {strength.label}
-                </span>
-              )}
+            {renderPasswordField(
+              "Current Password",
+              "currentPassword",
+              "current",
+            )}
+            {renderPasswordField("New Password", "newPassword", "newPass")}
 
-              {renderPasswordField("Confirm New Password", "confirmPassword", "confirm")}
+            {formData.newPassword && (
+              <div style={{ fontSize: "11px", marginTop: "6px" }}>
+                <p
+                  style={{
+                    color: strength.hasUppercase ? "#16a34a" : "#ef4444",
+                  }}
+                >
+                  {strength.hasUppercase ? "✓" : "✗"} At least 1 uppercase
+                  letter
+                </p>
 
-              {formData.confirmPassword &&
-                !errors.confirmPassword &&
-                formData.newPassword === formData.confirmPassword && (
-                  <span style={{ fontSize: "11px", color: "#16a34a", marginTop: "-6px" }}>
-                    ✓ Passwords match
-                  </span>
-                )}
-            </div>
+                <p
+                  style={{ color: strength.hasNumber ? "#16a34a" : "#ef4444" }}
+                >
+                  {strength.hasNumber ? "✓" : "✗"} At least 1 number
+                </p>
+
+                <p
+                  style={{
+                    color: strength.hasSpecialChar ? "#16a34a" : "#ef4444",
+                  }}
+                >
+                  {strength.hasSpecialChar ? "✓" : "✗"} At least 1 special
+                  character
+                </p>
+
+                <p
+                  style={{
+                    color: strength.hasMinLength ? "#16a34a" : "#ef4444",
+                  }}
+                >
+                  {strength.hasMinLength ? "✓" : "✗"} Minimum 6 characters
+                </p>
+              </div>
+            )}
+
+            {renderPasswordField(
+              "Confirm New Password",
+              "confirmPassword",
+              "confirm",
+            )}
           </div>
-
-          {renderCarousel(
-            "boardCertImages",
-            boardIndex,
-            setBoardIndex,
-            "Board Certifications",
-          )}
-          {renderCarousel("idPictures", idIndex, setIdIndex, "ID Cards")}
-          {renderDynamicField("subspecialty", "Subspecialty")}
-          {renderDynamicField("services", "Services")}
-          {renderDynamicField("certifications", "Certifications")}
         </div>
 
-        {/* FOOTER */}
         <div className={styles["modal-footer"]}>
           <button className={styles["btn-completed"]} onClick={handleSave}>
             Save Changes

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 /* ══════════════════════════════════════════════
    OVERLAY
@@ -14,7 +14,7 @@
   padding: 32px 16px;
   box-sizing: border-box;
   overflow-y: auto;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ══════════════════════════════════════════════
@@ -54,7 +54,7 @@
   font-size: clamp(14px, 2.5vw, 20px);
   font-weight: 700;
   color: #fff;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -74,7 +74,9 @@
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
 }
 
 .close-btn:hover {
@@ -97,10 +99,20 @@
   gap: 16px;
 }
 
-.modal-body::-webkit-scrollbar { width: 5px; }
-.modal-body::-webkit-scrollbar-track { background: #f0eaf8; border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb { background: #4d227c; border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb:hover { background: #6a3fa5; }
+.modal-body::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: #f0eaf8;
+  border-radius: 10px;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: #4d227c;
+  border-radius: 10px;
+}
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #6a3fa5;
+}
 
 /* ══════════════════════════════════════════════
    SECTIONS (card style)
@@ -118,7 +130,7 @@
   color: #4d227c;
   font-size: 15px;
   font-weight: 700;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   padding-bottom: 10px;
   border-bottom: 2px solid #ede5f7;
 }
@@ -138,7 +150,7 @@
   color: #4d227c;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   margin: 0;
 }
 
@@ -148,12 +160,14 @@
   border-radius: 9px;
   border: 1.5px solid #e2d5f5;
   font-size: 13px;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   color: #333;
   background: #fff;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .modal-input:focus {
@@ -161,7 +175,9 @@
   box-shadow: 0 0 0 3px rgba(77, 34, 124, 0.1);
 }
 
-.modal-input::placeholder { color: #aaa; }
+.modal-input::placeholder {
+  color: #aaa;
+}
 
 /* ══════════════════════════════════════════════
    GRIDS
@@ -175,10 +191,18 @@
   margin-bottom: 14px;
 }
 
-.grid-1 { grid-template-columns: 1fr; }
-.grid-2 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.grid-3 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-.grid-4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.grid-1 {
+  grid-template-columns: 1fr;
+}
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
 
 /* ══════════════════════════════════════════════
    DYNAMIC FIELDS
@@ -230,7 +254,9 @@
   transition: background 0.2s;
 }
 
-.delete:hover { background: #c0392b; }
+.delete:hover {
+  background: #c0392b;
+}
 
 /* ══════════════════════════════════════════════
    ADD BUTTON
@@ -247,13 +273,15 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   cursor: pointer;
   transition: background 0.2s;
   align-self: flex-start;
 }
 
-.add-btn:hover { background: #3d1a63; }
+.add-btn:hover {
+  background: #3d1a63;
+}
 
 /* ══════════════════════════════════════════════
    CAROUSEL
@@ -269,7 +297,7 @@
   justify-content: center;
   overflow: hidden;
   color: #aaa;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 13px;
 }
 
@@ -294,10 +322,20 @@
   transition: background 0.2s;
 }
 
-.carousel-btn:hover { background: rgba(77, 34, 124, 1); }
+.carousel-btn:hover {
+  background: rgba(77, 34, 124, 1);
+}
 
-.left  { left: 10px; top: 50%; transform: translateY(-50%); }
-.right { right: 10px; top: 50%; transform: translateY(-50%); }
+.left {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.right {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
 .edit {
   bottom: 10px;
@@ -329,11 +367,15 @@
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   cursor: pointer;
   letter-spacing: 0.5px;
   box-shadow: 0 4px 14px rgba(77, 34, 124, 0.3);
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s,
+    transform 0.1s;
 }
 
 .btn-completed:hover {
@@ -342,7 +384,9 @@
   box-shadow: 0 4px 14px rgba(77, 34, 124, 0.15);
 }
 
-.btn-completed:active { transform: translateY(1px); }
+.btn-completed:active {
+  transform: translateY(1px);
+}
 
 .btn-completed:disabled {
   background: #ccc;
@@ -350,6 +394,7 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
 
 /* ══════════════════════════════════════════════
    ANIMATION
@@ -369,11 +414,31 @@
    RESPONSIVE
 ══════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .profile-modal-overlay { padding: 16px 10px; }
-  .profile-modal-lg { max-height: calc(100vh - 32px); border-radius: 12px; }
-  .modal-header { padding: 16px 18px; border-radius: 12px 12px 0 0; }
-  .modal-body { padding: 14px; gap: 12px; }
-  .modal-section { padding: 16px; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .modal-footer { padding: 14px 16px; border-radius: 0 0 12px 12px; }
+  .profile-modal-overlay {
+    padding: 16px 10px;
+  }
+  .profile-modal-lg {
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+  }
+  .modal-header {
+    padding: 16px 18px;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal-body {
+    padding: 14px;
+    gap: 12px;
+  }
+  .modal-section {
+    padding: 16px;
+  }
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .modal-footer {
+    padding: 14px 16px;
+    border-radius: 0 0 12px 12px;
+  }
 }
