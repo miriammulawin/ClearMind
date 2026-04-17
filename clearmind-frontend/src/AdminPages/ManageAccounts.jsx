@@ -4,7 +4,7 @@ import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/ManageAccounts.module.css";
 import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
-
+import axiosClient from "../axiosClient";
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
   const [showViewModal, setShowViewModal] = useState(false);
@@ -42,19 +42,9 @@ function ManageAccounts() {
   const fetchDoctors = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/admin/doctors", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await axiosClient.get("/admin/doctors");
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error("Failed to fetch doctors:", result);
-        return;
-      }
+      const result = response.data; // ✅ THIS is correct for axios
 
       const mapped = result.data.map((user) => ({
         doctors_id: user.doctor?.doctor_id ?? user.id,
@@ -73,13 +63,17 @@ function ManageAccounts() {
         professional_title: user.doctor?.professional_title ?? null,
         license_number: user.doctor?.license_number ?? null,
         years_of_experience: user.doctor?.years_of_experience ?? null,
-        specialization: user.doctor?.specialization ?? null,
-        sub_specialization: user.doctor?.sub_specialization ?? null,
-        board_certification: user.doctor?.board_certification ?? null,
-        service: user.doctor?.service_department ?? null,
+        specialization: user.doctor?.specializations ?? [],
+        sub_specialization: user.doctor?.sub_specializations ?? [],
+        board_certification: user.doctor?.board_cert_names ?? [],
+        service: user.doctor?.services ?? [],
         description: user.doctor?.description ?? null,
-        profile_pic: user.doctor?.profile_picture ?? null,
-        cert_image: user.doctor?.cert_image ?? null,
+        profile_pic: user.doctor?.profile_picture
+          ? `http://127.0.0.1:8000/storage/${user.doctor.profile_picture}`
+          : null,
+        cert_image: user.doctor?.board_cert_images?.[0]
+          ? `http://127.0.0.1:8000/storage/${user.doctor.board_cert_images[0]}`
+          : null,
         profile_completed: user.doctor?.profile_completed ?? false,
       }));
 
