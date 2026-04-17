@@ -1381,7 +1381,7 @@ function CreateAppointmentModal({
                   fontFamily: "Poppins,sans-serif",
                 }}
               >
-                📋 Appointment Reference No.
+              Appointment Reference No.
               </div>
               <div
                 style={{
@@ -1604,7 +1604,6 @@ function CreateAppointmentModal({
                   />
                   <Err field="start_time" />
                   {/* ── Live AM/PM preview below the time input ── */}
-                 
                 </LabeledInput>
                 <LabeledInput label="End Time" disabled>
                   <input
@@ -1614,7 +1613,6 @@ function CreateAppointmentModal({
                     readOnly
                     placeholder="--:--"
                   />
-                  
                 </LabeledInput>
               </div>
 
@@ -1644,8 +1642,6 @@ function CreateAppointmentModal({
               </div>
 
               <hr className={styles.divider} />
-
-            
 
               <p className="tos-label">Type of Service</p>
               {servicesLoading ? (
@@ -1738,17 +1734,16 @@ function CreateAppointmentModal({
                 </div>
               )}
 
-              {(showAssignedDoctor || isAdmin) && (
-                <div className={styles.fieldRow} style={{ marginTop: "16px" }}>
-                  <DoctorDropdown
-                    value={selectedDoctor}
-                    onSelect={setSelectedDoctor}
-                  />
-                </div>
-              )}
+              <div className={styles.fieldRow} style={{ marginTop: "16px" }}>
+                <DoctorDropdown
+                  value={selectedDoctor}
+                  onSelect={setSelectedDoctor}
+                />
+              </div>
             </div>
 
             {/* ══ PAYMENT ══ */}
+            
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Payment Status</h4>
               <div className={styles.fieldRow}>
@@ -1788,7 +1783,7 @@ function CreateAppointmentModal({
                       fontFamily: "Poppins,sans-serif",
                     }}
                   >
-                   Payment Reference Number
+                    Payment Reference Number
                   </div>
                   <input
                     type="text"
@@ -1818,7 +1813,6 @@ function CreateAppointmentModal({
                       e.target.style.boxShadow = "none";
                     }}
                   />
-             
                 </div>
               )}
 

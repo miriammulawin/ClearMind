@@ -22,7 +22,8 @@ Route::post('/login',           [AuthController::class, 'login']);
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail']);
 Route::post('/reset-password',  [ResetPasswordController::class, 'reset']);
 Route::post('/verify-email',    [AuthController::class, 'verifyEmail']);
-
+// Public: service list for dropdowns (no auth required)
+Route::get('/services', [ServiceController::class, 'index']);
 // Public: available slots for patient booking (no auth required)
 Route::get('/schedules/available', [DoctorScheduleController::class, 'available']);
 
