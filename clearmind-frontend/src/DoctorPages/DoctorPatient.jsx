@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DoctorSidebar from "./components/DoctorSideBar";
 import DoctorTopNavbar from "./components/DoctorTopNavbar";
 import styles from "./DoctorStyle/DoctorPatient.module.css";
@@ -77,84 +77,7 @@ function DoctorPatient() {
   const [clinicalModalPatient, setClinicalModalPatient] = useState(null);
   const navigate = useNavigate();
 
-  const [patientList, setPatientList] = useState([
-    {
-      id: 101,
-      name: "Liezel Paciente",
-      date: "January 20, 2026",
-      time: "2:00 pm",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09171234567",
-      email: "liezel@email.com",
-      address: "123 Sampaguita St, Calamba, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 34,
-      gender: "Female",
-      totalVisits: 5,
-      progressionNote: {
-        assessment:
-          "Patient presents with persistent headache and dizziness lasting 3 days. Vital signs are stable. Diagnosed with tension-type headache, likely stress-induced. Prescribed ibuprofen 400mg every 8 hours as needed. Patient appears fatigued and stressed. Advised adequate rest, hydration, and stress management techniques. Follow-up recommended in 2 weeks or sooner if symptoms worsen.",
-      },
-    },
-    {
-      id: 102,
-      name: "Ara Christina Ceres",
-      date: "January 15, 2026",
-      time: "9:00 am",
-      type: "New Concern",
-      status: "Completed",
-      contact: "09181234567",
-      email: "ara@email.com",
-      address: "22 Acacia Rd, Santa Rosa, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 28,
-      gender: "Female",
-      totalVisits: 2,
-      progressionNote: {
-        assessment:
-          "Patient presents with erythematous rash on bilateral forearms for approximately 1 week. No fever or systemic symptoms noted. Diagnosed with contact dermatitis, likely allergic in origin. Topical hydrocortisone 1% cream prescribed for application twice daily for 7 days. Patient advised to avoid potential allergens and irritants. Allergy patch testing recommended if no improvement within 7 days. Follow-up in 1 week.",
-      },
-    },
-    {
-      id: 103,
-      name: "Maria Santos",
-      date: "January 10, 2026",
-      time: "1:30 pm",
-      type: "Check Up",
-      status: "Scheduled",
-      contact: "09191234567",
-      email: "maria@email.com",
-      address: "78 Mabini St, Los Baños, Laguna",
-      consultationMode: "On-Site",
-      patientType: "Existing Patient",
-      age: 52,
-      gender: "Female",
-      totalVisits: 12,
-    },
-    {
-      id: 104,
-      name: "Kevin Ramos",
-      date: "December 28, 2025",
-      time: "10:00 am",
-      type: "Follow Up",
-      status: "Completed",
-      contact: "09221234567",
-      email: "kevin@email.com",
-      address: "45 Rizal Ave, San Pablo, Laguna",
-      consultationMode: "Virtual",
-      patientType: "New Patient",
-      age: 39,
-      gender: "Male",
-      totalVisits: 3,
-      progressionNote: {
-        assessment:
-          "Follow-up consultation for hypertension management. Patient reports improved well-being and no adverse effects from current medication. Blood pressure today: 128/82 mmHg — within acceptable range and showing marked improvement from last visit. Patient is fully compliant with amlodipine 5mg once daily. No changes to current medication regimen. Advised to continue home blood pressure monitoring and maintain low-sodium diet. Next check-up in 1 month.",
-      },
-    },
-  ]);
+  const [patientList, setPatientList] = useState([]);
 
   const [progressionDraft, setProgressionDraft] = useState("");
   const rowsPerPage = 4;
@@ -215,7 +138,7 @@ function DoctorPatient() {
           color: "#16a34a",
           border: "1px solid #bbf7d0",
         };
-      case "scheduled":
+      case "confirmed":
         return {
           background: "#dbeafe",
           color: "#1d4ed8",
@@ -248,6 +171,54 @@ function DoctorPatient() {
     color: mode === "Virtual" ? "#1d4ed8" : "#4D227C",
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch("http://localhost:8000/api/doctor/patients", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          const mapped = data.data.map((p) => ({
+            id: p.patient_id,
+            name: p.name,
+            date: p.latestAppointment.date,
+            time: p.latestAppointment.time,
+            type: p.latestAppointment.type,
+            status: p.latestAppointment.status,
+            contact: p.contact,
+            email: p.email,
+            address: p.address,
+            consultationMode: p.latestAppointment.consultationMode,
+            patientType: p.patientType,
+            appointments: p.appointments || [],
+            age: p.age,
+            gender: p.gender,
+            totalVisits: p.totalVisits,
+            progressionNote: p.latestAppointment.notes
+              ? { assessment: p.latestAppointment.notes }
+              : null,
+          }));
+
+          setPatientList(mapped);
+        } else {
+          console.error(data.message);
+        }
+      } catch (err) {
+        console.error("Error fetching patients:", err);
+      }
+    };
+
+    fetchPatients();
+  }, []);
 
   return (
     <div className="doctor-layout">

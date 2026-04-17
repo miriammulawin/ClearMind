@@ -36,6 +36,7 @@ function ClinicalNotesSection() {
   const [editingEntry, setEditingEntry] = useState(null);
   const [formValue, setFormValue] = useState("");
 
+  
   const [notes, setNotes] = useState({
     intake: [
       {

@@ -15,6 +15,7 @@ use App\Http\Controllers\AssessmentPurposeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DoctorScheduleController;
+use App\Http\Controllers\DoctorPatientController;
 
 // ── Public Auth Routes ────────────────────────────────────────────
 Route::post('/register',        [AuthController::class, 'register']);
@@ -50,7 +51,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/doctor/profile/files', [DoctorProfileController::class, 'deleteFile']);
     Route::put('/doctor/change-password',  [DoctorController::class, 'changePassword']);
     Route::put('/doctor/update-doctor', [DoctorController::class, 'updateDoctorProfile']);
-Route::put('/doctor/account-security', [DoctorController::class, 'updateAccountSecurity']);
+    Route::put('/doctor/account-security', [DoctorController::class, 'updateAccountSecurity']);
+    Route::get('/doctor/patients', [DoctorPatientController::class, 'index']);
+    Route::get('/doctor/patients/{patientId}', [DoctorPatientController::class, 'show']);
     // ── Doctor profile ────────────────────────────────────────────
     Route::get   ('/doctor/profile',        [DoctorProfileController::class, 'show']);
     Route::post  ('/doctor/profile/setup',  [DoctorProfileController::class, 'setup']);
