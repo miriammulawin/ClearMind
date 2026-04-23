@@ -11,7 +11,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import ProfileAvatar from "./ProfileAvatar";
-import EditProfileModal from "./EditProfileModal";
+import EditProfileModal from "../EditProfileModal";
 import styles from "../ClientStyle/ProfilePage.module.css";
 import { useOutletContext, useNavigate } from "react-router-dom";
 
