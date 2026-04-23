@@ -15,6 +15,7 @@ function ManageAccounts() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -812,12 +813,14 @@ function ManageAccounts() {
                           src={`${src}?t=${Date.now()}`}
                           alt={`Certificate ${i + 1}`}
                           className={styles.viewCertImage}
+                          onClick={() => setPreviewImage(src)}
                           style={{
                             width: "120px",
                             height: "120px",
                             objectFit: "cover",
                             borderRadius: "8px",
                             border: "1.5px solid #e2d5f5",
+                            cursor: "pointer",
                           }}
                         />
                       ))}
@@ -844,12 +847,14 @@ function ManageAccounts() {
                           key={i}
                           src={`${src}?t=${Date.now()}`}
                           alt={`ID ${i + 1}`}
+                          onClick={() => setPreviewImage(src)}
                           style={{
                             width: "120px",
                             height: "120px",
                             objectFit: "cover",
                             borderRadius: "8px",
                             border: "1.5px solid #e2d5f5",
+                            cursor: "pointer",
                           }}
                         />
                       ))}
@@ -872,6 +877,52 @@ function ManageAccounts() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {previewImage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          {/* ❌ Close Button */}
+          <button
+            onClick={() => setPreviewImage(null)}
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "25px",
+              background: "transparent",
+              border: "none",
+              color: "#fff",
+              fontSize: "32px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            <FiX />
+          </button>
+
+          {/* 🖼 Image */}
+          <img
+            src={previewImage}
+            alt="Preview"
+            style={{
+              maxWidth: "90%",
+              maxHeight: "90%",
+              borderRadius: "10px",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+            }}
+          />
         </div>
       )}
     </div>
