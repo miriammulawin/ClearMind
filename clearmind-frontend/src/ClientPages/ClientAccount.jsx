@@ -2,7 +2,7 @@
 import { useState } from "react";
 import "./ClientStyle/ClientAccount.css";
 import AccountPage from "./ClientComponents/AccountPage";
-import EditProfileModal from "./ClientComponents/EditProfileModal";
+import EditProfileModal from "./EditProfileModal";
 import { mockUser } from "../MockData/MockUser";
 import { Outlet, useLocation } from "react-router-dom";
 
