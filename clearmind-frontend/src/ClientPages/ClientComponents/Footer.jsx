@@ -4,14 +4,14 @@ import { GoHomeFill } from "react-icons/go";
 import { FaCalendarCheck } from "react-icons/fa";
 import { AiFillMessage } from "react-icons/ai";
 import { BiSolidUserCircle } from "react-icons/bi";
-import { MdChevronLeft, MdChevronRight } from "react-icons/md";
-import styles from "../ClientStyle/ClientFooter.module.css";
+import { MdChevronLeft } from "react-icons/md";
+import styles from "../ClientStyle/Footer.module.css";
 
 import { RxHamburgerMenu } from "react-icons/rx";
 
 const HIDDEN_ON = ["/client/appointment/set-appointment-form"];
 
-function ClientFooter({ collapsed, onToggle }) {
+function Footer({ collapsed, onToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,7 +39,9 @@ function ClientFooter({ collapsed, onToggle }) {
       <nav
         className={`${styles.sideNav} ${collapsed ? styles.collapsed : styles.expanded}`}
       >
-        <div className={styles.toggleWrapper}>
+        <div
+          className={`${styles.toggleWrapper} ${!collapsed ? styles.toggleEnd : ""}`}
+        >
           <button className={styles.toggleBtn} onClick={onToggle}>
             {collapsed ? <RxHamburgerMenu /> : <MdChevronLeft />}
           </button>
@@ -76,4 +78,4 @@ function ClientFooter({ collapsed, onToggle }) {
   );
 }
 
-export default ClientFooter;
+export default Footer;

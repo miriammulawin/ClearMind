@@ -224,6 +224,22 @@
   color: white;
 }
 
+.ad-discontinue-btn {
+  background-color: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ad-discontinue-btn:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
 /* ── Responsive ── */
 @media (max-width: 576px) {
   .ad-row {

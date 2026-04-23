@@ -9,7 +9,6 @@ function ClientLayout() {
   const location = useLocation();
   const isAppointment = location.pathname.startsWith("/client/appointment");
   const [isInChat, setIsInChat] = useState(false);
-  const isAccount = location.pathname === "/client/account";
   const isSchedule = location.pathname === "/client/appointment/upcoming";
   const isPending = location.pathname === "/client/appointment/pending";
   const isSessions = location.pathname === "/client/appointment/sessions";
@@ -20,6 +19,7 @@ function ClientLayout() {
     location.pathname === "/client/appointment/psychological-assessment";
   const isBookNext =
     location.pathname === "/client/appointment/sessions/book-next";
+  const isHelp = location.pathname === "/client/help";
 
   const [navCollapsed, setNavCollapsed] = useState(false);
 
@@ -45,7 +45,17 @@ function ClientLayout() {
         )}
 
         <div
-          className={`${styles.bodyWrapper} ${isSchedule || isPending || isSessions || isHistory || isPACAppointment || isPAEAppointment || isAccount ? styles.noScroll : ""}`}
+          className={`${styles.bodyWrapper} ${
+            isSchedule ||
+            isPending ||
+            isSessions ||
+            isHistory ||
+            isPACAppointment ||
+            isPAEAppointment ||
+            isHelp
+              ? styles.noScroll
+              : ""
+          }`}
         >
           {/* I-pass ang setIsInChat sa Outlet via context */}
           <Outlet context={{ setIsInChat }} />

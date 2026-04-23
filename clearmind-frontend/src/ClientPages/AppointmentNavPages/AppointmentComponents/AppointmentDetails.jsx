@@ -2,13 +2,14 @@ import React from "react";
 import { Container, Button, Badge } from "react-bootstrap";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft, FaFileAlt } from "react-icons/fa";
-import { getAppointmentById } from "../../../MockData/MockAppointment.js";
+import { useAppointments } from "../../../context/AppointmentContext";
 import "./styles/AppointmentDetails.css";
 
 const AppointmentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const { getAppointmentById, discontinueProgram } = useAppointments();
   const appointment = getAppointmentById(id);
 
   const getStatusBadgeVariant = (status) => {
@@ -340,6 +341,26 @@ const AppointmentDetails = () => {
                   CANCEL
                 </button>
               )}
+
+              {/* Discontinue — session programs only */}
+              {appointment.programId &&
+                appointment.progressionStatus === "Active" && (
+                  <button
+                    className="ad-discontinue-btn"
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to discontinue your sessions?",
+                        )
+                      ) {
+                        discontinueProgram(appointment.programId);
+                        navigate(-1);
+                      }
+                    }}
+                  >
+                    DISCONTINUE SESSIONS
+                  </button>
+                )}
             </div>
           </div>
         </Container>

@@ -57,7 +57,7 @@ const SessionsTab = () => {
   };
 
   const handleViewDetails = (appointmentId) => {
-    navigate(`/client/appointment/sessions/${appointmentId}`, {
+    navigate(`/client/appointment/details/${appointmentId}`, {
       state: { from: "sessions" },
     });
   };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   FaCalendarAlt,
   FaClock,
@@ -11,7 +11,7 @@ import {
 import styles from "./styles/SessionCard.module.css";
 import SessionProgressBar from "./SessionProgressBar";
 import StatusBadge from "./StatusBadge";
-import { canProceedToNextSession } from "../../../MockData/MockAppointment";
+import { useAppointments } from "../../../context/AppointmentContext";
 
 const getSessionPhaseLabel = (sessionNumber) => {
   if (sessionNumber === 1) return "Initial Assessment";
@@ -113,6 +113,7 @@ const SessionCard = ({
   onBookNext,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const { discontinueProgram, canProceedToNextSession } = useAppointments(); // ← dagdag
 
   const totalSessions = 10;
   const completedCount = appointments.filter(
@@ -210,6 +211,29 @@ const SessionCard = ({
             </>
           )}
         </button>
+      )}
+
+      {/* ── Discontinue Sessions ── */}
+      {progressionStatus === "Active" && (
+        <>
+          <div className={styles.divider} />
+          <div className={styles.bookNextWrapper}>
+            <button
+              className={styles.discontinueBtn}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Are you sure you want to discontinue your sessions?",
+                  )
+                ) {
+                  discontinueProgram(latestApt.programId);
+                }
+              }}
+            >
+              DISCONTINUE SESSIONS
+            </button>
+          </div>
+        </>
       )}
 
       {/* ── Book Next Session ── */}

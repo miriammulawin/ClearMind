@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { Container, Form, InputGroup, Accordion } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import "../ClientStyle/Help.css";
 import { IoSearchOutline, IoArrowBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
-import ClientHeader from "./Header";
-import ClientFooter from "./Footer";
 
 export default function Help() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,10 +68,6 @@ export default function Help() {
 
   return (
     <div className="client-appointment-container">
-      <div className="sticky-header">
-        <ClientHeader />
-      </div>
-
       <div className="tab-content-wrapper">
         <div className="help-page-container">
           <Container className="help-container">
@@ -84,7 +78,7 @@ export default function Help() {
             >
               <IoArrowBack
                 size={22}
-                onClick={() => navigate("/client/profile")}
+                onClick={() => navigate("/client/account")}
                 style={{ cursor: "pointer" }}
               />
               <h4 className="help-title">How can we help you today?</h4>
@@ -133,10 +127,6 @@ export default function Help() {
             </div>
           </Container>
         </div>
-      </div>
-
-      <div className="sticky-footer">
-        <ClientFooter />
       </div>
     </div>
   );

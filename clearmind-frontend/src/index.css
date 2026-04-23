@@ -8,7 +8,7 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
-    background: #f5edfd;
+  background: #f5edfd;
 }
 
 .admin-main {
@@ -31,7 +31,7 @@ body {
 .sidebar-container {
   height: 100vh;
   transition: 0.35s ease;
-  overflow: visible; 
+  overflow: visible;
 }
 
 .sidebar {
@@ -41,12 +41,9 @@ body {
   display: flex;
   flex-direction: column;
   transition: width 0.35s ease;
-  overflow-x: hidden;  
+  overflow-x: hidden;
   overflow-y: hidden;
 }
-
-
-
 
 .sidebar-header {
   display: flex;
@@ -87,7 +84,7 @@ body {
   position: relative;
 }
 
-.profile-name{
+.profile-name {
   margin: 0;
   font-weight: bold;
   color: #381851;
@@ -115,7 +112,6 @@ body {
   padding: 1rem;
 }
 
-
 .sidebar-menu::-webkit-scrollbar {
   width: 6px;
 }
@@ -134,7 +130,6 @@ body {
   position: relative; /* tooltip uses this for reference */
   transition: all 0.25s ease;
 }
-
 
 .menu-item:hover {
   background: #f0e6ff;
@@ -161,8 +156,8 @@ body {
 }
 
 .menu-tooltip {
-  position: absolute;  /* ✅ absolute outside menu-item */
-  left: 100%;          /* appear right outside sidebar */
+  position: absolute; /* ✅ absolute outside menu-item */
+  left: 100%; /* appear right outside sidebar */
   top: 50%;
   transform: translate(10px, -50%);
   background: #4e237c;
@@ -175,7 +170,7 @@ body {
   transition: 0.2s ease;
   white-space: nowrap;
   z-index: 999;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
 }
 
 /* optional arrow */
@@ -189,7 +184,6 @@ body {
   border-style: solid;
   border-color: transparent #4e237c transparent transparent;
 }
-
 
 .sidebar-container:not(.collapsed) .menu-tooltip {
   display: none;
@@ -241,7 +235,6 @@ body {
   transform: translate(10px, -50%);
 }
 
-
 .sidebar-container.collapsed .sidebar-header {
   justify-content: center;
   padding: 1rem 0;
@@ -261,13 +254,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
- 
+
   padding: 0 2rem;
   box-sizing: border-box;
 }
 
 .top-navbar-left h3 {
-  color: #4E237C;
+  color: #4e237c;
   font-size: 2rem;
   font-weight: bolder;
   margin-top: 2.2rem;
@@ -316,11 +309,24 @@ body {
   color: #5b2d8b;
 }
 
-h2{
-  color: #4E237C;
+h2 {
+  color: #4e237c;
 }
 
-
+*::-webkit-scrollbar {
+  width: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: #d1bdf0;
+  border-radius: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #825cad;
+  border-radius: 10px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
 
 @media screen and (max-width: 900px) {
   .top-navbar {
@@ -365,26 +371,22 @@ h2{
     display: block;
     font-size: 1.8rem;
     cursor: pointer;
-    color: #4E237C;
+    color: #4e237c;
   }
-  
- 
-  }
+}
 
-  .doctor-text{
-     color: #4E237C;
-  }
-  .search-box {
-    width: 100%;
-  }
+.doctor-text {
+  color: #4e237c;
+}
+.search-box {
+  width: 100%;
+}
 
-  .search-box input {
-    font-size: 0.9rem;
-  }
-
+.search-box input {
+  font-size: 0.9rem;
+}
 
 @media (max-width: 992px) {
-
   .top-navbar {
     padding: 1rem;
   }
@@ -416,7 +418,6 @@ h2{
   }
 }
 @media (max-width: 576px) {
-
   .top-navbar {
     flex-direction: column;
     align-items: flex-start;

@@ -18,9 +18,13 @@ const DoctorProfile = ({ doctorData, onBookAppointment, onBack }) => {
 
   const handleBookAppointment = () => {
     if (onBookAppointment) onBookAppointment();
-    navigate("/client/appointment/set-appointment-form", {
-      state: { doctor: doctorData },
-    });
+    navigate(
+      "/client/appointment/psychotherapy-and-counseling/set-appointment-form",
+      {
+        state: { doctor: doctorData },
+        replace: true,
+      },
+    );
   };
 
   const getConsultationIcon = (mode) => {
@@ -45,11 +49,6 @@ const DoctorProfile = ({ doctorData, onBookAppointment, onBack }) => {
 
   return (
     <div className={styles.bookingView}>
-      {onBack && (
-        <button type="button" onClick={onBack} className={styles.btnBack}>
-          ← Back
-        </button>
-      )}
       <Card className={`${styles.profileCard} mb-4`}>
         <Card.Body className={styles.cardBody}>
           {/* Header */}

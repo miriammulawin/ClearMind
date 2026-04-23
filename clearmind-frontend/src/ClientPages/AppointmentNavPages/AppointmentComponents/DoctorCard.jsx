@@ -1,7 +1,4 @@
 // DoctorCard.jsx
-// Usage (doctor):  <DoctorCard doctor={doctor} onViewProfile={fn} onSetAppointment={fn} />
-// Usage (rpm):     <DoctorCard doctor={rpm} variant="rpm" isSelected={bool} onSelect={fn} />
-
 import React from "react";
 import { Card, Button } from "react-bootstrap";
 import {
@@ -20,153 +17,147 @@ const getConsultationIcon = (mode) =>
   );
 
 const formatScheduleDays = (days) => {
+  if (!days || days.length === 0) return "";
   if (days.length === 1) return days[0];
   if (days.length === 2) return days.join(" & ");
-  const lastDay = days[days.length - 1];
-  const otherDays = days.slice(0, -1).join(", ");
-  return `${otherDays} & ${lastDay}`;
+  return `${days.slice(0, -1).join(", ")} & ${days[days.length - 1]}`;
 };
-
-// ── Doctor variant ────────────────────────────────────────────────────────────
-const DoctorVariant = ({
-  doctor,
-  onViewProfile,
-  onSetAppointment,
-  hideSetAppointment,
-  viewProfileVariant = "outline",
-  onSelect,
-  isSelected,
-  compact,
-}) => (
-  <Card
-    className={`${styles.doctorCard} ${isSelected ? styles.doctorCardSelected : ""}`}
-    onClick={onSelect ? () => onSelect(doctor.id) : undefined}
-  >
-    <Card.Body className={styles.cardBody}>
-      {/* Header */}
-      <div className={styles.doctorHeader}>
-        {onSelect && (
-          <div
-            className={`${styles.radioIndicator} ${isSelected ? styles.radioSelected : styles.radioUnselected}`}
-          />
-        )}
-        <div className={styles.doctorAvatar}>
-          <FaUserCircle className={styles.avatarIcon} />
-        </div>
-        <div className={styles.doctorInfo}>
-          <h6 className={styles.doctorName}>{doctor.name}</h6>
-          <p className={styles.doctorCredentials}>{doctor.credentials}</p>
-        </div>
-        {compact && (
-          <Button
-            className={
-              viewProfileVariant === "purple"
-                ? styles.btnBookAppointment // purple
-                : styles.btnViewProfile // outline
-            }
-            onClick={(e) => {
-              e.stopPropagation(); // prevent card click triggering onSelect
-              onViewProfile(doctor.id);
-            }}
-          >
-            VIEW PROFILE
-          </Button>
-        )}
-      </div>
-
-      {/* Consultation Availability */}
-      <div className={styles.consultationAvailability}>
-        <p className={styles.availabilityLabel}>Consultation Availability</p>
-        <div className={styles.availabilityDetails}>
-          <div className={styles.availabilityItem}>
-            <FaCalendarCheck className={styles.iconSmall} />
-            <span>{formatScheduleDays(doctor.schedule.days)}</span>
-          </div>
-          <div className={styles.availabilityItem}>
-            {getConsultationIcon(doctor.consultationMode)}
-            <span>{doctor.consultationType}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Earliest Schedule */}
-      {!compact && (
-        <>
-          <div className={styles.earliestSchedule}>
-            <p className={styles.scheduleLabel}>Earliest Available Schedule</p>
-            <div className={styles.scheduleInfo}>
-              <div className={styles.scheduleItem}>
-                {getConsultationIcon(doctor.consultationMode)}
-                <span>{doctor.consultationType}</span>
-              </div>
-              <p className={styles.scheduleTime}>
-                {doctor.availability[0]?.day},{" "}
-                {doctor.availability[0]?.slots.find((s) => s.available)?.time ||
-                  "N/A"}
-              </p>
-              <p className={styles.scheduleFee}>
-                Fee: ₱
-                {doctor.consultationFees.initialConsultation.toLocaleString()}
-              </p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className={`${styles.cardActions} mt-3`}>
-            <Button
-              className={
-                viewProfileVariant === "purple"
-                  ? styles.btnBookAppointment
-                  : styles.btnViewProfile
-              }
-              onClick={() => onViewProfile(doctor.id)}
-            >
-              VIEW PROFILE
-            </Button>
-            {onSelect && (
-              <Button
-                className={styles.btnBookAppointment}
-                onClick={() => onSelect(doctor.id)}
-              >
-                SELECT
-              </Button>
-            )}
-            {!hideSetAppointment && (
-              <Button
-                variant="purple"
-                className={styles.btnBookAppointment}
-                onClick={() => onSetAppointment(doctor.id)}
-              >
-                SET APPOINTMENT
-              </Button>
-            )}
-          </div>
-        </>
-      )}
-    </Card.Body>
-  </Card>
-);
 
 const DoctorCard = ({
   doctor,
+  isSelected,
+  compact, // true only on DESKTOP when ANOTHER doctor is selected
   onViewProfile,
   onSetAppointment,
-  hideSetAppointment = false,
-  viewProfileVariant = "outline",
-  onSelect,
-  isSelected,
-  compact,
-}) => (
-  <DoctorVariant
-    doctor={doctor}
-    onViewProfile={onViewProfile}
-    onSetAppointment={onSetAppointment}
-    hideSetAppointment={hideSetAppointment}
-    viewProfileVariant={viewProfileVariant}
-    onSelect={onSelect}
-    isSelected={isSelected}
-    compact={compact}
-  />
-);
+  onSelect, // desktop-only radio select
+}) => {
+  return (
+    <Card
+      className={`
+        ${styles.doctorCard}
+        ${isSelected ? styles.doctorCardSelected : ""}
+        ${compact ? styles.doctorCardCompact : ""}
+      `}
+      onClick={compact && onSelect ? () => onSelect(doctor.id) : undefined}
+      style={{ cursor: compact && onSelect ? "pointer" : "default" }}
+    >
+      <Card.Body className={styles.cardBody}>
+        {/* ── Header row (always visible) ── */}
+        <div className={styles.doctorHeader}>
+          {/* Radio only on desktop sidebar */}
+          {compact && onSelect && (
+            <div
+              className={`${styles.radioIndicator} ${
+                isSelected ? styles.radioSelected : styles.radioUnselected
+              }`}
+            />
+          )}
+
+          {/* Avatar / Photo */}
+          <div className={styles.doctorAvatar}>
+            {doctor.photo ? (
+              <img
+                src={doctor.photo}
+                alt={doctor.name}
+                className={styles.avatarImg}
+              />
+            ) : (
+              <FaUserCircle className={styles.avatarIcon} />
+            )}
+          </div>
+
+          {/* Name + Title */}
+          <div className={styles.doctorInfo}>
+            <h6 className={styles.doctorName}>{doctor.name}</h6>
+            <p className={styles.doctorCredentials}>{doctor.title}</p>
+          </div>
+
+          {/* Compact mode: View Profile button on the right */}
+          {compact && (
+            <button
+              className={styles.btnViewProfile}
+              style={{ marginLeft: "auto", whiteSpace: "nowrap" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile(doctor.id);
+              }}
+            >
+              View Profile
+            </button>
+          )}
+        </div>
+
+        {/* ── Full details: only when NOT compact ── */}
+        {!compact && (
+          <>
+            {/* Consultation Availability */}
+            <div className={styles.consultationAvailability}>
+              <p className={styles.availabilityLabel}>
+                Consultation Availability
+              </p>
+              <div className={styles.availabilityDetails}>
+                {doctor.consultationMode && (
+                  <div className={styles.availabilityItem}>
+                    {getConsultationIcon(doctor.consultationMode)}
+                    <span>
+                      {doctor.consultationType || doctor.consultationMode}
+                    </span>
+                  </div>
+                )}
+
+                {doctor.schedule?.days && (
+                  <div className={styles.availabilityItem}>
+                    <FaCalendarCheck className={styles.iconSmall} />
+                    <span>{formatScheduleDays(doctor.schedule.days)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Earliest Available Schedule */}
+            <div className={styles.earliestSchedule}>
+              <p className={styles.scheduleLabel}>
+                Earliest Available Schedule
+              </p>
+              <div className={styles.scheduleInfo}>
+                {doctor.schedule?.days && (
+                  <div className={styles.scheduleItem}>
+                    <FaCalendarCheck className={styles.iconSmall} />
+                    <span>{formatScheduleDays(doctor.schedule.days)}</span>
+                  </div>
+                )}
+
+                {doctor.schedule?.time && (
+                  <p className={styles.scheduleTime}>{doctor.schedule.time}</p>
+                )}
+
+                {doctor.consultationFees?.initialConsultation && (
+                  <p className={styles.scheduleFee}>
+                    Fee: ₱
+                    {doctor.consultationFees.initialConsultation.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className={styles.cardActions}>
+              <button
+                className={styles.btnViewProfile}
+                onClick={() => onViewProfile(doctor.id)}
+              >
+                View Profile
+              </button>
+              <button
+                className={styles.btnBookAppointment}
+                onClick={() => onSetAppointment(doctor.id)}
+              >
+                Set Appointment
+              </button>
+            </div>
+          </>
+        )}
+      </Card.Body>
+    </Card>
+  );
+};
 
 export default DoctorCard;

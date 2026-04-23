@@ -60,7 +60,7 @@ const ProfilePage = () => {
   );
 
   return (
-    <div className={styles.pageWrapper}>
+    <div className={styles.bodyWrapper}>
       {/* ── Hero / Avatar Section ── */}
       <div className={styles.heroSection}>
         <div className={styles.heroOverlay} />

@@ -4,10 +4,9 @@
   font-family: "Poppins", sans-serif;
   max-width: 768px;
   margin: 0 auto;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
-  /* overflow: hidden; */
 }
 
 .headerSection {

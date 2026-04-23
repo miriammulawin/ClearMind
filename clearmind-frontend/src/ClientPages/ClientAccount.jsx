@@ -1,6 +1,6 @@
 // ClientAccount.jsx
 import { useState } from "react";
-import "./ClientStyle/ClientProfile.css";
+import "./ClientStyle/ClientAccount.css";
 import AccountPage from "./ClientComponents/AccountPage";
 import EditProfileModal from "./ClientComponents/EditProfileModal";
 import { mockUser } from "../MockData/MockUser";
@@ -22,7 +22,7 @@ function ClientAccount() {
   };
 
   return (
-    <div className="client-appointment-container">
+    <div>
       {/* Success Toast */}
       {showSuccess && (
         <div className="profile-success-toast">

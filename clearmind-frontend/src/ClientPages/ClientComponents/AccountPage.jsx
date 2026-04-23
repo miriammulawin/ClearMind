@@ -1,19 +1,18 @@
 import React, { useState, useRef } from "react";
 import { Container, Card, ListGroup, Modal, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "../ClientStyle/AccountPage.css";
 import { LuHandHeart } from "react-icons/lu";
 import { LuBookOpenText } from "react-icons/lu";
 import { MdOutlineShield } from "react-icons/md";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { IoLogOutOutline } from "react-icons/io5";
-import { FaRegEdit } from "react-icons/fa";
-import { FaCamera } from "react-icons/fa";
+import { FaRegEdit, FaCamera } from "react-icons/fa";
+import { IoBookOutline } from "react-icons/io5";
+
 import { Image } from "react-bootstrap";
 import logo_login from "../../assets/CMPS_Logo.png";
 import ProfileAvatar from "./ProfileAvatar";
-import { mockUser } from "../../MockData/MockUser";
 
 export default function AccountPage({ userData, onEditClick }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -35,6 +34,14 @@ export default function AccountPage({ userData, onEditClick }) {
   const menuItems = [
     { icon: <LuHandHeart />, label: "Help", link: "/client/help" },
     {
+      icon: <IoMdInformationCircleOutline />,
+      label: "About",
+      link: "/client/about",
+    },
+  ];
+
+  const policyItems = [
+    {
       icon: <LuBookOpenText />,
       label: "Terms and Conditions",
       link: "/client/terms-and-conditions",
@@ -45,12 +52,17 @@ export default function AccountPage({ userData, onEditClick }) {
       link: "/client/privacy-policy",
     },
     {
-      icon: <IoMdInformationCircleOutline />,
-      label: "About",
-      link: "/client/about",
+      icon: <IoBookOutline />,
+      label: "Therapy Appointment, Cancellation, and Rebooking Policy ",
+      link: "/client/privacy-policy",
     },
-    { icon: <IoLogOutOutline />, label: "Log Out", action: handleLogoutClick },
   ];
+
+  const logoutItem = {
+    icon: <IoLogOutOutline />,
+    label: "Log Out",
+    action: handleLogoutClick,
+  };
 
   return (
     <div className="profile-page-container">
@@ -98,7 +110,7 @@ export default function AccountPage({ userData, onEditClick }) {
           </Card>
         </div>
 
-        {/* Menu Items */}
+        {/* General */}
         <div className="menu-section">
           <Card className="menu-card">
             <ListGroup variant="flush">
@@ -108,7 +120,6 @@ export default function AccountPage({ userData, onEditClick }) {
                   className="menu-item"
                   action
                   onClick={() => handleMenuClick(item)}
-                  style={{ cursor: "pointer" }}
                 >
                   <div className="menu-item-content">
                     <span className="menu-icon">{item.icon}</span>
@@ -121,14 +132,46 @@ export default function AccountPage({ userData, onEditClick }) {
           </Card>
         </div>
 
-        {/* Branding Footer */}
-        <div className="branding-section">
-          <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
-          <div className="branding-logo">
-            <Image src={logo_login} className="logo-image" />
-          </div>
-          <p className="year-branding-dev-version">Est. 2024</p>
-          <p className="year-branding-dev-version">© 2026 | Version 1.0</p>
+        {/* Policies & Legal */}
+        <p className="menu-section-title">Policies & Legal</p>
+        <div className="menu-section">
+          <Card className="menu-card">
+            <ListGroup variant="flush">
+              {policyItems.map((item, index) => (
+                <ListGroup.Item
+                  key={index}
+                  className="menu-item"
+                  action
+                  onClick={() => handleMenuClick(item)}
+                >
+                  <div className="menu-item-content">
+                    <span className="menu-icon">{item.icon}</span>
+                    <span className="menu-label">{item.label}</span>
+                  </div>
+                  <span className="menu-arrow">›</span>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Card>
+        </div>
+
+        {/* Logout */}
+        <div className="menu-section">
+          <Card className="menu-card">
+            <ListGroup variant="flush">
+              <ListGroup.Item
+                className="menu-item"
+                action
+                onClick={handleLogoutClick}
+              >
+                <div className="menu-item-content">
+                  <span className="menu-icon">{logoutItem.icon}</span>
+                  <span className="menu-label">{logoutItem.label}</span>
+                </div>
+                <span className="menu-arrow">›</span>
+              </ListGroup.Item>
+            </ListGroup>
+          </Card>
         </div>
       </Container>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
@@ -83,28 +83,93 @@ const PACAppointment = () => {
     ? MOCK_DOCTORS.find((d) => d.id === selectedDoctor)
     : null;
 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <Container className={`${styles.bookAppointmentContainer} py-4`}>
-      {/* ── Header ── */}
-      <div className={styles.titleContainerBook}>
-        <h5 className={styles.titleBookAppointment}>SET AN APPOINTMENT</h5>
-        <Button
-          variant="button"
-          className={styles.backToServices}
-          onClick={() =>
-            selectedDoctor
-              ? handleBackToDoctors()
-              : navigate("/client/appointment/services")
-          }
+      {/* ── Specialist Info Modal ── (unchanged) ── */}
+      {showSpecialistModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowSpecialistModal(false)}
         >
-          <FaArrowLeft /> Go Back
-        </Button>
-      </div>
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h6 className={styles.modalTitle}>Which specialist do I need?</h6>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowSpecialistModal(false)}
+              >
+                ✕
+              </button>
+            </div>
 
-      <ServiceAlert selectedService={selectedService} />
+            <div className={styles.modalBody}>
+              <div className={styles.modalCard}>
+                <p className={styles.modalCardTitle}>🧠 Psychologist</p>
+                <p className={styles.modalCardDesc}>
+                  Best if you're dealing with stress, anxiety, trauma,
+                  relationship issues, or just need someone to talk to. They
+                  help through therapy and assessments — no medication involved.
+                </p>
+              </div>
 
-      {!selectedDoctor ? (
-        <>
+              <div className={styles.modalDivider} />
+
+              <div className={styles.modalCard}>
+                <p className={styles.modalCardTitle}>🩺 Psychiatrist</p>
+                <p className={styles.modalCardDesc}>
+                  Best if you need a formal diagnosis, a mental health
+                  certificate (for work/school/legal), or a psychiatric
+                  evaluation. They are medical doctors who can assess more
+                  complex conditions.
+                </p>
+              </div>
+
+              <div className={styles.modalTip}>
+                💡 <strong>Not sure?</strong> Start with a Psychologist — they
+                can refer you to a Psychiatrist if needed.
+              </div>
+            </div>
+
+            <button
+              className={styles.modalConfirmBtn}
+              onClick={() => setShowSpecialistModal(false)}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content: two-col on desktop, single-col on mobile ── */}
+      <div className={styles.desktopColumns}>
+        {/* LEFT / MOBILE-FULL: Doctor list — hidden on mobile when profile is open */}
+
+        <div
+          className={`${styles.leftColumn} ${selectedDoctor ? styles.hideOnMobile : ""}`}
+        >
+          {/* ── Header ── */}
+          <div className={styles.titleContainerBook}>
+            <h5 className={styles.titleBookAppointment}>SET AN APPOINTMENT</h5>
+            <Button
+              variant="button"
+              className={styles.backToServices}
+              onClick={() => navigate("/client/appointment/services")}
+            >
+              <FaArrowLeft /> Go Back
+            </Button>
+          </div>
+
+          <ServiceAlert selectedService={selectedService} />
+
           {/* ── Learn More Link ── */}
           <p
             className={styles.specialistLearnMore}
@@ -131,69 +196,9 @@ const PACAppointment = () => {
             </div>
           </div>
 
-          {/* ── Specialist Info Modal ── */}
-          {showSpecialistModal && (
-            <div
-              className={styles.modalOverlay}
-              onClick={() => setShowSpecialistModal(false)}
-            >
-              <div
-                className={styles.modalBox}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className={styles.modalHeader}>
-                  <h6 className={styles.modalTitle}>
-                    Which specialist do I need?
-                  </h6>
-                  <button
-                    className={styles.modalClose}
-                    onClick={() => setShowSpecialistModal(false)}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className={styles.modalBody}>
-                  <div className={styles.modalCard}>
-                    <p className={styles.modalCardTitle}>🧠 Psychologist</p>
-                    <p className={styles.modalCardDesc}>
-                      Best if you're dealing with stress, anxiety, trauma,
-                      relationship issues, or just need someone to talk to. They
-                      help through therapy and assessments — no medication
-                      involved.
-                    </p>
-                  </div>
-
-                  <div className={styles.modalDivider} />
-
-                  <div className={styles.modalCard}>
-                    <p className={styles.modalCardTitle}>🩺 Psychiatrist</p>
-                    <p className={styles.modalCardDesc}>
-                      Best if you need a formal diagnosis, a mental health
-                      certificate (for work/school/legal), or a psychiatric
-                      evaluation. They are medical doctors who can assess more
-                      complex conditions.
-                    </p>
-                  </div>
-
-                  <div className={styles.modalTip}>
-                    💡 <strong>Not sure?</strong> Start with a Psychologist —
-                    they can refer you to a Psychiatrist if needed.
-                  </div>
-                </div>
-
-                <button
-                  className={styles.modalConfirmBtn}
-                  onClick={() => setShowSpecialistModal(false)}
-                >
-                  Got it!
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Doctor Cards ── */}
-          <div className={styles.doctorsList}>
+          <div
+            className={`${styles.doctorsList} ${selectedDoctor ? styles.doctorsListHidden : ""}`}
+          >
             {filteredDoctors.length === 0 ? (
               <p className={styles.noDoctorsMsg}>
                 No doctors available for this specialization.
@@ -203,26 +208,63 @@ const PACAppointment = () => {
                 <DoctorCard
                   key={doctor.id}
                   doctor={doctor}
+                  isSelected={selectedDoctor === doctor.id}
+                  compact={
+                    isDesktop &&
+                    selectedDoctor !== null &&
+                    selectedDoctor !== doctor.id
+                  }
                   onViewProfile={handleViewProfile}
                   onSetAppointment={handleSetAppointment}
+                  onSelect={isDesktop ? (id) => setSelectedDoctor(id) : null}
                 />
               ))
             )}
           </div>
-        </>
-      ) : (
-        doctorData && (
-          <DoctorProfile
-            doctorData={doctorData}
-            selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            onSelectDate={setSelectedDate}
-            onSelectTime={setSelectedTime}
-            onConfirmBooking={handleConfirmBooking}
-            onBack={handleBackToDoctors}
-          />
-        )
-      )}
+        </div>
+
+        {/* RIGHT / MOBILE-FULL: Profile panel */}
+        <div
+          className={`${styles.profilePanel} ${selectedDoctor ? styles.profilePanelActive : ""}`}
+        >
+          {/* <h5> Doctor's Profile:</h5> */}
+          {selectedDoctor && doctorData ? (
+            <>
+              {/* Back button — mobile only */}
+              {!isDesktop && (
+                <div className={styles.profilePanelHeader}>
+                  <h5>Doctor's Profile:</h5>
+                  <Button
+                    variant="button"
+                    className={styles.backToServices}
+                    onClick={handleBackToDoctors}
+                  >
+                    <FaArrowLeft /> Back to Doctors
+                  </Button>
+                </div>
+              )}
+              <DoctorProfile
+                doctorData={doctorData}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onSelectDate={setSelectedDate}
+                onSelectTime={setSelectedTime}
+                onConfirmBooking={handleConfirmBooking}
+                onBack={handleBackToDoctors}
+                onBookAppointment={() => handleSetAppointment(selectedDoctor)}
+              />
+            </>
+          ) : (
+            <div className={styles.emptyProfile}>
+              <span className={styles.emptyProfileIcon}>🩺</span>
+              <p className={styles.emptyProfileText}>No doctor selected</p>
+              <p className={styles.emptyProfileSub}>
+                Select a doctor from the list to view their profile here
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <Outlet />
     </Container>

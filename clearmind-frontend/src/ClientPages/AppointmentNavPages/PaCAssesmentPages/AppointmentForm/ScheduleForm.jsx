@@ -9,7 +9,6 @@ import styles from "../../../ClientStyle/ScheduleForm.module.css";
 import SelectDateAndTime, {
   getEndTime,
 } from "../../AppointmentComponents/SelectDateandTime";
-import SetAppointmentFormHeader from "./SetAppointmentFormHeader"; // ← adjust path as needed
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getDayMode = (dateSlot, doctorData) => {
@@ -33,8 +32,6 @@ const ScheduleForm = ({
   setSelectedTime,
   consultationFee,
   onSameDayClick, // ← receive and forward
-  currentStep, // ← new prop (pass 1 for the Schedule tab)
-  onBack, // ← new prop
 }) => {
   // ── Derive available modes from doctor data ──────────────────
   const availableModes = useMemo(() => {
@@ -98,22 +95,26 @@ const ScheduleForm = ({
           /* Both modes available — show toggle */
           <div className={styles.modeToggleRow}>
             <button
-              className={`${styles.modeToggle} ${consultationMode === "ON-SITE" ? styles.modeToggleActive : ""}`}
+              className={`${styles.singleModeInfo} ${consultationMode === "ON-SITE/CLINIC" ? styles.modeToggleActive : ""}`}
               onClick={() => {
-                setConsultationMode("ON-SITE");
-                setSelectedDate(null);
-                setSelectedTime(null);
+                if (consultationMode !== "ON-SITE") {
+                  setConsultationMode("ON-SITE");
+                  setSelectedDate(null);
+                  setSelectedTime(null);
+                }
               }}
             >
               <FaHome className={styles.modeToggleIcon} />
               <span>On-Site</span>
             </button>
             <button
-              className={`${styles.modeToggle} ${consultationMode === "VIRTUAL" ? styles.modeToggleActive : ""}`}
+              className={`${styles.singleModeInfo} ${consultationMode === "VIRTUAL" ? styles.modeToggleActive : ""}`}
               onClick={() => {
-                setConsultationMode("VIRTUAL");
-                setSelectedDate(null);
-                setSelectedTime(null);
+                if (consultationMode !== "VIRTUAL") {
+                  setConsultationMode("VIRTUAL");
+                  setSelectedDate(null);
+                  setSelectedTime(null);
+                }
               }}
             >
               <FaVideo className={styles.modeToggleIcon} />

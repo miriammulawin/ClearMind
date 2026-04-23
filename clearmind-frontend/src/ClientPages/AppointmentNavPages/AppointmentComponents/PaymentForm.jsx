@@ -140,8 +140,7 @@ const PaymentForm = ({
         address: user?.homeAddress || "—",
       };
 
-  const visitType =
-    consultationMode === "ONLINE" ? "Online" : "On-site / Clinic";
+  const visitType = consultationMode === "ONLINE" ? "Online" : "On-site/Clinic";
   const dateTimeDisplay =
     selectedDate?.date && selectedTime
       ? `${selectedDate.date}, ${selectedTime} – ${getEndTime(selectedTime)}`

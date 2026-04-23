@@ -286,6 +286,23 @@
   font-size: 11px;
 }
 
+.discontinueBtn {
+  width: 100%;
+  padding: 10px;
+  background-color: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.discontinueBtn:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
   .sessionRowHeader {
