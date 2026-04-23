@@ -1,123 +1,58 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import DoctorSidebar from "./components/DoctorSideBar";
 import styles from "./DoctorStyle/DoctorMessages.module.css";
 import { FiSearch, FiPaperclip, FiSend } from "react-icons/fi";
-
-const chats = [
-  {
-    name: "Liezel Paciente",
-    initials: "LP",
-    email: "pacienteliezel@gmail.com",
-    phone: "09123 456791",
-    last: "You: goodmorning",
-    date: "Jan 20",
-    unread: true,
-  },
-  {
-    name: "Ara Christina Ceres",
-    initials: "AC",
-    email: "ara.ceres@gmail.com",
-    phone: "09181 234567",
-    last: "You: Thank you po!",
-    date: "Jan 19",
-    unread: false,
-  },
-  {
-    name: "Kevin Ramos",
-    initials: "KR",
-    email: "kevin.ramos@gmail.com",
-    phone: "09221 234567",
-    last: "Kevin: Okay po.",
-    date: "Jan 18",
-    unread: true,
-  },
-  {
-    name: "Maria Santos",
-    initials: "MS",
-    email: "maria.santos@gmail.com",
-    phone: "09191 234567",
-    last: "You: Noted, salamat!",
-    date: "Jan 17",
-    unread: false,
-  },
-  {
-    name: "Sofia Dela Cruz",
-    initials: "SD",
-    email: "sofia.delacruz@gmail.com",
-    phone: "09301 234567",
-    last: "Sofia: When po ba?",
-    date: "Jan 16",
-    unread: true,
-  },
-  {
-    name: "John Doe",
-    initials: "JD",
-    email: "john.doe@gmail.com",
-    phone: "09201 234567",
-    last: "You: Good morning!",
-    date: "Jan 15",
-    unread: false,
-  },
-  {
-    name: "Ana Reyes",
-    initials: "AR",
-    email: "ana.reyes@gmail.com",
-    phone: "09301 234567",
-    last: "Ana: Thank you!",
-    date: "Jan 14",
-    unread: false,
-  },
-  {
-    name: "Carlo Mendoza",
-    initials: "CM",
-    email: "carlo.mendoza@gmail.com",
-    phone: "09251 234567",
-    last: "You: Sure, noted po.",
-    date: "Jan 13",
-    unread: false,
-  },
-];
-
-const messages = [
-  { day: "JAN 19" },
-  { from: "patient", text: "Good morning po! Pwede po bang magtanong?" },
-  { from: "admin", text: "Good morning! Of course, how can I help you?" },
-  { from: "patient", text: "May appointment po ba bukas?" },
-  { from: "admin", text: "Let me check for you. Please hold on for a moment." },
-  { day: "JAN 20" },
-  { time: "8:14 am" },
-  { from: "patient", text: "goodmorning" },
-  {
-    from: "admin",
-    text: "Good morning!",
-  },
-  { time: "6:25 pm" },
-  {
-    from: "patient",
-    text: "goodmorning!",
-    seen: true,
-  },
-];
+import { useMessages } from "../hooks/useMessages";
 
 function DoctorMessages() {
   const [activeMenu] = useState("Messages");
-  const [selectedChat, setSelectedChat] = useState(0);
   const [showList, setShowList] = useState(true);
-  const [message, setMessage] = useState("");
+  const [inputText, setInputText] = useState("");
+  const [search, setSearch] = useState("");
+  const messagesEndRef = useRef(null);
 
-  const selected = chats[selectedChat];
+  const {
+    conversations,
+    activeConv,
+    messages,
+    loadingConvs,
+    loadingMsgs,
+    sending,
+    currentUserId,
+    openConversation,
+    sendMessage,
+    getOther,
+    getInitials,
+    formatTime,
+    formatDate,
+  } = useMessages();
 
-  const handleSelect = (i) => {
-    setSelectedChat(i);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSelect = (conv) => {
+    openConversation(conv);
     if (window.innerWidth < 768) setShowList(false);
   };
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+    await sendMessage(inputText.trim());
+    setInputText("");
+  };
+
+  const filtered = conversations.filter((c) => {
+    const other = getOther(c);
+    return `${other.firstName} ${other.lastName}`
+      .toLowerCase()
+      .includes(search.toLowerCase());
+  });
 
   return (
     <div className="doctor-layout">
       <DoctorSidebar activeMenu={activeMenu} />
       <div className="doctor-main">
-      
-
         <div
           className={`${styles.msgWrapper} ${showList ? styles.showList : ""}`}
         >
@@ -125,120 +60,175 @@ function DoctorMessages() {
           <div className={styles.msgLeft}>
             <div className={styles.msgLeftTop}>
               <h5 className={styles.msgLeftTitle}>Messages</h5>
-
               <div className={styles.msgSearch}>
                 <FiSearch />
-                <input placeholder="Search conversations…" />
+                <input
+                  placeholder="Search conversations…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
-
-              <select className={styles.msgFilter}>
-                <option>Show All</option>
-                <option>Unread</option>
-                <option>Patients</option>
-                <option>Doctors</option>
-              </select>
             </div>
 
             <div className={styles.msgList}>
-              {chats.map((c, i) => (
-                <div
-                  key={i}
-                  className={`${styles.msgItem} ${selectedChat === i ? styles.active : ""}`}
-                  onClick={() => handleSelect(i)}
+              {loadingConvs ? (
+                <p
+                  style={{ padding: 16, color: "var(--color-text-secondary)" }}
                 >
-                  <div className={styles.avatar}>{c.initials}</div>
-                  <div className={styles.msgItemInfo}>
-                    <h6>{c.name}</h6>
-                    <p>{c.last}</p>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                      gap: 6,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <span className={styles.msgDate}>{c.date}</span>
-                    {c.unread && <span className={styles.unreadDot} />}
-                  </div>
-                </div>
-              ))}
+                  Loading…
+                </p>
+              ) : filtered.length === 0 ? (
+                <p
+                  style={{ padding: 16, color: "var(--color-text-secondary)" }}
+                >
+                  No conversations yet.
+                </p>
+              ) : (
+                filtered.map((conv) => {
+                  const other = getOther(conv);
+                  const initials = getInitials(other);
+                  const lastMsg =
+                    conv.latest_message?.body ?? "No messages yet";
+                  const lastTime = conv.latest_message?.created_at
+                    ? new Date(
+                        conv.latest_message.created_at,
+                      ).toLocaleDateString()
+                    : "";
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`${styles.msgItem} ${activeConv?.id === conv.id ? styles.active : ""}`}
+                      onClick={() => handleSelect(conv)}
+                    >
+                      <div className={styles.avatar}>{initials}</div>
+                      <div className={styles.msgItemInfo}>
+                        <h6>
+                          {other.firstName} {other.lastName}
+                        </h6>
+                        <p>{lastMsg}</p>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 6,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span className={styles.msgDate}>{lastTime}</span>
+                        {conv.unread_count > 0 && (
+                          <span className={styles.unreadDot} />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
           {/* ══ RIGHT PANEL ══ */}
           <div className={styles.msgRight}>
-            {/* Header */}
-            <div className={styles.msgHeader}>
-              <button
-                className={styles.backBtn}
-                onClick={() => setShowList(true)}
-              >
-                ←
-              </button>
-
-              <div className={styles.avatarWrapper}>
-                <div className={`${styles.avatar} ${styles.avatarLg}`}>
-                  {selected.initials}
-                </div>
-                <span className={styles.onlineDot} />
-              </div>
-
-              <div className={styles.msgHeaderInfo}>
-                <h5>{selected.name}</h5>
-                <p>
-                  {selected.email} · {selected.phone}
-                </p>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className={styles.msgBody}>
-              {messages.map((m, i) => {
-                if (m.day)
-                  return (
-                    <div key={i} className={styles.msgDay}>
-                      {m.day}
-                    </div>
-                  );
-                if (m.time)
-                  return (
-                    <div key={i} className={styles.msgTime}>
-                      {m.time}
-                    </div>
-                  );
-                return (
-                  <div
-                    key={i}
-                    className={`${styles.bubble} ${m.from === "admin" ? styles.bubbleAdmin : styles.bubblePatient}`}
-                  >
-                    {m.text}
-                    {m.seen && <div className={styles.seen}>seen ✓</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Input */}
-            <div className={styles.msgInputBar}>
-              <button className={styles.iconBtn} title="Attach file">
-                <FiPaperclip />
-              </button>
-              <input
-                className={styles.msgInputField}
-                placeholder="Type a message…"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") setMessage("");
+            {!activeConv ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  color: "var(--color-text-secondary)",
                 }}
-              />
-              <button className={styles.sendBtn} title="Send message">
-                <FiSend />
-              </button>
-            </div>
+              >
+                Select a conversation to start messaging
+              </div>
+            ) : (
+              <>
+                <div className={styles.msgHeader}>
+                  <button
+                    className={styles.backBtn}
+                    onClick={() => setShowList(true)}
+                  >
+                    ←
+                  </button>
+                  <div className={styles.avatarWrapper}>
+                    <div className={`${styles.avatar} ${styles.avatarLg}`}>
+                      {getInitials(getOther(activeConv))}
+                    </div>
+                    <span className={styles.onlineDot} />
+                  </div>
+                  <div className={styles.msgHeaderInfo}>
+                    <h5>
+                      {getOther(activeConv).firstName}{" "}
+                      {getOther(activeConv).lastName}
+                    </h5>
+                    <p>{getOther(activeConv).role}</p>
+                  </div>
+                </div>
+
+                <div className={styles.msgBody}>
+                  {loadingMsgs ? (
+                    <p style={{ textAlign: "center", padding: 20 }}>
+                      Loading messages…
+                    </p>
+                  ) : (
+                    <>
+                      {messages.map((m, i) => {
+                        const isMine = m.sender_id === currentUserId;
+                        const showDate =
+                          i === 0 ||
+                          formatDate(m.created_at) !==
+                            formatDate(messages[i - 1]?.created_at);
+                        return (
+                          <div key={m.id}>
+                            {showDate && (
+                              <div className={styles.msgDay}>
+                                {formatDate(m.created_at)}
+                              </div>
+                            )}
+                            <div
+                              className={`${styles.bubble} ${isMine ? styles.bubbleAdmin : styles.bubblePatient}`}
+                            >
+                              {m.body}
+                              <div className={styles.msgTime}>
+                                {formatTime(m.created_at)}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
+
+                <div className={styles.msgInputBar}>
+                  <button className={styles.iconBtn}>
+                    <FiPaperclip />
+                  </button>
+                  <input
+                    className={styles.msgInputField}
+                    placeholder="Type a message…"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    disabled={sending}
+                  />
+                  <button
+                    className={styles.sendBtn}
+                    onClick={handleSend}
+                    disabled={sending}
+                  >
+                    <FiSend />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

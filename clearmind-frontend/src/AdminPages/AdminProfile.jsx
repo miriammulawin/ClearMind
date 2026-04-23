@@ -185,21 +185,34 @@ function AdminProfile() {
   };
 
   const handleUpdatePassword = async () => {
-    if (passwordData.newPass !== passwordData.confirm) {
+    const { current, newPass, confirm } = passwordData;
+
+    if (!current) {
+      alert("Please enter your current password.");
+      return;
+    }
+    if (newPass.length < 8) {
+      alert("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPass !== confirm) {
       alert("New password and confirmation do not match.");
       return;
     }
+
     try {
-      // Route::match(['put','post'], '/me', [AuthController::class, 'update'])
-      // Must include all required fields alongside the new password
       await axiosClient.put("/me", {
+        // Required fields your backend validation needs
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         dob: profileData.birthday,
         contactNo: profileData.contact,
         email: profileData.email,
-        password: passwordData.newPass,
-        password_confirmation: passwordData.confirm,
+
+        // Password fields
+        current_password: current, // ← was missing before
+        password: newPass,
+        password_confirmation: confirm,
       });
 
       setPasswordData({ current: "", newPass: "", confirm: "" });

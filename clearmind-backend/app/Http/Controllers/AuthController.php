@@ -232,7 +232,7 @@ private function userPayload(User $user): array
  
 public function update(Request $request)
 {
-    $user = $request->user(); // ← use $request->user() instead of Auth::user()
+    $user = $request->user();
 
     $validated = $request->validate([
         'firstName'        => 'required|string|max:100',
@@ -247,35 +247,42 @@ public function update(Request $request)
         'email'            => 'required|email|unique:users,email,' . $user->id,
         'address'          => 'nullable|string|max:255',
         'password'         => 'nullable|min:8|confirmed',
+        'current_password' => 'nullable|string',          // ← ADD THIS LINE ONLY
         'profilePicture'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
     ]);
 
-    // Profile picture handling
+    // Profile picture handling — unchanged
     if ($request->hasFile('profilePicture')) {
-        // Delete old picture if exists
         if ($user->profilePicture) {
             Storage::disk('public')->delete($user->profilePicture);
         }
         $validated['profilePicture'] = $request
             ->file('profilePicture')
             ->store('profile_pictures', 'public');
-
     } elseif ($request->input('removeProfilePicture') == '1') {
         if ($user->profilePicture) {
             Storage::disk('public')->delete($user->profilePicture);
         }
         $validated['profilePicture'] = null;
-
     } else {
         unset($validated['profilePicture']);
     }
 
-    // Password handling
+    // ── ADD THIS BLOCK: verify current password before allowing change ──
     if (!empty($validated['password'])) {
+        if (empty($request->current_password) || !Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
         $validated['password'] = Hash::make($validated['password']);
     } else {
         unset($validated['password']);
     }
+    // ── END OF ADDED BLOCK ──
+
+    unset($validated['current_password']); // ← don't save this to DB
 
     $user->fill($validated)->save();
 
