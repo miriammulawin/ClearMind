@@ -14,19 +14,19 @@ import {
   FiZoomOut,
   FiMaximize2,
   FiPlus,
+  FiDollarSign,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
 import toast, { Toaster } from "react-hot-toast";
 
-const API_BASE = "http://localhost:8000/api";
-const getToken = () => localStorage.getItem("token");
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const getToken = () =>
+  localStorage.getItem("token") ||
+  localStorage.getItem("auth_token") ||
+  sessionStorage.getItem("auth_token") ||
+  "";
 
 /* ─── Philippine Date & Time Formatters ─── */
-
-/**
- * Formats a 24h "HH:MM" string → "h:MM AM/PM"
- * e.g. "13:30" → "1:30 PM", "09:00" → "9:00 AM"
- */
 function formatTimePH(time24) {
   if (!time24) return "—";
   const [hourStr, minuteStr] = time24.split(":");
@@ -38,25 +38,22 @@ function formatTimePH(time24) {
   return `${hour}:${minute} ${period}`;
 }
 
-/**
- * Formats a date string "YYYY-MM-DD" → "Month D, YYYY"
- * e.g. "2025-04-16" → "April 16, 2025"
- */
 function formatDatePH(dateStr) {
   if (!dateStr) return "—";
-
   const d = new Date(dateStr);
-
-  // 🔥 Prevent crash
-  if (isNaN(d.getTime())) {
-    console.error("Invalid date:", dateStr);
-    return "—";
-  }
-
+  if (isNaN(d.getTime())) return "—";
   return format(d, "MMMM d, yyyy");
 }
 
-/* ─── Toast Styles ─── */
+// ── Format peso amount ─────────────────────────────────────────────────────
+function formatPeso(amount) {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
 
 const toastError = {
   duration: 1500,
@@ -120,6 +117,7 @@ function ImagePreviewModal({ file, src, onClose }) {
     setPos({ x: 0, y: 0 });
   };
   const isPdf = file?.type === "application/pdf";
+
   const toolbarBtn = {
     background: "rgba(255,255,255,0.08)",
     border: "1px solid rgba(255,255,255,0.15)",
@@ -546,6 +544,7 @@ function Row({ label, value }) {
     </div>
   ) : null;
 }
+
 function PatientInfoCard({ patient, onClear }) {
   const age = (() => {
     if (!patient.dob) return null;
@@ -556,6 +555,7 @@ function PatientInfoCard({ patient, onClear }) {
     if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
     return a >= 0 ? a : null;
   })();
+
   return (
     <div
       style={{
@@ -634,7 +634,6 @@ function PatientInfoCard({ patient, onClear }) {
         }}
       >
         <Row label="Age" value={age !== null ? `${age} years old` : null} />
-        {/* ── Philippine date format for DOB ── */}
         <Row
           label="DOB"
           value={patient.dob ? formatDatePH(patient.dob) : null}
@@ -913,6 +912,13 @@ function ServiceCard({
         <span style={{ fontSize: "13.5px", color: "#555" }}>
           {service.title}
         </span>
+        {service.fee !== null && service.fee !== undefined && (
+          <span
+            style={{ fontSize: "12px", color: "#059669", fontWeight: "600" }}
+          >
+            Default fee: {formatPeso(service.fee)}
+          </span>
+        )}
         {subtitle && (
           <span
             style={{ fontSize: "12px", fontWeight: "600", color: "#1d6fa4" }}
@@ -1006,6 +1012,7 @@ const EMPTY_FORM = {
   pae_purpose: "",
   payment_status: "not_paid",
   payment_reference: "",
+  bill_amount: "", // ← BAGO
 };
 
 /* ─────────────────────────────────────────────────────────
@@ -1031,9 +1038,9 @@ function CreateAppointmentModal({
   const [services, setServices] = useState([]);
   const [paePurposes, setPaePurposes] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
-
-  /* Success modal state */
   const [successData, setSuccessData] = useState(null);
+  // ── Track if user manually overrode the bill amount ────────────────────
+  const [billManuallyEdited, setBillManuallyEdited] = useState(false);
 
   const receiptInputRef = useRef(null);
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
@@ -1070,6 +1077,7 @@ function CreateAppointmentModal({
     if (receiptInputRef.current) receiptInputRef.current.value = "";
   };
 
+  // ── Fetch services (include fee from API) ──────────────────────────────
   const fetchServices = useCallback(async () => {
     setServicesLoading(true);
     try {
@@ -1086,6 +1094,8 @@ function CreateAppointmentModal({
         .map((s) => ({
           id: s.service_name,
           title: s.service_name,
+          // ── fee: support multiple possible field names from the API ──
+          fee: s.fee ?? s.price ?? s.amount ?? s.default_fee ?? null,
           isPsych: s.service_name
             .toLowerCase()
             .includes("psychological assessment"),
@@ -1117,14 +1127,28 @@ function CreateAppointmentModal({
     setForm((f) => ({ ...f, start_time: t, end_time: end }));
   };
 
+  // ── When service is selected, auto-fill bill amount if not manually edited
   const handleServiceSelect = (id) => {
     setSelectedService(id);
     set("service_type", id);
     const svc = services.find((s) => s.id === id);
+
+    // Auto-fill bill_amount from service fee ONLY if admin and not manually edited
+    if (
+      isAdmin &&
+      !billManuallyEdited &&
+      svc?.fee !== null &&
+      svc?.fee !== undefined
+    ) {
+      set("bill_amount", String(svc.fee));
+    }
+
     if (!svc?.isPsych) {
       set("pae_purpose", "");
       setShowPAEPanel(false);
-    } else setShowPAEPanel(true);
+    } else {
+      setShowPAEPanel(true);
+    }
   };
 
   async function handleSubmit() {
@@ -1140,7 +1164,6 @@ function CreateAppointmentModal({
     }
 
     setSubmitting(true);
-
     const fd = new FormData();
     fd.append("patient_id", selectedPatient.patient_id);
     if (form.informant_name.trim()) {
@@ -1154,14 +1177,20 @@ function CreateAppointmentModal({
     fd.append("reason_for_consultation", form.reason_for_consultation);
     fd.append("service_type", form.service_type);
     if (form.pae_purpose) fd.append("pae_purpose", form.pae_purpose);
-    fd.append("payment_status", form.payment_status);
 
-    if (form.payment_status === "paid" && form.payment_reference.trim()) {
-      fd.append("payment_reference", form.payment_reference.trim());
+    // ── Payment fields — only send if admin ──
+    if (isAdmin) {
+      fd.append("payment_status", form.payment_status);
+      if (form.payment_status === "paid" && form.payment_reference.trim()) {
+        fd.append("payment_reference", form.payment_reference.trim());
+      }
+      if (form.bill_amount !== "" && form.bill_amount !== null) {
+        fd.append("bill_amount", form.bill_amount);
+      }
+      receiptEntries.forEach((entry) => fd.append("receipts[]", entry.file));
     }
 
     if (selectedDoctor) fd.append("doctor_user_id", selectedDoctor.id);
-    receiptEntries.forEach((entry) => fd.append("receipts[]", entry.file));
 
     const url = isAdmin
       ? `${API_BASE}/admin/appointments`
@@ -1209,6 +1238,7 @@ function CreateAppointmentModal({
     clearAllReceipts();
     setErrors({});
     setSuccessData(null);
+    setBillManuallyEdited(false);
     onClose();
   }
 
@@ -1242,8 +1272,8 @@ function CreateAppointmentModal({
   const isPAE =
     services.find((s) => s.id === selectedService)?.isPsych ?? false;
   const showReceiptSection = showReceipt || form.payment_status === "paid";
+  const selectedServiceObj = services.find((s) => s.id === selectedService);
 
-  /* ─── Appointment ref preview ─── */
   const refPreview = (() => {
     if (!form.service_type) return null;
     const lower = form.service_type.toLowerCase();
@@ -1256,7 +1286,6 @@ function CreateAppointmentModal({
     return `${prefix}-${date}-XXXX`;
   })();
 
-  /* ─── Header date display: Philippine format ─── */
   const headerDateDisplay = form.appointment_date
     ? formatDatePH(form.appointment_date)
     : formatDatePH(new Date());
@@ -1285,9 +1314,13 @@ function CreateAppointmentModal({
         .receipt-remove-btn:hover{background:#fff0f0}
         .receipt-add-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed #c4a8e8;border-radius:10px;background:none;color:#4D227C;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
         .receipt-add-more-btn:hover{background:#f5f0fb;border-color:#4D227C}
+        .bill-input-wrap{position:relative;display:flex;align-items:center}
+        .bill-peso-sign{position:absolute;left:13px;font-size:14px;font-weight:700;color:#059669;pointer-events:none;z-index:1}
+        .bill-input{width:100%;padding:10px 13px 10px 28px;border-radius:9px;border:1.5px solid #a7f3d0;font-size:15px;font-weight:700;color:#065f46;background:#f0fdf4;box-sizing:border-box;outline:none;transition:border .2s,box-shadow .2s;font-family:'Poppins',sans-serif}
+        .bill-input:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,0.12)}
+        .bill-input::placeholder{color:#9ca3af;font-weight:400}
       `}</style>
 
-      {/* ── Image Preview Modal ── */}
       {previewEntry && (
         <ImagePreviewModal
           file={previewEntry.file}
@@ -1322,7 +1355,6 @@ function CreateAppointmentModal({
               animation: "paeIn .25s ease",
             }}
           >
-            {/* Checkmark */}
             <div
               style={{
                 width: "56px",
@@ -1360,14 +1392,14 @@ function CreateAppointmentModal({
               The appointment has been successfully saved.
             </p>
 
-            {/* Appointment Reference Number */}
+            {/* Appointment Reference */}
             <div
               style={{
                 background: "#f5f0fb",
                 border: "1.5px solid #d4b8f0",
                 borderRadius: "12px",
                 padding: "16px 20px",
-                marginBottom: "20px",
+                marginBottom: "16px",
               }}
             >
               <div
@@ -1381,7 +1413,7 @@ function CreateAppointmentModal({
                   fontFamily: "Poppins,sans-serif",
                 }}
               >
-              Appointment Reference No.
+                Appointment Reference No.
               </div>
               <div
                 style={{
@@ -1408,8 +1440,65 @@ function CreateAppointmentModal({
               </div>
             </div>
 
-            {/* Payment reference if paid */}
-            {successData.payment_reference && (
+            {/* ── Bill Amount in success modal (admin only) ── */}
+            {isAdmin &&
+              successData.bill_amount !== null &&
+              successData.bill_amount !== undefined && (
+                <div
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1.5px solid #a7f3d0",
+                    borderRadius: "12px",
+                    padding: "14px 20px",
+                    marginBottom: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#059669",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: "4px",
+                        fontFamily: "Poppins,sans-serif",
+                      }}
+                    >
+                      Bill Amount
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "22px",
+                        fontWeight: 700,
+                        color: "#065f46",
+                        fontFamily: "'Courier New',monospace",
+                      }}
+                    >
+                      {formatPeso(successData.bill_amount)}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "50%",
+                      background: "#dcfce7",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FiDollarSign size={20} color="#059669" />
+                  </div>
+                </div>
+              )}
+
+            {/* Payment reference */}
+            {isAdmin && successData.payment_reference && (
               <div
                 style={{
                   background: "#f0fdf4",
@@ -1446,7 +1535,7 @@ function CreateAppointmentModal({
               </div>
             )}
 
-            {/* Quick info — Philippine formatted date & time */}
+            {/* Quick info */}
             <div
               style={{
                 textAlign: "left",
@@ -1471,7 +1560,6 @@ function CreateAppointmentModal({
                   .filter(Boolean)
                   .join(" ") || "—"}
               </div>
-              {/* ── Philippine date format ── */}
               <div
                 style={{
                   fontSize: "12px",
@@ -1482,7 +1570,6 @@ function CreateAppointmentModal({
                 <strong>Date:</strong>{" "}
                 {formatDatePH(successData?.appointment_date)}
               </div>
-              {/* ── Philippine 12-hour time format ── */}
               <div
                 style={{
                   fontSize: "12px",
@@ -1534,11 +1621,10 @@ function CreateAppointmentModal({
 
       <div className={styles.backdrop}>
         <div className={styles.modal}>
-          {/* ── Header — Philippine date ── */}
+          {/* ── Header ── */}
           <div className={styles.header}>
             <h2 className={styles.headerTitle}>Create Appointment</h2>
             <div className={styles.headerRight}>
-              {/* ── Philippine format: "April 16, 2025" ── */}
               <span className={styles.headerDate}>{headerDateDisplay}</span>
               <button className={styles.closeBtn} onClick={handleClose}>
                 <FiX />
@@ -1603,7 +1689,6 @@ function CreateAppointmentModal({
                     onChange={handleStartTime}
                   />
                   <Err field="start_time" />
-                  {/* ── Live AM/PM preview below the time input ── */}
                 </LabeledInput>
                 <LabeledInput label="End Time" disabled>
                   <input
@@ -1742,186 +1827,281 @@ function CreateAppointmentModal({
               </div>
             </div>
 
-            {/* ══ PAYMENT ══ */}
-            
-            <div className={styles.section}>
-              <h4 className={styles.sectionTitle}>Payment Status</h4>
-              <div className={styles.fieldRow}>
-                <select
-                  className={styles.select}
-                  value={form.payment_status}
-                  onChange={(e) => {
-                    set("payment_status", e.target.value);
-                    if (e.target.value !== "paid") set("payment_reference", "");
-                  }}
-                >
-                  <option value="">Select Payment Status</option>
-                  <option value="paid">Paid</option>
-                  <option value="not_paid">Not Paid</option>
-                  <option value="probono">Probono</option>
-                </select>
-              </div>
+            {/* ══ PAYMENT — ADMIN ONLY ══ */}
+            {isAdmin && (
+              <div className={styles.section}>
+                <h4 className={styles.sectionTitle}>Payment & Billing</h4>
 
-              {form.payment_status === "paid" && (
-                <div
-                  style={{
-                    background: "#fff8e1",
-                    border: "1.5px solid #fde68a",
-                    borderRadius: "10px",
-                    padding: "14px 16px",
-                    marginTop: "8px",
-                  }}
-                >
-                  <div
+                {/* ── Bill Amount ── */}
+                <div className={styles.fieldRow}>
+                  <label
                     style={{
                       fontSize: "11px",
-                      fontWeight: 700,
-                      color: "#92400e",
+                      fontWeight: "700",
+                      color: "#059669",
                       textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      letterSpacing: "0.7px",
                       marginBottom: "8px",
-                      fontFamily: "Poppins,sans-serif",
+                      display: "block",
                     }}
                   >
-                    Payment Reference Number
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="GCash / bank transaction reference (optional)"
-                    value={form.payment_reference}
-                    onChange={(e) => set("payment_reference", e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 13px",
-                      borderRadius: "8px",
-                      border: "1.5px solid #fde68a",
-                      fontSize: "13px",
-                      fontFamily: "Poppins,sans-serif",
-                      color: "#333",
-                      boxSizing: "border-box",
-                      background: "#fffdf0",
-                      outline: "none",
-                      transition: "border .2s",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.border = "1.5px solid #f59e0b";
-                      e.target.style.boxShadow =
-                        "0 0 0 3px rgba(245,158,11,0.15)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.border = "1.5px solid #fde68a";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
-                </div>
-              )}
-
-              {showReceiptSection && (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "10px",
-                      marginTop: "12px",
-                    }}
-                  >
-                    <div className={styles.uploadLabel} style={{ margin: 0 }}>
-                      Upload Receipt{receiptEntries.length > 1 ? "s" : ""}
-                    </div>
-                    {receiptEntries.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span style={{ fontSize: "11px", color: "#888" }}>
-                          {receiptEntries.length} file
-                          {receiptEntries.length > 1 ? "s" : ""} selected
-                        </span>
-                        <button
-                          onClick={clearAllReceipts}
+                    Bill Amount
+                    {selectedServiceObj?.fee !== null &&
+                      selectedServiceObj?.fee !== undefined &&
+                      !billManuallyEdited && (
+                        <span
                           style={{
+                            marginLeft: "8px",
                             fontSize: "11px",
-                            color: "#e53e3e",
-                            background: "none",
-                            border: "1px solid #f0d0d0",
-                            borderRadius: "6px",
-                            padding: "2px 8px",
-                            cursor: "pointer",
-                            fontWeight: "600",
+                            color: "#6b7280",
+                            fontWeight: "400",
+                            textTransform: "none",
+                            letterSpacing: 0,
                           }}
                         >
-                          Remove all
-                        </button>
+                          (auto-filled from service:{" "}
+                          {formatPeso(selectedServiceObj.fee)})
+                        </span>
+                      )}
+                    {billManuallyEdited && (
+                      <button
+                        onClick={() => {
+                          const fee = selectedServiceObj?.fee;
+                          if (fee !== null && fee !== undefined)
+                            set("bill_amount", String(fee));
+                          setBillManuallyEdited(false);
+                        }}
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "10px",
+                          color: "#4D227C",
+                          background: "none",
+                          border: "1px solid #d4b8f0",
+                          borderRadius: "4px",
+                          padding: "1px 6px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          textTransform: "none",
+                          letterSpacing: 0,
+                        }}
+                      >
+                        Reset to default
+                      </button>
+                    )}
+                  </label>
+                  <div className="bill-input-wrap">
+                    <span className="bill-peso-sign">₱</span>
+                    <input
+                      className="bill-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={form.bill_amount}
+                      onChange={(e) => {
+                        set("bill_amount", e.target.value);
+                        setBillManuallyEdited(true);
+                      }}
+                    />
+                  </div>
+                 
+                  <Err field="bill_amount" />
+                </div>
+
+                {/* ── Payment Status ── */}
+                <div className={styles.fieldRow} style={{ marginTop: "14px" }}>
+                  <label
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "#4D227C",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.7px",
+                      marginBottom: "8px",
+                      display: "block",
+                    }}
+                  >
+                    Payment Status
+                  </label>
+                  <select
+                    className={styles.select}
+                    value={form.payment_status}
+                    onChange={(e) => {
+                      set("payment_status", e.target.value);
+                      if (e.target.value !== "paid")
+                        set("payment_reference", "");
+                    }}
+                  >
+                    <option value="">Select Payment Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="not_paid">Not Paid</option>
+                    <option value="probono">Probono</option>
+                  </select>
+                </div>
+
+                {/* ── Payment Reference (only when paid) ── */}
+                {form.payment_status === "paid" && (
+                  <div
+                    style={{
+                      background: "#fff8e1",
+                      border: "1.5px solid #fde68a",
+                      borderRadius: "10px",
+                      padding: "14px 16px",
+                      marginTop: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#92400e",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        marginBottom: "8px",
+                        fontFamily: "Poppins,sans-serif",
+                      }}
+                    >
+                      Payment Reference Number
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="GCash / bank transaction reference (optional)"
+                      value={form.payment_reference}
+                      onChange={(e) => set("payment_reference", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 13px",
+                        borderRadius: "8px",
+                        border: "1.5px solid #fde68a",
+                        fontSize: "13px",
+                        fontFamily: "Poppins,sans-serif",
+                        color: "#333",
+                        boxSizing: "border-box",
+                        background: "#fffdf0",
+                        outline: "none",
+                        transition: "border .2s",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.border = "1.5px solid #f59e0b";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(245,158,11,0.15)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.border = "1.5px solid #fde68a";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* ── Receipt Upload ── */}
+                {showReceiptSection && (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "10px",
+                        marginTop: "12px",
+                      }}
+                    >
+                      <div className={styles.uploadLabel} style={{ margin: 0 }}>
+                        Upload Receipt{receiptEntries.length > 1 ? "s" : ""}
+                      </div>
+                      {receiptEntries.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span style={{ fontSize: "11px", color: "#888" }}>
+                            {receiptEntries.length} file
+                            {receiptEntries.length > 1 ? "s" : ""} selected
+                          </span>
+                          <button
+                            onClick={clearAllReceipts}
+                            style={{
+                              fontSize: "11px",
+                              color: "#e53e3e",
+                              background: "none",
+                              border: "1px solid #f0d0d0",
+                              borderRadius: "6px",
+                              padding: "2px 8px",
+                              cursor: "pointer",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Remove all
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      ref={receiptInputRef}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        if (e.target.files?.length)
+                          addReceiptFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    {receiptEntries.length > 0 && (
+                      <div style={{ marginBottom: "4px" }}>
+                        {receiptEntries.map((entry) => (
+                          <ReceiptItem
+                            key={entry.id}
+                            entry={entry}
+                            onRemove={removeReceiptEntry}
+                            onPreview={setPreviewEntry}
+                          />
+                        ))}
                       </div>
                     )}
-                  </div>
-                  <input
-                    ref={receiptInputRef}
-                    type="file"
-                    accept="image/*,application/pdf"
-                    multiple
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      if (e.target.files?.length)
-                        addReceiptFiles(e.target.files);
-                      e.target.value = "";
-                    }}
-                  />
-                  {receiptEntries.length > 0 && (
-                    <div style={{ marginBottom: "4px" }}>
-                      {receiptEntries.map((entry) => (
-                        <ReceiptItem
-                          key={entry.id}
-                          entry={entry}
-                          onRemove={removeReceiptEntry}
-                          onPreview={setPreviewEntry}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {receiptEntries.length === 0 ? (
-                    <div
-                      className={styles.uploadZone}
-                      onClick={() => receiptInputRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (e.dataTransfer.files?.length)
-                          addReceiptFiles(e.dataTransfer.files);
-                      }}
-                    >
-                      <div className={styles.uploadPlaceholder}>
-                        <FiUpload className={styles.uploadIcon} />
-                        <span className={styles.uploadText}>
-                          Click or drag &amp; drop to upload receipt
-                        </span>
-                        <span className={styles.uploadHint}>
-                          Supports JPG, PNG, PDF · Multiple files allowed
-                        </span>
+                    {receiptEntries.length === 0 ? (
+                      <div
+                        className={styles.uploadZone}
+                        onClick={() => receiptInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files?.length)
+                            addReceiptFiles(e.dataTransfer.files);
+                        }}
+                      >
+                        <div className={styles.uploadPlaceholder}>
+                          <FiUpload className={styles.uploadIcon} />
+                          <span className={styles.uploadText}>
+                            Click or drag &amp; drop to upload receipt
+                          </span>
+                          <span className={styles.uploadHint}>
+                            Supports JPG, PNG, PDF · Multiple files allowed
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <button
-                      className="receipt-add-more-btn"
-                      onClick={() => receiptInputRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (e.dataTransfer.files?.length)
-                          addReceiptFiles(e.dataTransfer.files);
-                      }}
-                    >
-                      <FiPlus size={14} /> Add more receipts
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+                    ) : (
+                      <button
+                        className="receipt-add-more-btn"
+                        onClick={() => receiptInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files?.length)
+                            addReceiptFiles(e.dataTransfer.files);
+                        }}
+                      >
+                        <FiPlus size={14} /> Add more receipts
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Footer ── */}
