@@ -1520,7 +1520,7 @@ function CreateAppointmentModal({
                     fontFamily: "Poppins,sans-serif",
                   }}
                 >
-                  💳 Payment Reference
+                 Payment Reference
                 </div>
                 <div
                   style={{
