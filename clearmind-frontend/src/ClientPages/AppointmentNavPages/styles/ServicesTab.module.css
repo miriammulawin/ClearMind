@@ -37,7 +37,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .serviceDescription {
@@ -45,16 +45,16 @@
   font-size: 13px;
   line-height: 1.6;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .continueButton {
+  align-self: flex-end; /* ← pushes only the button to the right */
   background-color: #4e237c !important;
-  max-width: min-content;
   border: none !important;
   border-radius: 20px !important;
   padding: 10px 32px !important;
   font-weight: bold !important;
-  width: 100%;
   font-size: 14px !important;
   cursor: pointer;
   color: white !important;
@@ -224,4 +224,75 @@
   .bottomNavigation {
     padding-bottom: max(12px, env(safe-area-inset-bottom));
   }
+}
+/* ── Price row ── */
+.servicePriceRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #f3eeff;
+  border: 1.5px solid #d8c9ef;
+  border-radius: 8px;
+  padding: 7px 14px;
+  margin-bottom: 16px;
+}
+
+.priceLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #7c5cbf;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.priceValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #4a1d96;
+}
+
+/* ── Purposes box ── */
+.purposeList {
+  background: #faf7ff;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  border: 1.5px solid #e2d9f3;
+  width: 100%;
+}
+
+.purposeListLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7341a8;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.purposeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e2d9f3;
+}
+
+.purposeRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.purposeName {
+  font-size: 0.875rem;
+  color: #374151;
+  flex: 1;
+  padding-right: 16px; /* prevents crowding on long names */
+}
+
+.purposePrice {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #4a1d96;
+  white-space: nowrap;
 }
