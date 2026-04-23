@@ -55,7 +55,7 @@ export default function ProfilePage({ userData, onEditClick }) {
     },
     {
       icon: <IoMdInformationCircleOutline />,
-      label: "About",
+      label: "Abouts",
       link: "/client/about",
     },
     { icon: <IoLogOutOutline />, label: "Log Out", action: handleLogoutClick },

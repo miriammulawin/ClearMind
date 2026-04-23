@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";  // ← fixed
 import {
   FaPen,
   FaPhone,
@@ -20,6 +20,10 @@ const ProfilePage = () => {
   const { userData, onSave } = useOutletContext();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [user, setUser] = useState(userData);
+
+  useEffect(() => {
+    if (userData) setUser(userData);
+  }, [userData]);
 
   const handleSave = (updatedData) => {
     setUser(updatedData);
@@ -45,7 +49,7 @@ const ProfilePage = () => {
     });
   };
 
-  const age = computeAge(user?.dateOfBirth);
+  const age = computeAge(user?.dob);  // ← fixed: was dateOfBirth
 
   const InfoRow = ({ icon: Icon, label, value }) => (
     <div className={styles.infoRow}>
@@ -68,13 +72,13 @@ const ProfilePage = () => {
           <ProfileAvatar
             firstName={user?.firstName}
             lastName={user?.lastName}
-            profilePic={user?.profilePic}
+            profilePic={user?.profilePicture}  
             size={88}
           />
         </div>
         <div className={styles.heroInfo}>
           <h1 className={styles.heroName}>
-            {[user?.firstName, user?.middleName, user?.lastName]
+            {[user?.firstName, user?.middleInitial, user?.lastName]
               .filter(Boolean)
               .join(" ") || "—"}
           </h1>
@@ -83,9 +87,9 @@ const ProfilePage = () => {
               <span className={styles.badge}>{user.civilStatus}</span>
             )}
             {user?.sex && <span className={styles.badge}>{user.sex}</span>}
-            {user?.preferredPronouns && (
+            {user?.preferredPronoun && (  
               <span className={styles.badgeOutline}>
-                {user.preferredPronouns}
+                {user.preferredPronoun}
               </span>
             )}
           </div>
@@ -113,7 +117,7 @@ const ProfilePage = () => {
             <InfoRow
               icon={FaCalendarAlt}
               label="Date of Birth"
-              value={`${formatDate(user?.dateOfBirth)}${age !== null ? ` (${age} yrs old)` : ""}`}
+              value={`${formatDate(user?.dob)}${age !== null ? ` (${age} yrs old)` : ""}`}
             />
             <InfoRow icon={FaVenusMars} label="Sex" value={user?.sex} />
             {user?.genderIdentity && (
@@ -147,7 +151,7 @@ const ProfilePage = () => {
             <InfoRow
               icon={FaMapMarkerAlt}
               label="Home Address"
-              value={user?.homeAddress}
+              value={user?.address}  
             />
           </div>
         </div>

@@ -84,7 +84,7 @@ export default function AccountPage({ userData, onEditClick }) {
                 <ProfileAvatar
                   firstName={userData.firstName}
                   lastName={userData.lastName}
-                  profilePic={userData.profilePic}
+                  profilePic={userData.profilePicture}
                   size={52}
                 />
                 <div className="avatar-edit-btn">
@@ -95,8 +95,8 @@ export default function AccountPage({ userData, onEditClick }) {
               <div className="user-details">
                 <h5 className="user-name">
                   {userData.firstName}{" "}
-                  {userData.middleName && userData.middleName !== "N/A"
-                    ? `${userData.middleName[0]}. `
+                  {userData.middleInitial && userData.middleInitial !== "N/A"
+                    ? `${userData.middleInitial[0]}. `
                     : ""}
                   {userData.lastName}
                 </h5>

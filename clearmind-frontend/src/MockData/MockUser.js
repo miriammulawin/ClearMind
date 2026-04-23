@@ -3,7 +3,7 @@
 
 export const mockUser = {
   id: "usr_001",
-  firstName: "Juan",
+  firstName: "Juans",
   middleName: "Santos",
   lastName: "Dela Cruz",
   civilStatus: "Single",
