@@ -44,6 +44,40 @@ class AppointmentController extends Controller
     }
 
     /* ══════════════════════════════════════════════
+       GET /appointments/booked-slots
+       Returns all confirmed time slots for a doctor
+       on a specific date so the frontend can block
+       them out in the time picker.
+
+       Query params:
+         doctor_user_id  — required
+         date            — required (YYYY-MM-DD)
+    ══════════════════════════════════════════════ */
+    public function bookedSlots(Request $request): JsonResponse
+    {
+        $request->validate([
+            'doctor_user_id' => ['required', 'integer', 'exists:users,id'],
+            'date'           => ['required', 'date'],
+        ]);
+
+        // Only confirmed appointments block the slot.
+        // pending / cancelled / no_show do NOT block.
+        $slots = Appointment::where('doctor_user_id', $request->doctor_user_id)
+            ->whereDate('appointment_date', $request->date)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->get(['appointment_id', 'start_time', 'end_time', 'status']);
+
+        return response()->json([
+            'data' => $slots->map(fn($s) => [
+                'appointment_id' => $s->appointment_id,
+                'start_time'     => substr($s->start_time, 0, 5), // HH:MM
+                'end_time'       => substr($s->end_time,   0, 5),
+                'status'         => $s->status,
+            ]),
+        ]);
+    }
+
+    /* ══════════════════════════════════════════════
        POST /appointments
     ══════════════════════════════════════════════ */
     public function store(Request $request): JsonResponse
@@ -71,7 +105,7 @@ class AppointmentController extends Controller
             'pae_purpose'              => ['nullable', 'string', 'max:200'],
             'payment_status'           => ['nullable', 'in:paid,not_paid,probono'],
             'payment_reference'        => ['nullable', 'string', 'max:100'],
-            'bill_amount'              => ['nullable', 'numeric', 'min:0', 'max:999999.99'], // ← BAGO
+            'bill_amount'              => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'receipts'                 => ['nullable', 'array', 'max:10'],
             'receipts.*'               => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
             'doctor_user_id'           => ['nullable', 'exists:users,id'],
@@ -82,6 +116,33 @@ class AppointmentController extends Controller
                 'message' => 'Validation failed.',
                 'errors'  => $validator->errors(),
             ], 422);
+        }
+
+        /* ── Time-slot conflict check ────────────────────────────────
+           If a doctor is assigned, make sure the requested time window
+           does not overlap any existing CONFIRMED appointment for that
+           doctor on the same date.
+
+           Overlap condition (Allen's interval algebra):
+             existing.start_time < new.end_time
+             AND existing.end_time > new.start_time
+        ─────────────────────────────────────────────────────────── */
+        if ($request->filled('doctor_user_id')) {
+            $conflict = Appointment::where('doctor_user_id', $request->doctor_user_id)
+                ->whereDate('appointment_date', $request->appointment_date)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->where('start_time', '<', $request->end_time)
+                ->where('end_time',   '>', $request->start_time)
+                ->exists();
+
+            if ($conflict) {
+                return response()->json([
+                    'message' => 'The selected time slot is already taken. Please choose a different time.',
+                    'errors'  => [
+                        'start_time' => ['This time slot overlaps with an existing confirmed appointment.'],
+                    ],
+                ], 422);
+            }
         }
 
         DB::beginTransaction();
@@ -132,7 +193,7 @@ class AppointmentController extends Controller
                 'payment_reference'       => $request->filled('payment_reference')
                                                 ? $request->payment_reference
                                                 : null,
-                'bill_amount'             => $request->filled('bill_amount')   // ← BAGO
+                'bill_amount'             => $request->filled('bill_amount')
                                                 ? $request->bill_amount
                                                 : null,
                 'receipt_paths'           => $receiptPaths,
@@ -198,7 +259,7 @@ class AppointmentController extends Controller
             'doctor_user_id'    => ['nullable', 'exists:users,id'],
             'payment_status'    => ['nullable', 'in:paid,not_paid,probono'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
-            'bill_amount'       => ['nullable', 'numeric', 'min:0', 'max:999999.99'], // ← BAGO
+            'bill_amount'       => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'notes'             => ['nullable', 'string'],
             'service_type'      => ['nullable', 'string', 'max:100'],
             'receipts'          => ['nullable', 'array', 'max:10'],
@@ -215,7 +276,7 @@ class AppointmentController extends Controller
         try {
             $appt->fill($request->only([
                 'status', 'doctor_user_id', 'payment_status', 'payment_reference',
-                'bill_amount', 'notes', 'visit_type', 'appointment_date',        // ← bill_amount BAGO
+                'bill_amount', 'notes', 'visit_type', 'appointment_date',
                 'start_time', 'end_time', 'service_type',
             ]));
 
