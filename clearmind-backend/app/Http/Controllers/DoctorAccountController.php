@@ -20,6 +20,7 @@ class DoctorAccountController extends Controller
             'middleInitial' => ['nullable', 'string', 'max:5'],
             'sex'           => ['nullable', 'in:male,female,other'],
             'dob'           => ['required', 'date', 'before:today'],
+
             'email'         => ['required', 'email'],
             'contactNo'     => ['nullable', 'string', 'max:20'],
             'address'       => ['nullable', 'string', 'max:255'],
