@@ -1,19 +1,44 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Accordion, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "./styles/ServicesTab.module.css";
 import { IHelpTrigger } from "./iHelp";
+import axiosClient from "../../axiosClient"; 
 
 const ServicesTab = () => {
   const navigate = useNavigate();
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axiosClient
+      .get("/admin/services")
+      .then(({ data }) => {
+        const available = (data.data || []).filter(
+          (s) => s.is_available === true || s.is_available === 1,
+        );
+        setServices(available);
+      })
+      .catch((e) => console.error("Fetch Services Error:", e))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const formatPrice = (price) => {
+    const num = parseFloat(price);
+    return isNaN(num)
+      ? null
+      : `₱${num.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+  };
 
   const handleContinue = (serviceTitle) => {
     if (serviceTitle === "Psychotherapy and Counseling") {
       navigate("/client/appointment/psychotherapy-and-counseling", {
         state: { selectedService: serviceTitle },
       });
-    } else if (serviceTitle === "Psychological Assessment and Evaluation") {
+    } else if (
+      serviceTitle.toLowerCase().includes("psychological assessment")
+    ) {
       navigate("/client/appointment/psychological-assessment", {
         state: { selectedService: serviceTitle },
       });
@@ -24,20 +49,13 @@ const ServicesTab = () => {
     }
   };
 
-  const services = [
-    {
-      id: "0",
-      title: "Psychotherapy and Counseling",
-      description:
-        "The purpose of Psychotherapy and Counseling is to help individuals understand and manage their thoughts, emotions, and behaviors in a healthy way. It aims to promote emotional healing, personal growth, and improved coping skills for dealing with life's challenges and mental health concerns.",
-    },
-    {
-      id: "1",
-      title: "Psychological Assessment and Evaluation",
-      description:
-        "The purpose of Psychological Assessment Test is to gather and integrate data about a person's mental, emotional, cognitive, behavioral, personality, and social functioning. Tools used include standardized tests, interviews, observations, and other measures.",
-    },
-  ];
+  if (loading) {
+    return (
+      <div className={styles.appointmentServicesContainer}>
+        <p style={{ color: "#888", textAlign: "center" }}>Loading services…</p>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.appointmentServicesContainer}>
@@ -48,26 +66,69 @@ const ServicesTab = () => {
       <IHelpTrigger onSelectService={(title) => handleContinue(title)} />
 
       <Accordion>
-        {services.map((service) => (
-          <Accordion.Item
-            key={service.id}
-            eventKey={service.id}
-            className={styles.accordionItemCustom}
-          >
-            <Accordion.Header className={styles.accordionHeaderCustom}>
-              <span className={styles.accordionTitle}>{service.title}</span>
-            </Accordion.Header>
-            <Accordion.Body className={styles.accordionBodyCustom}>
-              <p className={styles.serviceDescription}>{service.description}</p>
-              <Button
-                className={styles.continueButton}
-                onClick={() => handleContinue(service.title)}
-              >
-                CONTINUE
-              </Button>
-            </Accordion.Body>
-          </Accordion.Item>
-        ))}
+        {services.map((service) => {
+          const isPsych = service.service_name
+            .toLowerCase()
+            .includes("psychological assessment");
+          const activePurposes = (service.purposes || []).filter(
+            (p) => p.is_active === true || p.is_active === 1,
+          );
+
+          return (
+            <Accordion.Item
+              key={service.service_id}
+              eventKey={String(service.service_id)}
+              className={styles.accordionItemCustom}
+            >
+              <Accordion.Header className={styles.accordionHeaderCustom}>
+                <span className={styles.accordionTitle}>
+                  {service.service_name}
+                </span>
+              </Accordion.Header>
+              <Accordion.Body className={styles.accordionBodyCustom}>
+                <p className={styles.serviceDescription}>
+                  {service.description}
+                </p>
+
+                {/* Consultation fee */}
+                {formatPrice(service.price) && (
+                  <div className={styles.servicePriceRow}>
+                    <span className={styles.priceLabel}>Consultation Fee:</span>
+                    <span className={styles.priceValue}>
+                      {formatPrice(service.price)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Purposes — only for Psychological Assessment */}
+                {isPsych && activePurposes.length > 0 && (
+                  <div className={styles.purposeList}>
+                    <p className={styles.purposeListLabel}>
+                      Assessment Purposes &amp; Fees:
+                    </p>
+                    {activePurposes.map((p) => (
+                      <div key={p.purpose_id} className={styles.purposeRow}>
+                        <span className={styles.purposeName}>
+                          {p.purpose_name}
+                        </span>
+                        <span className={styles.purposePrice}>
+                          {formatPrice(p.price) || "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button
+                  className={styles.continueButton}
+                  onClick={() => handleContinue(service.service_name)}
+                >
+                  CONTINUE
+                </Button>
+              </Accordion.Body>
+            </Accordion.Item>
+          );
+        })}
       </Accordion>
     </div>
   );
