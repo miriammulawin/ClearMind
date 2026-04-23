@@ -1,32 +1,36 @@
-import React from 'react';
-import { Container } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { FaCalendarTimes } from 'react-icons/fa';
-import MOCK_APPOINTMENTS from '../../MockData/MockAppointment';
-import AppointmentCard from './AppointmentComponents/AppointmentCard';
-import "./styles/PendingTab.css";
+import React from "react";
+import { Container } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { FaCalendarTimes } from "react-icons/fa";
+import MOCK_APPOINTMENTS from "../../MockData/MockAppointment";
+import AppointmentCard from "./AppointmentComponents/AppointmentCard";
+import styles from "./styles/PendingTab.module.css";
 
 const PendingTab = () => {
   const navigate = useNavigate();
 
   const handleViewDetails = (appointmentId) => {
-    navigate(`/client/appointment/details/${appointmentId}`, { state: { from: 'pending' } });
+    navigate(`/client/appointment/details/${appointmentId}`, {
+      state: { from: "pending" },
+    });
   };
 
   const pendingAppointments = MOCK_APPOINTMENTS.filter(
-    (apt) => apt.status === 'Pending'
+    (apt) => apt.status === "Pending",
   );
 
   return (
-    <Container className="py-4 upcoming-container">
-      <div className="d-flex justify-content-between align-items-center mb-3 header-section">
-        <h5 className='title-upcoming'>PENDING APPOINTMENTS</h5>
+    <Container className={`py-4 ${styles.upcomingContainer}`}>
+      <div
+        className={`d-flex justify-content-between align-items-center mb-3 ${styles.headerSection}`}
+      >
+        <h5 className={styles.titleUpcoming}>PENDING APPOINTMENTS</h5>
       </div>
 
-      <div className='appointments-list'>
+      <div className={styles.appointmentsList}>
         {pendingAppointments.length === 0 ? (
-          <div className='no-appointments'>
-            <FaCalendarTimes className='calendar-icon' />
+          <div className={styles.noAppointments}>
+            <FaCalendarTimes className={styles.calendarIcon} />
             <p>You have no pending appointments.</p>
           </div>
         ) : (

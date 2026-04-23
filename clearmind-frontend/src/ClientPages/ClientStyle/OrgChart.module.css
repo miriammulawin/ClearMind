@@ -1,0 +1,119 @@
+.orgChartLabel {
+  font-weight: 500;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+/* ─── Accordion Item ─────────────────────────────────────────────────────── */
+
+.accordionItem {
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: var(--color-background-primary);
+  transition: background 0.2s;
+}
+
+.accordionHeader.open {
+  background: var(--color-background-secondary);
+}
+
+.accordionHeaderText {
+  flex: 1;
+}
+
+.accordionTitle {
+  margin: 0;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.accordionSubtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.accordionChevron {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  display: inline-block;
+  transform: none;
+  transition: transform 0.25s;
+}
+
+.accordionChevron.open {
+  transform: rotate(180deg);
+}
+
+.accordionBody {
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+
+/* ─── Department Head Row ────────────────────────────────────────────────── */
+
+.headRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-background-secondary);
+}
+
+.headName {
+  margin: 0;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.headRole {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ─── Member Row ─────────────────────────────────────────────────────────── */
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+
+.memberName {
+  margin: 0;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.memberRole {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────────────── */
+
+.avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  flex-shrink: 0;
+}

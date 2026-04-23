@@ -68,7 +68,7 @@ const AppointmentSuccessScreen = ({
 
           <button
             className={styles.viewBtn}
-            onClick={() => navigate("/client/appointments")} // adjust path
+            onClick={() => navigate("/client/appointment/pending")} // adjust path
           >
             View Appointment
           </button>

@@ -1,11 +1,11 @@
 // AppointmentForm/PAaEFormHeader.jsx
 // Sticky header: purple back bar + title/service label + stepper with progress bar
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
-import { FiCheck } from 'react-icons/fi';
-import styles from '../style/PAaEAppointmentForm.module.css';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
+import { FiCheck } from "react-icons/fi";
+import styles from "../style/PAaEAppointmentForm.module.css";
 
 /* -----------------------------------------------------------------
    Stepper
@@ -15,34 +15,40 @@ function Stepper({ steps, current }) {
     <div className={styles.stepperOuter}>
       <div className={styles.stepper}>
         {steps.map((label, i) => {
-          const idx      = i + 1;
-          const isDone   = idx < current;
+          const idx = i + 1;
+          const isDone = idx < current;
           const isActive = idx === current;
 
           return (
             <React.Fragment key={i}>
               <div className={styles.stepItem}>
-                <div className={[
-                  styles.stepCircle,
-                  isDone   ? styles.stepDone    : '',
-                  isActive ? styles.stepActive  : '',
-                  !isDone && !isActive ? styles.stepPending : '',
-                ].join(' ')}>
+                <div
+                  className={[
+                    styles.stepCircle,
+                    isDone ? styles.stepDone : "",
+                    isActive ? styles.stepActive : "",
+                    !isDone && !isActive ? styles.stepPending : "",
+                  ].join(" ")}
+                >
                   {isDone ? <FiCheck size={13} strokeWidth={3} /> : idx}
                 </div>
-                <span className={[
-                  styles.stepLabel,
-                  isActive ? styles.stepLabelActive : '',
-                  isDone   ? styles.stepLabelDone   : '',
-                ].join(' ')}>
+                <span
+                  className={[
+                    styles.stepLabel,
+                    isActive ? styles.stepLabelActive : "",
+                    isDone ? styles.stepLabelDone : "",
+                  ].join(" ")}
+                >
                   {label}
                 </span>
               </div>
               {i < steps.length - 1 && (
-                <div className={[
-                  styles.stepConnector,
-                  isDone ? styles.stepConnectorDone : '',
-                ].join(' ')} />
+                <div
+                  className={[
+                    styles.stepConnector,
+                    isDone ? styles.stepConnectorDone : "",
+                  ].join(" ")}
+                />
               )}
             </React.Fragment>
           );
@@ -71,7 +77,6 @@ function Stepper({ steps, current }) {
 const PAaEFormHeader = ({ serviceTitle, steps, currentStep, onBack }) => {
   return (
     <div className={styles.header}>
-
       {/* ── Purple back bar ── */}
       <div className={styles.backRow}>
         <button className={styles.backBtn} onClick={onBack}>
@@ -89,7 +94,6 @@ const PAaEFormHeader = ({ serviceTitle, steps, currentStep, onBack }) => {
 
       {/* ── Stepper ── */}
       <Stepper steps={steps} current={currentStep} />
-
     </div>
   );
 };

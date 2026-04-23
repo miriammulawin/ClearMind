@@ -1,15 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { flushSync } from "react-dom";
-import { Container, Card, Button } from "react-bootstrap";
+import { Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
-import {
-  FaVideo,
-  FaClinicMedical,
-  FaCalendarCheck,
-  FaUserCircle,
-  FaArrowLeft,
-} from "react-icons/fa";
+import { FaArrowLeft } from "react-icons/fa";
+
 import MOCK_DOCTORS from "../../../MockData/MockDoctors.js";
+import DoctorCard from "../AppointmentComponents/DoctorCard.jsx";
 import DoctorProfile from "../AppointmentComponents/DoctorProfile.jsx";
 import ServiceAlert from "../AppointmentComponents/ServiceAlert.jsx";
 import styles from "./style/PACSetAppointment.module.css";
@@ -38,21 +34,6 @@ const PACAppointment = () => {
   const [activeSpecialist, setActiveSpecialist] = useState("Psychologist");
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
 
-  const getConsultationIcon = (mode) =>
-    mode === "Online" ? (
-      <FaVideo className={styles.consultationIcon} />
-    ) : (
-      <FaClinicMedical className={styles.consultationIcon} />
-    );
-
-  const formatScheduleDays = (days) => {
-    if (days.length === 1) return days[0];
-    if (days.length === 2) return days.join(" & ");
-    const lastDay = days[days.length - 1];
-    const otherDays = days.slice(0, -1).join(", ");
-    return `${otherDays} & ${lastDay}`;
-  };
-
   const handleViewProfile = (doctorId) => {
     setSelectedDoctor(doctorId);
     setSelectedDate(null);
@@ -65,9 +46,7 @@ const PACAppointment = () => {
     if (doctor) {
       navigate(
         "/client/appointment/psychotherapy-and-counseling/set-appointment-form",
-        {
-          state: { doctor, selectedService },
-        },
+        { state: { doctor, selectedService } },
       );
     }
   };
@@ -92,7 +71,6 @@ const PACAppointment = () => {
     });
   };
 
-  // Filter doctors by specialist role
   const filteredDoctors = activeSpecialist
     ? MOCK_DOCTORS.filter((d) =>
         d.title
@@ -105,28 +83,93 @@ const PACAppointment = () => {
     ? MOCK_DOCTORS.find((d) => d.id === selectedDoctor)
     : null;
 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     <Container className={`${styles.bookAppointmentContainer} py-4`}>
-      {/* ── Header ── */}
-      <div className={styles.titleContainerBook}>
-        <h5 className={styles.titleBookAppointment}>SET AN APPOINTMENT</h5>
-        <Button
-          variant="button"
-          className={styles.backToServices}
-          onClick={() =>
-            selectedDoctor
-              ? handleBackToDoctors()
-              : navigate("/client/appointment/services")
-          }
+      {/* ── Specialist Info Modal ── (unchanged) ── */}
+      {showSpecialistModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setShowSpecialistModal(false)}
         >
-          <FaArrowLeft /> Go Back
-        </Button>
-      </div>
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h6 className={styles.modalTitle}>Which specialist do I need?</h6>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowSpecialistModal(false)}
+              >
+                ✕
+              </button>
+            </div>
 
-      <ServiceAlert selectedService={selectedService} />
+            <div className={styles.modalBody}>
+              <div className={styles.modalCard}>
+                <p className={styles.modalCardTitle}>🧠 Psychologist</p>
+                <p className={styles.modalCardDesc}>
+                  Best if you're dealing with stress, anxiety, trauma,
+                  relationship issues, or just need someone to talk to. They
+                  help through therapy and assessments — no medication involved.
+                </p>
+              </div>
 
-      {!selectedDoctor ? (
-        <>
+              <div className={styles.modalDivider} />
+
+              <div className={styles.modalCard}>
+                <p className={styles.modalCardTitle}>🩺 Psychiatrist</p>
+                <p className={styles.modalCardDesc}>
+                  Best if you need a formal diagnosis, a mental health
+                  certificate (for work/school/legal), or a psychiatric
+                  evaluation. They are medical doctors who can assess more
+                  complex conditions.
+                </p>
+              </div>
+
+              <div className={styles.modalTip}>
+                💡 <strong>Not sure?</strong> Start with a Psychologist — they
+                can refer you to a Psychiatrist if needed.
+              </div>
+            </div>
+
+            <button
+              className={styles.modalConfirmBtn}
+              onClick={() => setShowSpecialistModal(false)}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main content: two-col on desktop, single-col on mobile ── */}
+      <div className={styles.desktopColumns}>
+        {/* LEFT / MOBILE-FULL: Doctor list — hidden on mobile when profile is open */}
+
+        <div
+          className={`${styles.leftColumn} ${selectedDoctor ? styles.hideOnMobile : ""}`}
+        >
+          {/* ── Header ── */}
+          <div className={styles.titleContainerBook}>
+            <h5 className={styles.titleBookAppointment}>SET AN APPOINTMENT</h5>
+            <Button
+              variant="button"
+              className={styles.backToServices}
+              onClick={() => navigate("/client/appointment/services")}
+            >
+              <FaArrowLeft /> Go Back
+            </Button>
+          </div>
+
+          <ServiceAlert selectedService={selectedService} />
+
           {/* ── Learn More Link ── */}
           <p
             className={styles.specialistLearnMore}
@@ -153,164 +196,75 @@ const PACAppointment = () => {
             </div>
           </div>
 
-          {/* ── Specialist Info Modal ── */}
-          {showSpecialistModal && (
-            <div
-              className={styles.modalOverlay}
-              onClick={() => setShowSpecialistModal(false)}
-            >
-              <div
-                className={styles.modalBox}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className={styles.modalHeader}>
-                  <h6 className={styles.modalTitle}>
-                    Which specialist do I need?
-                  </h6>
-                  <button
-                    className={styles.modalClose}
-                    onClick={() => setShowSpecialistModal(false)}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className={styles.modalBody}>
-                  <div className={styles.modalCard}>
-                    <p className={styles.modalCardTitle}>🧠 Psychologist</p>
-                    <p className={styles.modalCardDesc}>
-                      Best if you're dealing with stress, anxiety, trauma,
-                      relationship issues, or just need someone to talk to. They
-                      help through therapy and assessments — no medication
-                      involved.
-                    </p>
-                  </div>
-
-                  <div className={styles.modalDivider} />
-
-                  <div className={styles.modalCard}>
-                    <p className={styles.modalCardTitle}>🩺 Psychiatrist</p>
-                    <p className={styles.modalCardDesc}>
-                      Best if you need a formal diagnosis, a mental health
-                      certificate (for work/school/legal), or a psychiatric
-                      evaluation. They are medical doctors who can assess more
-                      complex conditions.
-                    </p>
-                  </div>
-
-                  <div className={styles.modalTip}>
-                    💡 <strong>Not sure?</strong> Start with a Psychologist —
-                    they can refer you to a Psychiatrist if needed.
-                  </div>
-                </div>
-
-                <button
-                  className={styles.modalConfirmBtn}
-                  onClick={() => setShowSpecialistModal(false)}
-                >
-                  Got it!
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Doctor Cards ── */}
-          <div className={styles.doctorsList}>
+          <div
+            className={`${styles.doctorsList} ${selectedDoctor ? styles.doctorsListHidden : ""}`}
+          >
             {filteredDoctors.length === 0 ? (
               <p className={styles.noDoctorsMsg}>
                 No doctors available for this specialization.
               </p>
             ) : (
               filteredDoctors.map((doctor) => (
-                <Card key={doctor.id} className={styles.doctorCard}>
-                  <Card.Body className={styles.cardBody}>
-                    <div className={styles.doctorHeader}>
-                      <div className={styles.doctorAvatar}>
-                        <FaUserCircle className={styles.avatarIcon} />
-                      </div>
-                      <div className={styles.doctorInfo}>
-                        <h6 className={styles.doctorName}>{doctor.name}</h6>
-                        <p className={styles.doctorCredentials}>
-                          {doctor.credentials}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={styles.consultationAvailability}>
-                      <p className={styles.availabilityLabel}>
-                        Consultation Availability
-                      </p>
-                      <div className={styles.availabilityDetails}>
-                        <div className={styles.availabilityItem}>
-                          <FaCalendarCheck className={styles.iconSmall} />
-                          <span>
-                            {formatScheduleDays(doctor.schedule.days)}
-                          </span>
-                        </div>
-                        <div className={styles.availabilityItem}>
-                          {getConsultationIcon(doctor.consultationMode)}
-                          <span>{doctor.consultationType}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={styles.earliestSchedule}>
-                      <p className={styles.scheduleLabel}>
-                        Earliest Available Schedule
-                      </p>
-                      <div className={styles.scheduleInfo}>
-                        <div className={styles.scheduleItem}>
-                          {getConsultationIcon(doctor.consultationMode)}
-                          <span>{doctor.consultationType}</span>
-                        </div>
-                        <p className={styles.scheduleTime}>
-                          {doctor.availability[0]?.day},{" "}
-                          {doctor.availability[0]?.slots.find(
-                            (s) => s.available,
-                          )?.time || "N/A"}
-                        </p>
-                        <p className={styles.scheduleFee}>
-                          Fee: ₱
-                          {doctor.consultationFees.initialConsultation.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`${styles.cardActions} mt-3`}>
-                      <Button
-                        variant="outline-purple"
-                        className={styles.btnViewProfile}
-                        onClick={() => handleViewProfile(doctor.id)}
-                      >
-                        VIEW PROFILE
-                      </Button>
-                      <Button
-                        variant="purple"
-                        className={styles.btnBookAppointment}
-                        onClick={() => handleSetAppointment(doctor.id)}
-                      >
-                        SET APPOINTMENT
-                      </Button>
-                    </div>
-                  </Card.Body>
-                </Card>
+                <DoctorCard
+                  key={doctor.id}
+                  doctor={doctor}
+                  isSelected={selectedDoctor === doctor.id}
+                  compact={
+                    isDesktop &&
+                    selectedDoctor !== null &&
+                    selectedDoctor !== doctor.id
+                  }
+                  onViewProfile={handleViewProfile}
+                  onSetAppointment={handleSetAppointment}
+                  onSelect={isDesktop ? (id) => setSelectedDoctor(id) : null}
+                />
               ))
             )}
           </div>
-        </>
-      ) : (
-        doctorData && (
-          <DoctorProfile
-            doctorData={doctorData}
-            selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            onSelectDate={setSelectedDate}
-            onSelectTime={setSelectedTime}
-            onConfirmBooking={handleConfirmBooking}
-            onBack={handleBackToDoctors}
-          />
-        )
-      )}
+        </div>
+
+        {/* RIGHT / MOBILE-FULL: Profile panel */}
+        <div
+          className={`${styles.profilePanel} ${selectedDoctor ? styles.profilePanelActive : ""}`}
+        >
+          {/* <h5> Doctor's Profile:</h5> */}
+          {selectedDoctor && doctorData ? (
+            <>
+              {/* Back button — mobile only */}
+              {!isDesktop && (
+                <div className={styles.profilePanelHeader}>
+                  <h5>Doctor's Profile:</h5>
+                  <Button
+                    variant="button"
+                    className={styles.backToServices}
+                    onClick={handleBackToDoctors}
+                  >
+                    <FaArrowLeft /> Back to Doctors
+                  </Button>
+                </div>
+              )}
+              <DoctorProfile
+                doctorData={doctorData}
+                selectedDate={selectedDate}
+                selectedTime={selectedTime}
+                onSelectDate={setSelectedDate}
+                onSelectTime={setSelectedTime}
+                onConfirmBooking={handleConfirmBooking}
+                onBack={handleBackToDoctors}
+                onBookAppointment={() => handleSetAppointment(selectedDoctor)}
+              />
+            </>
+          ) : (
+            <div className={styles.emptyProfile}>
+              <span className={styles.emptyProfileIcon}>🩺</span>
+              <p className={styles.emptyProfileText}>No doctor selected</p>
+              <p className={styles.emptyProfileSub}>
+                Select a doctor from the list to view their profile here
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       <Outlet />
     </Container>

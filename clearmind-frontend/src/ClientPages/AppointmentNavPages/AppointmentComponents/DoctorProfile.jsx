@@ -11,14 +11,20 @@ const formatFeeLabel = (key) =>
     .replace(/^./, (c) => c.toUpperCase())
     .trim();
 
-const DoctorProfile = ({ doctorData, onBookAppointment }) => {
+const DoctorProfile = ({ doctorData, onBookAppointment, onBack }) => {
   const navigate = useNavigate();
+  console.log("DoctorProfile doctorData:", doctorData);
+  if (!doctorData) return null;
 
   const handleBookAppointment = () => {
     if (onBookAppointment) onBookAppointment();
-    navigate("/client/appointment/set-appointment-form", {
-      state: { doctor: doctorData },
-    });
+    navigate(
+      "/client/appointment/psychotherapy-and-counseling/set-appointment-form",
+      {
+        state: { doctor: doctorData },
+        replace: true,
+      },
+    );
   };
 
   const getConsultationIcon = (mode) => {

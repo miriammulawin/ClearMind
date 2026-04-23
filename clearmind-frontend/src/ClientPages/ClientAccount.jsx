@@ -1,45 +1,29 @@
-import { useState, useEffect } from "react";
-import "./ClientStyle/ClientProfile.css";
-import ClientHeader from "./ClientComponents/Header";
-import ClientFooter from "./ClientComponents/Footer";
+// ClientAccount.jsx
+import { useState } from "react";
+import "./ClientStyle/ClientAccount.css";
 import AccountPage from "./ClientComponents/AccountPage";
-import EditProfileModal from "./EditProfileModal";
+import EditProfileModal from "./ClientComponents/EditProfileModal";
+import { mockUser } from "../MockData/MockUser";
 import { Outlet, useLocation } from "react-router-dom";
-import axiosClient from "../axiosClient";
 
 function ClientAccount() {
   const location = useLocation();
   const isProfilePage = location.pathname.includes("profile-page");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState(mockUser);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // ── Fetch user on mount ──────────────────────────────────────────────────────
-  useEffect(() => {
-    axiosClient
-      .get("/me")
-      .then((res) => {
-        if (res.data.success) setUserData(res.data.data);
-      })
-      .catch((err) => console.error("Failed to fetch user:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  // ── Called by EditProfileModal after a successful save ───────────────────────
   const handleSave = (updatedData) => {
-    setUserData(updatedData); // update the single source of truth
+    setUserData(updatedData);
     setIsModalOpen(false);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
+    console.log("Saved:", updatedData);
   };
 
   return (
-    <div className="client-appointment-container">
-      <div className="sticky-header">
-        <ClientHeader />
-      </div>
-
+    <div>
+      {/* Success Toast */}
       {showSuccess && (
         <div className="profile-success-toast">
           <span className="profile-success-icon">✓</span>
@@ -48,18 +32,8 @@ function ClientAccount() {
       )}
 
       <div className="tab-content-wrapper">
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "2rem" }}>
-            <p className="text-muted">Loading...</p>
-          </div>
-        ) : isProfilePage ? (
-          // ✅ Pass user, the modal opener, and handleSave down via context
-          <Outlet
-            context={{
-              user: userData,
-              setIsEditOpen: setIsModalOpen,
-            }}
-          />
+        {isProfilePage ? (
+          <Outlet context={{ userData, onSave: handleSave }} />
         ) : (
           <AccountPage
             userData={userData}
@@ -68,14 +42,10 @@ function ClientAccount() {
         )}
       </div>
 
-      <div className="sticky-footer">
-        <ClientFooter />
-      </div>
-
-      {/* Single EditProfileModal — only lives here */}
       <EditProfileModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        userData={userData}
         onSave={handleSave}
       />
     </div>

@@ -1,26 +1,4 @@
 /* Page Layout  */
-.pageWrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-  background: #f5f0fc;
-}
-
-.stickyHeader {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  flex-shrink: 0;
-}
-
-.stickyFooter {
-  position: sticky;
-  bottom: 0;
-  z-index: 100;
-  flex-shrink: 0;
-}
-
 .bodyWrapper {
   flex: 1;
   overflow-y: auto;
@@ -32,7 +10,6 @@
   background-color: transparent;
   box-sizing: border-box;
   width: 100%;
-  margin-bottom: 70px !important;
 }
 
 /* Custom Scrollbar */
@@ -54,7 +31,6 @@
   background: #4a2273;
 }
 
-
 /* Next Available Session */
 .huWrap {
   width: 100%;
@@ -68,7 +44,7 @@
 }
 
 .huTitle {
-  font-size: clamp(1.5rem, 2.2vw,1.7rem);
+  font-size: clamp(1.5rem, 2.2vw, 1.7rem);
   font-weight: 700;
   color: #542982;
 }
@@ -216,7 +192,7 @@
 }
 
 .anCardDate {
-  font-size: clamp(0.63rem, 1.5vw,0.9rem);
+  font-size: clamp(0.63rem, 1.5vw, 0.9rem);
   color: #aaa;
   font-weight: 500;
 }
@@ -232,7 +208,7 @@
   box-shadow: 0 2px 8px rgba(84, 41, 130, 0.06);
   box-sizing: border-box;
   width: 100%;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 /* Left accent strip */
@@ -315,7 +291,9 @@
   cursor: pointer;
   letter-spacing: 0.03em;
   white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .huViewDetailsBtn:hover {
@@ -332,7 +310,7 @@
 
 .huViewAllBtn {
   width: clamp(200px, 70%, 360px);
-  background: #3D1278;
+  background: #3d1278;
   color: #fff;
   border: none;
   border-radius: 28px;

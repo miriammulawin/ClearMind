@@ -1,14 +1,11 @@
-body{
-    color: #542982;
+body {
+  color: #542982;
 }
 
 /* Header Styles */
 .app-header {
   background: var(--bs-white);
   padding: 16px 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
   box-shadow: var(--shadow-soft);
 }
 
@@ -25,7 +22,7 @@ body{
 }
 
 .logo-icon {
-  width: 40px ;
+  width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -82,7 +79,7 @@ body{
   right: 8px;
   width: 8px;
   height: 8px;
-  background: #FF6B6B;
+  background: #ff6b6b;
   border-radius: 50%;
   border: 2px solid var(--white);
 }

@@ -8,7 +8,7 @@ import styles from "../style/PACSetAppointmentForm.module.css";
 import SetAppointmentFormHeader from "./SetAppointmentFormHeader.jsx";
 import ScheduleForm from "./ScheduleForm.jsx";
 import VerifyProfileForm from "./VerifyProfileForm.jsx";
-import PaymentForm from "./PaymentForm.jsx";
+import PaymentForm from "../../AppointmentComponents/PaymentForm";
 import PolicyModal from "../../AppointmentComponents/PolicyModal.jsx";
 import { SameDayToast } from "../../AppointmentComponents/SelectDateandTime.jsx";
 import {

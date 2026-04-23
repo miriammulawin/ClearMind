@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   padding: clamp(0.45rem, 1.5vw, 0.7rem) clamp(1rem, 4vw, 2rem);
-  background-color: #5B2C91;
+  background-color: #5b2c91;
   flex-shrink: 0;
 }
 
@@ -52,8 +52,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #5B2C91;
-  border: 2px solid #5B2C91;
+  background-color: #5b2c91;
+  border: 2px solid #5b2c91;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
   padding: 14px 20px;
@@ -72,11 +72,26 @@
   border-radius: 20px;
   font-weight: 600;
 }
-.badge.bg-warning  { background-color: #fff5b5 !important; color: #7a7a00 !important; }
-.badge.bg-info     { background-color: #a8bffd !important; color: #1a3a8f !important; }
-.badge.bg-orange   { background-color: #FFCE99 !important; color: #7a4000 !important; }
-.badge.bg-success  { background-color: #bbf7d0 !important; color: #166534 !important; }
-.badge.bg-danger   { background-color: #fecaca !important; color: #991b1b !important; }
+.badge.bg-warning {
+  background-color: #fff5b5 !important;
+  color: #7a7a00 !important;
+}
+.badge.bg-info {
+  background-color: #a8bffd !important;
+  color: #1a3a8f !important;
+}
+.badge.bg-orange {
+  background-color: #ffce99 !important;
+  color: #7a4000 !important;
+}
+.badge.bg-success {
+  background-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+.badge.bg-danger {
+  background-color: #fecaca !important;
+  color: #991b1b !important;
+}
 
 /* ── Summary card ── */
 .ad-summary-card {
@@ -125,7 +140,7 @@
 
 /* ── Value ── */
 .ad-val {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 600;
 }
 
@@ -146,9 +161,15 @@
   line-height: 1.6;
 }
 
+.ad-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: #5b2c91;
+}
+
 /* ── Receipt link ── */
 .ad-receipt-link {
-  color: #6B46C1 !important;
+  color: #6b46c1 !important;
   text-decoration: none !important;
   padding: 0 !important;
   display: inline-flex !important;
@@ -158,7 +179,7 @@
   font-size: 13px !important;
 }
 .ad-receipt-link:hover {
-  color: #553C9A !important;
+  color: #553c9a !important;
   text-decoration: underline !important;
 }
 
@@ -172,8 +193,8 @@
 }
 .ad-cancel-btn {
   background: transparent;
-  color: #E53E3E;
-  border: 2px solid #E53E3E;
+  color: #e53e3e;
+  border: 2px solid #e53e3e;
   border-radius: 8px;
   padding: 10px 40px;
   font-weight: 700;
@@ -183,13 +204,13 @@
   font-family: inherit;
 }
 .ad-cancel-btn:hover {
-  background: #E53E3E;
+  background: #e53e3e;
   color: white;
 }
 .ad-reschedule-btn {
   background: transparent;
-  color: #6B46C1;
-  border: 2px solid #6B46C1;
+  color: #6b46c1;
+  border: 2px solid #6b46c1;
   border-radius: 8px;
   padding: 10px 40px;
   font-weight: 700;
@@ -199,7 +220,23 @@
   font-family: inherit;
 }
 .ad-reschedule-btn:hover {
-  background: #6B46C1;
+  background: #6b46c1;
+  color: white;
+}
+
+.ad-discontinue-btn {
+  background-color: transparent;
+  border: 1px solid #dc3545;
+  color: #dc3545;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ad-discontinue-btn:hover {
+  background-color: #dc3545;
   color: white;
 }
 
