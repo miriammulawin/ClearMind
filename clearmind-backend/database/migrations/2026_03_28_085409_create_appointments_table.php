@@ -23,6 +23,8 @@ return new class extends Migration
             $table->unsignedBigInteger('doctor_user_id')->nullable();
             $table->foreign('doctor_user_id')->references('id')->on('users')->nullOnDelete();
 
+            
+
             $table->date('appointment_date');
             $table->time('start_time');
             $table->time('end_time');
