@@ -79,6 +79,11 @@ class User extends Authenticatable
     return asset('storage/' . $value);
 }
 
+public function getAgeAttribute(): ?int{
+    if (!$this->dob) return null;
+    return \Carbon\Carbon::parse($this->dob)->age;
+}
+
     // ── Relationships ─────────────────────────────────────────────────
 
     public function doctor()

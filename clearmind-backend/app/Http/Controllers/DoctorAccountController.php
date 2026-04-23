@@ -20,6 +20,7 @@ class DoctorAccountController extends Controller
             'middleInitial' => ['nullable', 'string', 'max:5'],
             'sex'           => ['nullable', 'in:male,female,other'],
             'dob'           => ['required', 'date', 'before:today'],
+
             'email'         => ['required', 'email'],
             'contactNo'     => ['nullable', 'string', 'max:20'],
             'address'       => ['nullable', 'string', 'max:255'],
@@ -94,7 +95,11 @@ class DoctorAccountController extends Controller
     $doctors = User::with('doctor')
         ->where('role', 'Doctor')
         ->orderBy('created_at', 'desc')
-        ->get();
+        ->get()
+        ->map(function ($user) {
+            $user->age = $user->age;
+            return $user;
+        });
 
     return response()->json([
         'data' => $doctors,
