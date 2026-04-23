@@ -28,6 +28,31 @@ body {
   margin: 2rem;
 }
 
+.doctor-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+    background: #f5edfd;
+}
+
+.doctor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.doctor-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem 2rem 10rem 2rem !important;
+  background-color: white;
+  border-radius: 1%;
+  margin: 2rem !important;
+  height: 100vh !important;
+} 
+
+
 .sidebar-container {
   height: 100vh;
   transition: 0.35s ease;
