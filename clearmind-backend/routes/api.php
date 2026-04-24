@@ -110,6 +110,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('patients/{id}',              [PatientController::class, 'destroy']);
         Route::get   ('patients/{id}/appointments', [PatientController::class, 'appointments']);
 
+        Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedSlots']);
+        
         // ── Appointments ──────────────────────────────────────────
         Route::get   ('appointments',      [AppointmentController::class, 'index']);
         Route::post  ('appointments',      [AppointmentController::class, 'store']);
