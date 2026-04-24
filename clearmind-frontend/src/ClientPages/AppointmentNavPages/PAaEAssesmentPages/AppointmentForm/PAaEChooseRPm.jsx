@@ -1,12 +1,10 @@
 // PAaEAssesmentPages/AppointmentForm/PAaEChooseRPm.jsx
 import { useMemo, useState, useEffect } from "react";
 import DoctorProfile from "../../AppointmentComponents/DoctorProfile";
-import { MOCK_DOCTORS } from "../../../../MockData/MockDoctors";
 import styles from "../style/PAaEAppointmentForm.module.css";
 import DoctorCard from "../../AppointmentComponents/DoctorCard";
 import axiosClient from "../../../../axiosClient";
 
-// ── Backend → DoctorCard shape ────────────────────────────────────
 const mapDoctor = (d) => ({
   id: d.doctor_id,
   name: `${d.firstName}${d.middleInitial ? " " + d.middleInitial + "." : ""} ${d.lastName}`,
@@ -24,48 +22,58 @@ const PAaEChooseRPm = ({ config, form, setForm, onDoctorSelect }) => {
   useEffect(() => {
     axiosClient
       .get("/doctors/list")
-      .then(({ data }) => setDoctors(data.data || []))
-      .catch(() => setError("Failed to load doctors."))
+      .then(({ data }) => {
+        console.log("doctors/list raw response:", data.data);
+        data.data?.forEach((d) =>
+          console.log(`[${d.doctor_id}]`, {
+            professional_title: d.professional_title,
+            specialization: d.specialization,
+            sex: d.sex,
+          }),
+        );
+        setDoctors(data.data || []);
+      })
+      .catch((err) => {
+        console.error("Failed to load doctors:", err);
+        setError("Failed to load doctors.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const rpmList = useMemo(() => {
     return doctors.filter((d) => {
-      const specs = d.specializations ?? [];
+      const title = (d.professional_title || "").toLowerCase();
+      const spec = (d.specialization || "").toLowerCase();
 
-      const isRpm = specs.some((s) => s.toLowerCase() === "psychometrician");
+      const isRpm =
+        title.includes("psychometrician") ||
+        title.includes("rpm") ||
+        title.includes("r.pm") ||
+        spec.includes("psychometrician") ||
+        spec.includes("rpm");
 
-      if (config.femaleOnly) {
-        return isRpm && d.sex === "female";
+      if (config?.femaleOnly) {
+        return isRpm && (d.sex || "").toLowerCase() === "female";
       }
 
       return isRpm;
     });
-  }, [doctors, config.femaleOnly]);
+  }, [doctors, config?.femaleOnly]);
 
-  doctors.forEach((d) => {
-    console.log({
-      specialization: d.specialization,
-      title: d.professional_title,
-    });
-  });
+  const displayList = rpmList.length > 0 ? rpmList : doctors;
 
   return (
     <div className={styles.stepCard}>
       {selectedProfile ? (
-        // ── Profile view ──────────────────────────────────
         <DoctorProfile
           doctorData={selectedProfile}
           onBack={() => setSelectedProfile(null)}
         />
       ) : (
-        // ── List view ─────────────────────────────────────
         <>
-          <div>
-            <h4 className={styles.titlePage}>Choose your Psychometrician :</h4>
-          </div>
+          <h4 className={styles.titlePage}>Choose your Psychometrician:</h4>
 
-          {config.femaleOnly && (
+          {config?.femaleOnly && (
             <div className={styles.infoBanner}>
               <span>⚠️</span>
               <span>
@@ -76,29 +84,28 @@ const PAaEChooseRPm = ({ config, form, setForm, onDoctorSelect }) => {
           )}
 
           {loading && <p>Loading doctors...</p>}
-          {error && <p>{error}</p>}
+          {error && <p style={{ color: "red" }}>{error}</p>}
 
           <div className={styles.rpmGrid}>
-            {!loading && !error && rpmList.length === 0 && (
-              <p>No psychometricians available.</p>
+            {!loading && !error && displayList.length === 0 && (
+              <p>No doctors available.</p>
             )}
             {!loading &&
               !error &&
-              rpmList.map((d) => {
-                const mapped = mapDoctor(d); // ← i-map ang bawat doctor
+              displayList.map((d) => {
+                const mapped = mapDoctor(d);
                 return (
                   <DoctorCard
                     compact
-                    viewProfileVariant="purple"
-                    key={d.doctor_id} // ← d.doctor_id, hindi d.id
-                    doctor={mapped} // ← mapped, hindi raw d
+                    key={d.doctor_id}
+                    doctor={mapped}
                     hideSetAppointment
-                    isSelected={form.rpm === d.doctor_id} // ← doctor_id
+                    isSelected={form.rpm === d.doctor_id}
                     onViewProfile={() => setSelectedProfile(mapped)}
                     onSelect={() => {
                       setForm((prev) => ({
                         ...prev,
-                        rpm: d.doctor_id, // ← doctor_id
+                        rpm: d.doctor_id,
                         date: null,
                         time: null,
                       }));
