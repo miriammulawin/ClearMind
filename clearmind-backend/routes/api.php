@@ -110,7 +110,7 @@ Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedS
         Route::delete('patients/{id}',              [PatientController::class, 'destroy']);
         Route::get   ('patients/{id}/appointments', [PatientController::class, 'appointments']);
 
-        
+        Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedSlots']);
         
         // ── Appointments ──────────────────────────────────────────
         Route::get   ('appointments',      [AppointmentController::class, 'index']);
