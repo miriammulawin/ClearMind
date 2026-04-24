@@ -14,10 +14,17 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiSearch,
+  FiDownload,
+  FiFile,
 } from "react-icons/fi";
 
 /* ── Config ── */
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+
+// FIXED: Storage base for building receipt URLs from receipt_paths
+const STORAGE_BASE = (
+  import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"
+).replace("/api", "");
 
 const getToken = () =>
   localStorage.getItem("auth_token") ||
@@ -155,6 +162,139 @@ const StatusIcon = ({ s }) =>
     VOID: <FiXCircle size={13} />,
   })[s] || null;
 
+/* ── ✅ ReceiptViewer — matches DayAppointmentsModal logic ── */
+function ReceiptViewer({ paths = [] }) {
+  if (!paths || paths.length === 0) {
+    return (
+      <div
+        style={{
+          padding: "24px",
+          textAlign: "center",
+          color: "#9ca3af",
+          fontSize: 13,
+        }}
+      >
+        No payment receipt uploaded.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      {paths.map((path, i) => {
+        const url = `${STORAGE_BASE}/storage/${path}`;
+        const isPdf = path.toLowerCase().endsWith(".pdf");
+
+        if (isPdf) {
+          return (
+            <a
+              key={i}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "14px 16px",
+                color: "#4D227C",
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: "none",
+                borderBottom:
+                  i < paths.length - 1 ? "1px solid #f3f0fa" : "none",
+                transition: "background .15s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#faf7ff")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: "#ede9f6",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <FiFile size={16} color="#4D227C" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div>PDF Receipt {paths.length > 1 ? i + 1 : ""}</div>
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  Click to open in new tab
+                </div>
+              </div>
+              <FiDownload size={14} color="#9ca3af" />
+            </a>
+          );
+        }
+
+        return (
+          <div key={i} style={{ position: "relative" }}>
+            <img
+              src={url}
+              alt={`Receipt ${i + 1}`}
+              style={{ width: "100%", display: "block" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextSibling.style.display = "flex";
+              }}
+            />
+            {/* fallback if image fails */}
+            <div
+              style={{
+                display: "none",
+                padding: "20px",
+                textAlign: "center",
+                color: "#9ca3af",
+                fontSize: 13,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                flexDirection: "column",
+              }}
+            >
+              <FiFile size={24} color="#d1d5db" />
+              <span>Could not load image</span>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#4D227C", fontWeight: 600, fontSize: 12 }}
+              >
+                Open directly
+              </a>
+            </div>
+            {paths.length > 1 && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  left: 8,
+                  background: "rgba(0,0,0,0.5)",
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                }}
+              >
+                {i + 1} / {paths.length}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Main ── */
 export default function AdminBilling() {
   const [activeMenu, setActiveMenu] = useState("Billing");
@@ -277,11 +417,11 @@ export default function AdminBilling() {
     {
       label: "Void",
       key: "VOID",
-      count: appointments.filter((a) => a.payment_status === "not_paid").length,
+      count: appointments.filter((a) => a.payment_status === "void").length,
     },
   ];
 
-  /* ── Styles (inline, no CSS module needed) ── */
+  /* ── Styles ── */
   const S = {
     page: { display: "flex", flexDirection: "column", gap: 0 },
     card: {
@@ -466,9 +606,9 @@ export default function AdminBilling() {
       boxShadow: "0 24px 60px rgba(0,0,0,0.2)",
     },
     modalHeader: {
-      background: "linear-gradient(135deg, #4D227C, #7341A8)",
+      background: "#4D227C",
       padding: "22px 24px",
-      borderRadius: "18px 18px 0 0",
+      borderRadius: "15px 4px 0 0",
       position: "relative",
     },
     modalHeaderRow: {
@@ -597,6 +737,12 @@ export default function AdminBilling() {
       marginBottom: 18,
     },
   };
+
+  // ✅ Helper: get receipt paths from appointment (handles both field names)
+  const getReceiptPaths = (appt) =>
+    appt?.receipt_paths ||
+    (appt?.receipt_path ? [appt.receipt_path] : []) ||
+    [];
 
   return (
     <div className="admin-layout">
@@ -797,7 +943,9 @@ export default function AdminBilling() {
                       displayed.map((a) => {
                         const payStatus =
                           STATUS_MAP[a.payment_status] ?? "UNKNOWN";
-                        const hasReceipt = a.receipt_urls?.length > 0;
+                        // ✅ FIXED: use receipt_paths instead of receipt_urls
+                        const receiptPaths = getReceiptPaths(a);
+                        const hasReceipt = receiptPaths.length > 0;
                         return (
                           <tr
                             key={a.appointment_id}
@@ -855,15 +1003,19 @@ export default function AdminBilling() {
                               <div style={S.statusBadge(payStatus)}>
                                 <StatusIcon s={payStatus} /> {payStatus}
                               </div>
+                              {/* ✅ FIXED: check receipt_paths */}
                               {hasReceipt && (
                                 <div
                                   style={{
                                     fontSize: 10,
                                     color: "#7341A8",
                                     marginTop: 3,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 3,
                                   }}
                                 >
-                                  receipt ✓
+                                  <FiFile size={9} /> receipt ✓
                                 </div>
                               )}
                             </td>
@@ -1188,42 +1340,48 @@ export default function AdminBilling() {
                   </div>
                 </div>
 
-                {/* Receipt toggle */}
+                {/* ✅ FIXED: Receipt toggle using receipt_paths → STORAGE_BASE/storage/{path} */}
                 <div style={{ marginTop: 14 }}>
                   <button
                     style={S.receiptToggle}
                     onClick={() => setReceiptOpen(!receiptOpen)}
                   >
-                    <span>View Payment Receipt</span>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <FiFile size={14} />
+                      View Payment Receipt
+                      {getReceiptPaths(selected).length > 0 && (
+                        <span
+                          style={{
+                            background: "#dcfce7",
+                            color: "#16a34a",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: 999,
+                            padding: "1px 8px",
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {getReceiptPaths(selected).length} file
+                          {getReceiptPaths(selected).length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </span>
                     {receiptOpen ? (
                       <FiChevronUp size={18} color="#4D227C" />
                     ) : (
                       <FiChevronDown size={18} color="#4D227C" />
                     )}
                   </button>
+
                   {receiptOpen && (
                     <div style={S.receiptBody}>
-                      {selected.receipt_urls?.length > 0 ? (
-                        selected.receipt_urls.map((url, i) => (
-                          <img
-                            key={i}
-                            src={url}
-                            alt={`Receipt ${i + 1}`}
-                            style={{ width: "100%", display: "block" }}
-                          />
-                        ))
-                      ) : (
-                        <div
-                          style={{
-                            padding: "24px",
-                            textAlign: "center",
-                            color: "#9ca3af",
-                            fontSize: 13,
-                          }}
-                        >
-                          No payment receipt uploaded.
-                        </div>
-                      )}
+                      <ReceiptViewer paths={getReceiptPaths(selected)} />
                     </div>
                   )}
                 </div>
