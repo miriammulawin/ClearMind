@@ -22,11 +22,18 @@ import {
   FiFilter,
 } from "react-icons/fi";
 import { FaCalendarAlt } from "react-icons/fa";
-import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
 import CompleteAppointmentModal from "./components/CompleteAppointmentModal";
 
-const AvatarPlaceholder = ({ name, size = 80 }) => {
+/* ─────────────────────────────────────────────────────────
+   Constants
+───────────────────────────────────────────────────────── */
+const API_BASE = "http://localhost:8000";
+
+/* ─────────────────────────────────────────────────────────
+   Helpers
+───────────────────────────────────────────────────────── */
+const AvatarPlaceholder = ({ name = "?", size = 80 }) => {
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -41,7 +48,7 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
     "#9333ea",
     "#0ea5e9",
   ];
-  const color = colors[name.charCodeAt(0) % colors.length];
+  const color = colors[(name.charCodeAt(0) || 0) % colors.length];
   return (
     <div
       style={{
@@ -65,6 +72,47 @@ const AvatarPlaceholder = ({ name, size = 80 }) => {
   );
 };
 
+/**
+ * Resolve receipt URL from an appointment object.
+ * Handles receipt_urls[] (model $appends), receipt_paths[], and plain receiptUrl.
+ */
+const resolveReceiptUrl = (appointment) => {
+  if (!appointment) return null;
+
+  const fixUrl = (path) => {
+    if (!path) return null;
+
+    // already full URL
+    if (path.startsWith("http")) return path;
+
+    // always force backend origin
+    return `${API_BASE}/storage/${path.replace(/^\/+/, "")}`;
+  };
+
+  if (
+    Array.isArray(appointment.receipt_urls) &&
+    appointment.receipt_urls.length > 0
+  ) {
+    return fixUrl(appointment.receipt_urls[0]);
+  }
+
+  if (appointment.receiptUrl) {
+    return fixUrl(appointment.receiptUrl);
+  }
+
+  if (
+    Array.isArray(appointment.receipt_paths) &&
+    appointment.receipt_paths.length > 0
+  ) {
+    return fixUrl(appointment.receipt_paths[0]);
+  }
+
+  return null;
+};
+
+/* ─────────────────────────────────────────────────────────
+   Component
+───────────────────────────────────────────────────────── */
 function DoctorPatient() {
   const [activeMenu, setActiveMenu] = useState("Patients");
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,13 +123,17 @@ function DoctorPatient() {
   const [patientTypeFilter, setPatientTypeFilter] = useState("all");
   const [showClinicalModal, setShowClinicalModal] = useState(false);
   const [clinicalModalPatient, setClinicalModalPatient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingSaveId, setPendingSaveId] = useState(null);
   const navigate = useNavigate();
 
   const [patientList, setPatientList] = useState([]);
-
   const [progressionDraft, setProgressionDraft] = useState("");
   const rowsPerPage = 4;
 
+  /* Filtered + paginated data */
   const filteredList =
     patientTypeFilter === "all"
       ? patientList
@@ -93,6 +145,102 @@ function DoctorPatient() {
     currentPage * rowsPerPage,
   );
 
+  /* ══════════════════════════════════════════════════════
+     FETCH — GET /api/doctor/patients
+  ══════════════════════════════════════════════════════ */
+
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/doctor/patients`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Failed to fetch patients.");
+
+      const mapped = (json.data || []).map((p) => {
+        const latest = p.latestAppointment || {};
+        const appointments = p.appointments || [];
+
+        return {
+          id: p.patient_id,
+          patient_id: p.patient_id,
+          name: p.name,
+          age: p.age ?? "—",
+          gender: p.gender ?? "—",
+          address: p.address ?? "—",
+          contact: p.contact ?? "—",
+          email: p.email ?? "—",
+          patientType: p.patientType,
+          totalVisits: p.totalVisits,
+
+            profilePicture: p.user?.profilePicture
+    ? `${API_BASE}/storage/${p.user.profilePicture}`
+    : null,
+
+
+          date: latest?.date ?? "—",
+          time: latest?.time ?? "—",
+          type: latest?.type ?? "—",
+          status: latest?.status || "—",
+          raw_status: latest?.raw_status ?? "",
+
+          consultationMode:
+            latest?.consultationMode ?? latest?.consultation_mode ?? "On-Site",
+
+          paymentStatus:
+            latest?.payment_status ?? latest?.paymentStatus ?? "not_paid",
+
+          appointmentId: latest?.appointment_id ?? null,
+
+          appointmentDate: latest?.raw_date ?? latest?.date ?? null,
+          startTime: latest?.start_time ?? null,
+          endTime: latest?.end_time ?? null,
+          visitType: latest?.visit_type ?? null,
+
+          referenceNumber:
+            latest?.appointment_ref ?? latest?.referenceNumber ?? null,
+
+          serviceType: latest?.service_type ?? null,
+          assessmentPurpose: latest?.pae_purpose ?? null,
+          reason: latest?.reason_for_consultation ?? latest?.notes ?? null,
+
+          receipt_urls: latest?.receipt_urls ?? [],
+          receipt_paths: latest?.receipt_paths ?? [],
+          receiptUrl: resolveReceiptUrl(latest),
+
+          progressionNote: latest?.progression_note ?? null,
+
+          appointments: appointments.map((a) => ({
+            ...a,
+            receiptUrl: resolveReceiptUrl(a),
+          })),
+        };
+      });
+
+      setPatientList(mapped);
+    } catch (err) {
+      console.error("Error fetching patients:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  /* ══════════════════════════════════════════════════════
+     ACTIONS
+  ══════════════════════════════════════════════════════ */
   const handleView = (row) => {
     setSelectedPatient(row);
     setProgressionDraft("");
@@ -105,24 +253,59 @@ function DoctorPatient() {
     setCurrentPage(1);
   };
 
-  const handleMarkComplete = () => {
-    if (!progressionDraft.trim()) return;
-    const updated = patientList.map((p) =>
-      p.id === selectedPatient.id
-        ? {
-            ...p,
-            status: "Completed",
-            progressionNote: { assessment: progressionDraft.trim() },
-          }
-        : p,
-    );
-    setPatientList(updated);
-    setSelectedPatient((prev) => ({
-      ...prev,
-      status: "Completed",
-      progressionNote: { assessment: progressionDraft.trim() },
-    }));
-    setProgressionDraft("");
+  const handleMarkComplete = async () => {
+    if (!selectedPatient) return;
+    if (!progressionDraft.trim()) {
+      alert("Please write a clinical assessment before completing.");
+      return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE}/api/appointments/${selectedPatient.appointmentId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            status: "completed",
+            notes: progressionDraft.trim(),
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to mark complete");
+      }
+
+      const updated = patientList.map((p) =>
+        p.id === selectedPatient.id
+          ? {
+              ...p,
+              status: "Completed",
+              raw_status: "completed",
+              progressionNote: { assessment: progressionDraft.trim() },
+              notes: progressionDraft.trim(),
+            }
+          : p,
+      );
+      setPatientList(updated);
+      setSelectedPatient((prev) => ({
+        ...prev,
+        status: "Completed",
+        raw_status: "completed",
+        progressionNote: { assessment: progressionDraft.trim() },
+        notes: progressionDraft.trim(),
+      }));
+      setProgressionDraft("");
+    } catch (err) {
+      console.error("Mark complete error:", err);
+      alert(`Error: ${err.message}`);
+    }
   };
 
   const handleOpenClinical = (row) => {
@@ -130,8 +313,74 @@ function DoctorPatient() {
     setShowClinicalModal(true);
   };
 
+  /**
+   * ✅ Fixed: correct URL  POST /api/appointments/{id}/progression-note
+   */
+  const handleSaveProgressionNote = async (appointmentId) => {
+    if (!progressionDraft.trim()) {
+      alert("Please write an assessment before saving.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE}/api/appointments/${appointmentId}/progression-note`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ assessment: progressionDraft.trim() }),
+        },
+      );
+
+      let data;
+
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Server returned invalid JSON (probably 500 error)");
+      }
+      if (!res.ok) throw new Error(data.message || "Save failed");
+      await fetchPatients();
+
+      // Update local state so the draft becomes permanent in the modal
+      setPatientList((prev) =>
+        prev.map((p) =>
+          p.appointmentId === appointmentId
+            ? {
+                ...p,
+                progressionNote: { assessment: progressionDraft.trim() },
+                notes: progressionDraft.trim(),
+              }
+            : p,
+        ),
+      );
+
+      if (selectedPatient?.appointmentId === appointmentId) {
+        setSelectedPatient((prev) => ({
+          ...prev,
+          progressionNote: { assessment: progressionDraft.trim() },
+          notes: progressionDraft.trim(),
+        }));
+      }
+
+      setProgressionDraft("");
+      alert("Progression note saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Save failed: " + err.message);
+    }
+  };
+
+  /* ══════════════════════════════════════════════════════
+     BADGE STYLES
+  ══════════════════════════════════════════════════════ */
   const getStatusBadgeStyle = (status) => {
-    switch (status?.toLowerCase()) {
+    switch ((status ?? "").toLowerCase()) {
       case "completed":
         return {
           background: "#dcfce7",
@@ -139,6 +388,7 @@ function DoctorPatient() {
           border: "1px solid #bbf7d0",
         };
       case "confirmed":
+      case "scheduled":
         return {
           background: "#dbeafe",
           color: "#1d4ed8",
@@ -149,6 +399,12 @@ function DoctorPatient() {
           background: "#fee2e2",
           color: "#dc2626",
           border: "1px solid #fecaca",
+        };
+      case "pending":
+        return {
+          background: "#fef9c3",
+          color: "#b45309",
+          border: "1px solid #fde68a",
         };
       default:
         return {
@@ -172,54 +428,9 @@ function DoctorPatient() {
     border: mode === "Virtual" ? "1px solid #bfdbfe" : "1px solid #d8ccf0",
   });
 
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const res = await fetch("http://localhost:8000/api/doctor/patients", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          const mapped = data.data.map((p) => ({
-            id: p.patient_id,
-            name: p.name,
-            date: p.latestAppointment.date,
-            time: p.latestAppointment.time,
-            type: p.latestAppointment.type,
-            status: p.latestAppointment.status,
-            contact: p.contact,
-            email: p.email,
-            address: p.address,
-            consultationMode: p.latestAppointment.consultationMode,
-            patientType: p.patientType,
-            appointments: p.appointments || [],
-            age: p.age,
-            gender: p.gender,
-            totalVisits: p.totalVisits,
-            progressionNote: p.latestAppointment.notes
-              ? { assessment: p.latestAppointment.notes }
-              : null,
-          }));
-
-          setPatientList(mapped);
-        } else {
-          console.error(data.message);
-        }
-      } catch (err) {
-        console.error("Error fetching patients:", err);
-      }
-    };
-
-    fetchPatients();
-  }, []);
-
+  /* ══════════════════════════════════════════════════════
+     RENDER
+  ══════════════════════════════════════════════════════ */
   return (
     <div className="doctor-layout">
       <DoctorSidebar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -227,11 +438,28 @@ function DoctorPatient() {
         <DoctorTopNavbar activeMenu={activeMenu} />
         <div className="doctor-content" style={{ padding: "20px" }}>
           <div className="patient-card">
-            {/* ── Tab + Filter Row ── */}
+            {/* Error banner */}
+            {error && (
+              <div
+                style={{
+                  padding: "10px 16px",
+                  background: "#fee2e2",
+                  color: "#dc2626",
+                  borderRadius: "8px",
+                  marginBottom: "12px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                }}
+              >
+                ⚠ {error}
+              </div>
+            )}
+
+            {/* Tab + Filter Row */}
             <div className={styles.patientTabsRow}>
               <div className={styles.patientTabs}>
                 <button className={styles.tabActive}>
-                  Total's Patients <span>{patientList.length}</span>
+                  My Patients&nbsp;<span>{patientList.length}</span>
                 </button>
               </div>
               <div className={styles.patientFilterDropdown}>
@@ -244,7 +472,7 @@ function DoctorPatient() {
               </div>
             </div>
 
-            {/* ── Table ── */}
+            {/* Table */}
             <div className={styles.patientTableWrapper}>
               <table className={styles.patientTable}>
                 <thead>
@@ -259,7 +487,20 @@ function DoctorPatient() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedData.length === 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        style={{
+                          textAlign: "center",
+                          padding: "32px",
+                          color: "#aaa",
+                        }}
+                      >
+                        Loading patients…
+                      </td>
+                    </tr>
+                  ) : displayedData.length === 0 ? (
                     <tr>
                       <td
                         colSpan={7}
@@ -276,74 +517,73 @@ function DoctorPatient() {
                       </td>
                     </tr>
                   ) : (
-                    displayedData.map((row) => (
-                      <tr key={row.id}>
-                        <td>{row.name}</td>
-                        <td>
-                          <span
-                            className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
-                          >
-                            {row.patientType}
-                          </span>
-                        </td>
-                        <td>{row.age}</td>
-                        <td>{row.gender}</td>
-                        <td>{row.address}</td>
-                        <td>
-                          <span
-                            className={`${styles.status} ${styles[row.status.toLowerCase()]}`}
-                          >
-                            {row.status}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.btnView}
-                            onClick={() => handleView(row)}
-                          >
-                            View
-                          </button>
-                          <button
-                            className={styles.btnConfirm}
-                            style={{
-                              height: 32,
-                              width: "auto",
-                              padding: "0 14px",
-                              fontSize: 12,
-                              borderRadius: 8,
-                              fontWeight: 600,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 5,
-                              cursor:
-                                row.status === "Completed"
-                                  ? "not-allowed"
-                                  : "pointer",
-                              border: "1px solid #4a965b",
-                              background:
-                                row.status === "Completed"
-                                  ? "#a8d5b5"
-                                  : "#4a965b",
-                              color: "#fff",
-                              opacity: row.status === "Completed" ? 0.55 : 1,
-                            }}
-                            disabled={row.status === "Completed"}
-                            onClick={() =>
-                              row.status !== "Completed" &&
-                              handleOpenClinical(row)
-                            }
-                          >
-                            Complete
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    displayedData.map((row) => {
+                      const isCompleted =
+                        (row.raw_status || row.status || "").toLowerCase() ===
+                        "completed";
+                      return (
+                        <tr key={row.id}>
+                          <td>{row.name}</td>
+                          <td>
+                            <span
+                              className={`${styles.patientTypeBadge} ${row.patientType === "New Patient" ? styles.badgeNew : styles.badgeExisting}`}
+                            >
+                              {row.patientType}
+                            </span>
+                          </td>
+                          <td>{row.age}</td>
+                          <td>{row.gender}</td>
+                          <td>{row.address}</td>
+                          <td>
+                            <span
+                              className={styles.statusBadge}
+                              style={getStatusBadgeStyle(row.status)}
+                            >
+                              {row.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={styles.btnView}
+                              onClick={() => handleView(row)}
+                            >
+                              View
+                            </button>
+                            <button
+                              style={{
+                                height: 32,
+                                width: "auto",
+                                padding: "0 14px",
+                                fontSize: 12,
+                                borderRadius: 8,
+                                fontWeight: 600,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                cursor: isCompleted ? "not-allowed" : "pointer",
+                                border: "1px solid #4a965b",
+                                background: isCompleted ? "#a8d5b5" : "#4a965b",
+                                color: "#fff",
+                                opacity: isCompleted ? 0.55 : 1,
+                                marginLeft: 6,
+                              }}
+                              disabled={isCompleted}
+                              onClick={() => {
+                                if (!isCompleted) handleOpenClinical(row);
+                              }}
+                            >
+                              Complete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* ── Pagination ── */}
+            {/* Pagination */}
             <div className={styles.pagination}>
               <button
                 disabled={currentPage === 1}
@@ -395,7 +635,22 @@ function DoctorPatient() {
                 <FiX />
               </button>
               <div className={styles.modalProfileRow}>
-                <AvatarPlaceholder name={selectedPatient.name} size={68} />
+              {selectedPatient.profilePicture ? (
+  <img
+    src={selectedPatient.profilePicture}
+    alt={selectedPatient.name}
+    style={{
+      width: 68,
+      height: 68,
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "3px solid #fff",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    }}
+  />
+) : (
+  <AvatarPlaceholder name={selectedPatient.name} size={68} />
+)}
                 <div className={styles.patientProfileInfo}>
                   <h3 className={styles.patientProfileName}>
                     {selectedPatient.name}
@@ -415,7 +670,7 @@ function DoctorPatient() {
                         {selectedPatient.gender}
                       </span>
                     )}
-                    {selectedPatient.totalVisits && (
+                    {selectedPatient.totalVisits !== undefined && (
                       <span className={styles.profileMetaChip}>
                         {selectedPatient.totalVisits} Visits
                       </span>
@@ -431,13 +686,12 @@ function DoctorPatient() {
                 <button
                   className={styles.btnViewProfile}
                   onClick={() =>
-                    navigate(`/doctor/patient-profile/${selectedPatient.id}`, {
-                      state: { patient: selectedPatient },
-                    })
+                    navigate(
+                      `/doctor/patient-profile/${selectedPatient.patient_id}`,
+                    )
                   }
                 >
-                  <FiExternalLink style={{ marginRight: "6px" }} />
-                  View Profile
+                  <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
                 </button>
               </div>
             </div>
@@ -485,39 +739,31 @@ function DoctorPatient() {
                   </h4>
                 </div>
                 <div className={styles.modalTwoCol}>
-                  <div className={styles.modalInfoItem}>
-                    <div className={styles.modalInfoIcon}>
-                      <FiCalendar />
+                  {[
+                    {
+                      icon: <FiCalendar />,
+                      label: "Date",
+                      value: selectedPatient.date,
+                    },
+                    {
+                      icon: <FiClock />,
+                      label: "Time",
+                      value: selectedPatient.time,
+                    },
+                    {
+                      icon: <FiFileText />,
+                      label: "Visit Type",
+                      value: selectedPatient.type,
+                    },
+                  ].map(({ icon, label, value }) => (
+                    <div key={label} className={styles.modalInfoItem}>
+                      <div className={styles.modalInfoIcon}>{icon}</div>
+                      <div>
+                        <span className={styles.modalInfoLabel}>{label}</span>
+                        <span className={styles.modalInfoValue}>{value}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className={styles.modalInfoLabel}>Date</span>
-                      <span className={styles.modalInfoValue}>
-                        {selectedPatient.date}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.modalInfoItem}>
-                    <div className={styles.modalInfoIcon}>
-                      <FiClock />
-                    </div>
-                    <div>
-                      <span className={styles.modalInfoLabel}>Time</span>
-                      <span className={styles.modalInfoValue}>
-                        {selectedPatient.time}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.modalInfoItem}>
-                    <div className={styles.modalInfoIcon}>
-                      <FiUser />
-                    </div>
-                    <div>
-                      <span className={styles.modalInfoLabel}>Visit Type</span>
-                      <span className={styles.modalInfoValue}>
-                        {selectedPatient.type}
-                      </span>
-                    </div>
-                  </div>
+                  ))}
                   <div className={styles.modalInfoItem}>
                     <div className={styles.modalInfoIcon}>
                       <FiUser />
@@ -748,11 +994,40 @@ function DoctorPatient() {
                         background: "#fff",
                         fontFamily: "inherit",
                         boxSizing: "border-box",
-                        transition: "border-color 0.2s",
                       }}
                       onFocus={(e) => (e.target.style.borderColor = "#7341A8")}
                       onBlur={(e) => (e.target.style.borderColor = "#d8ccf0")}
                     />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      marginTop: "12px",
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        if (!selectedPatient?.appointmentId) {
+                          alert("No appointment ID found for this patient.");
+                          return;
+                        }
+                        setPendingSaveId(selectedPatient.appointmentId);
+                        setShowConfirmModal(true);
+                      }}
+                      style={{
+                        background: "#7341A8",
+                        color: "#fff",
+                        border: "none",
+                        padding: "8px 14px",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Save Progression Note
+                    </button>
                   </div>
                 </div>
               ) : null}
@@ -802,6 +1077,7 @@ function DoctorPatient() {
                     </span>
                   </span>
                 </button>
+
                 {paymentOpen && (
                   <div className={styles.paymentCollapseBody}>
                     <div className={styles.paymentLayout}>
@@ -816,31 +1092,71 @@ function DoctorPatient() {
                             </span>
                             <span
                               className={styles.statusBadge}
-                              style={{
-                                background: "#dcfce7",
-                                color: "#16a34a",
-                                border: "1px solid #bbf7d0",
-                                padding: "3px 10px",
-                                borderRadius: "20px",
-                                fontSize: "12px",
-                                fontWeight: 700,
-                              }}
+                              style={
+                                selectedPatient.paymentStatus === "paid"
+                                  ? {
+                                      background: "#dcfce7",
+                                      color: "#16a34a",
+                                      border: "1px solid #bbf7d0",
+                                      padding: "3px 10px",
+                                      borderRadius: "20px",
+                                      fontSize: "12px",
+                                      fontWeight: 700,
+                                    }
+                                  : {
+                                      background: "#fef9c3",
+                                      color: "#b45309",
+                                      border: "1px solid #fde68a",
+                                      padding: "3px 10px",
+                                      borderRadius: "20px",
+                                      fontSize: "12px",
+                                      fontWeight: 700,
+                                    }
+                              }
                             >
-                              Paid
+                              {selectedPatient.paymentStatus === "paid"
+                                ? "Paid"
+                                : selectedPatient.paymentStatus === "probono"
+                                  ? "Pro Bono"
+                                  : "Not Paid"}
                             </span>
                           </div>
                         </div>
                       </div>
+
+                      {/* ✅ Payment proof — use resolved receiptUrl */}
                       <div className={styles.paymentProof}>
                         <span className={styles.paymentProofLabel}>
                           Payment Proof
                         </span>
-                        <img
-                          src={samplePayment}
-                          alt="Payment Proof"
-                          className={styles.paymentProofImg}
-                          onClick={() => setZoomImage(samplePayment)}
-                        />
+                        {selectedPatient.receiptUrl ? (
+                          <img
+                            src={selectedPatient.receiptUrl}
+                            alt="Payment Proof"
+                            className={styles.paymentProofImg}
+                            style={{ cursor: "zoom-in" }}
+                            onClick={() =>
+                              setZoomImage(selectedPatient.receiptUrl)
+                            }
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              padding: "20px",
+                              textAlign: "center",
+                              color: "#aaa",
+                              fontSize: "13px",
+                              background: "#f9f9f9",
+                              borderRadius: "8px",
+                              border: "1px dashed #e5e7eb",
+                            }}
+                          >
+                            No payment proof uploaded
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -853,15 +1169,19 @@ function DoctorPatient() {
               <button
                 className={styles.btnViewHistory}
                 onClick={() =>
-                  navigate(`/doctor/patient-history/${selectedPatient.id}`, {
-                    state: { patient: selectedPatient },
-                  })
+                  navigate(
+                    `/doctor/patient-profile/${selectedPatient.patient_id}#appointment-history`,
+                    { state: { patient: selectedPatient } },
+                  )
                 }
               >
-                <FiFileText style={{ marginRight: "6px" }} />
-                View History
+                <FiFileText style={{ marginRight: "6px" }} /> View History
               </button>
-              {selectedPatient.status !== "Completed" && (
+              {(
+                selectedPatient.raw_status ||
+                selectedPatient.status ||
+                ""
+              ).toLowerCase() !== "completed" && (
                 <button
                   className={styles.btnConfirm}
                   style={{
@@ -874,14 +1194,15 @@ function DoctorPatient() {
                     gap: "7px",
                     height: "auto",
                     width: "auto",
-                    opacity: progressionDraft.trim() ? 1 : 0.5,
-                    cursor: progressionDraft.trim() ? "pointer" : "not-allowed",
+                    opacity: 1,
+                    cursor: "pointer",
                   }}
-                  disabled={!progressionDraft.trim()}
-                  onClick={handleMarkComplete}
+                  onClick={() => {
+                    setShowModal(false);
+                    handleOpenClinical(selectedPatient);
+                  }}
                 >
-                  <FiCheck size={15} />
-                  Mark as Complete
+                  <FiCheck size={15} /> Mark as Complete
                 </button>
               )}
             </div>
@@ -889,7 +1210,7 @@ function DoctorPatient() {
         </div>
       )}
 
-      {/* Zoom image */}
+      {/* Zoom Image */}
       {zoomImage && (
         <div
           className={styles.patientModalOverlay}
@@ -921,8 +1242,10 @@ function DoctorPatient() {
         </div>
       )}
 
-      {/* Clinical Notes Modal */}
-      {showClinicalModal && clinicalModalPatient && (
+      {/* ══════════════════════════════════════
+          Clinical Notes / Complete Modal
+      ══════════════════════════════════════ */}
+      {showClinicalModal && (
         <CompleteAppointmentModal
           isOpen={showClinicalModal}
           onClose={() => {
@@ -930,27 +1253,124 @@ function DoctorPatient() {
             setClinicalModalPatient(null);
           }}
           appt={{
-            patientName: clinicalModalPatient.name,
-            start: new Date(
-              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
-            ),
-            end: new Date(
-              `${clinicalModalPatient.date} ${clinicalModalPatient.time}`,
-            ),
-            title:
-              clinicalModalPatient.consultationMode === "Virtual"
-                ? "Online Clinic"
-                : "Physical Clinic",
+            appointment_id: clinicalModalPatient?.appointmentId,
+
+            referenceNumber: clinicalModalPatient?.referenceNumber,
+            patientName: clinicalModalPatient?.name,
+
+            // ✅ Pass raw_date so CompleteAppointmentModal can parse it correctly
+            appointmentDate: clinicalModalPatient?.appointmentDate,
+            startTime: clinicalModalPatient?.startTime,
+            endTime: clinicalModalPatient?.endTime,
+            visitType: clinicalModalPatient?.visitType,
+
+            serviceType: clinicalModalPatient?.serviceType,
+            assessmentPurpose: clinicalModalPatient?.assessmentPurpose,
+            reason: clinicalModalPatient?.reason,
+
+            paymentStatus: clinicalModalPatient?.paymentStatus,
+
+            // ✅ Pass receipt arrays so resolveReceiptUrl inside modal works
+            receipt_urls: clinicalModalPatient?.receipt_urls ?? [],
+            receipt_paths: clinicalModalPatient?.receipt_paths ?? [],
+            // Also pass the already-resolved URL as fallback
+            receiptUrl: clinicalModalPatient?.receiptUrl ?? null,
           }}
           onConfirm={() => {
-            const updated = patientList.map((p) =>
-              p.id === clinicalModalPatient.id
-                ? { ...p, status: "Completed" }
-                : p,
+            setPatientList((prev) =>
+              prev.map((p) =>
+                p.appointmentId === clinicalModalPatient?.appointmentId
+                  ? { ...p, status: "Completed", raw_status: "completed" }
+                  : p,
+              ),
             );
-            setPatientList(updated);
+            setShowClinicalModal(false);
+            setClinicalModalPatient(null);
           }}
         />
+      )}
+
+      {/* Confirm Progression Note Save */}
+      {showConfirmModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: "20px",
+              borderRadius: "12px",
+              width: "360px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3 style={{ marginBottom: "10px", color: "#3b1f6e" }}>
+              Confirm Save
+            </h3>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "#6b7280",
+                marginBottom: "20px",
+              }}
+            >
+              Are you sure you want to save this progression note? This will be
+              stored in the patient's appointment record.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (!pendingSaveId) return;
+                  setShowConfirmModal(false);
+                  await handleSaveProgressionNote(pendingSaveId);
+                  setPendingSaveId(null);
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#7341A8",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                Yes, Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
