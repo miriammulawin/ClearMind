@@ -199,6 +199,8 @@ if ($seed['appointment']['status'] === 'completed') {
         'payment_status'        => 'paid',
         'status'                => 'confirmed', // upcoming
         'notes'                 => null,
+
+        'receipt_paths' => ['receipts/image.png'],
     ]);
 }
         }

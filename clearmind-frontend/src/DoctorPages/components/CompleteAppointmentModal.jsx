@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import {
   FiX,
@@ -16,19 +16,18 @@ import {
 import styles from "../DoctorStyle/DayAppointmentsModal.module.css";
 
 /* ─────────────────────────────────────────────────────────
-   Config
+   Helpers
 ───────────────────────────────────────────────────────── */
 const API_BASE = "http://localhost:8000/api";
 const getToken = () => localStorage.getItem("token");
 
-/* ─────────────────────────────────────────────────────────
-   Helpers — uses real API fields (startTime: "09:00",
-   appointmentDate: "2025-05-10"), NOT JS Date objects
-───────────────────────────────────────────────────────── */
 const toTime12 = (timeStr) => {
   if (!timeStr) return "—";
-  const [h, m] = timeStr.split(":");
-  const hour = parseInt(h);
+  const clean = timeStr.replace(/\s?(am|pm)$/i, "");
+  if (!clean.includes(":")) return "—";
+  const [h, m] = clean.split(":");
+  const hour = parseInt(h, 10);
+  if (isNaN(hour)) return "—";
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`;
 };
 
@@ -44,16 +43,46 @@ const formatApptDate = (dateStr) => {
 const visitTypeLabel = (visitType) =>
   visitType === "virtual" ? "Virtual Consultation" : "Onsite Consultation";
 
+/**
+ * Resolve the best receipt URL from an appointment data object.
+ * The backend model appends `receipt_urls` (full URLs via $appends).
+ * Falls back to building from `receipt_paths` if needed.
+ */
+const resolveReceiptUrl = (data) => {
+  if (!data) return null;
+
+  // 1. FULL URL from backend (BEST)
+  if (Array.isArray(data.receipt_urls) && data.receipt_urls.length) {
+    return data.receipt_urls[0];
+  }
+
+  // 2. single URL
+  if (data.receiptUrl) {
+    return data.receiptUrl.startsWith("http")
+      ? data.receiptUrl
+      : `http://localhost:8000/storage/${data.receiptUrl}`;
+  }
+
+  // 3. fallback path
+  if (Array.isArray(data.receipt_paths) && data.receipt_paths.length) {
+    return data.receipt_paths[0].startsWith("http")
+      ? data.receipt_paths[0]
+      : `http://localhost:8000/storage/${data.receipt_paths[0]}`;
+  }
+
+  return null;
+};
+
 /* ─────────────────────────────────────────────────────────
    ClinicalNotesSection
 ───────────────────────────────────────────────────────── */
-function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
+function ClinicalNotesSection({ appointmentId }) {
   const [activeTab, setActiveTab] = useState("intake");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [formValue, setFormValue] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [deleting, setDeleting] = useState(null); // noteId being deleted
   const [notes, setNotes] = useState({
     intake: [],
     progress: [],
@@ -86,56 +115,135 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
 
   const currentTab = tabConfig.find((t) => t.key === activeTab);
 
-  const handleAdd = () => {
-    if (!formValue.trim()) return;
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: [
+  // ── Fetch on mount / when appointmentId changes ──
+  useEffect(() => {
+    if (!appointmentId) return;
+    fetchNotes();
+  }, [appointmentId]);
+
+  const fetchNotes = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/appointments/${appointmentId}/clinical-notes`,
         {
-          id: Date.now(),
-          date: new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
-          author: "Dr. Admin",
-          content: formValue.trim(),
+          headers: { Authorization: `Bearer ${getToken()}` },
         },
-        ...prev[activeTab],
-      ],
-    }));
-    closeForm();
+      );
+      const data = await res.json();
+      if (res.ok && data.notes) setNotes(data.notes);
+    } catch (err) {
+      console.error("Failed to load notes", err);
+    }
   };
 
-  const handleEdit = (entry) => {
-    setEditingEntry(entry);
-    setFormValue(entry.content);
-    setShowAddModal(true);
-  };
-
-  const handleSaveEdit = () => {
+  // ── ADD ──
+  const handleAdd = async () => {
     if (!formValue.trim()) return;
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].map((e) =>
-        e.id === editingEntry.id ? { ...e, content: formValue.trim() } : e,
-      ),
-    }));
-    closeForm();
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/appointments/${appointmentId}/clinical-notes`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ type: activeTab, content: formValue.trim() }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      // Prepend the server-returned note (has UUID id + server date/author)
+      setNotes((prev) => ({
+        ...prev,
+        [activeTab]: [data.note, ...prev[activeTab]],
+      }));
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save note: " + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id) =>
-    setNotes((prev) => ({
-      ...prev,
-      [activeTab]: prev[activeTab].filter((e) => e.id !== id),
-    }));
+  // ── EDIT (save) ──
+  const handleSaveEdit = async () => {
+    if (!formValue.trim() || !editingEntry) return;
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/appointments/${appointmentId}/clinical-notes/${editingEntry.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ type: activeTab, content: formValue.trim() }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setNotes((prev) => ({
+        ...prev,
+        [activeTab]: prev[activeTab].map((e) =>
+          e.id === editingEntry.id ? { ...e, content: formValue.trim() } : e,
+        ),
+      }));
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update note: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── DELETE ──
+  const handleDelete = async (noteId) => {
+    if (!window.confirm("Delete this note?")) return;
+    setDeleting(noteId);
+    try {
+      const res = await fetch(
+        `${API_BASE}/appointments/${appointmentId}/clinical-notes/${noteId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+          },
+          body: JSON.stringify({ type: activeTab }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      setNotes((prev) => ({
+        ...prev,
+        [activeTab]: prev[activeTab].filter((e) => e.id !== noteId),
+      }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete note: " + err.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const openAdd = () => {
     setEditingEntry(null);
     setFormValue("");
     setShowAddModal(true);
   };
-
+  const openEdit = (entry) => {
+    setEditingEntry(entry);
+    setFormValue(entry.content);
+    setShowAddModal(true);
+  };
   const closeForm = () => {
     setShowAddModal(false);
     setEditingEntry(null);
@@ -159,6 +267,7 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
         .cn-entries::-webkit-scrollbar-thumb{background:#4D227C;border-radius:10px}
         .cn-entries{scrollbar-color:#4D227C #f0eaf8;scrollbar-width:thin}
         .cn-entry-card{border-radius:12px;border:1px solid #ede5f7;border-left-width:4px;padding:14px 16px;background:#fdfcff;flex-shrink:0;box-shadow:0 1px 6px rgba(77,34,124,0.05)}
+        .cn-entry-card.cn-deleting{opacity:0.5;pointer-events:none}
         .cn-entry-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
         .cn-entry-meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
         .cn-entry-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Poppins',sans-serif}
@@ -189,8 +298,7 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
         .cn-save-btn{display:flex;align-items:center;gap:6px;padding:9px 20px;border-radius:10px;border:none;color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;transition:filter 0.15s,transform 0.1s;text-transform:uppercase;letter-spacing:.4px}
         .cn-save-btn:hover{filter:brightness(1.1)}
         .cn-save-btn:active{transform:translateY(1px)}
-        @media(max-width:480px){.cn-tabs{flex-direction:column}.cn-tab-btn{flex:none;width:100%}.cn-add-btn{width:100%;justify-content:center}}
-        @media(max-width:360px){.cn-tab-btn span:not(.cn-tab-count){display:none}}
+        .cn-save-btn:disabled{opacity:0.6;cursor:not-allowed}
         .cam-footer{flex-shrink:0;border-top:2px solid #ede5f7;padding:16px 24px;background:#fff;display:flex;justify-content:flex-end;align-items:center;gap:10px;border-radius:0 0 16px 16px;font-family:'Poppins',sans-serif}
         .cam-cancel-btn{background:#f0ebf7;color:#4D227C;border:2px solid #c9b8f0;padding:11px 22px;border-radius:10px;font-size:14px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;transition:background 0.2s,color 0.2s,border-color 0.2s}
         .cam-cancel-btn:hover{background:#4D227C;color:#fff;border-color:#4D227C}
@@ -198,7 +306,13 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
         .cam-confirm-btn:hover{background:#fff;color:#15803d}
         .cam-confirm-btn:active{transform:translateY(1px)}
         .cam-confirm-btn:disabled{opacity:0.6;cursor:not-allowed}
-        @media(max-width:768px){.cam-footer{padding:14px 16px;border-radius:0 0 12px 12px;flex-direction:column-reverse;gap:8px}.cam-cancel-btn,.cam-confirm-btn{width:100%;justify-content:center;text-align:center}}
+        .cam-payment-label{font-size:11px;font-weight:700;color:#4D227C;text-transform:uppercase;letter-spacing:.6px;font-family:'Poppins',sans-serif;display:block;margin-bottom:6px}
+        .cam-payment-status-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif}
+        .cam-receipt-wrap{width:100%;margin-top:6px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;background:#f9f9f9;cursor:zoom-in}
+        .cam-receipt-img{width:100%;max-height:260px;object-fit:contain;display:block}
+        .cam-receipt-empty{padding:20px;text-align:center;color:#aaa;font-size:13px;background:#f9f9f9;border-radius:8px;border:1px dashed #e5e7eb;margin-top:6px;font-family:'Poppins',sans-serif}
+        .cam-zoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:13000;cursor:zoom-out;padding:20px;box-sizing:border-box}
+        .cam-zoom-img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,0.5)}
       `}</style>
 
       {/* Add button */}
@@ -271,7 +385,7 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
           notes[activeTab].map((entry, index) => (
             <div
               key={entry.id}
-              className="cn-entry-card"
+              className={`cn-entry-card${deleting === entry.id ? " cn-deleting" : ""}`}
               style={{ borderLeftColor: currentTab.color }}
             >
               <div className="cn-entry-header">
@@ -296,7 +410,7 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
                 <div className="cn-entry-actions">
                   <button
                     className="cn-action-btn cn-edit-btn"
-                    onClick={() => handleEdit(entry)}
+                    onClick={() => openEdit(entry)}
                     title="Edit"
                   >
                     <FiEdit3 size={13} />
@@ -305,6 +419,7 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
                     className="cn-action-btn cn-delete-btn"
                     onClick={() => handleDelete(entry.id)}
                     title="Delete"
+                    disabled={deleting === entry.id}
                   >
                     <FiTrash2 size={13} />
                   </button>
@@ -348,16 +463,25 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
               />
             </div>
             <div className="cn-modal-footer">
-              <button className="cn-cancel-btn" onClick={closeForm}>
+              <button
+                className="cn-cancel-btn"
+                onClick={closeForm}
+                disabled={saving}
+              >
                 Cancel
               </button>
               <button
                 className="cn-save-btn"
                 style={{ background: currentTab.color }}
                 onClick={editingEntry ? handleSaveEdit : handleAdd}
+                disabled={saving}
               >
                 <FiCheck size={14} />{" "}
-                {editingEntry ? "Save Changes" : "Add Entry"}
+                {saving
+                  ? "Saving…"
+                  : editingEntry
+                    ? "Save Changes"
+                    : "Add Entry"}
               </button>
             </div>
           </div>
@@ -369,38 +493,118 @@ function ClinicalNotesSection({ appointmentId, initialNotes = null }) {
 
 /* ─────────────────────────────────────────────────────────
    CompleteAppointmentModal
-   ✅ Uses real API fields from mapAppointment():
-      appt.appointmentDate  → "2025-05-10"
-      appt.startTime        → "09:00"
-      appt.endTime          → "10:00"
-      appt.visitType        → "onsite" | "virtual"
-      appt.patientName      → "Juan D. dela Cruz"
-      appt.referenceNumber  → "PAE-2025-05-10-0001"
-      appt.serviceType      → "Psychological Assessment and Evaluation"
-      appt.paymentStatus    → "paid" | "not_paid" | "probono"
-      appt.status           → "pending" | "confirmed" | ...
-      appt.appointment_id   → 1
 ───────────────────────────────────────────────────────── */
 function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [appointment, setAppointment] = useState(null);
+  const [zoomReceipt, setZoomReceipt] = useState(null);
+
+  /* Fetch full appointment data so we always have receipt_urls from the model */
+  useEffect(() => {
+    if (!isOpen || !appt?.appointment_id) return;
+
+    const fetchAppointment = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `${API_BASE}/appointments/${appt.appointment_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+              Accept: "application/json",
+            },
+          },
+        );
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || "Failed to fetch");
+        setAppointment(json.data || json);
+      } catch (err) {
+        console.error("Fetch appointment error:", err);
+        setAppointment(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointment();
+  }, [isOpen, appt?.appointment_id]);
 
   if (!isOpen || !appt) return null;
 
-  // ── Use real API fields ──
-  const clinicType = visitTypeLabel(appt.visitType);
-  const dateDisplay = formatApptDate(appt.appointmentDate);
-  const timeDisplay = `${toTime12(appt.startTime)} – ${toTime12(appt.endTime)}`;
-  // Short date for header badge
-  const dateBadge = appt.appointmentDate
-    ? format(new Date(appt.appointmentDate + "T00:00:00"), "MMM d, yyyy")
-    : "—";
+  if (loading) {
+    return (
+      <div className={styles.overlay}>
+        <div className={styles.modal}>
+          <div
+            style={{
+              padding: "40px 20px",
+              textAlign: "center",
+              color: "#7341A8",
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: 14,
+            }}
+          >
+            Loading appointment details…
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  /* ── Mark as Completed — calls PUT /appointments/{id} ── */
+  /*
+   * Merge: prop data first (camelCase fields from DoctorPatient.jsx),
+   * then overlay with fetched API data (snake_case + receipt_urls from $appends).
+   * resolveReceiptUrl checks both shapes.
+   */
+  const data = { ...(appt || {}), ...(appointment || {}) };
+
+  /* Derived display values */
+  const clinicType = visitTypeLabel(data.visitType ?? data.visit_type);
+  const dateDisplay = formatApptDate(
+    data.appointmentDate ?? data.appointment_date ?? data.raw_date,
+  );
+  const start = toTime12(data.startTime ?? data.start_time);
+  const end = toTime12(data.endTime ?? data.end_time);
+  const timeDisplay =
+    start !== "—" && end !== "—"
+      ? `${start} – ${end}`
+      : start !== "—"
+        ? start
+        : end !== "—"
+          ? end
+          : "—";
+
+  let dateBadge = "—";
+  try {
+    const rawDate =
+      data.appointmentDate ?? data.appointment_date ?? data.raw_date;
+    if (rawDate)
+      dateBadge = format(new Date(rawDate + "T00:00:00"), "MMM d, yyyy");
+  } catch {
+    /* no-op */
+  }
+
+  /* ✅ Use the unified resolver — works for receipt_urls[], receiptUrl, receipt_paths[] */
+  const receiptUrl = resolveReceiptUrl(data);
+
+  /* Payment */
+  const rawPayment = data.paymentStatus ?? data.payment_status ?? "";
+  const isPaid = rawPayment === "paid";
+  const paymentStatusLabel =
+    rawPayment === "paid"
+      ? "Paid"
+      : rawPayment === "probono"
+        ? "Pro Bono"
+        : "Not Paid";
+
+  /* Mark as Completed */
   const handleConfirm = async () => {
     setSubmitting(true);
+
     try {
       const res = await fetch(
-        `${API_BASE}/appointments/${appt.appointment_id}`,
+        `${API_BASE}/appointments/${appt.appointment_id}/status`,
         {
           method: "PUT",
           headers: {
@@ -411,166 +615,249 @@ function CompleteAppointmentModal({ isOpen, onClose, appt, onConfirm }) {
           body: JSON.stringify({ status: "completed" }),
         },
       );
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        alert(json.message || `Error ${res.status}`);
-        return;
-      }
-      onConfirm?.();
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed");
+
+      onConfirm?.(); // refresh parent list
       onClose();
     } catch (e) {
-      alert("Network error: " + e.message);
+      alert("Error: " + e.message);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className={styles.modalHeader}>
-          <h3 className={styles.modalTitle}>Add Clinical Notes</h3>
-          <div className={styles.modalHeaderRight}>
-            <span className={styles.dateBadge}>{dateBadge}</span>
+    <>
+      {/* Zoomed receipt overlay */}
+      {zoomReceipt && (
+        <div className="cam-zoom-overlay" onClick={() => setZoomReceipt(null)}>
+          <img
+            src={zoomReceipt}
+            alt="Zoomed Receipt"
+            className="cam-zoom-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      <div className={styles.overlay} onClick={onClose}>
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+          {/* Header */}
+          <div className={styles.modalHeader}>
+            <h3 className={styles.modalTitle}>Add Clinical Notes</h3>
+            <div className={styles.modalHeaderRight}>
+              <span className={styles.dateBadge}>{dateBadge}</span>
+              <button
+                className={styles.closeBtn}
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <FiX />
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable body */}
+          <div className={styles.scrollBody}>
+            {/* Appointment Information */}
+            <section className={styles.card}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardHeaderLeft}>
+                  Appointment Information
+                </span>
+                {data.referenceNumber && (
+                  <span className={styles.referenceNumber}>
+                    {data.referenceNumber}
+                  </span>
+                )}
+              </div>
+              <div className={styles.cardBody}>
+                <div className={styles.cardFields}>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Patient:</span>
+                    <span
+                      className={styles.infoValue}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiUser size={12} style={{ color: "#9c7dd4" }} />
+                      {data.patientName ?? data.patient_name ?? "—"}
+                    </span>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Date:</span>
+                    <span
+                      className={styles.infoValue}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiCalendar size={12} style={{ color: "#9c7dd4" }} />
+                      {dateDisplay}
+                    </span>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Time:</span>
+                    <span
+                      className={styles.infoValue}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiClock size={12} style={{ color: "#9c7dd4" }} />
+                      {timeDisplay}
+                    </span>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span className={styles.infoLabel}>Visit Type:</span>
+                    <span className={styles.infoValue}>{clinicType}</span>
+                  </div>
+                  {(data.serviceType ?? data.service_type) && (
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Service:</span>
+                      <span className={styles.infoValue}>
+                        {data.serviceType ?? data.service_type}
+                      </span>
+                    </div>
+                  )}
+                  {(data.assessmentPurpose ?? data.pae_purpose) && (
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Purpose:</span>
+                      <span className={styles.infoValue}>
+                        {data.assessmentPurpose ?? data.pae_purpose}
+                      </span>
+                    </div>
+                  )}
+                  {(data.doctorName ?? data.doctor_name) && (
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Doctor:</span>
+                      <span className={styles.infoValue}>
+                        {data.doctorName ?? data.doctor_name}
+                      </span>
+                    </div>
+                  )}
+                  {(data.reason ?? data.reason_for_consultation) && (
+                    <div className={styles.infoRow}>
+                      <span className={styles.infoLabel}>Reason:</span>
+                      <span className={styles.infoValue}>
+                        {data.reason ?? data.reason_for_consultation}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Payment Details */}
+            <section className={styles.card}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardHeaderLeft}>Payment Details</span>
+              </div>
+              <div
+                style={{
+                  padding: "14px 20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                }}
+              >
+                {/* Status */}
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span className="cam-payment-label" style={{ margin: 0 }}>
+                    Payment Status:
+                  </span>
+                  <span
+                    className="cam-payment-status-badge"
+                    style={
+                      isPaid
+                        ? {
+                            background: "#dcfce7",
+                            color: "#16a34a",
+                            border: "1px solid #bbf7d0",
+                          }
+                        : {
+                            background: "#fef9c3",
+                            color: "#b45309",
+                            border: "1px solid #fde68a",
+                          }
+                    }
+                  >
+                    {paymentStatusLabel}
+                  </span>
+                </div>
+
+                {/* ✅ Payment proof */}
+                <div>
+                  <span className="cam-payment-label">Payment Proof</span>
+                  {receiptUrl ? (
+                    <div
+                      className="cam-receipt-wrap"
+                      onClick={() => setZoomReceipt(receiptUrl)}
+                    >
+                      <img
+                        src={receiptUrl}
+                        alt="Payment Proof"
+                        className="cam-receipt-img"
+                        onError={(e) => {
+                          e.target.parentElement.style.display = "none";
+                          const empty = e.target.parentElement.nextSibling;
+                          if (empty) empty.style.display = "block";
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                  <div
+                    className="cam-receipt-empty"
+                    style={{ display: receiptUrl ? "none" : "block" }}
+                  >
+                    No payment proof uploaded
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Clinical Notes */}
+            <section className={styles.card}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardHeaderLeft}>Clinical Notes</span>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                <ClinicalNotesSection appointmentId={appt.appointment_id} />
+              </div>
+            </section>
+          </div>
+
+          {/* Footer */}
+          <div className="cam-footer">
             <button
-              className={styles.closeBtn}
+              className="cam-cancel-btn"
               onClick={onClose}
-              aria-label="Close"
+              disabled={submitting}
             >
-              <FiX />
+              Cancel
+            </button>
+            <button
+              className="cam-confirm-btn"
+              onClick={handleConfirm}
+              disabled={submitting}
+            >
+              <FiCheck size={15} />
+              {submitting ? "Saving…" : "Mark as Completed"}
             </button>
           </div>
         </div>
-
-        {/* Scrollable body */}
-        <div className={styles.scrollBody}>
-          {/* ── Appointment info card ── */}
-          <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardHeaderLeft}>
-                Appointment Information
-              </span>
-              <span className={styles.referenceNumber}>
-                {appt.referenceNumber}
-              </span>
-            </div>
-            <div className={styles.cardBody}>
-              <div className={styles.cardFields}>
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Patient:</span>
-                  <span
-                    className={styles.infoValue}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <FiUser size={12} style={{ color: "#9c7dd4" }} />
-                    {appt.patientName || "—"}
-                  </span>
-                </div>
-
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Date:</span>
-                  <span
-                    className={styles.infoValue}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <FiCalendar size={12} style={{ color: "#9c7dd4" }} />
-                    {dateDisplay}
-                  </span>
-                </div>
-
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Time:</span>
-                  <span
-                    className={styles.infoValue}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
-                  >
-                    <FiClock size={12} style={{ color: "#9c7dd4" }} />
-                    {timeDisplay}
-                  </span>
-                </div>
-
-                <div className={styles.infoRow}>
-                  <span className={styles.infoLabel}>Visit Type:</span>
-                  <span className={styles.infoValue}>{clinicType}</span>
-                </div>
-
-                {appt.serviceType && (
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Service:</span>
-                    <span className={styles.infoValue}>{appt.serviceType}</span>
-                  </div>
-                )}
-
-                {appt.assessmentPurpose && (
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Purpose:</span>
-                    <span className={styles.infoValue}>
-                      {appt.assessmentPurpose}
-                    </span>
-                  </div>
-                )}
-
-                {appt.doctorName && (
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Doctor:</span>
-                    <span className={styles.infoValue}>{appt.doctorName}</span>
-                  </div>
-                )}
-
-                {appt.reason && (
-                  <div className={styles.infoRow}>
-                    <span className={styles.infoLabel}>Reason:</span>
-                    <span className={styles.infoValue}>{appt.reason}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* ── Clinical Notes card ── */}
-          <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <span className={styles.cardHeaderLeft}>Clinical Notes</span>
-            </div>
-            <div style={{ padding: "16px 20px" }}>
-              <ClinicalNotesSection appointmentId={appt.appointment_id} />
-            </div>
-          </section>
-        </div>
-
-        {/* Footer */}
-        <div className="cam-footer">
-          <button
-            className="cam-cancel-btn"
-            onClick={onClose}
-            disabled={submitting}
-          >
-            Cancel
-          </button>
-          <button
-            className="cam-confirm-btn"
-            onClick={handleConfirm}
-            disabled={submitting}
-          >
-            <FiCheck size={15} />
-            {submitting ? "Saving…" : "Mark as Completed"}
-          </button>
-        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -37,6 +37,8 @@ class Appointment extends Model
     protected $casts = [
         'appointment_date' => 'date',
         'receipt_paths'    => 'array',
+        'progression_note' => 'array',
+        'clinical_notes'   => 'array',
     ];
 
     protected $appends = ['receipt_urls'];

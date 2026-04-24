@@ -789,10 +789,7 @@ function DoctorProfile() {
                       </div>
                     </div>
                   ) : (
-                    <div
-                      className="card p-4 shadow-sm"
-                      style={{ borderRadius: "12px" }}
-                    >
+                    <div className="card p-4 shadow-sm">
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <h5 style={{ color: "#4D227C" }} className="fw-bold">
                           Terms & Conditions

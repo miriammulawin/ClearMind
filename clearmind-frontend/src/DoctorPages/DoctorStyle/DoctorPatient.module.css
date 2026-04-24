@@ -135,16 +135,6 @@
   font-weight: 500;
 }
 
-.scheduled {
-  color: #005892;
-}
-.completed {
-  color: #22c55e;
-}
-.cancelled {
-  color: #ef4444;
-}
-
 /* ─── Table Action Buttons ───────────────────────────── */
 .patientTable td button {
   height: 32px;
@@ -160,9 +150,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .btnView {
@@ -178,9 +166,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .btnView:hover {
@@ -198,9 +184,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .btnConfirm:hover:not(:disabled) {
@@ -654,9 +638,7 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition:
-    background 0.2s,
-    transform 0.15s;
+  transition: background 0.2s, transform 0.15s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -721,6 +703,7 @@
   padding: 40px;
   border-radius: 20px;
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
 }
 
 .patientProfileLayout {
@@ -759,9 +742,24 @@
   color: #4d227c;
 }
 
+.sectionSubLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9b7ec8;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 14px;
+  margin-top: 0;
+}
+
+.sectionDivider {
+  border-top: 1.5px solid #e5d6f5;
+  margin-bottom: 20px;
+}
+
 /* ─── Appointment History Card ───────────────────────── */
 .appointmentHistoryCard {
-  margin-top: 40px;
+  margin-top: 0;
   background: #fff;
   padding: 30px;
   border-radius: 20px;
@@ -865,7 +863,10 @@
   margin: 0;
 }
 
-/* ── Clinical Notes Section ── */
+/* ══════════════════════════════════════════════
+   Clinical Notes — Redesigned
+══════════════════════════════════════════════ */
+
 .clinicalSection {
   background: #fff;
   border-radius: 20px;
@@ -875,19 +876,104 @@
   margin-bottom: 24px;
 }
 
-.clinicalTabsBar {
+/* ── Section header (title + appt selector + tabs) ── */
+.clinicalSectionHeader {
+  padding: 18px 22px 0;
+  border-bottom: 1.5px solid #e8e3f0;
+}
+
+.clinicalTitleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 22px 0 22px;
-  border-bottom: 2px solid #f0eaf8;
-  gap: 12px;
-  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
-.clinicalTabs {
+.clinicalTitleLeft {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+}
+
+.clinicalTitleIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #4d227c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.clinicalTitleText {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3b1f6e;
+  margin: 0;
+}
+
+/* ── Appointment selector row ── */
+.cnApptSelectorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.cnApptLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9b7ec8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.cnApptSelectWrap {
+  flex: 1;
+  position: relative;
+}
+
+.cnApptSelect {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #d8ccf0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2e104e;
+  background: #faf7ff;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cnApptSelect:hover {
+  border-color: #9b7ec8;
+}
+
+.cnApptSelect:focus {
+  border-color: #7341a8;
+  box-shadow: 0 0 0 3px rgba(115, 65, 168, 0.1);
+}
+
+.cnApptCaret {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #9b7ec8;
+}
+
+/* ── Tab row (sits at bottom of header, flush with border) ── */
+.clinicalTabsRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  margin-bottom: -1.5px;
 }
 
 .clinicalTabBtn {
@@ -896,29 +982,44 @@
   gap: 7px;
   padding: 9px 16px;
   border-radius: 10px 10px 0 0;
-  border: 1.5px solid #e5d6f5;
+  border: 1px solid #e5d6f5;
   border-bottom: none;
-  background: #faf7fd;
-  color: #7341a8;
-  font-size: 13.5px;
+  background: #f6f2fc;
+  color: #7b5ea7;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  margin-right: 4px;
   position: relative;
-  bottom: -2px;
 }
 
-.clinicalTabBtn:hover:not(.clinicalTabActive) {
-  background: #f0e8ff;
+.clinicalTabBtn:hover {
+  background: #ede5f7;
   color: #4d227c;
 }
 
-.clinicalTabActive {
+/* Per-tab active colors */
+.clinicalTabActiveIntake {
+  background: #4d227c !important;
   color: #fff !important;
-  border-color: transparent !important;
-  box-shadow: 0 -4px 12px rgba(77, 34, 124, 0.2);
-  z-index: 1;
+  border-color: #4d227c !important;
+  z-index: 2;
+}
+
+.clinicalTabActiveProgress {
+  background: #1d6fa4 !important;
+  color: #fff !important;
+  border-color: #1d6fa4 !important;
+  z-index: 2;
+}
+
+.clinicalTabActiveRec {
+  background: #15803d !important;
+  color: #fff !important;
+  border-color: #15803d !important;
+  z-index: 2;
 }
 
 .clinicalTabCount {
@@ -929,36 +1030,71 @@
   line-height: 1.4;
 }
 
-.clinicalAddBtn {
+/* ── Tab body ── */
+.clinicalTabBody {
+  padding: 18px 22px 22px;
+}
+
+/* ── Toolbar row (contains add button, right-aligned) ── */
+.clinicalToolbar {
   display: flex;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+/* ── Add button ── */
+.clinicalAddBtn {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition:
-    filter 0.2s,
-    transform 0.15s;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-  margin-bottom: 6px;
+  transition: filter 0.15s, transform 0.12s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 
-.clinicalAddBtn:hover {
+.clinicalAddBtn:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
+.clinicalAddBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+/* ── Loading / no-appts states ── */
+.clinicalLoading {
+  padding: 32px;
+  text-align: center;
+  color: #9b7ec8;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.clinicalNoAppts {
+  padding: 32px 20px;
+  text-align: center;
+  color: #bbb;
+  border: 1.5px dashed #e0d4f5;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* ── Empty state ── */
 .clinicalEntries {
-  padding: 20px 22px 24px 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 120px;
+  gap: 12px;
+  min-height: 80px;
 }
 
 .clinicalEmpty {
@@ -972,23 +1108,37 @@
   text-align: center;
 }
 
-.clinicalEmpty p {
-  margin: 0;
-  font-size: 14px;
+.clinicalEmptyIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #f6f2fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e5d6f5;
+  opacity: 0.7;
 }
 
+.clinicalEmptyText {
+  margin: 0;
+  font-size: 13.5px;
+  color: #9b7ec8;
+}
+
+/* ── Entry cards ── */
 .clinicalEntryCard {
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #ede9f6;
-  border-left: 4px solid #4d227c;
+  border-left: 3px solid #4d227c;
   background: #faf8fc;
-  padding: 16px 18px;
-  transition: box-shadow 0.2s;
+  padding: 14px 16px;
+  transition: box-shadow 0.18s;
   animation: fadeSlideIn 0.2s ease;
 }
 
 .clinicalEntryCard:hover {
-  box-shadow: 0 4px 16px rgba(77, 34, 124, 0.08);
+  box-shadow: 0 4px 14px rgba(77, 34, 124, 0.08);
 }
 
 .clinicalEntryHeader {
@@ -1035,15 +1185,16 @@
 }
 
 .clinicalActionBtn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
+  background: transparent;
 }
 
 .clinicalEditBtn {
@@ -1107,7 +1258,7 @@
 
 .clinicalModalHeader h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: #fff;
 }
@@ -1157,16 +1308,14 @@
   width: 100%;
   padding: 14px 16px;
   border-radius: 10px;
-  border: 2px solid #e5d6f5;
+  border: 1.5px solid #e5d6f5;
   font-size: 14px;
   font-family: inherit;
   color: #2d1a45;
   resize: vertical;
   box-sizing: border-box;
   line-height: 1.65;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   background: #fff;
 }
 
@@ -1179,53 +1328,55 @@
 .clinicalModalFooter {
   padding: 16px 24px;
   background: #fff;
-  border-top: 2px solid #f0eaf8;
+  border-top: 1.5px solid #f0eaf8;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
 .clinicalCancelBtn {
-  padding: 10px 22px;
-  border-radius: 10px;
-  border: 2px solid #e5d6f5;
-  background: #f0ebf7;
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #e5d6f5;
+  background: #f6f2fc;
   color: #4d227c;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .clinicalCancelBtn:hover {
-  background: #e5d6f5;
-  border-color: #4d227c;
+  background: #ede5f7;
+  border-color: #9b7ec8;
 }
 
 .clinicalSaveBtn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 24px;
-  border-radius: 10px;
+  padding: 9px 22px;
+  border-radius: 8px;
   border: none;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition:
-    filter 0.2s,
-    transform 0.15s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: filter 0.18s, transform 0.12s;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.14);
 }
 
-.clinicalSaveBtn:hover {
+.clinicalSaveBtn:hover:not(:disabled) {
   filter: brightness(1.1);
   transform: translateY(-1px);
+}
+
+.clinicalSaveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ─── Responsive ─────────────────────────────────────── */
@@ -1242,6 +1393,17 @@
 
   .patientDetailsSection {
     width: 100%;
+  }
+
+  .clinicalTabsRow {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .clinicalTabBtn {
+    border-radius: 8px;
+    border-bottom: 1px solid #e5d6f5;
+    margin-right: 0;
   }
 }
 
@@ -1275,5 +1437,14 @@
   .btnViewProfile {
     width: 100%;
     justify-content: center;
+  }
+
+  .cnApptSelectorRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cnApptSelectWrap {
+    width: 100%;
   }
 }
