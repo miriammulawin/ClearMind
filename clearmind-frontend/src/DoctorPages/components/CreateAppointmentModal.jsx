@@ -109,6 +109,88 @@ const DAY_ABBR = {
 };
 
 /* ─────────────────────────────────────────────────────────
+   Helper: check if a time slot overlaps any booked slot.
+
+   Each selectable slot represents a 1-HOUR appointment
+   (e.g. picking 11:00 AM means 11:00–12:00).
+   A slot is considered unavailable if selecting it would
+   cause ANY overlap with an existing confirmed booking:
+
+     newStart < bookedEnd  AND  newEnd > bookedStart
+
+   This correctly hides:
+     • 11:00 AM  → new end 12:00  overlaps 11:30–12:30 ✓
+     • 10:30 AM  → new end 11:30  overlaps 11:00–12:00 ✓
+     • 11:30 AM  → new end 12:30  overlaps 11:00–12:00 ✓
+───────────────────────────────────────────────────────── */
+const APPOINTMENT_DURATION_MINS = 60; // 1-hour appointments
+
+function isSlotBooked(slotTime, bookedSlots) {
+  if (!bookedSlots || bookedSlots.length === 0) return false;
+  const [sh, sm] = slotTime.split(":").map(Number);
+  const slotStart = sh * 60 + sm;
+  const slotEnd = slotStart + APPOINTMENT_DURATION_MINS; // 60-min appointment
+
+  return bookedSlots.some((b) => {
+    const [bsh, bsm] = b.start_time.split(":").map(Number);
+    const [beh, bem] = b.end_time.split(":").map(Number);
+    const bookedStart = bsh * 60 + bsm;
+    // If backend end_time is missing or equal to start, derive it too
+    const bookedEnd =
+      beh * 60 + bem > bookedStart
+        ? beh * 60 + bem
+        : bookedStart + APPOINTMENT_DURATION_MINS;
+    // Overlap: new slot starts before booked ends AND new slot ends after booked starts
+    return slotStart < bookedEnd && slotEnd > bookedStart;
+  });
+}
+
+/* ─────────────────────────────────────────────────────────
+   Helper: build every selectable start-time slot within a
+   schedule window.  Slots are 30-min apart but each slot
+   represents a 60-min appointment, so the last valid start
+   is  scheduleEnd − APPOINTMENT_DURATION_MINS.
+───────────────────────────────────────────────────────── */
+function buildAllSlotsForSchedule(schedEntry) {
+  if (!schedEntry) return [];
+  const startH = parseInt(schedEntry.start_time.split(":")[0]);
+  const startM = parseInt(schedEntry.start_time.split(":")[1]);
+  const endH = parseInt(schedEntry.end_time.split(":")[0]);
+  const endM = parseInt(schedEntry.end_time.split(":")[1]);
+  const schedEndMins = endH * 60 + endM;
+
+  const slots = [];
+  for (let h = startH; h <= endH; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      if (h === startH && m < startM) continue;
+      const slotStart = h * 60 + m;
+      const slotEnd = slotStart + APPOINTMENT_DURATION_MINS;
+      // only include if the full 60-min appointment fits inside the schedule
+      if (slotEnd > schedEndMins) continue;
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+  return slots;
+}
+
+/* ─────────────────────────────────────────────────────────
+   Helper: true when EVERY slot on a given date is taken.
+   bookedSlotsForDate — [{start_time, end_time}, ...]
+   doctorSchedule     — full weekly schedule array
+   dateStr            — "yyyy-MM-dd"
+───────────────────────────────────────────────────────── */
+function isDateFullyBooked(dateStr, bookedSlotsForDate, doctorSchedule) {
+  if (!bookedSlotsForDate || bookedSlotsForDate.length === 0) return false;
+  if (!doctorSchedule || doctorSchedule.length === 0) return false;
+  const dayNum = new Date(dateStr + "T00:00:00").getDay();
+  const schedEntry = doctorSchedule.find((s) => s.day_num === dayNum);
+  if (!schedEntry) return false; // not a scheduled day — already greyed by availableDayNums
+  const allSlots = buildAllSlotsForSchedule(schedEntry);
+  if (allSlots.length === 0) return false;
+  return allSlots.every((t) => isSlotBooked(t, bookedSlotsForDate));
+}
+
+/* ─────────────────────────────────────────────────────────
    ImagePreviewModal
 ───────────────────────────────────────────────────────── */
 function ImagePreviewModal({ file, src, onClose }) {
@@ -859,14 +941,11 @@ function DoctorDropdown({ onSelect, value, onScheduleLoad }) {
 
   const fetchSchedule = useCallback(async (doctor) => {
     const doctorTableId = doctor.doctor_id ?? doctor.id;
-
     if (!doctorTableId) {
-      console.warn("No doctor_id found on doctor object:", doctor);
       setSchedule([]);
       onScheduleLoadRef.current?.([]);
       return;
     }
-
     setScheduleLoading(true);
     try {
       const res = await fetch(
@@ -878,14 +957,7 @@ function DoctorDropdown({ onSelect, value, onScheduleLoad }) {
           },
         },
       );
-
-      if (!res.ok) {
-        console.error(
-          `Schedule fetch failed: GET /doctors/${doctorTableId}/schedules → HTTP ${res.status}`,
-        );
-        throw new Error(`HTTP ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const sched = json.data?.schedule || [];
       setSchedule(sched);
@@ -1513,12 +1585,10 @@ function CalendarDatePicker({
 
 /* ─────────────────────────────────────────────────────────
    TimePicker
-   FIX: A time slot is hidden if its start time falls
-        anywhere within a confirmed booked appointment's
-        window (start_time >= booked.start AND
-        start_time < booked.end).
-        Controller already returns clean HH:MM strings
-        for confirmed/completed appointments only.
+   FIX: slots are only shown if the full 60-min session
+   fits within the schedule window (slotStart + 60 <= schedEnd).
+   This correctly hides 4:30 PM and 5:00 PM when schedule
+   ends at 5:00 PM — last valid start is 4:00 PM.
 ───────────────────────────────────────────────────────── */
 function TimePicker({
   value,
@@ -1527,6 +1597,7 @@ function TimePicker({
   disabled = false,
   scheduleForDate = null,
   bookedSlots = [],
+  loadingSlots = false,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -1540,64 +1611,33 @@ function TimePicker({
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  // ── Build available slots ──────────────────────────────
-  const slots = [];
-  const startH = scheduleForDate
-    ? parseInt(scheduleForDate.start_time.split(":")[0], 10)
-    : 0;
-  const startM = scheduleForDate
-    ? parseInt(scheduleForDate.start_time.split(":")[1], 10)
-    : 0;
-  const endH = scheduleForDate
-    ? parseInt(scheduleForDate.end_time.split(":")[0], 10)
-    : 23;
-  const endM = scheduleForDate
-    ? parseInt(scheduleForDate.end_time.split(":")[1], 10)
-    : 30;
+  // ── BUILD SLOTS ──────────────────────────────────────────────────
+  // Only include a slot if the full APPOINTMENT_DURATION_MINS session
+  // fits entirely within the schedule window (strict: slotEnd <= schedEnd).
+  const allSlots = [];
+  if (scheduleForDate) {
+    const startH = parseInt(scheduleForDate.start_time.split(":")[0]);
+    const startM = parseInt(scheduleForDate.start_time.split(":")[1]);
+    const endH = parseInt(scheduleForDate.end_time.split(":")[0]);
+    const endM = parseInt(scheduleForDate.end_time.split(":")[1]);
+    const schedEndMins = endH * 60 + endM;
 
-  // Pre-compute booked windows in minutes once, outside the inner loop
-  const bookedWindows = bookedSlots
-    .filter((bs) => bs.start_time && bs.end_time)
-    .map((bs) => {
-      const [bsStartH, bsStartM] = bs.start_time.split(":").map(Number);
-      const [bsEndH, bsEndM] = bs.end_time.split(":").map(Number);
-      return {
-        start: bsStartH * 60 + bsStartM,
-        end: bsEndH * 60 + bsEndM,
-      };
-    });
-
-  for (let h = startH; h <= endH; h++) {
-    for (let m = 0; m < 60; m += 30) {
-      // Skip slots before schedule start
-      if (h === startH && m < startM) continue;
-      // Skip slots after or at schedule end (last slot must start before end)
-      if (h === endH && m >= endM) continue;
-      // Also skip if hour is beyond end
-      if (h > endH) continue;
-
-      const slotStartMinutes = h * 60 + m;
-      const slotStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-
-      /*
-       * KEY FIX: A slot is blocked when its start time falls
-       * INSIDE a booked window:
-       *   slotStart >= bookedStart  AND  slotStart < bookedEnd
-       *
-       * Example: booked 09:00–10:00 (540–600 min)
-       *   09:00 slot (540) → 540 >= 540 && 540 < 600 → BLOCKED ✓
-       *   09:30 slot (570) → 570 >= 540 && 570 < 600 → BLOCKED ✓
-       *   10:00 slot (600) → 600 >= 540 && 600 < 600 → false   → AVAILABLE ✓
-       */
-      const isBooked = bookedWindows.some(
-        (w) => slotStartMinutes >= w.start && slotStartMinutes < w.end,
-      );
-
-      if (!isBooked) {
-        slots.push(slotStr);
+    for (let h = startH; h <= endH; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        if (h === startH && m < startM) continue;
+        const slotStartMins = h * 60 + m;
+        const slotEndMins = slotStartMins + APPOINTMENT_DURATION_MINS;
+        // ✅ FIX: skip if the 60-min session overflows the schedule end
+        if (slotEndMins > schedEndMins) continue;
+        allSlots.push(
+          `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+        );
       }
     }
   }
+
+  // Filter out booked slots — they simply won't appear in the list
+  const availableSlots = allSlots.filter((t) => !isSlotBooked(t, bookedSlots));
 
   useEffect(() => {
     if (open && value && slotRef.current) {
@@ -1607,12 +1647,13 @@ function TimePicker({
   }, [open, value]);
 
   const displayValue = value ? formatTimePH(value) : null;
+  const bookedCount = allSlots.length - availableSlots.length;
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div
         onClick={() => {
-          if (!disabled) setOpen((o) => !o);
+          if (!disabled && !loadingSlots) setOpen((o) => !o);
         }}
         style={{
           display: "flex",
@@ -1626,27 +1667,41 @@ function TimePicker({
               ? "1.5px solid #d4b8f0"
               : "1.5px solid #e2d5f5",
           background: disabled ? "#f9f7fd" : value ? "#faf7ff" : "#fff",
-          cursor: disabled ? "not-allowed" : "pointer",
+          cursor: disabled || loadingSlots ? "not-allowed" : "pointer",
           transition: "all .2s",
           boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
           opacity: disabled ? 0.6 : 1,
         }}
       >
-        <FiClock
-          size={15}
-          style={{ color: value ? "#4D227C" : "#aaa", flexShrink: 0 }}
-        />
+        {loadingSlots ? (
+          <div
+            style={{
+              width: "14px",
+              height: "14px",
+              borderRadius: "50%",
+              border: "2px solid #4D227C",
+              borderTop: "2px solid transparent",
+              animation: "spin 0.8s linear infinite",
+              flexShrink: 0,
+            }}
+          />
+        ) : (
+          <FiClock
+            size={15}
+            style={{ color: value ? "#4D227C" : "#aaa", flexShrink: 0 }}
+          />
+        )}
         <span
           style={{
             fontSize: "13px",
-            color: value ? "#2d1254" : "#aaa",
+            color: loadingSlots ? "#aaa" : value ? "#2d1254" : "#aaa",
             fontWeight: value ? "600" : "400",
             flex: 1,
           }}
         >
-          {displayValue || "Select time"}
+          {loadingSlots ? "Loading slots…" : displayValue || "Select time"}
         </span>
-        {!disabled && (
+        {!disabled && !loadingSlots && (
           <FiChevronDown
             size={14}
             style={{
@@ -1658,6 +1713,33 @@ function TimePicker({
           />
         )}
       </div>
+
+      {/* Show how many slots are already taken */}
+      {!disabled && bookedCount > 0 && !loadingSlots && (
+        <div
+          style={{
+            marginTop: "4px",
+            fontSize: "10px",
+            color: "#9a3412",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#ef4444",
+              display: "inline-block",
+              flexShrink: 0,
+            }}
+          />
+          {bookedCount} slot{bookedCount > 1 ? "s" : ""} already booked on this
+          date
+        </div>
+      )}
 
       {open && !disabled && (
         <div
@@ -1671,7 +1753,7 @@ function TimePicker({
             borderRadius: "12px",
             boxShadow: "0 12px 32px rgba(77,34,124,.16)",
             overflow: "hidden",
-            width: "180px",
+            width: "200px",
           }}
         >
           {scheduleForDate && (
@@ -1685,46 +1767,60 @@ function TimePicker({
                 fontWeight: "700",
               }}
             >
-              {formatTimePH(scheduleForDate.start_time)} –{" "}
+              Schedule: {formatTimePH(scheduleForDate.start_time)} –{" "}
               {formatTimePH(scheduleForDate.end_time)}
             </div>
           )}
-          {/* Booked slots info banner */}
-          {bookedWindows.length > 0 && (
+          {bookedCount > 0 && (
             <div
               style={{
                 padding: "6px 12px",
-                background: "#fff8f0",
-                borderBottom: "1px solid #fed7aa",
+                background: "#fef2f2",
+                borderBottom: "1px solid #fecaca",
                 fontSize: "10px",
-                color: "#9a3412",
+                color: "#991b1b",
                 fontWeight: "600",
                 display: "flex",
                 alignItems: "center",
-                gap: "4px",
+                gap: "5px",
               }}
             >
-              <span>⚠</span>
-              <span>
-                {bookedWindows.length} slot
-                {bookedWindows.length > 1 ? "s" : ""} already booked
-              </span>
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+              />
+              {bookedCount} booked slot{bookedCount > 1 ? "s" : ""} hidden
             </div>
           )}
           <div ref={slotRef} style={{ maxHeight: "220px", overflowY: "auto" }}>
-            {slots.length === 0 ? (
+            {availableSlots.length === 0 ? (
               <div
                 style={{
-                  padding: "14px",
-                  color: "#aaa",
+                  padding: "18px 14px",
+                  color: "#9a3412",
                   fontSize: "12px",
                   textAlign: "center",
+                  background: "#fff8f0",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
-                No available slots
+                <span style={{ fontSize: "20px" }}>📅</span>
+                <span style={{ fontWeight: "600" }}>No available slots</span>
+                <span style={{ color: "#aaa", fontSize: "11px" }}>
+                  All time slots are booked for this date
+                </span>
               </div>
             ) : (
-              slots.map((t) => {
+              availableSlots.map((t) => {
                 const isSelected = value === t;
                 return (
                   <div
@@ -1955,10 +2051,7 @@ function CreateAppointmentModal({
   const [successData, setSuccessData] = useState(null);
   const [billManuallyEdited, setBillManuallyEdited] = useState(false);
 
-  // ── Booked slots: confirmed/completed appointments for the
-  //    selected doctor on the selected date.
-  //    Controller returns: { appointment_id, start_time (HH:MM),
-  //                          end_time (HH:MM), status }
+  // ── booked slots state ───────────────────────────────────────────
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
 
@@ -1973,16 +2066,7 @@ function CreateAppointmentModal({
     return doctorSchedule.find((s) => s.day_num === dayNum) || null;
   })();
 
-  /* ══════════════════════════════════════════════════════
-     Fetch booked slots whenever doctor OR date changes.
-     Controller endpoint:
-       GET /appointments/booked-slots
-         ?doctor_user_id={id}&date={YYYY-MM-DD}
-     Response shape:
-       { data: [ { appointment_id, start_time, end_time, status } ] }
-     start_time / end_time are already HH:MM (substr'd in PHP).
-     Only confirmed + completed are returned by the controller.
-  ══════════════════════════════════════════════════════ */
+  // ── Fetch booked slots whenever doctor + date both selected ───────
   useEffect(() => {
     if (!selectedDoctor || !form.appointment_date) {
       setBookedSlots([]);
@@ -1990,35 +2074,36 @@ function CreateAppointmentModal({
     }
 
     const doctorUserId = selectedDoctor.id;
+    if (!doctorUserId) return;
+
     const ctrl = new AbortController();
     setBookedSlotsLoading(true);
 
-    fetch(
-      `${API_BASE}/appointments/booked-slots?doctor_user_id=${doctorUserId}&date=${form.appointment_date}`,
-      {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-        signal: ctrl.signal,
+    const url = isAdmin
+      ? `${API_BASE}/admin/appointments/booked-slots?doctor_user_id=${doctorUserId}&date=${form.appointment_date}`
+      : `${API_BASE}/appointments/booked-slots?doctor_user_id=${doctorUserId}&date=${form.appointment_date}`;
+
+    fetch(url, {
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        Accept: "application/json",
       },
-    )
+      signal: ctrl.signal,
+    })
       .then((r) => r.json())
       .then((json) => {
-        // Controller already filters to confirmed/completed and
-        // returns clean HH:MM strings — just use data directly.
         setBookedSlots(json.data || []);
       })
       .catch((e) => {
         if (e.name !== "AbortError") {
-          console.error("booked-slots fetch error:", e);
+          console.error("Failed to fetch booked slots:", e);
           setBookedSlots([]);
         }
       })
       .finally(() => setBookedSlotsLoading(false));
 
     return () => ctrl.abort();
-  }, [selectedDoctor, form.appointment_date]);
+  }, [selectedDoctor, form.appointment_date, isAdmin]);
 
   useEffect(() => {
     return () => {
@@ -2104,18 +2189,21 @@ function CreateAppointmentModal({
     let end = "";
     if (t) {
       const [h, m] = t.split(":").map(Number);
-      const endH = (h + 1) % 24;
+      const totalEndMins = h * 60 + m + APPOINTMENT_DURATION_MINS;
+      const endH = Math.floor(totalEndMins / 60) % 24;
+      const endM = totalEndMins % 60;
+
       if (scheduleForDate) {
         const schEndH = parseInt(scheduleForDate.end_time.split(":")[0]);
         const schEndM = parseInt(scheduleForDate.end_time.split(":")[1]);
-        const endMinutes = endH * 60 + m;
+        const endMinutes = endH * 60 + endM;
         const schEndMinutes = schEndH * 60 + schEndM;
         end =
           endMinutes > schEndMinutes
             ? scheduleForDate.end_time.substring(0, 5)
-            : `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+            : `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
       } else {
-        end = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        end = `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
       }
     }
     setForm((f) => ({ ...f, start_time: t, end_time: end }));
@@ -2650,6 +2738,7 @@ function CreateAppointmentModal({
                       start_time: "",
                       end_time: "",
                     }));
+                    setBookedSlots([]);
                   }}
                   onScheduleLoad={handleScheduleLoad}
                 />
@@ -2674,47 +2763,17 @@ function CreateAppointmentModal({
                   />
                   <Err field="appointment_date" />
                 </LabeledInput>
-
-                <LabeledInput label="Start Times">
-                  {bookedSlotsLoading ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "10px 13px",
-                        borderRadius: "9px",
-                        border: "1.5px solid #e2d5f5",
-                        background: "#f9f7fd",
-                        fontSize: "13px",
-                        color: "#aaa",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "12px",
-                          height: "12px",
-                          borderRadius: "50%",
-                          border: "2px solid #4D227C",
-                          borderTop: "2px solid transparent",
-                          animation: "spin 0.8s linear infinite",
-                          flexShrink: 0,
-                        }}
-                      />
-                      Checking availability…
-                    </div>
-                  ) : (
-                    <TimePicker
-                      value={form.start_time}
-                      onChange={handleStartTimeChange}
-                      scheduleForDate={scheduleForDate}
-                      disabled={!form.appointment_date}
-                      bookedSlots={bookedSlots}
-                    />
-                  )}
+                <LabeledInput label="Start Time">
+                  <TimePicker
+                    value={form.start_time}
+                    onChange={handleStartTimeChange}
+                    scheduleForDate={scheduleForDate}
+                    disabled={!form.appointment_date}
+                    bookedSlots={bookedSlots}
+                    loadingSlots={bookedSlotsLoading}
+                  />
                   <Err field="start_time" />
                 </LabeledInput>
-
                 <LabeledInput label="End Time" disabled>
                   <TimePicker
                     value={form.end_time}
