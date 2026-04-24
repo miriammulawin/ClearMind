@@ -4,7 +4,7 @@
 /* ===============================
    Page Wrapper
 ================================= */
-.pageWrapper {
+.bodyWrapper {
   min-height: 100vh;
   background: #f5f3ff;
   display: flex;

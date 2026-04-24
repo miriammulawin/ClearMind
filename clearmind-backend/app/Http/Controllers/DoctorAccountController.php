@@ -20,19 +20,17 @@ class DoctorAccountController extends Controller
             'middleInitial' => ['nullable', 'string', 'max:5'],
             'sex'           => ['nullable', 'in:male,female,other'],
             'dob'           => ['required', 'date', 'before:today'],
+
             'email'         => ['required', 'email'],
             'contactNo'     => ['nullable', 'string', 'max:20'],
             'address'       => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Password = their birthday e.g. "1990-07-22"
         $plainPassword = $request->dob;
 
-        // ── Check if email already exists ────────────────────────────
         $existingUser = User::where('email', $request->email)->first();
 
         if ($existingUser) {
-            // Already has an account — just re-send their credentials email
             Mail::to($existingUser->email)->send(
                 new DoctorAccountCreated($existingUser, $plainPassword, isExisting: true)
             );
@@ -44,7 +42,6 @@ class DoctorAccountController extends Controller
             ], 200);
         }
 
-        // ── Create new account ───────────────────────────────────────
         DB::beginTransaction();
         try {
             $user = User::create([
@@ -67,7 +64,6 @@ class DoctorAccountController extends Controller
 
             DB::commit();
 
-            // Send welcome email with credentials
             Mail::to($user->email)->send(
                 new DoctorAccountCreated($user, $plainPassword, isExisting: false)
             );
@@ -89,15 +85,113 @@ class DoctorAccountController extends Controller
         }
     }
 
-    public function index(): JsonResponse
-{
-    $doctors = User::with('doctor')
-        ->where('role', 'Doctor')
-        ->orderBy('created_at', 'desc')
-        ->get();
+    /* ─────────────────────────────────────────────────────────────────
+       GET /api/doctors/list  &  GET /api/admin/doctors
+       
+       FIX: Flatten doctor_id to the top level of each item so the
+       frontend can call GET /api/doctors/{doctor_id}/schedules with
+       the correct primary key from the doctors table.
 
-    return response()->json([
-        'data' => $doctors,
-    ]);
-}
+       Before this fix the response looked like:
+         { id: 3, firstName: "...", doctor: { doctor_id: 7, ... } }
+
+       The schedule endpoint needs doctor_id = 7, but the frontend
+       was sending id = 3 (the users.id), causing the 404.
+
+       After this fix the response looks like:
+         { id: 3, doctor_id: 7, firstName: "...", doctor: { ... } }
+    ───────────────────────────────────────────────────────────────── */
+    public function index(): JsonResponse
+    {
+        $doctors = User::with('doctor')
+            ->where('role', 'Doctor')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function (User $user) {
+                return [
+                    // users.id — used as doctor_user_id on appointments
+                    'id'            => $user->id,
+
+                    // doctors.doctor_id — used for schedule route /doctors/{doctor_id}/schedules
+                    // This is the key field the frontend was missing
+                    'doctor_id'     => $user->doctor?->doctor_id,
+
+                    // Basic user info
+                    'firstName'     => $user->firstName,
+                    'lastName'      => $user->lastName,
+                    'middleInitial' => $user->middleInitial,
+                    'email'         => $user->email,
+                    'contactNo'     => $user->contactNo,
+                    'role'          => $user->role,
+                    'is_active'     => $user->is_active,
+                    'created_at'    => $user->created_at,
+
+                    // Doctor-specific fields (still available if needed)
+                    'specialization'     => $user->doctor?->main_specialty,
+                    'professional_title' => $user->doctor?->professional_title,
+                    'license_number'     => $user->doctor?->license_number,
+                    'profile_completed'  => $user->doctor?->profile_completed,
+
+                    // Keep full nested doctor object too for anything else
+                    'doctor'        => $user->doctor,
+                ];
+            });
+
+        return response()->json([
+            'data' => $doctors,
+        ]);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       GET /api/admin/doctors/{id}
+    ───────────────────────────────────────────────────────────────── */
+    public function show(int $id): JsonResponse
+    {
+        $user = User::with('doctor')
+            ->where('role', 'Doctor')
+            ->findOrFail($id);
+
+        return response()->json([
+            'data' => [
+                'id'                 => $user->id,
+                'doctor_id'          => $user->doctor?->doctor_id,
+                'firstName'          => $user->firstName,
+                'lastName'           => $user->lastName,
+                'middleInitial'      => $user->middleInitial,
+                'email'              => $user->email,
+                'contactNo'          => $user->contactNo,
+                'role'               => $user->role,
+                'is_active'          => $user->is_active,
+                'specialization'     => $user->doctor?->main_specialty,
+                'professional_title' => $user->doctor?->professional_title,
+                'license_number'     => $user->doctor?->license_number,
+                'profile_completed'  => $user->doctor?->profile_completed,
+                'doctor'             => $user->doctor,
+            ],
+        ]);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────
+       PUT /api/admin/doctors/{id}
+    ───────────────────────────────────────────────────────────────── */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $user = User::where('role', 'Doctor')->findOrFail($id);
+
+        $validated = $request->validate([
+            'firstName'     => ['sometimes', 'string', 'max:100'],
+            'lastName'      => ['sometimes', 'string', 'max:100'],
+            'middleInitial' => ['nullable', 'string', 'max:5'],
+            'email'         => ['sometimes', 'email', 'max:255'],
+            'contactNo'     => ['nullable', 'string', 'max:20'],
+            'is_active'     => ['sometimes', 'boolean'],
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Doctor updated successfully.',
+            'data'    => $user->fresh()->load('doctor'),
+        ]);
+    }
 }

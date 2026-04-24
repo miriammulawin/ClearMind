@@ -1,40 +1,13 @@
-import "./ClientStyle/ClientAppointment.css"
-import ClientHeader from "./ClientComponents/Header";
-import ClientFooter from "./ClientComponents/Footer";
+import "./ClientStyle/ClientAppointment.css";
 import ClientAppointmentTab from "./AppointmentNavPages/AppointmentComponents/AppointmentTab";
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from "react-router-dom";
 
 function ClientAppointment() {
-    const location = useLocation();
-    
-    // List of routes where header/footer should be hidden
-    const hideLayoutRoutes = [
-        '/client/appointment/book-form',
-        '/client/appointment/payment',
-    ];    
-        
-    const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
-
-    return (
-       <div className="client-appointment-container">
-            {!shouldHideLayout && (
-                <div className="sticky-header">
-                    <ClientHeader />
-                    <ClientAppointmentTab />
-                </div>
-            )}
-            
-            <div className="tab-content-wrapper">
-                <Outlet />
-            </div>
-            
-            {!shouldHideLayout && (
-                <div className="sticky-footer">
-                    <ClientFooter />
-                </div>
-            )}
-        </div>
-    );
+  return (
+    <div className="tab-content-wrapper">
+      <Outlet />
+    </div>
+  );
 }
 
 export default ClientAppointment;

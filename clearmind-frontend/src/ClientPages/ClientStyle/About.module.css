@@ -1,0 +1,270 @@
+/* Page Wrapper */
+.pageWrapper {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Back Header */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.backIcon {
+  cursor: pointer;
+  color: #4a2e8f;
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  color: #4a2e8f;
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+/* Logo */
+.logoWrapper {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.logoImg {
+  width: 260px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Intro Card */
+.introCard {
+  background: #e8dff5;
+  border: 2px solid white;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.introText {
+  color: #333;
+  font-size: 0.95rem;
+  text-align: justify;
+  line-height: 1.7;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Two column grid on desktop */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 3rem;
+}
+
+/* Section Title */
+.sectionTitle {
+  text-align: center;
+  color: #4a2e8f;
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding-top: 1rem;
+  margin: 0 0 0.75rem 0;
+}
+
+/* Services Card */
+.servicesCard {
+  background: #e8dff5;
+  border: 2px solid white;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  height: 100%;
+}
+
+.serviceItem {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.65rem;
+}
+
+.serviceItem:last-child {
+  margin-bottom: 0;
+}
+
+.serviceName {
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.serviceDesc {
+  color: #888;
+  font-size: 0.78rem;
+  margin: 0;
+  padding-left: 0.75rem;
+}
+
+/* Map Card */
+.mapCard {
+  background: #e8dff5;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  height: 100%;
+}
+
+.mapEmbed {
+  width: 100%;
+  height: 180px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 0.75rem;
+}
+
+.addressRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.addressIcon {
+  color: #4a2e8f;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.addressText {
+  color: #555;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Contact Card — full width below */
+.contactCard {
+  background: #e8dff5;
+  border: 2px solid white;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.contactRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 0.65rem;
+}
+
+.contactRow:last-child {
+  margin-bottom: 0;
+}
+
+.contactIcon {
+  color: #4a2e8f;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.contactText {
+  color: #555;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.contactLabel {
+  font-weight: 600;
+  color: #4a2e8f;
+  margin-right: 4px;
+}
+
+.linkText {
+  color: #4a2e8f;
+  font-size: 0.88rem;
+  margin-right: 4px;
+}
+
+/* ── Responsive Strategy ── */
+
+/* 1. Tablets */
+@media (max-width: 1024px) {
+  .pageWrapper {
+    padding: 2rem;
+  }
+  .twoCol {
+    gap: 1.5rem;
+  }
+}
+
+/* 2. Large Mobiles (768px and down) */
+@media (max-width: 768px) {
+  .pageWrapper {
+    padding: 1.25rem 1rem 5rem 1rem;
+    max-width: 100%;
+  }
+
+  .twoCol {
+    grid-template-columns: 1fr; /* Stacks the two columns */
+    margin-bottom: 1rem;
+  }
+
+  .logoImg {
+    width: 200px;
+  }
+
+  .servicesCard,
+  .mapCard {
+    height: auto;
+  }
+}
+
+/* 3. iPhone 12/13/14/15 Range (430px and down) */
+@media (max-width: 430px) {
+  .pageWrapper {
+    padding: 0.75rem 1rem 5rem 1rem;
+  }
+
+  .headerTitle {
+    font-size: 1.15rem;
+  }
+
+  .introText {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .contactCard {
+    padding: 1rem;
+  }
+
+  .contactRow {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+  }
+
+  .contactText,
+  .linkText {
+    font-size: 0.8rem;
+  }
+
+  .mapEmbed {
+    height: 160px;
+  }
+}
+
+/* 4. Small Devices (320px) */
+@media (max-width: 320px) {
+  .headerTitle {
+    font-size: 1rem;
+  }
+
+  .logoImg {
+    width: 160px;
+  }
+}

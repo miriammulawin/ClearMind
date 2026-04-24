@@ -26,6 +26,8 @@ class AppointmentController extends Controller
 
             if ($user->role === 'Client') {
                 $query->where('booked_by_user_id', $user->id);
+            } elseif ($user->role === 'Doctor') {
+                $query->where('doctor_user_id', $user->id);
             }
 
             if ($request->filled('status')) {
@@ -42,12 +44,45 @@ class AppointmentController extends Controller
     }
 
     /* ══════════════════════════════════════════════
+       GET /appointments/booked-slots
+       Returns all confirmed time slots for a doctor
+       on a specific date so the frontend can block
+       them out in the time picker.
+
+       Query params:
+         doctor_user_id  — required
+         date            — required (YYYY-MM-DD)
+    ══════════════════════════════════════════════ */
+    public function bookedSlots(Request $request): JsonResponse
+    {
+        $request->validate([
+            'doctor_user_id' => ['required', 'integer', 'exists:users,id'],
+            'date'           => ['required', 'date'],
+        ]);
+
+        // Only confirmed appointments block the slot.
+        // pending / cancelled / no_show do NOT block.
+        $slots = Appointment::where('doctor_user_id', $request->doctor_user_id)
+            ->whereDate('appointment_date', $request->date)
+            ->whereIn('status', ['confirmed', 'completed'])
+            ->get(['appointment_id', 'start_time', 'end_time', 'status']);
+
+        return response()->json([
+            'data' => $slots->map(fn($s) => [
+                'appointment_id' => $s->appointment_id,
+                'start_time'     => substr($s->start_time, 0, 5), // HH:MM
+                'end_time'       => substr($s->end_time,   0, 5),
+                'status'         => $s->status,
+            ]),
+        ]);
+    }
+
+    /* ══════════════════════════════════════════════
        POST /appointments
     ══════════════════════════════════════════════ */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            /* Patient */
             'patient_id'               => ['nullable', 'exists:patients,patient_id'],
             'patient_firstName'        => ['required_without:patient_id', 'string', 'max:100'],
             'patient_lastName'         => ['required_without:patient_id', 'string', 'max:100'],
@@ -59,31 +94,20 @@ class AppointmentController extends Controller
             'patient_contactNo'        => ['nullable', 'string', 'max:20'],
             'patient_email'            => ['nullable', 'email', 'max:191'],
             'patient_address'          => ['nullable', 'string'],
-
-            /* Informant */
             'informant_name'           => ['nullable', 'string', 'max:200'],
             'informant_relation'       => ['nullable', 'string', 'max:100'],
-
-            /* Schedule */
             'appointment_date'         => ['required', 'date', 'after_or_equal:today'],
             'start_time'               => ['required', 'date_format:H:i'],
             'end_time'                 => ['required', 'date_format:H:i', 'after:start_time'],
             'visit_type'               => ['required', 'in:onsite,virtual'],
-
-            /* Service */
             'reason_for_consultation'  => ['nullable', 'string', 'max:500'],
             'service_type'             => ['nullable', 'string', 'max:100'],
             'pae_purpose'              => ['nullable', 'string', 'max:200'],
-
-            /* Payment */
             'payment_status'           => ['nullable', 'in:paid,not_paid,probono'],
-            'payment_reference'        => ['nullable', 'string', 'max:100'],   // GCash / bank ref
-
-            /* Receipts */
+            'payment_reference'        => ['nullable', 'string', 'max:100'],
+            'bill_amount'              => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'receipts'                 => ['nullable', 'array', 'max:10'],
             'receipts.*'               => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-
-            /* Doctor */
             'doctor_user_id'           => ['nullable', 'exists:users,id'],
         ]);
 
@@ -94,13 +118,39 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+        /* ── Time-slot conflict check ────────────────────────────────
+           If a doctor is assigned, make sure the requested time window
+           does not overlap any existing CONFIRMED appointment for that
+           doctor on the same date.
+
+           Overlap condition (Allen's interval algebra):
+             existing.start_time < new.end_time
+             AND existing.end_time > new.start_time
+        ─────────────────────────────────────────────────────────── */
+        if ($request->filled('doctor_user_id')) {
+            $conflict = Appointment::where('doctor_user_id', $request->doctor_user_id)
+                ->whereDate('appointment_date', $request->appointment_date)
+                ->whereIn('status', ['confirmed', 'completed'])
+                ->where('start_time', '<', $request->end_time)
+                ->where('end_time',   '>', $request->start_time)
+                ->exists();
+
+            if ($conflict) {
+                return response()->json([
+                    'message' => 'The selected time slot is already taken. Please choose a different time.',
+                    'errors'  => [
+                        'start_time' => ['This time slot overlaps with an existing confirmed appointment.'],
+                    ],
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         $receiptPaths = [];
 
         try {
             $user = Auth::user();
 
-            /* ── 1. Resolve or create patient ── */
             if ($request->filled('patient_id')) {
                 $patient = Patient::where('patient_id', $request->patient_id)->firstOrFail();
             } else {
@@ -120,17 +170,12 @@ class AppointmentController extends Controller
                 ]);
             }
 
-            /* ── 2. Upload receipts ── */
             if ($request->hasFile('receipts')) {
                 foreach ($request->file('receipts') as $file) {
                     $receiptPaths[] = $file->store('appointments/receipts', 'public');
                 }
             }
 
-            /* ── 3. Create appointment ──
-               appointment_ref  → auto-generated by model boot hook (always)
-               payment_reference → from request (only when paid, user-entered)
-            ── */
             $appointment = Appointment::create([
                 'booked_by_user_id'       => $user->id,
                 'patient_id'              => $patient->patient_id,
@@ -148,8 +193,10 @@ class AppointmentController extends Controller
                 'payment_reference'       => $request->filled('payment_reference')
                                                 ? $request->payment_reference
                                                 : null,
+                'bill_amount'             => $request->filled('bill_amount')
+                                                ? $request->bill_amount
+                                                : null,
                 'receipt_paths'           => $receiptPaths,
-                // appointment_ref is auto-set by model creating hook
                 'status'                  => 'pending',
             ]);
 
@@ -187,6 +234,9 @@ class AppointmentController extends Controller
             if ($user->role === 'Client' && $appt->booked_by_user_id !== $user->id) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }
+            if ($user->role === 'Doctor' && $appt->doctor_user_id !== $user->id) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
 
             return response()->json(['data' => $appt]);
         } catch (\Exception $e) {
@@ -209,6 +259,7 @@ class AppointmentController extends Controller
             'doctor_user_id'    => ['nullable', 'exists:users,id'],
             'payment_status'    => ['nullable', 'in:paid,not_paid,probono'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
+            'bill_amount'       => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'notes'             => ['nullable', 'string'],
             'service_type'      => ['nullable', 'string', 'max:100'],
             'receipts'          => ['nullable', 'array', 'max:10'],
@@ -225,11 +276,10 @@ class AppointmentController extends Controller
         try {
             $appt->fill($request->only([
                 'status', 'doctor_user_id', 'payment_status', 'payment_reference',
-                'notes', 'visit_type', 'appointment_date', 'start_time', 'end_time',
-                'service_type',
+                'bill_amount', 'notes', 'visit_type', 'appointment_date',
+                'start_time', 'end_time', 'service_type',
             ]));
 
-            // Append new receipt files
             if ($request->hasFile('receipts')) {
                 $existing = $appt->receipt_paths ?? [];
                 foreach ($request->file('receipts') as $file) {
@@ -238,7 +288,6 @@ class AppointmentController extends Controller
                 $appt->receipt_paths = $existing;
             }
 
-            // appointment_ref is regenerated by model updating hook if service_type changes
             $appt->save();
 
             return response()->json([

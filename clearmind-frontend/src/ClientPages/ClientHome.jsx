@@ -7,22 +7,10 @@ import NextAppointment from "../ClientPages/ClientComponents/NextAppointment";
 
 function ClientHome() {
   return (
-    <div className={styles.pageWrapper}>
-
-      <div className={styles.stickyHeader}>
-        <ClientHeader />
-      </div>
-
-      <div className={styles.bodyWrapper}>
-        <ProfessionalsSection />
-        <Announcements />
-        <NextAppointment />
-      </div>
-
-      <div className={styles.stickyFooter}>
-        <ClientFooter />
-      </div>
-
+    <div className={styles.bodyWrapper}>
+      <ProfessionalsSection />
+      <Announcements />
+      <NextAppointment />
     </div>
   );
 }

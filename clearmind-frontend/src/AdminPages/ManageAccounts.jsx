@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import AdminSideBar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/ManageAccounts.module.css";
 import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axiosClient from "../axiosClient";
+
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
   const [showViewModal, setShowViewModal] = useState(false);
@@ -14,6 +15,7 @@ function ManageAccounts() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -34,17 +36,19 @@ function ManageAccounts() {
     "Manage Accounts",
   ];
 
-  // ── Fetch doctors on mount ─────────────────────────────────────────
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
+  // ── Helper: format array fields for display ────────────────────────
+  const formatArray = (value) => {
+    if (!value) return "—";
+    if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "—";
+    return value;
+  };
 
-  const fetchDoctors = async () => {
+  // ── Fetch doctors ──────────────────────────────────────────────────
+  const fetchDoctors = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axiosClient.get("/admin/doctors");
-
-      const result = response.data; // ✅ THIS is correct for axios
+      const result = response.data;
 
       const mapped = result.data.map((user) => ({
         doctors_id: user.doctor?.doctor_id ?? user.id,
@@ -63,6 +67,7 @@ function ManageAccounts() {
         professional_title: user.doctor?.professional_title ?? null,
         license_number: user.doctor?.license_number ?? null,
         years_of_experience: user.doctor?.years_of_experience ?? null,
+        // Keep as arrays — format only at render time
         specialization: user.doctor?.specializations ?? [],
         sub_specialization: user.doctor?.sub_specializations ?? [],
         board_certification: user.doctor?.board_cert_names ?? [],
@@ -74,6 +79,13 @@ function ManageAccounts() {
         cert_image: user.doctor?.board_cert_images?.[0]
           ? `http://127.0.0.1:8000/storage/${user.doctor.board_cert_images[0]}`
           : null,
+        // All cert images for gallery
+        cert_images: (user.doctor?.board_cert_images ?? []).map(
+          (p) => `http://127.0.0.1:8000/storage/${p}`,
+        ),
+        id_pictures: (user.doctor?.id_pictures ?? []).map(
+          (p) => `http://127.0.0.1:8000/storage/${p}`,
+        ),
         profile_completed: user.doctor?.profile_completed ?? false,
       }));
 
@@ -83,9 +95,39 @@ function ManageAccounts() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // ── Handlers ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
+
+  // ── Listen for doctor profile updates dispatched by AccountSetupModal ──
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      // Refetch all doctors so admin view stays in sync
+      fetchDoctors().then(() => {
+        // If the view modal is open, refresh selectedUser from updated list
+        setSelectedUser((prev) => {
+          if (!prev) return prev;
+          // Will be synced below in a separate effect
+          return prev;
+        });
+      });
+    };
+
+    window.addEventListener("doctorProfileUpdated", handleProfileUpdated);
+    return () =>
+      window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
+  }, [fetchDoctors]);
+
+  // ── When users list re-fetches, keep selectedUser in sync ─────────
+  useEffect(() => {
+    if (!selectedUser) return;
+    const updated = users.find((u) => u.user_id === selectedUser.user_id);
+    if (updated) setSelectedUser(updated);
+  }, [users]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handlers ──────────────────────────────────────────────────────
 
   const handleRoleChange = (userId, role) => {
     setUsers(
@@ -124,19 +166,14 @@ function ManageAccounts() {
 
   const validateForm = () => {
     const errors = [];
-
     if (!formData.firstName.trim())
       errors.push({ field: "firstName", message: "First name is required." });
-
     if (!formData.lastName.trim())
       errors.push({ field: "lastName", message: "Last name is required." });
-
     if (!formData.sex)
       errors.push({ field: "sex", message: "Sex is required." });
-
     if (!formData.dob)
       errors.push({ field: "dob", message: "Date of birth is required." });
-
     if (!formData.email.trim()) {
       errors.push({ field: "email", message: "Email address is required." });
     } else if (
@@ -148,7 +185,6 @@ function ManageAccounts() {
         message: "Email must contain '@' and end with '.com'.",
       });
     }
-
     if (!formData.contactNo.trim()) {
       errors.push({
         field: "contactNo",
@@ -161,18 +197,14 @@ function ManageAccounts() {
           "Contact number must start with '09' and be exactly 11 digits.",
       });
     }
-
     if (!formData.address.trim())
       errors.push({ field: "address", message: "Address is required." });
-
     return errors;
   };
 
   const handleCreateAccount = async () => {
     setIsSubmitting(true);
-
     const errors = validateForm();
-
     const hasEmptyFields = errors.some((e) =>
       e.message.toLowerCase().includes("required"),
     );
@@ -182,11 +214,9 @@ function ManageAccounts() {
 
     if (errors.length > 0) {
       if (hasEmptyFields) {
-        // Single consolidated message for any empty field
         setFormErrors([{ field: "all", message: "All fields are required." }]);
         setTimeout(() => setFormErrors([]), 2400);
       } else if (hasFormatErrors) {
-        // Individual format errors shown one by one
         setFormErrors(errors);
         setTimeout(() => setFormErrors([]), errors.length * 400 + 2000);
       }
@@ -195,7 +225,6 @@ function ManageAccounts() {
     }
 
     setFormErrors([]);
-
     try {
       const response = await fetch("http://localhost:8000/api/admin/doctors", {
         method: "POST",
@@ -234,10 +263,7 @@ function ManageAccounts() {
               borderRadius: "10px",
               boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
             },
-            iconTheme: {
-              primary: "#C62828",
-              secondary: "#FDECEA",
-            },
+            iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
           },
         );
         setShowCreateModal(false);
@@ -263,13 +289,15 @@ function ManageAccounts() {
           professional_title: null,
           license_number: null,
           years_of_experience: null,
-          specialization: null,
-          sub_specialization: null,
-          board_certification: null,
-          service: null,
+          specialization: [],
+          sub_specialization: [],
+          board_certification: [],
+          service: [],
           description: null,
           profile_pic: null,
           cert_image: null,
+          cert_images: [],
+          id_pictures: [],
           profile_completed: false,
         },
       ]);
@@ -298,7 +326,7 @@ function ManageAccounts() {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────
 
   return (
     <div className="admin-layout">
@@ -559,7 +587,6 @@ function ManageAccounts() {
                   </label>
                 </div>
 
-                {/* ── Animated error messages ── */}
                 <div className={styles.errorContainer}>
                   {formErrors.map((err, index) => (
                     <div
@@ -604,10 +631,12 @@ function ManageAccounts() {
           >
             <div className={styles.viewHeader}>
               <div className={styles.viewHeaderLeft}>
+                {/* ── Profile picture with cache-bust so edits show immediately ── */}
                 <img
                   src={
-                    selectedUser.profile_pic ||
-                    "https://via.placeholder.com/150/6a49a9/ffffff?text=Dr."
+                    selectedUser.profile_pic
+                      ? `${selectedUser.profile_pic}?t=${Date.now()}`
+                      : "https://via.placeholder.com/150/6a49a9/ffffff?text=Dr."
                   }
                   alt="Profile"
                   className={styles.viewAvatar}
@@ -622,8 +651,7 @@ function ManageAccounts() {
                   </h2>
                   <p className={styles.viewSubtitle}>
                     {selectedUser.professional_title || "No title yet"}{" "}
-                    &nbsp;•&nbsp;{" "}
-                    {selectedUser.specialization || "No specialization yet"}
+                    &nbsp;•&nbsp; {formatArray(selectedUser.specialization)}
                   </p>
                 </div>
               </div>
@@ -708,7 +736,7 @@ function ManageAccounts() {
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Specialization</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.specialization || "—"}
+                      {formatArray(selectedUser.specialization)}
                     </span>
                   </div>
                   <div
@@ -718,7 +746,7 @@ function ManageAccounts() {
                       Sub-Specialization
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.sub_specialization || "—"}
+                      {formatArray(selectedUser.sub_specialization)}
                     </span>
                   </div>
                   <div
@@ -728,17 +756,17 @@ function ManageAccounts() {
                       Board Certification
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.board_certification || "—"}
+                      {formatArray(selectedUser.board_certification)}
                     </span>
                   </div>
                   <div
                     className={`${styles.viewInfoItem} ${styles.viewInfoFull}`}
                   >
                     <span className={styles.viewInfoLabel}>
-                      Service Department
+                      Services Offered
                     </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.service || "—"}
+                      {formatArray(selectedUser.service)}
                     </span>
                   </div>
                 </div>
@@ -768,20 +796,72 @@ function ManageAccounts() {
                 </div>
               </div>
 
+              {/* ── Board Cert Images (all of them) ── */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
-                  Certification Document
+                  Certification Documents
                 </p>
                 <div className={styles.viewCertContainer}>
-                  {selectedUser.cert_image ? (
-                    <img
-                      src={selectedUser.cert_image}
-                      alt="Certificate"
-                      className={styles.viewCertImage}
-                    />
+                  {selectedUser.cert_images &&
+                  selectedUser.cert_images.length > 0 ? (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}
+                    >
+                      {selectedUser.cert_images.map((src, i) => (
+                        <img
+                          key={i}
+                          src={`${src}?t=${Date.now()}`}
+                          alt={`Certificate ${i + 1}`}
+                          className={styles.viewCertImage}
+                          onClick={() => setPreviewImage(src)}
+                          style={{
+                            width: "120px",
+                            height: "120px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1.5px solid #e2d5f5",
+                            cursor: "pointer",
+                          }}
+                        />
+                      ))}
+                    </div>
                   ) : (
                     <span style={{ color: "#999", fontSize: "14px" }}>
                       No certificate uploaded yet.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── ID Pictures ── */}
+              <div className={styles.viewSection}>
+                <p className={styles.viewSectionTitle}>ID Pictures</p>
+                <div className={styles.viewCertContainer}>
+                  {selectedUser.id_pictures &&
+                  selectedUser.id_pictures.length > 0 ? (
+                    <div
+                      style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}
+                    >
+                      {selectedUser.id_pictures.map((src, i) => (
+                        <img
+                          key={i}
+                          src={`${src}?t=${Date.now()}`}
+                          alt={`ID ${i + 1}`}
+                          onClick={() => setPreviewImage(src)}
+                          style={{
+                            width: "120px",
+                            height: "120px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1.5px solid #e2d5f5",
+                            cursor: "pointer",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ color: "#999", fontSize: "14px" }}>
+                      No ID pictures uploaded yet.
                     </span>
                   )}
                 </div>
@@ -797,6 +877,52 @@ function ManageAccounts() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {previewImage && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.85)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          {/* ❌ Close Button */}
+          <button
+            onClick={() => setPreviewImage(null)}
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "25px",
+              background: "transparent",
+              border: "none",
+              color: "#fff",
+              fontSize: "32px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            <FiX />
+          </button>
+
+          {/* 🖼 Image */}
+          <img
+            src={previewImage}
+            alt="Preview"
+            style={{
+              maxWidth: "90%",
+              maxHeight: "90%",
+              borderRadius: "10px",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+            }}
+          />
         </div>
       )}
     </div>

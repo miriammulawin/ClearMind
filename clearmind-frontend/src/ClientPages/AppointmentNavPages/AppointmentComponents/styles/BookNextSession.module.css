@@ -1,0 +1,637 @@
+/* ── Page ── */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f8f5ff;
+}
+
+/* ── Header ── */
+.headerBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: clamp(0.45rem, 1.5vw, 0.7rem) clamp(1rem, 4vw, 2rem);
+  background-color: #5b2c91;
+  flex-shrink: 0;
+}
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: clamp(0.78rem, 2vw, 0.9rem);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+.backBtn:hover {
+  opacity: 0.75;
+}
+.headerTitle {
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-right: 60px;
+}
+
+/* ── Stepper ── */
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 40px;
+  background: white;
+  border-bottom: 1px solid #e9e0f8;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.stepperItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.stepCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e9e0f8;
+  color: #9b8ab0;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.stepCircleActive {
+  background: #5b2c91;
+  color: white;
+}
+
+.stepCircleDone {
+  background: #e9d8fd;
+  color: #5b2c91;
+}
+
+.stepLabel {
+  font-size: 11px;
+  color: #9b8ab0;
+  font-weight: 600;
+}
+
+.stepLabelActive {
+  color: #5b2c91;
+}
+
+.stepLabelDone {
+  color: #5b2c91;
+}
+
+/* ── Connector Line ── */
+.stepperLine {
+  width: 80px;
+  height: 2px;
+  background: #e9e0f8;
+  margin: 0 8px;
+  margin-bottom: 18px;
+  transition: background 0.2s;
+}
+
+.stepperLineDone {
+  background: #ddd6f0;
+}
+
+/* ── Stepper Wrapper ── */
+.stepperWrapper {
+  background: white;
+  border-bottom: 1px solid #e9e0f8;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.stepperInner {
+  width: 100%;
+  max-width: 700px;
+}
+
+/* ── Progress Bar ── */
+.progressBarTrack {
+  height: 4px;
+  background: #e9e0f8;
+  flex-shrink: 0;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: #5b2c91;
+  transition: width 0.3s ease;
+}
+
+/* ── Scroll Body ── */
+.scrollBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* ← i-center horizontally */
+  gap: 14px;
+}
+
+.scrollBodyInner {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Session Info Card ── */
+.sessionInfoCard {
+  background: white;
+  border: 1.5px solid #c4aee8;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.sessionInfoRow {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+.sessionInfoLabel {
+  color: #4b5563;
+  font-weight: 500;
+  white-space: nowrap;
+  min-width: 120px;
+}
+.sessionInfoVal {
+  color: #5b2c91;
+  font-weight: 600;
+}
+.sessionInfoNote {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #7c5cbf;
+  background: #f3eeff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 500;
+}
+
+/* ── Step Card ── */
+.stepCard {
+  background: white;
+  border: 1.5px solid #c4aee8;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stepCardTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9b8ab0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Preference Buttons ── */
+.preferenceBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #ddd0f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+  text-align: left;
+}
+.preferenceBtnActive {
+  border-color: #5b2c91;
+  background: #f3eeff;
+}
+.preferenceText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.preferenceMain {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3d2b5e;
+}
+.preferenceSub {
+  font-size: 11px;
+  color: #9b8ab0;
+  font-weight: 500;
+}
+
+/* ── Custom Radio Circle ── */
+.customCheck {
+  width: clamp(17px, 4vw, 20px);
+  height: clamp(17px, 4vw, 20px);
+  border-radius: 50%;
+  border: 2px solid #c4aee8;
+  background: white;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+.customCheckActive {
+  border-color: #5b2c91;
+}
+.customCheckActive::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(8px, 2vw, 10px);
+  height: clamp(8px, 2vw, 10px);
+  border-radius: 50%;
+  background: #5b2c91;
+}
+
+/* ── Reason Block ── */
+.reasonBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f6ff;
+  border-radius: 10px;
+  border: 1px solid #e4d9f8;
+}
+.reasonLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5b2c91;
+}
+.selectWrapper {
+  position: relative;
+}
+.reasonSelect {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border: 1.5px solid #c4aee8;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-family: inherit;
+  color: #3d2b5e;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+}
+.reasonSelect:focus {
+  border-color: #5b2c91;
+}
+.selectIcon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9b8ab0;
+  font-size: 11px;
+  pointer-events: none;
+}
+.otherTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  border: 1.5px solid #c4aee8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #3d2b5e;
+  resize: vertical;
+  outline: none;
+}
+.otherTextarea:focus {
+  border-color: #5b2c91;
+}
+
+/* ── Payment Fields ── */
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5563;
+}
+.req {
+  color: #e53e3e;
+}
+
+.paymentModes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.paymentModeBtn {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px;
+  border: 2px solid #ddd0f0;
+  border-radius: 10px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b5a8a;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+}
+.paymentModeBtnActive {
+  border-color: #5b2c91;
+  background: #f3eeff;
+  color: #5b2c91;
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1.5px solid #c4aee8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #3d2b5e;
+  outline: none;
+  width: 100%;
+}
+.input:focus {
+  border-color: #5b2c91;
+}
+
+/* ── Upload Zone ── */
+.uploadZone {
+  border: 2px dashed #c8b0e8;
+  border-radius: 10px;
+  padding: clamp(16px, 3.5vw, 24px);
+  text-align: center;
+  background: #faf6ff;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+.uploadIcon {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin-bottom: 5px;
+}
+.uploadText {
+  font-weight: 600;
+  color: #5b2c91;
+  font-size: clamp(12px, 3vw, 13px);
+}
+.uploadSub {
+  font-size: clamp(10px, 2.3vw, 12px);
+  color: #8a7a9a;
+  margin-top: 3px;
+}
+.uploadInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.filePreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3eeff;
+  border-radius: 7px;
+  padding: 7px 12px;
+  margin-top: 8px;
+  font-size: clamp(11px, 2.5vw, 12px);
+}
+.fileName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2d1b69;
+  font-weight: 500;
+}
+.removeFile {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8a7a9a;
+  font-size: 14px;
+}
+
+/* ── Fee Summary ── */
+.feeSummary {
+  background: #f3eeff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.feeSummaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+}
+.feeSummaryTotal {
+  border-top: 1px solid #c4aee8;
+  padding-top: 8px;
+  margin-top: 4px;
+  font-weight: 800;
+  color: #5b2c91;
+  font-size: 15px;
+}
+
+/* ── Footer Spacer ── */
+.footerSpacer {
+  height: 80px;
+}
+
+/* ── Sticky Footer ── */
+.stickyFooter {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-top: 1px solid #e9e0f8;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.footerInner {
+  width: 100%;
+  max-width: 700px; /* ← same max-width ng body */
+  display: flex;
+  gap: 10px;
+}
+
+.cancelBtn {
+  background: transparent;
+  color: #5b2c91;
+  border: 2px solid #5b2c91;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.cancelBtn:hover {
+  background: #6b46c1;
+  color: white;
+}
+.continueBtn {
+  flex: 1;
+  background: #5b2c91;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+.continueBtn:hover {
+  background: #6b46c1;
+}
+
+.continueBtnDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.continueBtnDisabled:hover {
+  background: #c4aee8;
+}
+
+/* ── Confirm Modal ── */
+.confirmModalContent {
+  border-radius: 16px !important;
+  border: none !important;
+}
+.confirmModalBody {
+  padding: 28px 24px !important;
+  text-align: center;
+}
+.confirmIconWrapper {
+  margin-bottom: 12px;
+}
+.confirmIcon {
+  font-size: 48px;
+  color: #5b2c91;
+}
+.confirmTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3d2b5e;
+  margin-bottom: 8px;
+}
+.confirmMessage {
+  font-size: 13px;
+  color: #6b5a8a;
+  margin-bottom: 20px;
+}
+.confirmActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.confirmBtnBack {
+  background: transparent;
+  color: #6b46c1;
+  border: 2px solid #6b46c1;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.confirmBtnConfirm {
+  background: #5b2c91;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Error Modal ── */
+.errorModalContent {
+  border-radius: 16px !important;
+  border: none !important;
+}
+.errorModalBody {
+  padding: 28px 24px !important;
+  text-align: center;
+}
+.errorIconWrapper {
+  margin-bottom: 12px;
+}
+.errorIcon {
+  width: 40px;
+  height: 40px;
+  fill: #e53e3e;
+}
+.errorTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3d2b5e;
+  margin-bottom: 8px;
+}
+.errorMessage {
+  font-size: 13px;
+  color: #6b5a8a;
+  margin-bottom: 20px;
+}
+.errorBtn {
+  background: #5b2c91;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 32px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}

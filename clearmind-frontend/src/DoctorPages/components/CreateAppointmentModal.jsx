@@ -1,5 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { format } from "date-fns";
+import {
+  format,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  isBefore,
+} from "date-fns";
 import {
   FiX,
   FiChevronDown,
@@ -14,19 +25,22 @@ import {
   FiZoomOut,
   FiMaximize2,
   FiPlus,
+  FiDollarSign,
+  FiChevronLeft,
+  FiClock,
+  FiCalendar,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/CreateAppointmentModal.module.css";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 
-const API_BASE = "http://localhost:8000/api";
-const getToken = () => localStorage.getItem("token");
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const getToken = () =>
+  localStorage.getItem("token") ||
+  localStorage.getItem("auth_token") ||
+  sessionStorage.getItem("auth_token") ||
+  "";
 
-/* ─── Philippine Date & Time Formatters ─── */
-
-/**
- * Formats a 24h "HH:MM" string → "h:MM AM/PM"
- * e.g. "13:30" → "1:30 PM", "09:00" → "9:00 AM"
- */
+/* ─── Formatters ─── */
 function formatTimePH(time24) {
   if (!time24) return "—";
   const [hourStr, minuteStr] = time24.split(":");
@@ -38,25 +52,25 @@ function formatTimePH(time24) {
   return `${hour}:${minute} ${period}`;
 }
 
-/**
- * Formats a date string "YYYY-MM-DD" → "Month D, YYYY"
- * e.g. "2025-04-16" → "April 16, 2025"
- */
 function formatDatePH(dateStr) {
   if (!dateStr) return "—";
-
-  const d = new Date(dateStr);
-
-  // 🔥 Prevent crash
-  if (isNaN(d.getTime())) {
-    console.error("Invalid date:", dateStr);
-    return "—";
-  }
-
+  const d = new Date(
+    typeof dateStr === "string" && dateStr.length === 10
+      ? dateStr + "T00:00:00"
+      : dateStr,
+  );
+  if (isNaN(d.getTime())) return "—";
   return format(d, "MMMM d, yyyy");
 }
 
-/* ─── Toast Styles ─── */
+function formatPeso(amount) {
+  if (amount === null || amount === undefined || amount === "") return "—";
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
 
 const toastError = {
   duration: 1500,
@@ -69,9 +83,29 @@ const toastError = {
     textAlign: "center",
     maxWidth: "320px",
     borderRadius: "10px",
-    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
   },
   iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
+};
+
+/* ─── Day name map ─── */
+const DAY_NAMES = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
+};
+const DAY_ABBR = {
+  0: "Sun",
+  1: "Mon",
+  2: "Tue",
+  3: "Wed",
+  4: "Thu",
+  5: "Fri",
+  6: "Sat",
 };
 
 /* ─────────────────────────────────────────────────────────
@@ -105,20 +139,6 @@ function ImagePreviewModal({ file, src, onClose }) {
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  const handleMouseDown = (e) => {
-    if (zoom <= 1) return;
-    setDragging(true);
-    setStartPos({ x: e.clientX - pos.x, y: e.clientY - pos.y });
-  };
-  const handleMouseMove = (e) => {
-    if (!dragging) return;
-    setPos({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
-  };
-  const handleMouseUp = () => setDragging(false);
-  const resetView = () => {
-    setZoom(1);
-    setPos({ x: 0, y: 0 });
-  };
   const isPdf = file?.type === "application/pdf";
   const toolbarBtn = {
     background: "rgba(255,255,255,0.08)",
@@ -206,7 +226,13 @@ function ImagePreviewModal({ file, src, onClose }) {
             >
               <FiZoomIn size={15} />
             </button>
-            <button style={toolbarBtn} onClick={resetView}>
+            <button
+              style={toolbarBtn}
+              onClick={() => {
+                setZoom(1);
+                setPos({ x: 0, y: 0 });
+              }}
+            >
               <FiMaximize2 size={15} />
             </button>
           </div>
@@ -240,10 +266,17 @@ function ImagePreviewModal({ file, src, onClose }) {
           cursor: zoom > 1 ? (dragging ? "grabbing" : "grab") : "default",
           userSelect: "none",
         }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseDown={(e) => {
+          if (zoom <= 1) return;
+          setDragging(true);
+          setStartPos({ x: e.clientX - pos.x, y: e.clientY - pos.y });
+        }}
+        onMouseMove={(e) => {
+          if (!dragging) return;
+          setPos({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+        }}
+        onMouseUp={() => setDragging(false)}
+        onMouseLeave={() => setDragging(false)}
       >
         {isPdf ? (
           <iframe
@@ -546,6 +579,7 @@ function Row({ label, value }) {
     </div>
   ) : null;
 }
+
 function PatientInfoCard({ patient, onClear }) {
   const age = (() => {
     if (!patient.dob) return null;
@@ -556,6 +590,7 @@ function PatientInfoCard({ patient, onClear }) {
     if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
     return a >= 0 ? a : null;
   })();
+
   return (
     <div
       style={{
@@ -634,7 +669,6 @@ function PatientInfoCard({ patient, onClear }) {
         }}
       >
         <Row label="Age" value={age !== null ? `${age} years old` : null} />
-        {/* ── Philippine date format for DOB ── */}
         <Row
           label="DOB"
           value={patient.dob ? formatDatePH(patient.dob) : null}
@@ -659,13 +693,149 @@ function PatientInfoCard({ patient, onClear }) {
 }
 
 /* ─────────────────────────────────────────────────────────
-   DoctorDropdown
+   ScheduleBadge
 ───────────────────────────────────────────────────────── */
-function DoctorDropdown({ onSelect, value }) {
+function ScheduleBadge({ schedule }) {
+  if (!schedule || schedule.length === 0)
+    return (
+      <div
+        style={{
+          marginTop: "10px",
+          padding: "10px 14px",
+          background: "#fff8f0",
+          border: "1px solid #fed7aa",
+          borderRadius: "8px",
+          fontSize: "12px",
+          color: "#9a3412",
+        }}
+      >
+        ⚠ No schedule set for this doctor.
+      </div>
+    );
+
+  return (
+    <div
+      style={{
+        marginTop: "10px",
+        padding: "12px 14px",
+        background: "#f1e8fbc2",
+        border: "1px solid #bbf7d0",
+        borderRadius: "10px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "11px",
+          fontWeight: "700",
+          color: "#4D227C",
+          textTransform: "uppercase",
+          letterSpacing: "0.06em",
+          marginBottom: "10px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <FiClock size={12} /> Available Schedule
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        {schedule.map((s) => {
+          const slotColor =
+            s.slot_type === "online"
+              ? { bg: "#eff6ff", border: "#bfdbfe", text: "#1d4ed8" }
+              : s.slot_type === "physical"
+                ? { bg: "#f5f0fb", border: "#d4b8f0", text: "#4D227C" }
+                : { bg: "#ecfdf5", border: "#a7f3d0", text: "#065f46" };
+          return (
+            <div
+              key={s.schedule_id || s.day_num}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "8px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  flex: 1,
+                }}
+              >
+                <span
+                  style={{
+                    width: "32px",
+                    height: "22px",
+                    borderRadius: "5px",
+                    background: "#4D227C",
+                    color: "#fff",
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {DAY_ABBR[s.day_num]}
+                </span>
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#374151",
+                    fontWeight: "500",
+                  }}
+                >
+                  {formatTimePH(s.start_time)} – {formatTimePH(s.end_time)}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  padding: "2px 8px",
+                  borderRadius: "20px",
+                  background: slotColor.bg,
+                  border: `1px solid ${slotColor.border}`,
+                  color: slotColor.text,
+                  textTransform: "capitalize",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {s.slot_type === "both" ? "Online & Physical" : s.slot_type}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   DoctorDropdown
+   FIX 1: onScheduleLoad is now called inside the fetch,
+           not passed as a dependency to useEffect — this
+           prevents the infinite re-render loop.
+   FIX 2: Use doctor.doctor_id (doctors table PK) for the
+           schedule endpoint, falling back to doctor.id only
+           if doctor_id is absent.
+───────────────────────────────────────────────────────── */
+function DoctorDropdown({ onSelect, value, onScheduleLoad }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [doctors, setDoctors] = useState([]);
+  const [schedule, setSchedule] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
   const ref = useRef(null);
+
+  // Keep a stable ref to onScheduleLoad so we never add it to dep arrays
+  const onScheduleLoadRef = useRef(onScheduleLoad);
+  useEffect(() => {
+    onScheduleLoadRef.current = onScheduleLoad;
+  }, [onScheduleLoad]);
 
   useEffect(() => {
     const h = (e) => {
@@ -686,7 +856,7 @@ function DoctorDropdown({ onSelect, value }) {
       const json = await res.json();
       setDoctors(json.data || []);
     } catch (e) {
-      console.error(e);
+      console.error("Failed to load doctors:", e);
     }
   }, []);
 
@@ -694,9 +864,68 @@ function DoctorDropdown({ onSelect, value }) {
     if (open) fetchDoctors();
   }, [open, fetchDoctors]);
 
+  // ── FIX: fetch schedule using doctor_id (doctors table PK), not user id ──
+  const fetchSchedule = useCallback(async (doctor) => {
+    // doctor.doctor_id = doctors.doctor_id (PK of the doctors table)
+    // doctor.id        = users.id (may be the same number but is NOT the schedule key)
+    // The route is: /api/doctors/{doctorId}/schedules  where doctorId = doctors.doctor_id
+    const doctorTableId = doctor.doctor_id ?? doctor.id;
+
+    if (!doctorTableId) {
+      console.warn("No doctor_id found on doctor object:", doctor);
+      setSchedule([]);
+      onScheduleLoadRef.current?.([]);
+      return;
+    }
+
+    setScheduleLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/doctors/${doctorTableId}/schedules`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+            Accept: "application/json",
+          },
+        },
+      );
+
+      if (!res.ok) {
+        // Log clearly so the dev sees exactly which id was tried
+        console.error(
+          `Schedule fetch failed: GET /doctors/${doctorTableId}/schedules → HTTP ${res.status}`,
+        );
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const json = await res.json();
+      const sched = json.data?.schedule || [];
+      setSchedule(sched);
+      // Use ref to avoid adding onScheduleLoad to dep array (prevents infinite loop)
+      onScheduleLoadRef.current?.(sched);
+    } catch (e) {
+      console.error("Failed to fetch doctor schedule:", e);
+      setSchedule([]);
+      onScheduleLoadRef.current?.([]);
+    } finally {
+      setScheduleLoading(false);
+    }
+  }, []); // ← empty deps — stable callback, no infinite loop
+
+  // ── Only re-fetch when value (selected doctor) changes ──
+  useEffect(() => {
+    if (value) {
+      fetchSchedule(value);
+    } else {
+      setSchedule([]);
+      onScheduleLoadRef.current?.([]);
+    }
+  }, [value, fetchSchedule]); // fetchSchedule is stable (empty deps above)
+
   const filtered = doctors.filter((d) =>
     `${d.firstName} ${d.lastName}`.toLowerCase().includes(query.toLowerCase()),
   );
+
   const displayName = value
     ? `${value.firstName}${value.middleInitial ? " " + value.middleInitial + "." : ""} ${value.lastName}`
     : "";
@@ -743,6 +972,7 @@ function DoctorDropdown({ onSelect, value }) {
           }}
         />
       </div>
+
       {open && (
         <div
           style={{
@@ -842,16 +1072,651 @@ function DoctorDropdown({ onSelect, value }) {
                       {(d.firstName || " ")[0]}
                       {(d.lastName || " ")[0]}
                     </div>
-                    <div>
-                      {d.firstName}{" "}
-                      {d.middleInitial ? d.middleInitial + ". " : ""}
+                    <div style={{ flex: 1 }}>
+                      {d.firstName}
+                      {d.middleInitial ? " " + d.middleInitial + ". " : " "}
                       {d.lastName}
+                      {/* Show the doctor_id for debugging — remove in production */}
+                      {d.doctor_id && (
+                        <span
+                          style={{
+                            fontSize: "10px",
+                            color: "#aaa",
+                            marginLeft: "6px",
+                          }}
+                        >
+                          (Dr ID: {d.doctor_id})
+                        </span>
+                      )}
                     </div>
                     {isActive && (
                       <FiCheck
                         style={{ marginLeft: "auto", color: "#4D227C" }}
                       />
                     )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Schedule display below dropdown */}
+      {value &&
+        (scheduleLoading ? (
+          <div
+            style={{
+              marginTop: "10px",
+              padding: "10px 14px",
+              background: "#f9f5ff",
+              border: "1px solid #e9d8fd",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: "#6b7280",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <div
+              style={{
+                width: "12px",
+                height: "12px",
+                borderRadius: "50%",
+                border: "2px solid #4D227C",
+                borderTop: "2px solid transparent",
+                animation: "spin 0.8s linear infinite",
+                flexShrink: 0,
+              }}
+            />
+            Loading schedule…
+          </div>
+        ) : (
+          <ScheduleBadge schedule={schedule} />
+        ))}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   CalendarDatePicker
+───────────────────────────────────────────────────────── */
+function CalendarDatePicker({
+  value,
+  onChange,
+  availableDayNums = null,
+  minDate = new Date(),
+}) {
+  const [viewDate, setViewDate] = useState(() => {
+    if (value) {
+      const d = new Date(value + "T00:00:00");
+      return isNaN(d.getTime()) ? new Date() : d;
+    }
+    return new Date();
+  });
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const monthStart = startOfMonth(viewDate);
+  const monthEnd = endOfMonth(viewDate);
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+
+  const days = [];
+  let cur = calStart;
+  while (cur <= calEnd) {
+    days.push(new Date(cur));
+    cur = addDays(cur, 1);
+  }
+
+  const prevMonth = () =>
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () =>
+    setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+
+  const isDisabled = (d) => {
+    if (isBefore(d, today)) return true;
+    if (availableDayNums && availableDayNums.length > 0)
+      return !availableDayNums.includes(d.getDay());
+    return false;
+  };
+
+  const selectedDate = value ? new Date(value + "T00:00:00") : null;
+
+  const handleSelect = (d) => {
+    if (isDisabled(d)) return;
+    onChange(format(d, "yyyy-MM-dd"));
+    setOpen(false);
+  };
+
+  const displayValue = value ? formatDatePH(value) : null;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "10px 13px",
+          borderRadius: "9px",
+          border: open
+            ? "1.5px solid #4D227C"
+            : value
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5",
+          background: value ? "#faf7ff" : "#fff",
+          cursor: "pointer",
+          transition: "all .2s",
+          boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
+          userSelect: "none",
+        }}
+      >
+        <FiCalendar
+          size={15}
+          style={{ color: value ? "#4D227C" : "#aaa", flexShrink: 0 }}
+        />
+        <span
+          style={{
+            fontSize: "13px",
+            color: value ? "#2d1254" : "#aaa",
+            fontWeight: value ? "600" : "400",
+            flex: 1,
+          }}
+        >
+          {displayValue || "Select date"}
+        </span>
+        <FiChevronDown
+          size={14}
+          style={{
+            color: "#4D227C",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform .2s",
+            flexShrink: 0,
+          }}
+        />
+      </div>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 8px)",
+            left: 0,
+            zIndex: 99999,
+            background: "#fff",
+            border: "1px solid #e0d4f5",
+            borderRadius: "14px",
+            boxShadow: "0 16px 48px rgba(77,34,124,.18)",
+            overflow: "hidden",
+            minWidth: "300px",
+          }}
+        >
+          {/* Month nav */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "14px 16px 10px",
+              borderBottom: "1px solid #f0eaf8",
+            }}
+          >
+            <button
+              onClick={prevMonth}
+              style={{
+                background: "none",
+                border: "1px solid #e2d5f5",
+                borderRadius: "7px",
+                cursor: "pointer",
+                padding: "6px 8px",
+                color: "#4D227C",
+                display: "flex",
+                alignItems: "center",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f5f0fb")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              <FiChevronLeft size={14} />
+            </button>
+            <span
+              style={{
+                fontWeight: "700",
+                fontSize: "14px",
+                color: "#2d1254",
+                fontFamily: "'Poppins',sans-serif",
+              }}
+            >
+              {format(viewDate, "MMMM yyyy")}
+            </span>
+            <button
+              onClick={nextMonth}
+              style={{
+                background: "none",
+                border: "1px solid #e2d5f5",
+                borderRadius: "7px",
+                cursor: "pointer",
+                padding: "6px 8px",
+                color: "#4D227C",
+                display: "flex",
+                alignItems: "center",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f5f0fb")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              <FiChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Available days legend */}
+          {availableDayNums && availableDayNums.length > 0 && (
+            <div
+              style={{
+                padding: "8px 14px",
+                background: "#f0f9fd",
+                borderBottom: "1px solid #d1fae5",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "10px",
+                  color: "#056696",
+                  fontWeight: "700",
+                }}
+              >
+                Available:
+              </span>
+              {availableDayNums.sort().map((n) => (
+                <span
+                  key={n}
+                  style={{
+                    fontSize: "10px",
+                    background: "#4D227C",
+                    color: "#fff",
+                    padding: "2px 7px",
+                    borderRadius: "20px",
+                    fontWeight: "600",
+                  }}
+                >
+                  {DAY_ABBR[n]}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Day headers */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              padding: "10px 12px 4px",
+            }}
+          >
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+              <div
+                key={d}
+                style={{
+                  textAlign: "center",
+                  fontSize: "11px",
+                  fontWeight: "700",
+                  color: "#9c7dd4",
+                  padding: "4px 0",
+                }}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Day cells */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7,1fr)",
+              padding: "0 12px 12px",
+              gap: "2px",
+            }}
+          >
+            {days.map((d, i) => {
+              const disabled = isDisabled(d);
+              const inMonth = isSameMonth(d, viewDate);
+              const isSelected = selectedDate && isSameDay(d, selectedDate);
+              const isTodayD = isToday(d);
+              const isAvail =
+                availableDayNums &&
+                availableDayNums.includes(d.getDay()) &&
+                !isBefore(d, today);
+
+              return (
+                <div
+                  key={i}
+                  onClick={() => handleSelect(d)}
+                  style={{
+                    height: "36px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: isSelected ? "700" : "400",
+                    cursor: disabled || !inMonth ? "default" : "pointer",
+                    color: !inMonth
+                      ? "#e5d9f5"
+                      : isSelected
+                        ? "#fff"
+                        : disabled
+                          ? "#d1d5db"
+                          : isTodayD
+                            ? "#4D227C"
+                            : "#374151",
+                    background: isSelected
+                      ? "#4D227C"
+                      : isTodayD && !isSelected
+                        ? "#f3ecfc"
+                        : "transparent",
+                    border:
+                      isTodayD && !isSelected
+                        ? "1.5px solid #d4b8f0"
+                        : "1.5px solid transparent",
+                    position: "relative",
+                    transition: "background .12s",
+                    opacity: !inMonth ? 0.3 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!disabled && inMonth && !isSelected)
+                      e.currentTarget.style.background = "#f5f0fb";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.background =
+                        isTodayD && !isSelected ? "#f3ecfc" : "transparent";
+                  }}
+                >
+                  {d.getDate()}
+                  {isAvail && !isSelected && inMonth && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        bottom: "3px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        width: "4px",
+                        height: "4px",
+                        borderRadius: "50%",
+                        background: "#056696",
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div
+            style={{
+              padding: "8px 14px",
+              borderTop: "1px solid #f0eaf8",
+              fontSize: "10px",
+              color: "#bbb",
+              textAlign: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+            }}
+          >
+            {availableDayNums && availableDayNums.length > 0 && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "#056696",
+                    display: "inline-block",
+                  }}
+                />
+                Available day
+              </span>
+            )}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <span
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  borderRadius: "4px",
+                  background: "#4D227C",
+                  display: "inline-block",
+                }}
+              />
+              Selected
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────
+   TimePicker
+───────────────────────────────────────────────────────── */
+function TimePicker({
+  value,
+  onChange,
+  label,
+  disabled = false,
+  scheduleForDate = null,
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const slotRef = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const slots = [];
+  const startH = scheduleForDate
+    ? parseInt(scheduleForDate.start_time.split(":")[0])
+    : 0;
+  const startM = scheduleForDate
+    ? parseInt(scheduleForDate.start_time.split(":")[1])
+    : 0;
+  const endH = scheduleForDate
+    ? parseInt(scheduleForDate.end_time.split(":")[0])
+    : 23;
+  const endM = scheduleForDate
+    ? parseInt(scheduleForDate.end_time.split(":")[1])
+    : 30;
+
+  for (let h = startH; h <= endH; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      if (h === startH && m < startM) continue;
+      if (h === endH && m > endM) continue;
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+
+  useEffect(() => {
+    if (open && value && slotRef.current) {
+      const el = slotRef.current.querySelector(`[data-time="${value}"]`);
+      if (el) el.scrollIntoView({ block: "center" });
+    }
+  }, [open, value]);
+
+  const displayValue = value ? formatTimePH(value) : null;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div
+        onClick={() => {
+          if (!disabled) setOpen((o) => !o);
+        }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "10px 13px",
+          borderRadius: "9px",
+          border: open
+            ? "1.5px solid #4D227C"
+            : value
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5",
+          background: disabled ? "#f9f7fd" : value ? "#faf7ff" : "#fff",
+          cursor: disabled ? "not-allowed" : "pointer",
+          transition: "all .2s",
+          boxShadow: open ? "0 0 0 3px rgba(77,34,124,0.1)" : "none",
+          opacity: disabled ? 0.6 : 1,
+        }}
+      >
+        <FiClock
+          size={15}
+          style={{ color: value ? "#4D227C" : "#aaa", flexShrink: 0 }}
+        />
+        <span
+          style={{
+            fontSize: "13px",
+            color: value ? "#2d1254" : "#aaa",
+            fontWeight: value ? "600" : "400",
+            flex: 1,
+          }}
+        >
+          {displayValue || "Select time"}
+        </span>
+        {!disabled && (
+          <FiChevronDown
+            size={14}
+            style={{
+              color: "#4D227C",
+              transform: open ? "rotate(180deg)" : "none",
+              transition: "transform .2s",
+              flexShrink: 0,
+            }}
+          />
+        )}
+      </div>
+
+      {open && !disabled && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            zIndex: 99999,
+            background: "#fff",
+            border: "1px solid #e0d4f5",
+            borderRadius: "12px",
+            boxShadow: "0 12px 32px rgba(77,34,124,.16)",
+            overflow: "hidden",
+            width: "180px",
+          }}
+        >
+          {scheduleForDate && (
+            <div
+              style={{
+                padding: "8px 12px",
+                background: "#f5f0fb",
+                borderBottom: "1px solid #e9d8fd",
+                fontSize: "10px",
+                color: "#4D227C",
+                fontWeight: "700",
+              }}
+            >
+              {formatTimePH(scheduleForDate.start_time)} –{" "}
+              {formatTimePH(scheduleForDate.end_time)}
+            </div>
+          )}
+          <div ref={slotRef} style={{ maxHeight: "220px", overflowY: "auto" }}>
+            {slots.length === 0 ? (
+              <div
+                style={{
+                  padding: "14px",
+                  color: "#aaa",
+                  fontSize: "12px",
+                  textAlign: "center",
+                }}
+              >
+                No slots available
+              </div>
+            ) : (
+              slots.map((t) => {
+                const isSelected = value === t;
+                return (
+                  <div
+                    key={t}
+                    data-time={t}
+                    onClick={() => {
+                      onChange(t);
+                      setOpen(false);
+                    }}
+                    style={{
+                      padding: "9px 14px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      color: isSelected ? "#fff" : "#374151",
+                      fontWeight: isSelected ? "700" : "400",
+                      background: isSelected ? "#4D227C" : "transparent",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      transition: "background .12s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected)
+                        e.currentTarget.style.background = "#f5f0fb";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected)
+                        e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <FiClock
+                      size={12}
+                      style={{
+                        color: isSelected ? "#c4a8e8" : "#aaa",
+                        flexShrink: 0,
+                      }}
+                    />
+                    {formatTimePH(t)}
                   </div>
                 );
               })
@@ -913,6 +1778,13 @@ function ServiceCard({
         <span style={{ fontSize: "13.5px", color: "#555" }}>
           {service.title}
         </span>
+        {service.fee !== null && service.fee !== undefined && (
+          <span
+            style={{ fontSize: "12px", color: "#059669", fontWeight: "600" }}
+          >
+            Default fee: {formatPeso(service.fee)}
+          </span>
+        )}
         {subtitle && (
           <span
             style={{ fontSize: "12px", fontWeight: "600", color: "#1d6fa4" }}
@@ -1006,15 +1878,17 @@ const EMPTY_FORM = {
   pae_purpose: "",
   payment_status: "not_paid",
   payment_reference: "",
+  bill_amount: "",
 };
 
 /* ─────────────────────────────────────────────────────────
-   CreateAppointmentModal
+   CreateAppointmentModal — MAIN
 ───────────────────────────────────────────────────────── */
 function CreateAppointmentModal({
   isOpen,
   onClose,
   onSuccess,
+  onAdd,
   showReceipt = false,
   showAssignedDoctor = false,
   isAdmin = false,
@@ -1022,6 +1896,7 @@ function CreateAppointmentModal({
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctorSchedule, setDoctorSchedule] = useState([]);
   const [selectedService, setSelectedService] = useState("");
   const [showPAEPanel, setShowPAEPanel] = useState(false);
   const [receiptEntries, setReceiptEntries] = useState([]);
@@ -1031,12 +1906,19 @@ function CreateAppointmentModal({
   const [services, setServices] = useState([]);
   const [paePurposes, setPaePurposes] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(false);
-
-  /* Success modal state */
   const [successData, setSuccessData] = useState(null);
+  const [billManuallyEdited, setBillManuallyEdited] = useState(false);
 
   const receiptInputRef = useRef(null);
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
+
+  const availableDayNums = doctorSchedule.map((s) => s.day_num);
+  const scheduleForDate = (() => {
+    if (!form.appointment_date || doctorSchedule.length === 0) return null;
+    const d = new Date(form.appointment_date + "T00:00:00");
+    const dayNum = d.getDay();
+    return doctorSchedule.find((s) => s.day_num === dayNum) || null;
+  })();
 
   useEffect(() => {
     return () => {
@@ -1086,6 +1968,7 @@ function CreateAppointmentModal({
         .map((s) => ({
           id: s.service_name,
           title: s.service_name,
+          fee: s.fee ?? s.price ?? s.amount ?? s.default_fee ?? null,
           isPsych: s.service_name
             .toLowerCase()
             .includes("psychological assessment"),
@@ -1107,12 +1990,35 @@ function CreateAppointmentModal({
     if (isOpen) fetchServices();
   }, [isOpen, fetchServices]);
 
-  const handleStartTime = (e) => {
-    const t = e.target.value;
+  // ── FIX: stable callback — does NOT recreate on every render ──
+  // This is the key fix for "Maximum update depth exceeded"
+  const handleScheduleLoad = useCallback((sched) => {
+    setDoctorSchedule(sched);
+  }, []); // empty deps = stable forever
+
+  const handleDateChange = (dateStr) => {
+    set("appointment_date", dateStr);
+    set("start_time", "");
+    set("end_time", "");
+  };
+
+  const handleStartTimeChange = (t) => {
     let end = "";
     if (t) {
       const [h, m] = t.split(":").map(Number);
-      end = `${String((h + 1) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      const endH = (h + 1) % 24;
+      if (scheduleForDate) {
+        const schEndH = parseInt(scheduleForDate.end_time.split(":")[0]);
+        const schEndM = parseInt(scheduleForDate.end_time.split(":")[1]);
+        const endMinutes = endH * 60 + m;
+        const schEndMinutes = schEndH * 60 + schEndM;
+        end =
+          endMinutes > schEndMinutes
+            ? scheduleForDate.end_time.substring(0, 5)
+            : `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      } else {
+        end = `${String(endH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      }
     }
     setForm((f) => ({ ...f, start_time: t, end_time: end }));
   };
@@ -1121,6 +2027,14 @@ function CreateAppointmentModal({
     setSelectedService(id);
     set("service_type", id);
     const svc = services.find((s) => s.id === id);
+    if (
+      isAdmin &&
+      !billManuallyEdited &&
+      svc?.fee !== null &&
+      svc?.fee !== undefined
+    ) {
+      set("bill_amount", String(svc.fee));
+    }
     if (!svc?.isPsych) {
       set("pae_purpose", "");
       setShowPAEPanel(false);
@@ -1140,7 +2054,6 @@ function CreateAppointmentModal({
     }
 
     setSubmitting(true);
-
     const fd = new FormData();
     fd.append("patient_id", selectedPatient.patient_id);
     if (form.informant_name.trim()) {
@@ -1154,14 +2067,15 @@ function CreateAppointmentModal({
     fd.append("reason_for_consultation", form.reason_for_consultation);
     fd.append("service_type", form.service_type);
     if (form.pae_purpose) fd.append("pae_purpose", form.pae_purpose);
-    fd.append("payment_status", form.payment_status);
-
-    if (form.payment_status === "paid" && form.payment_reference.trim()) {
-      fd.append("payment_reference", form.payment_reference.trim());
+    if (isAdmin) {
+      fd.append("payment_status", form.payment_status);
+      if (form.payment_status === "paid" && form.payment_reference.trim())
+        fd.append("payment_reference", form.payment_reference.trim());
+      if (form.bill_amount !== "" && form.bill_amount !== null)
+        fd.append("bill_amount", form.bill_amount);
+      receiptEntries.forEach((entry) => fd.append("receipts[]", entry.file));
     }
-
     if (selectedDoctor) fd.append("doctor_user_id", selectedDoctor.id);
-    receiptEntries.forEach((entry) => fd.append("receipts[]", entry.file));
 
     const url = isAdmin
       ? `${API_BASE}/admin/appointments`
@@ -1193,6 +2107,7 @@ function CreateAppointmentModal({
 
       setSuccessData(result.data);
       if (onSuccess) onSuccess(result.data);
+      if (onAdd) onAdd(result.data);
     } catch (e) {
       toast.error("Network error. Please try again.", toastError);
     } finally {
@@ -1204,11 +2119,13 @@ function CreateAppointmentModal({
     setForm(EMPTY_FORM);
     setSelectedPatient(null);
     setSelectedDoctor(null);
+    setDoctorSchedule([]);
     setSelectedService("");
     setShowPAEPanel(false);
     clearAllReceipts();
     setErrors({});
     setSuccessData(null);
+    setBillManuallyEdited(false);
     onClose();
   }
 
@@ -1242,21 +2159,7 @@ function CreateAppointmentModal({
   const isPAE =
     services.find((s) => s.id === selectedService)?.isPsych ?? false;
   const showReceiptSection = showReceipt || form.payment_status === "paid";
-
-  /* ─── Appointment ref preview ─── */
-  const refPreview = (() => {
-    if (!form.service_type) return null;
-    const lower = form.service_type.toLowerCase();
-    const prefix =
-      lower.includes("psychological assessment") ||
-      lower.includes("assessment and evaluation")
-        ? "PAE"
-        : "PAC";
-    const date = form.appointment_date || "YYYY-MM-DD";
-    return `${prefix}-${date}-XXXX`;
-  })();
-
-  /* ─── Header date display: Philippine format ─── */
+  const selectedServiceObj = services.find((s) => s.id === selectedService);
   const headerDateDisplay = form.appointment_date
     ? formatDatePH(form.appointment_date)
     : formatDatePH(new Date());
@@ -1285,9 +2188,14 @@ function CreateAppointmentModal({
         .receipt-remove-btn:hover{background:#fff0f0}
         .receipt-add-more-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;border:1.5px dashed #c4a8e8;border-radius:10px;background:none;color:#4D227C;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px}
         .receipt-add-more-btn:hover{background:#f5f0fb;border-color:#4D227C}
+        .bill-input-wrap{position:relative;display:flex;align-items:center}
+        .bill-peso-sign{position:absolute;left:13px;font-size:14px;font-weight:700;color:#059669;pointer-events:none;z-index:1}
+        .bill-input{width:100%;padding:10px 13px 10px 28px;border-radius:9px;border:1.5px solid #a7f3d0;font-size:15px;font-weight:700;color:#065f46;background:#f0fdf4;box-sizing:border-box;outline:none;transition:border .2s,box-shadow .2s;font-family:'Poppins',sans-serif}
+        .bill-input:focus{border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,0.12)}
+        .bill-input::placeholder{color:#9ca3af;font-weight:400}
+        @keyframes spin{to{transform:rotate(360deg)}}
       `}</style>
 
-      {/* ── Image Preview Modal ── */}
       {previewEntry && (
         <ImagePreviewModal
           file={previewEntry.file}
@@ -1322,7 +2230,6 @@ function CreateAppointmentModal({
               animation: "paeIn .25s ease",
             }}
           >
-            {/* Checkmark */}
             <div
               style={{
                 width: "56px",
@@ -1360,14 +2267,13 @@ function CreateAppointmentModal({
               The appointment has been successfully saved.
             </p>
 
-            {/* Appointment Reference Number */}
             <div
               style={{
                 background: "#f5f0fb",
                 border: "1.5px solid #d4b8f0",
                 borderRadius: "12px",
                 padding: "16px 20px",
-                marginBottom: "20px",
+                marginBottom: "16px",
               }}
             >
               <div
@@ -1381,7 +2287,7 @@ function CreateAppointmentModal({
                   fontFamily: "Poppins,sans-serif",
                 }}
               >
-                📋 Appointment Reference No.
+                Appointment Reference No.
               </div>
               <div
                 style={{
@@ -1408,8 +2314,63 @@ function CreateAppointmentModal({
               </div>
             </div>
 
-            {/* Payment reference if paid */}
-            {successData.payment_reference && (
+            {isAdmin &&
+              successData.bill_amount !== null &&
+              successData.bill_amount !== undefined && (
+                <div
+                  style={{
+                    background: "#f0fdf4",
+                    border: "1.5px solid #a7f3d0",
+                    borderRadius: "12px",
+                    padding: "14px 20px",
+                    marginBottom: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#059669",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        marginBottom: "4px",
+                        fontFamily: "Poppins,sans-serif",
+                      }}
+                    >
+                      Bill Amount
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "22px",
+                        fontWeight: 700,
+                        color: "#065f46",
+                        fontFamily: "'Courier New',monospace",
+                      }}
+                    >
+                      {formatPeso(successData.bill_amount)}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "50%",
+                      background: "#dcfce7",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FiDollarSign size={20} color="#059669" />
+                  </div>
+                </div>
+              )}
+
+            {isAdmin && successData.payment_reference && (
               <div
                 style={{
                   background: "#f0fdf4",
@@ -1431,7 +2392,7 @@ function CreateAppointmentModal({
                     fontFamily: "Poppins,sans-serif",
                   }}
                 >
-                  💳 Payment Reference
+                  Payment Reference
                 </div>
                 <div
                   style={{
@@ -1446,7 +2407,6 @@ function CreateAppointmentModal({
               </div>
             )}
 
-            {/* Quick info — Philippine formatted date & time */}
             <div
               style={{
                 textAlign: "left",
@@ -1471,7 +2431,6 @@ function CreateAppointmentModal({
                   .filter(Boolean)
                   .join(" ") || "—"}
               </div>
-              {/* ── Philippine date format ── */}
               <div
                 style={{
                   fontSize: "12px",
@@ -1482,7 +2441,6 @@ function CreateAppointmentModal({
                 <strong>Date:</strong>{" "}
                 {formatDatePH(successData?.appointment_date)}
               </div>
-              {/* ── Philippine 12-hour time format ── */}
               <div
                 style={{
                   fontSize: "12px",
@@ -1517,7 +2475,6 @@ function CreateAppointmentModal({
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "Poppins,sans-serif",
-                transition: "background .15s",
               }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.background = "#3d1870")
@@ -1534,11 +2491,9 @@ function CreateAppointmentModal({
 
       <div className={styles.backdrop}>
         <div className={styles.modal}>
-          {/* ── Header — Philippine date ── */}
           <div className={styles.header}>
             <h2 className={styles.headerTitle}>Create Appointment</h2>
             <div className={styles.headerRight}>
-              {/* ── Philippine format: "April 16, 2025" ── */}
               <span className={styles.headerDate}>{headerDateDisplay}</span>
               <button className={styles.closeBtn} onClick={handleClose}>
                 <FiX />
@@ -1584,39 +2539,86 @@ function CreateAppointmentModal({
             {/* ══ SCHEDULE ══ */}
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>Consultation Schedule</h4>
-              <div className={styles.grid3}>
+
+              {/* Doctor picker — always shown so schedule is known before picking date */}
+              <div className={styles.fieldRow} style={{ marginBottom: "20px" }}>
+                <DoctorDropdown
+                  value={selectedDoctor}
+                  onSelect={(d) => {
+                    setSelectedDoctor(d);
+                    setForm((f) => ({
+                      ...f,
+                      appointment_date: "",
+                      start_time: "",
+                      end_time: "",
+                    }));
+                  }}
+                  onScheduleLoad={handleScheduleLoad}
+                />
+              </div>
+
+              {/* Date + Time */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "12px",
+                  marginBottom: "14px",
+                }}
+              >
                 <LabeledInput label="Date">
-                  <input
-                    className={styles.input}
-                    type="date"
+                  <CalendarDatePicker
                     value={form.appointment_date}
-                    min={new Date().toISOString().split("T")[0]}
-                    onChange={(e) => set("appointment_date", e.target.value)}
+                    onChange={handleDateChange}
+                    availableDayNums={
+                      availableDayNums.length > 0 ? availableDayNums : null
+                    }
+                    minDate={new Date()}
                   />
                   <Err field="appointment_date" />
                 </LabeledInput>
                 <LabeledInput label="Start Time">
-                  <input
-                    className={styles.input}
-                    type="time"
+                  <TimePicker
                     value={form.start_time}
-                    onChange={handleStartTime}
+                    onChange={handleStartTimeChange}
+                    scheduleForDate={scheduleForDate}
+                    disabled={!form.appointment_date}
                   />
                   <Err field="start_time" />
-                  {/* ── Live AM/PM preview below the time input ── */}
-                 
                 </LabeledInput>
                 <LabeledInput label="End Time" disabled>
-                  <input
-                    className={styles.input}
-                    type="time"
+                  <TimePicker
                     value={form.end_time}
-                    readOnly
-                    placeholder="--:--"
+                    onChange={(t) => set("end_time", t)}
+                    scheduleForDate={scheduleForDate}
+                    disabled={true}
                   />
-                  
                 </LabeledInput>
               </div>
+
+              {/* Warning when selected date has no schedule */}
+              {form.appointment_date &&
+                doctorSchedule.length > 0 &&
+                !scheduleForDate && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "#fff8f0",
+                      border: "1px solid #fed7aa",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                      color: "#9a3412",
+                      marginBottom: "14px",
+                    }}
+                  >
+                    ⚠ The doctor is not available on{" "}
+                    {format(
+                      new Date(form.appointment_date + "T00:00:00"),
+                      "EEEE",
+                    )}
+                    s. Please choose a different date.
+                  </div>
+                )}
 
               <div
                 className={styles.radioGroup}
@@ -1644,8 +2646,6 @@ function CreateAppointmentModal({
               </div>
 
               <hr className={styles.divider} />
-
-            
 
               <p className="tos-label">Type of Service</p>
               {servicesLoading ? (
@@ -1737,200 +2737,290 @@ function CreateAppointmentModal({
                   ))}
                 </div>
               )}
-
-              {(showAssignedDoctor || isAdmin) && (
-                <div className={styles.fieldRow} style={{ marginTop: "16px" }}>
-                  <DoctorDropdown
-                    value={selectedDoctor}
-                    onSelect={setSelectedDoctor}
-                  />
-                </div>
-              )}
             </div>
 
-            {/* ══ PAYMENT ══ */}
-            <div className={styles.section}>
-              <h4 className={styles.sectionTitle}>Payment Status</h4>
-              <div className={styles.fieldRow}>
-                <select
-                  className={styles.select}
-                  value={form.payment_status}
-                  onChange={(e) => {
-                    set("payment_status", e.target.value);
-                    if (e.target.value !== "paid") set("payment_reference", "");
-                  }}
-                >
-                  <option value="">Select Payment Status</option>
-                  <option value="paid">Paid</option>
-                  <option value="not_paid">Not Paid</option>
-                  <option value="probono">Probono</option>
-                </select>
-              </div>
+            {/* ══ PAYMENT — ADMIN ONLY ══ */}
+            {isAdmin && (
+              <div className={styles.section}>
+                <h4 className={styles.sectionTitle}>Payment & Billing</h4>
 
-              {form.payment_status === "paid" && (
-                <div
-                  style={{
-                    background: "#fff8e1",
-                    border: "1.5px solid #fde68a",
-                    borderRadius: "10px",
-                    padding: "14px 16px",
-                    marginTop: "8px",
-                  }}
-                >
-                  <div
+                <div className={styles.fieldRow}>
+                  <label
                     style={{
                       fontSize: "11px",
-                      fontWeight: 700,
-                      color: "#92400e",
+                      fontWeight: "700",
+                      color: "#059669",
                       textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      letterSpacing: "0.7px",
                       marginBottom: "8px",
-                      fontFamily: "Poppins,sans-serif",
+                      display: "block",
                     }}
                   >
-                   Payment Reference Number
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="GCash / bank transaction reference (optional)"
-                    value={form.payment_reference}
-                    onChange={(e) => set("payment_reference", e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 13px",
-                      borderRadius: "8px",
-                      border: "1.5px solid #fde68a",
-                      fontSize: "13px",
-                      fontFamily: "Poppins,sans-serif",
-                      color: "#333",
-                      boxSizing: "border-box",
-                      background: "#fffdf0",
-                      outline: "none",
-                      transition: "border .2s",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.border = "1.5px solid #f59e0b";
-                      e.target.style.boxShadow =
-                        "0 0 0 3px rgba(245,158,11,0.15)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.border = "1.5px solid #fde68a";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
-             
-                </div>
-              )}
-
-              {showReceiptSection && (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      marginBottom: "10px",
-                      marginTop: "12px",
-                    }}
-                  >
-                    <div className={styles.uploadLabel} style={{ margin: 0 }}>
-                      Upload Receipt{receiptEntries.length > 1 ? "s" : ""}
-                    </div>
-                    {receiptEntries.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span style={{ fontSize: "11px", color: "#888" }}>
-                          {receiptEntries.length} file
-                          {receiptEntries.length > 1 ? "s" : ""} selected
-                        </span>
-                        <button
-                          onClick={clearAllReceipts}
+                    Bill Amount
+                    {selectedServiceObj?.fee !== null &&
+                      selectedServiceObj?.fee !== undefined &&
+                      !billManuallyEdited && (
+                        <span
                           style={{
+                            marginLeft: "8px",
                             fontSize: "11px",
-                            color: "#e53e3e",
-                            background: "none",
-                            border: "1px solid #f0d0d0",
-                            borderRadius: "6px",
-                            padding: "2px 8px",
-                            cursor: "pointer",
-                            fontWeight: "600",
+                            color: "#6b7280",
+                            fontWeight: "400",
+                            textTransform: "none",
+                            letterSpacing: 0,
                           }}
                         >
-                          Remove all
-                        </button>
+                          (auto-filled: {formatPeso(selectedServiceObj.fee)})
+                        </span>
+                      )}
+                    {billManuallyEdited && (
+                      <button
+                        onClick={() => {
+                          const fee = selectedServiceObj?.fee;
+                          if (fee !== null && fee !== undefined)
+                            set("bill_amount", String(fee));
+                          setBillManuallyEdited(false);
+                        }}
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "10px",
+                          color: "#4D227C",
+                          background: "none",
+                          border: "1px solid #d4b8f0",
+                          borderRadius: "4px",
+                          padding: "1px 6px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          textTransform: "none",
+                          letterSpacing: 0,
+                        }}
+                      >
+                        Reset to default
+                      </button>
+                    )}
+                  </label>
+                  <div className="bill-input-wrap">
+                    <span className="bill-peso-sign">₱</span>
+                    <input
+                      className="bill-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={form.bill_amount}
+                      onChange={(e) => {
+                        set("bill_amount", e.target.value);
+                        setBillManuallyEdited(true);
+                      }}
+                    />
+                  </div>
+                  {form.bill_amount !== "" &&
+                    !isNaN(parseFloat(form.bill_amount)) && (
+                      <div
+                        style={{
+                          marginTop: "6px",
+                          fontSize: "13px",
+                          color: "#059669",
+                          fontWeight: "600",
+                        }}
+                      >
+                        = {formatPeso(parseFloat(form.bill_amount))}
                       </div>
                     )}
-                  </div>
-                  <input
-                    ref={receiptInputRef}
-                    type="file"
-                    accept="image/*,application/pdf"
-                    multiple
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      if (e.target.files?.length)
-                        addReceiptFiles(e.target.files);
-                      e.target.value = "";
+                  <Err field="bill_amount" />
+                </div>
+
+                <div className={styles.fieldRow} style={{ marginTop: "14px" }}>
+                  <label
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      color: "#4D227C",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.7px",
+                      marginBottom: "8px",
+                      display: "block",
                     }}
-                  />
-                  {receiptEntries.length > 0 && (
-                    <div style={{ marginBottom: "4px" }}>
-                      {receiptEntries.map((entry) => (
-                        <ReceiptItem
-                          key={entry.id}
-                          entry={entry}
-                          onRemove={removeReceiptEntry}
-                          onPreview={setPreviewEntry}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {receiptEntries.length === 0 ? (
+                  >
+                    Payment Status
+                  </label>
+                  <select
+                    className={styles.select}
+                    value={form.payment_status}
+                    onChange={(e) => {
+                      set("payment_status", e.target.value);
+                      if (e.target.value !== "paid")
+                        set("payment_reference", "");
+                    }}
+                  >
+                    <option value="">Select Payment Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="not_paid">Not Paid</option>
+                    <option value="probono">Probono</option>
+                  </select>
+                </div>
+
+                {form.payment_status === "paid" && (
+                  <div
+                    style={{
+                      background: "#fff8e1",
+                      border: "1.5px solid #fde68a",
+                      borderRadius: "10px",
+                      padding: "14px 16px",
+                      marginTop: "8px",
+                    }}
+                  >
                     <div
-                      className={styles.uploadZone}
-                      onClick={() => receiptInputRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (e.dataTransfer.files?.length)
-                          addReceiptFiles(e.dataTransfer.files);
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        color: "#92400e",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        marginBottom: "8px",
                       }}
                     >
-                      <div className={styles.uploadPlaceholder}>
-                        <FiUpload className={styles.uploadIcon} />
-                        <span className={styles.uploadText}>
-                          Click or drag &amp; drop to upload receipt
-                        </span>
-                        <span className={styles.uploadHint}>
-                          Supports JPG, PNG, PDF · Multiple files allowed
-                        </span>
-                      </div>
+                      Payment Reference Number
                     </div>
-                  ) : (
-                    <button
-                      className="receipt-add-more-btn"
-                      onClick={() => receiptInputRef.current?.click()}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (e.dataTransfer.files?.length)
-                          addReceiptFiles(e.dataTransfer.files);
+                    <input
+                      type="text"
+                      placeholder="GCash / bank transaction reference (optional)"
+                      value={form.payment_reference}
+                      onChange={(e) => set("payment_reference", e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 13px",
+                        borderRadius: "8px",
+                        border: "1.5px solid #fde68a",
+                        fontSize: "13px",
+                        color: "#333",
+                        boxSizing: "border-box",
+                        background: "#fffdf0",
+                        outline: "none",
+                        transition: "border .2s",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.border = "1.5px solid #f59e0b";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(245,158,11,0.15)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.border = "1.5px solid #fde68a";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
+                {showReceiptSection && (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "10px",
+                        marginTop: "12px",
                       }}
                     >
-                      <FiPlus size={14} /> Add more receipts
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+                      <div className={styles.uploadLabel} style={{ margin: 0 }}>
+                        Upload Receipt{receiptEntries.length > 1 ? "s" : ""}
+                      </div>
+                      {receiptEntries.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span style={{ fontSize: "11px", color: "#888" }}>
+                            {receiptEntries.length} file
+                            {receiptEntries.length > 1 ? "s" : ""} selected
+                          </span>
+                          <button
+                            onClick={clearAllReceipts}
+                            style={{
+                              fontSize: "11px",
+                              color: "#e53e3e",
+                              background: "none",
+                              border: "1px solid #f0d0d0",
+                              borderRadius: "6px",
+                              padding: "2px 8px",
+                              cursor: "pointer",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Remove all
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      ref={receiptInputRef}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        if (e.target.files?.length)
+                          addReceiptFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    {receiptEntries.length > 0 && (
+                      <div style={{ marginBottom: "4px" }}>
+                        {receiptEntries.map((entry) => (
+                          <ReceiptItem
+                            key={entry.id}
+                            entry={entry}
+                            onRemove={removeReceiptEntry}
+                            onPreview={setPreviewEntry}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {receiptEntries.length === 0 ? (
+                      <div
+                        className={styles.uploadZone}
+                        onClick={() => receiptInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files?.length)
+                            addReceiptFiles(e.dataTransfer.files);
+                        }}
+                      >
+                        <div className={styles.uploadPlaceholder}>
+                          <FiUpload className={styles.uploadIcon} />
+                          <span className={styles.uploadText}>
+                            Click or drag &amp; drop to upload receipt
+                          </span>
+                          <span className={styles.uploadHint}>
+                            Supports JPG, PNG, PDF · Multiple files allowed
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className="receipt-add-more-btn"
+                        onClick={() => receiptInputRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (e.dataTransfer.files?.length)
+                            addReceiptFiles(e.dataTransfer.files);
+                        }}
+                      >
+                        <FiPlus size={14} /> Add more receipts
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* ── Footer ── */}
           <div className={styles.footer}>
             <button
               className={styles.btnCancel}

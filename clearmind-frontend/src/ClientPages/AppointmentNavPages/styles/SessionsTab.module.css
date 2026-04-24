@@ -4,13 +4,13 @@
    Card styles live in SessionCard.module.css
    ============================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 .sessionsContainer {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   max-width: 768px;
   margin: 0 auto;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -23,7 +23,7 @@
 }
 
 .titleSessions {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 700;
   font-size: 1.4rem;
   margin: 0 0 0.75rem 0;
@@ -42,9 +42,9 @@
 
 /* ── Status Dropdown ── */
 .statusDropdownSessions :global(.dropdown-toggle) {
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   color: white;
-  background: #5B2C91;
+  background: #5b2c91;
   border-radius: 10px;
   padding: 6px 20px;
   font-weight: bold;
@@ -54,14 +54,14 @@
 }
 
 .statusDropdownSessions :global(.dropdown-menu) {
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   border-radius: 12px;
   padding: 0.5rem 0;
   min-width: 100px;
 }
 
 .statusDropdownSessions :global(.dropdown-item) {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 500;
   padding: 0.5rem 1rem;
 }
@@ -71,15 +71,15 @@
 }
 
 .statusDropdownSessions :global(.dropdown-item.active) {
-  background-color: #5B2C91;
+  background-color: #5b2c91;
   color: white;
 }
 
 /* ── Sort Dropdown ── */
 .sortDropdownSessions :global(.dropdown-toggle) {
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   color: white;
-  background: #5B2C91;
+  background: #5b2c91;
   border-radius: 10px;
   padding: 6px 20px;
   font-weight: bold;
@@ -89,14 +89,14 @@
 }
 
 .sortDropdownSessions :global(.dropdown-menu) {
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   border-radius: 12px;
   padding: 0.5rem 0;
   min-width: 180px;
 }
 
 .sortDropdownSessions :global(.dropdown-item) {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 500;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
@@ -107,14 +107,14 @@
 }
 
 .sortDropdownSessions :global(.dropdown-item.active) {
-  background-color: #5B2C91;
+  background-color: #5b2c91;
   color: white;
 }
 
 /* ── Date Filter Toggle Button ── */
 .dateFilterToggle {
-  border: 2px solid #5B2C91 !important;
-  color: #5B2C91 !important;
+  border: 2px solid #5b2c91 !important;
+  color: #5b2c91 !important;
   background: white !important;
   border-radius: 10px !important;
   padding: 6px 12px !important;
@@ -125,9 +125,9 @@
 
 .dateFilterToggle:hover,
 .dateFilterToggle:focus {
-  background-color: #5B2C91 !important;
+  background-color: #5b2c91 !important;
   color: white !important;
-  border-color: #5B2C91 !important;
+  border-color: #5b2c91 !important;
 }
 
 /* =============================================
@@ -135,7 +135,7 @@
    ============================================= */
 .dateRangeFilter {
   background-color: #f0e6ff;
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   border-radius: 15px;
   padding: 1rem;
   animation: slideDown 0.3s ease;
@@ -144,28 +144,34 @@
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dateLabel {
-  color: #5B2C91;
+  color: #5b2c91;
   font-weight: 600;
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
 }
 
 .dateInput {
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   border-radius: 8px;
   padding: 0.5rem;
   font-size: 0.9rem;
-  color: #5B2C91;
+  color: #5b2c91;
   width: 100%;
 }
 
 .dateInput:focus {
-  border-color: #5B2C91;
+  border-color: #5b2c91;
   box-shadow: 0 0 0 0.2rem rgba(91, 44, 145, 0.25);
   outline: none;
 }
@@ -199,10 +205,20 @@
   height: 100%;
 }
 
-.sessionsListWrapper::-webkit-scrollbar { width: 8px; }
-.sessionsListWrapper::-webkit-scrollbar-track { background: #f0e6ff; border-radius: 10px; }
-.sessionsListWrapper::-webkit-scrollbar-thumb { background: #5B2C91; border-radius: 10px; }
-.sessionsListWrapper::-webkit-scrollbar-thumb:hover { background: #4a2273; }
+.sessionsListWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+.sessionsListWrapper::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+.sessionsListWrapper::-webkit-scrollbar-thumb {
+  background: #5b2c91;
+  border-radius: 10px;
+}
+.sessionsListWrapper::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
 
 /* =============================================
    No Sessions State
@@ -211,7 +227,7 @@
   background-color: white;
   height: 100%;
   border-radius: 25px;
-  border: 2px solid #5B2C91;
+  border: 2px solid #5b2c91;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -237,86 +253,223 @@
    Responsive
    ============================================= */
 @media (max-width: 360px) {
-  .sessionsContainer { padding: 0.25rem; height: calc(100vh - 180px); }
-  .titleSessions { font-size: 0.95rem; }
-  .filtersGroup { gap: 0.2rem; }
+  .sessionsContainer {
+    padding: 0.25rem;
+    height: calc(100vh - 180px);
+  }
+  .titleSessions {
+    font-size: 0.95rem;
+  }
+  .filtersGroup {
+    gap: 0.2rem;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
-  .sortDropdownSessions :global(.dropdown-toggle) { font-size: 0.65rem; padding: 4px 6px; min-width: 60px; }
-  .dateFilterToggle { padding: 4px 6px !important; font-size: 0.65rem !important; }
-  .calendarIconSessions { font-size: 2.2rem; }
-  .noSessions p { font-size: 0.75rem; }
-  .sessionsListWrapper { margin: 2px; padding-right: 2px; }
-  .sessionsListWrapper::-webkit-scrollbar { width: 3px; }
+  .sortDropdownSessions :global(.dropdown-toggle) {
+    font-size: 0.65rem;
+    padding: 4px 6px;
+    min-width: 60px;
+  }
+  .dateFilterToggle {
+    padding: 4px 6px !important;
+    font-size: 0.65rem !important;
+  }
+  .calendarIconSessions {
+    font-size: 2.2rem;
+  }
+  .noSessions p {
+    font-size: 0.75rem;
+  }
+  .sessionsListWrapper {
+    margin: 2px;
+    padding-right: 2px;
+  }
+  .sessionsListWrapper::-webkit-scrollbar {
+    width: 3px;
+  }
 }
 
 @media (min-width: 361px) and (max-width: 389px) {
-  .sessionsContainer { padding: 0.35rem; height: calc(100vh - 180px); }
-  .titleSessions { font-size: 1.2rem; margin-left: 15px; }
-  .filtersGroup { gap: 0.25rem; margin-left: 10px; }
+  .sessionsContainer {
+    padding: 0.35rem;
+    height: calc(100vh - 180px);
+  }
+  .titleSessions {
+    font-size: 1.2rem;
+    margin-left: 15px;
+  }
+  .filtersGroup {
+    gap: 0.25rem;
+    margin-left: 10px;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
-  .sortDropdownSessions :global(.dropdown-toggle) { font-size: 0.7rem; padding: 4px 8px; min-width: 62px; }
-  .dateFilterToggle { padding: 4px 8px !important; font-size: 0.7rem !important; }
-  .calendarIconSessions { font-size: 2.4rem; }
-  .noSessions p { font-size: 0.78rem; }
-  .sessionsListWrapper { margin: 3px; padding-right: 3px; }
-  .sessionsListWrapper::-webkit-scrollbar { width: 4px; }
+  .sortDropdownSessions :global(.dropdown-toggle) {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    min-width: 62px;
+  }
+  .dateFilterToggle {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+  }
+  .calendarIconSessions {
+    font-size: 2.4rem;
+  }
+  .noSessions p {
+    font-size: 0.78rem;
+  }
+  .sessionsListWrapper {
+    margin: 3px;
+    padding-right: 3px;
+  }
+  .sessionsListWrapper::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 @media (min-width: 390px) and (max-width: 429px) {
-  .sessionsContainer { padding: 0.4rem; height: calc(100vh - 185px); }
-  .titleSessions { font-size: 1.3rem; margin-left: 10px; }
-  .filtersGroup { gap: 0.3rem; margin-left: 15px; }
+  .sessionsContainer {
+    padding: 0.4rem;
+    height: calc(100vh - 185px);
+  }
+  .titleSessions {
+    font-size: 1.3rem;
+    margin-left: 10px;
+  }
+  .filtersGroup {
+    gap: 0.3rem;
+    margin-left: 15px;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
-  .sortDropdownSessions :global(.dropdown-toggle) { font-size: 0.75rem; padding: 5px 10px; min-width: 68px; }
-  .dateFilterToggle { padding: 5px 10px !important; font-size: 0.75rem !important; }
-  .calendarIconSessions { font-size: 2.6rem; }
-  .noSessions p { font-size: 0.82rem; }
-  .sessionsListWrapper { margin: 3px; padding-right: 3px; padding-bottom: 10px; }
-  .sessionsListWrapper::-webkit-scrollbar { width: 4px; }
+  .sortDropdownSessions :global(.dropdown-toggle) {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    min-width: 68px;
+  }
+  .dateFilterToggle {
+    padding: 5px 10px !important;
+    font-size: 0.75rem !important;
+  }
+  .calendarIconSessions {
+    font-size: 2.6rem;
+  }
+  .noSessions p {
+    font-size: 0.82rem;
+  }
+  .sessionsListWrapper {
+    margin: 3px;
+    padding-right: 3px;
+    padding-bottom: 10px;
+  }
+  .sessionsListWrapper::-webkit-scrollbar {
+    width: 4px;
+  }
 }
 
 @media (min-width: 430px) and (max-width: 575px) {
-  .sessionsContainer { padding: 0.5rem; height: calc(100vh - 190px); }
-  .titleSessions { font-size: 1.35rem; }
-  .filtersGroup { gap: 0.35rem; }
+  .sessionsContainer {
+    padding: 0.5rem;
+    height: calc(100vh - 190px);
+  }
+  .titleSessions {
+    font-size: 1.35rem;
+  }
+  .filtersGroup {
+    gap: 0.35rem;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
-  .sortDropdownSessions :global(.dropdown-toggle) { font-size: 0.8rem; padding: 5px 12px; min-width: 72px; }
-  .dateFilterToggle { padding: 5px 12px !important; font-size: 0.8rem !important; }
-  .calendarIconSessions { font-size: 2.8rem; }
-  .noSessions p { font-size: 0.87rem; }
-  .sessionsListWrapper { margin: 4px; padding-right: 4px; padding-bottom: 10px; }
-  .sessionsListWrapper::-webkit-scrollbar { width: 5px; }
+  .sortDropdownSessions :global(.dropdown-toggle) {
+    font-size: 0.8rem;
+    padding: 5px 12px;
+    min-width: 72px;
+  }
+  .dateFilterToggle {
+    padding: 5px 12px !important;
+    font-size: 0.8rem !important;
+  }
+  .calendarIconSessions {
+    font-size: 2.8rem;
+  }
+  .noSessions p {
+    font-size: 0.87rem;
+  }
+  .sessionsListWrapper {
+    margin: 4px;
+    padding-right: 4px;
+    padding-bottom: 10px;
+  }
+  .sessionsListWrapper::-webkit-scrollbar {
+    width: 5px;
+  }
 }
 
 @media (min-width: 576px) and (max-width: 768px) {
-  .sessionsContainer { padding: 0.75rem; height: calc(100vh - 160px); }
-  .titleSessions { font-size: 1.3rem; }
+  .sessionsContainer {
+    padding: 0.75rem;
+    height: calc(100vh - 160px);
+  }
+  .titleSessions {
+    font-size: 1.3rem;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
-  .sortDropdownSessions :global(.dropdown-toggle) { font-size: 0.85rem; padding: 5px 12px; }
-  .dateFilterToggle { padding: 5px 12px !important; font-size: 0.85rem !important; }
-  .calendarIconSessions { font-size: 3.2rem; }
-  .noSessions p { font-size: 0.9rem; }
-  .sessionsListWrapper { padding-right: 5px; }
-  .sessionsListWrapper::-webkit-scrollbar { width: 6px; }
+  .sortDropdownSessions :global(.dropdown-toggle) {
+    font-size: 0.85rem;
+    padding: 5px 12px;
+  }
+  .dateFilterToggle {
+    padding: 5px 12px !important;
+    font-size: 0.85rem !important;
+  }
+  .calendarIconSessions {
+    font-size: 3.2rem;
+  }
+  .noSessions p {
+    font-size: 0.9rem;
+  }
+  .sessionsListWrapper {
+    padding-right: 5px;
+  }
+  .sessionsListWrapper::-webkit-scrollbar {
+    width: 6px;
+  }
 }
 
 @media (min-width: 769px) {
-  .sessionsContainer { padding: 1rem; }
-  .filtersGroup { gap: 0.5rem; }
+  .sessionsContainer {
+    padding: 1rem;
+  }
+  .filtersGroup {
+    gap: 0.5rem;
+  }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  .sessionsContainer { height: calc(100vh - 100px); }
-  .titleSessions { font-size: 0.9rem; margin-bottom: 0.35rem; }
-  .filtersGroup { gap: 0.2rem; }
+  .sessionsContainer {
+    height: calc(100vh - 100px);
+  }
+  .titleSessions {
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+  }
+  .filtersGroup {
+    gap: 0.2rem;
+  }
   .statusDropdownSessions :global(.dropdown-toggle),
   .sortDropdownSessions :global(.dropdown-toggle),
-  .dateFilterToggle { font-size: 0.65rem !important; padding: 3px 7px !important; }
-  .calendarIconSessions { font-size: 1.8rem; }
-  .noSessions p { font-size: 0.7rem; }
+  .dateFilterToggle {
+    font-size: 0.65rem !important;
+    padding: 3px 7px !important;
+  }
+  .calendarIconSessions {
+    font-size: 1.8rem;
+  }
+  .noSessions p {
+    font-size: 0.7rem;
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {
   .statusDropdownSessions :global(.dropdown-item),
-  .sortDropdownSessions :global(.dropdown-item) { padding: 0.75rem 1rem; }
+  .sortDropdownSessions :global(.dropdown-item) {
+    padding: 0.75rem 1rem;
+  }
 }

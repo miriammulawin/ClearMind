@@ -74,18 +74,19 @@ const PAaEAppointment = () => {
 
   // Detect when the child route (set-appointment-form) is active
   const isOnForm = useMatch(
-    "client/appointment/psychological-assessment/set-appointment-form",
+    "/client/appointment/psychological-assessment/set-appointment-form",
   );
 
   const handleContinue = (service) => {
     if (service.available) {
       navigate("set-appointment-form", {
-        state: { selectedService: service.title },
+        state: {
+          selectedService: service.title,
+          showDeclaration: true, //
+        },
       });
     } else {
-      alert(
-        `${service.title} booking will be available soon. This feature is currently under development.`,
-      );
+      alert(`${service.title} booking will be available soon.`);
     }
   };
 

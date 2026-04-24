@@ -48,7 +48,7 @@ return new class extends Migration
 
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'])
                   ->default('pending');
-
+            $table->decimal('bill_amount', 10, 2)->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();

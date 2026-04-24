@@ -1,0 +1,95 @@
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #f5f0fc;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.stickyFooter {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.bodyWrapper {
+  flex: 1;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
+.noScroll {
+  overflow: visible;
+}
+
+/* Custom Scrollbar */
+.bodyWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bodyWrapper::-webkit-scrollbar-track {
+  background: #d1bdf0;
+  border-radius: 10px;
+}
+
+.bodyWrapper::-webkit-scrollbar-thumb {
+  background: #825cad;
+  border-radius: 10px;
+}
+
+.bodyWrapper::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
+}
+/* Side nav — nakatago sa mobile */
+.sideNavWrapper {
+  display: none;
+}
+
+.sideNavWrapper :global(.bottomNav) {
+  display: none;
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+  .pageWrapper {
+    flex-direction: row;
+  }
+
+  .sideNavWrapper {
+    display: flex;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+
+  .stickyFooter {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .sideNavWrapper {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+}

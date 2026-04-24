@@ -19,10 +19,8 @@
 }
 
 .bookAppointmentContainer {
-  max-width: 768px;
   margin: 0 auto;
-  padding: clamp(0.5rem, 3vw, 1rem);
-  height: calc(100vh - 204px);
+  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
 }
@@ -128,6 +126,208 @@
 .logoIconProfile {
   flex-shrink: 0;
   width: clamp(36px, 8vw, 52px);
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE VISIBILITY HELPERS
+───────────────────────────────────────── */
+.mobileOnly {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+.desktopOnly {
+  display: none;
+}
+
+/* ─────────────────────────────────────────
+   TWO-COLUMN DESKTOP LAYOUT
+───────────────────────────────────────── */
+.desktopColumns {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+@media (min-width: 768px) {
+  .mobileOnly {
+    display: none;
+  }
+
+  .desktopOnly {
+    display: block;
+  }
+
+  .desktopColumns {
+    display: grid;
+    grid-template-columns: 420px 1fr; /* Fixed width sa list para hindi gumagalaw */
+    gap: 0;
+    height: calc(100vh - 80px); /* I-adjust base sa main navbar height mo */
+    overflow: hidden;
+  }
+
+  .leftColumn,
+  .profilePanel {
+    height: 100%;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .leftColumn {
+    border-right: 1px solid #e9e0f8;
+    background-color: #f8f9fa;
+  }
+
+  .profilePanel {
+    background-color: white;
+  }
+
+  .doctorsListHidden {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktopColumns {
+    grid-template-columns: 45% 1fr;
+  }
+}
+
+/* Mobile: profilePanel needs a bounded height to scroll */
+@media (max-width: 767px) {
+  .profilePanel {
+    height: calc(100dvh - 60px - 48px); /* navbar + back button bar */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin-bottom: 150px;
+  }
+  .profilePanelActive {
+    display: block;
+  }
+}
+/* ─────────────────────────────────────────
+   DOCTOR LIST — mobile: hide when profile open
+───────────────────────────────────────── */
+.doctorsListHidden {
+  display: none;
+}
+
+/* ─────────────────────────────────────────
+   RIGHT PANEL — PROFILE
+───────────────────────────────────────── */
+.profilePanel {
+  position: relative;
+  border-radius: 16px;
+  min-height: 300px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* On mobile, hide the panel entirely when nothing is selected */
+.profilePanel:has(.emptyProfile) {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .profilePanel:has(.emptyProfile) {
+    display: block;
+  }
+}
+
+@media (max-width: 767px) {
+  .desktopColumns {
+    display: block;
+    height: auto;
+  }
+
+  /* Itago yung doctor list kapag may selected na doctor */
+  .hideOnMobile {
+    display: none !important;
+  }
+
+  .doctorsList.doctorsListHidden {
+    display: none !important;
+  }
+
+  /* Profile panel: hidden by default on mobile */
+  .profilePanel {
+    display: none;
+    border-radius: 0;
+    top: 0;
+    padding-right: 0;
+    min-height: unset;
+    height: auto;
+    overflow-y: visible;
+  }
+
+  /* Inline lang — HINDI fixed/overlay para makita pa rin header at footer */
+  .profilePanelActive {
+    display: block !important;
+    position: static !important;
+    width: 100%;
+    height: auto;
+    z-index: auto;
+  }
+
+  .profilePanel:has(.emptyProfile) {
+    display: none !important;
+  }
+
+  .leftColumn::-webkit-scrollbar,
+  .profilePanel::-webkit-scrollbar {
+    width: 6px;
+  }
+  .leftColumn::-webkit-scrollbar-thumb,
+  .profilePanel::-webkit-scrollbar-thumb {
+    background: #d6bcfa;
+    border-radius: 10px;
+  }
+}
+
+/* ── Empty state ── */
+.emptyProfile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 3.5rem) 1.5rem;
+  border: 2px dashed #d6bcfa;
+  border-radius: 16px;
+  background-color: #faf7ff;
+  text-align: center;
+  gap: 0.5rem;
+  min-height: 260px;
+}
+
+.emptyProfileIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.emptyProfileText {
+  color: #5b2c91;
+  font-weight: 700;
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+  margin: 0;
+}
+
+.emptyProfileSub {
+  color: #9b8ab0;
+  font-size: clamp(0.75rem, 2vw, 0.85rem);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────
+   DOCTOR CARD — SELECTED STATE (desktop)
+───────────────────────────────────────── */
+.doctorCardSelected {
+  border-color: #5b2c91 !important;
+  background-color: #faf7ff !important;
+  box-shadow: 0 0 0 3px rgba(91, 44, 145, 0.12);
 }
 
 /* ─────────────────────────────────────────
@@ -350,6 +550,17 @@
   gap: 0.5rem;
 }
 
+.backToServicesMob {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.profilePanelHeader {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 1rem;
+}
 .backToServices {
   color: white;
   background: #5b2c91;

@@ -28,8 +28,9 @@ class Appointment extends Model
         'pae_purpose',
         'payment_status',
         'receipt_paths',
-        'appointment_ref',      // always auto-generated — PAC/PAE-YYYY-MM-DD-XXXX
-        'payment_reference',    // optional — user-entered GCash/bank ref number
+        'appointment_ref',
+        'payment_reference',
+        'bill_amount',      // ← BAGO
         'status',
         'notes',
     ];
@@ -39,16 +40,13 @@ class Appointment extends Model
         'receipt_paths'    => 'array',
         'progression_note' => 'array',
         'clinical_notes'   => 'array',
+        'bill_amount'      => 'decimal:2',  // ← BAGO
     ];
 
     protected $appends = ['receipt_urls'];
 
-    /* ══════════════════════════════════════════════════════════════════
-       Boot hooks
-    ══════════════════════════════════════════════════════════════════ */
     protected static function booted(): void
     {
-        // Always generate an appointment_ref on every new appointment
         static::creating(function (Appointment $appt) {
             if (empty($appt->appointment_ref)) {
                 $appt->appointment_ref = self::generateAppointmentRef(
@@ -62,7 +60,6 @@ class Appointment extends Model
             }
         });
 
-        // If service_type changes on an existing appointment, regenerate the ref
         static::updating(function (Appointment $appt) {
             if ($appt->isDirty('service_type')) {
                 $appt->appointment_ref = self::generateAppointmentRef(
@@ -77,17 +74,6 @@ class Appointment extends Model
         });
     }
 
-    /* ══════════════════════════════════════════════════════════════════
-       generateAppointmentRef
-       ──────────────────────────────────────────────────────────────
-       Generates a unique appointment reference number.
-
-       Format: PREFIX-YYYY-MM-DD-XXXX
-         PREFIX  → PAE  (Psychological Assessment & Evaluation)
-                 → PAC  (Psychotherapy / Counseling — default)
-         DATE    → appointment_date in YYYY-MM-DD
-         XXXX    → zero-padded sequential count per prefix+date
-    ══════════════════════════════════════════════════════════════════ */
     public static function generateAppointmentRef(
         ?string $serviceType,
         ?string $date = null
@@ -95,7 +81,6 @@ class Appointment extends Model
         $date   = $date ?? now()->format('Y-m-d');
         $prefix = self::prefixFromService($serviceType);
 
-        // Count all existing (including soft-deleted) refs for this prefix+date
         $pattern = "{$prefix}-{$date}-%";
         $count   = self::withTrashed()
                        ->where('appointment_ref', 'like', $pattern)
@@ -104,7 +89,6 @@ class Appointment extends Model
         $seq = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
         $ref = "{$prefix}-{$date}-{$seq}";
 
-        // Race-condition safety: keep incrementing if ref already exists
         while (self::withTrashed()->where('appointment_ref', $ref)->exists()) {
             $count++;
             $seq = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
@@ -114,15 +98,10 @@ class Appointment extends Model
         return $ref;
     }
 
-    /* ──────────────────────────────────────────────────────────────
-       Determine PAE or PAC prefix from service type string
-    ────────────────────────────────────────────────────────────── */
     public static function prefixFromService(?string $serviceType): string
     {
         if (empty($serviceType)) return 'PAC';
-
         $lower = strtolower($serviceType);
-
         if (
             str_contains($lower, 'psychological assessment') ||
             str_contains($lower, 'assessment and evaluation') ||
@@ -130,26 +109,18 @@ class Appointment extends Model
         ) {
             return 'PAE';
         }
-
         return 'PAC';
     }
 
-    /* ══════════════════════════════════════════════════════════════════
-       Accessor — full public URLs for receipt files
-    ══════════════════════════════════════════════════════════════════ */
     public function getReceiptUrlsAttribute(): array
     {
         if (empty($this->receipt_paths)) return [];
-
         return array_map(
             fn($path) => Storage::disk('public')->url($path),
             $this->receipt_paths
         );
     }
 
-    /* ══════════════════════════════════════════════════════════════════
-       Relationships
-    ══════════════════════════════════════════════════════════════════ */
     public function patient()
     {
         return $this->belongsTo(Patient::class, 'patient_id', 'patient_id');

@@ -20,12 +20,11 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/AccountSetupModal.module.css";
+import axiosClient from "../../axiosClient";
 
 /* ─────────────────────────────────────────────
    Config
 ───────────────────────────────────────────── */
-const API_BASE = "http://localhost:8000/api";
-const getToken = () => localStorage.getItem("token");
 const STORAGE_BASE = "http://localhost:8000/storage/";
 
 /* ─────────────────────────────────────────────
@@ -41,28 +40,10 @@ const STEPS = [
 ];
 
 /* ─────────────────────────────────────────────
-   Dropdown options — mental health / PH focused
+   Static dropdown options
 ───────────────────────────────────────────── */
-const DEFAULT_OPTIONS = {
-  specialization: [
-    "Clinical Psychology",
-    "Psychiatry",
-    "Counseling Psychology",
-    "Child & Adolescent Psychology",
-    "Neuropsychology",
-    "Health Psychology",
-    "Forensic Psychology",
-    "Geriatric Psychiatry",
-    "Addiction Psychiatry",
-    "Community Mental Health",
-    "General Medicine",
-    "Internal Medicine",
-    "Pediatrics",
-    "Neurology",
-    "Obstetrics & Gynecology",
-    "Family Medicine",
-    "Geriatrics",
-  ],
+const STATIC_OPTIONS = {
+  specialization: ["Psychologist", "Psychiatrist", "Psychometrician"],
   subSpecialization: [
     "Cognitive Behavioral Therapy (CBT)",
     "Dialectical Behavior Therapy (DBT)",
@@ -101,28 +82,6 @@ const DEFAULT_OPTIONS = {
     "American Board of Psychiatry and Neurology (ABPN)",
     "American Board of Pediatrics (ABP)",
     "Royal College of Psychiatrists (RCPsych)",
-  ],
-  myServices: [
-    "Individual Therapy / Counseling",
-    "Psychological Assessment and Evaluation",
-    "Psychiatric Evaluation & Consultation",
-    "Psychotherapy (Outpatient)",
-    "Online / Telemedicine Consultation",
-    "Child & Adolescent Counseling",
-    "Family Therapy",
-    "Couples Therapy",
-    "Group Therapy",
-    "Crisis Intervention",
-    "Cognitive Behavioral Therapy (CBT)",
-    "Trauma-Focused Therapy",
-    "Substance Use Counseling",
-    "Medication Management (Psychiatry)",
-    "School-Based Psychological Services",
-    "Pre-Employment Psychological Assessment",
-    "Emotional Support Animal (ESA) Assessment",
-    "Mental Health Clearance / Certificate",
-    "Neuropsychological Testing",
-    "ADHD Assessment",
   ],
 };
 
@@ -253,12 +212,22 @@ function Lightbox({ src, name, onClose }) {
 /* ─────────────────────────────────────────────
    DropdownListInput
 ───────────────────────────────────────────── */
-function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
-  const [options, setOptions] = useState(DEFAULT_OPTIONS[fieldKey] || []);
+function DropdownListInput({
+  label,
+  options: propOptions = [],
+  selected,
+  onAdd,
+  onRemove,
+}) {
+  const [options, setOptions] = useState(propOptions);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    setOptions(propOptions);
+  }, [propOptions]);
 
   useEffect(() => {
     const h = (e) => {
@@ -338,7 +307,6 @@ function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
       >
         {label}
       </div>
-
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1 }}>
           <input
@@ -347,7 +315,7 @@ function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
             placeholder={
               selected.length
                 ? `${selected.length} selected — type to add more`
-                : `Search or add…`
+                : "Search or add…"
             }
             value={search}
             onChange={(e) => {
@@ -399,7 +367,6 @@ function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            transition: "background .15s",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#3d1870")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#4d227c")}
@@ -475,8 +442,6 @@ function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
                         alignItems: "center",
                         justifyContent: "space-between",
                         background: isSel ? "#f0eaff" : "transparent",
-                        transition: "background .12s",
-                        color: "#333",
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background = isSel
@@ -552,7 +517,365 @@ function DropdownListInput({ label, fieldKey, selected, onAdd, onRemove }) {
                   padding: 0,
                   display: "flex",
                   alignItems: "center",
-                  lineHeight: 1,
+                }}
+              >
+                <FiX size={11} strokeWidth={2.5} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   ServicesDropdown — uses axiosClient
+───────────────────────────────────────────── */
+function ServicesDropdown({ selected, onAdd, onRemove }) {
+  const [apiOptions, setApiOptions] = useState([]);
+  const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: json } = await axiosClient.get("/services");
+        setApiOptions(json.data || []);
+      } catch (e) {
+        setFetchError("Could not load services. Please refresh.");
+        console.error("Services fetch error:", e);
+      } finally {
+        setFetching(false);
+      }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    const h = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const filtered = apiOptions.filter((s) =>
+    s.service_name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const handleSelect = (serviceName) => {
+    if (selected.includes(serviceName)) onRemove(selected.indexOf(serviceName));
+    else onAdd(serviceName);
+    setSearch("");
+    inputRef.current?.focus();
+  };
+
+  const baseInputSt = {
+    width: "100%",
+    height: "42px",
+    padding: "0 36px 0 14px",
+    border: "1.5px solid #e2d5f5",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontFamily: "Poppins, sans-serif",
+    color: "#333",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border .2s, box-shadow .2s",
+    background: "#fff",
+  };
+
+  return (
+    <div ref={dropdownRef} style={{ position: "relative", width: "100%" }}>
+      <div
+        style={{
+          fontSize: "11px",
+          fontWeight: 700,
+          color: "#4d227c",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          marginBottom: "6px",
+          fontFamily: "Poppins, sans-serif",
+        }}
+      >
+        My Services *
+      </div>
+
+      {fetchError && (
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#e53e3e",
+            background: "#fff0f0",
+            border: "1px solid #fca5a5",
+            borderRadius: "8px",
+            padding: "8px 12px",
+            marginBottom: "8px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontFamily: "Poppins, sans-serif",
+          }}
+        >
+          <FiAlertCircle size={13} /> {fetchError}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder={
+              fetching
+                ? "Loading services…"
+                : selected.length
+                  ? `${selected.length} selected — search to add more`
+                  : "Search services…"
+            }
+            disabled={fetching || !!fetchError}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={(e) => {
+              setOpen(true);
+              e.target.style.border = "1.5px solid #4d227c";
+              e.target.style.boxShadow = "0 0 0 3px rgba(77,34,124,0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.border = "1.5px solid #e2d5f5";
+              e.target.style.boxShadow = "none";
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setOpen(false);
+                setSearch("");
+              }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const unsel = filtered.filter(
+                  (s) => !selected.includes(s.service_name),
+                );
+                if (unsel.length === 1) handleSelect(unsel[0].service_name);
+              }
+            }}
+            style={{ ...baseInputSt, opacity: fetching ? 0.6 : 1 }}
+          />
+          {fetching ? (
+            <span
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "13px",
+                height: "13px",
+                borderRadius: "50%",
+                border: "2px solid #e2d5f5",
+                borderTopColor: "#4d227c",
+                animation: "spin .7s linear infinite",
+                display: "inline-block",
+              }}
+            />
+          ) : (
+            <FiChevronDown
+              size={15}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: open
+                  ? "translateY(-50%) rotate(180deg)"
+                  : "translateY(-50%)",
+                transition: "transform 0.2s",
+                color: "#4d227c",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((v) => !v);
+            inputRef.current?.focus();
+          }}
+          disabled={fetching || !!fetchError}
+          style={{
+            width: "42px",
+            height: "42px",
+            borderRadius: "8px",
+            border: "none",
+            background: fetching ? "#c4a8e8" : "#4d227c",
+            color: "#fff",
+            cursor: fetching ? "not-allowed" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            if (!fetching) e.currentTarget.style.background = "#3d1870";
+          }}
+          onMouseLeave={(e) => {
+            if (!fetching) e.currentTarget.style.background = "#4d227c";
+          }}
+        >
+          <FiPlus size={17} />
+        </button>
+      </div>
+
+      {open && !fetching && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: "52px",
+            background: "#fff",
+            border: "1.5px solid #ede5f7",
+            borderRadius: "10px",
+            boxShadow: "0 8px 24px rgba(77,34,124,0.14)",
+            zIndex: 2000,
+            overflow: "hidden",
+          }}
+        >
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: "6px 0",
+              maxHeight: "220px",
+              overflowY: "auto",
+            }}
+          >
+            {filtered.length > 0 ? (
+              filtered.map((svc) => {
+                const isSel = selected.includes(svc.service_name);
+                return (
+                  <li
+                    key={svc.service_id}
+                    onClick={() => handleSelect(svc.service_name)}
+                    style={{
+                      padding: "10px 16px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontFamily: "Poppins, sans-serif",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      background: isSel ? "#f0eaff" : "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = isSel
+                        ? "#e8e0fa"
+                        : "#f8f4fd")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = isSel
+                        ? "#f0eaff"
+                        : "transparent")
+                    }
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, color: "#2d2040" }}>
+                        {svc.service_name}
+                      </div>
+                      {svc.description && (
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "#9e84c2",
+                            marginTop: "1px",
+                          }}
+                        >
+                          {svc.description.length > 60
+                            ? svc.description.slice(0, 60) + "…"
+                            : svc.description}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexShrink: 0,
+                        marginLeft: "12px",
+                      }}
+                    >
+                      {isSel && (
+                        <FiCheck size={14} style={{ color: "#4d227c" }} />
+                      )}
+                    </div>
+                  </li>
+                );
+              })
+            ) : (
+              <li
+                style={{
+                  padding: "12px 16px",
+                  fontSize: "13px",
+                  color: "#aaa",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {search
+                  ? "No matching services found."
+                  : "No services available."}
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {selected.length > 0 && (
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px",
+          }}
+        >
+          {selected.map((name, i) => (
+            <span
+              key={i}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#4d227c",
+                color: "#fff",
+                padding: "5px 12px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: 500,
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {name}
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.8)",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
                 <FiX size={11} strokeWidth={2.5} />
@@ -631,7 +954,6 @@ function MultiFileInput({
           background: "#f8f4fd",
           padding: "14px 16px",
           cursor: "pointer",
-          transition: "background .2s",
           display: "flex",
           alignItems: "center",
           gap: "12px",
@@ -685,7 +1007,6 @@ function MultiFileInput({
           }}
         />
       </div>
-
       {(existingUrls.length > 0 || files.length > 0) && (
         <div
           style={{
@@ -722,7 +1043,6 @@ function MultiFileInput({
           })}
         </div>
       )}
-
       {preview && (
         <Lightbox
           src={preview.src}
@@ -871,18 +1191,16 @@ function Thumb({ src, name, isNew, onView, onRemove, isImg }) {
 function ProfilePictureInput({ file, existingUrl, onChange }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const objUrl = useMemo(
     () => (file ? URL.createObjectURL(file) : null),
     [file],
   );
-  const [hovered, setHovered] = useState(false);
-
   useEffect(() => {
     return () => {
       if (objUrl) URL.revokeObjectURL(objUrl);
     };
   }, [objUrl]);
-
   const src = objUrl || (existingUrl ? STORAGE_BASE + existingUrl : null);
 
   return (
@@ -972,7 +1290,6 @@ function ProfilePictureInput({ file, existingUrl, onChange }) {
               fontWeight: 600,
               cursor: "pointer",
               fontFamily: "Poppins, sans-serif",
-              transition: "background .15s,border .15s",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#ede5f7";
@@ -1002,7 +1319,6 @@ function ProfilePictureInput({ file, existingUrl, onChange }) {
                 fontWeight: 500,
                 cursor: "pointer",
                 fontFamily: "Poppins, sans-serif",
-                transition: "background .15s",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#f8f4fd";
@@ -1137,7 +1453,6 @@ function PasswordInput({ placeholder, value, onChange }) {
           display: "flex",
           alignItems: "center",
           padding: "2px",
-          transition: "color .15s",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.color = "#4d227c")}
         onMouseLeave={(e) => (e.currentTarget.style.color = "#aaa")}
@@ -1219,9 +1534,6 @@ function PasswordStrength({ password }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   Spinner helper
-───────────────────────────────────────────── */
 const Spinner = () => (
   <span
     style={{
@@ -1271,7 +1583,6 @@ function AccountSetupModal({ showModal, onClose }) {
   const [boardCertificateList, setBoardCertificateList] = useState([]);
   const [servicesList, setServicesList] = useState([]);
 
-  /* Password */
   const [pwForm, setPwForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -1281,11 +1592,10 @@ function AccountSetupModal({ showModal, onClose }) {
   const [pwSuccess, setPwSuccess] = useState("");
   const [pwSubmitting, setPwSubmitting] = useState(false);
 
-  /* UI */
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-  const [profileSaved, setProfileSaved] = useState(false); // tracks if profile was saved this session
+  const [profileSaved, setProfileSaved] = useState(false);
 
   const set = (f, v) => setFormData((p) => ({ ...p, [f]: v }));
   const setPw = (f, v) => setPwForm((p) => ({ ...p, [f]: v }));
@@ -1294,14 +1604,9 @@ function AccountSetupModal({ showModal, onClose }) {
   const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/doctor/profile`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) return;
-      const { data: d = {} } = await res.json();
+      const {
+        data: { data: d = {} },
+      } = await axiosClient.get("/doctor/profile");
 
       setDoctorName(
         `${d.firstName || ""} ${d.middleInitial ? d.middleInitial + ". " : ""}${d.lastName || ""}`.trim(),
@@ -1328,7 +1633,7 @@ function AccountSetupModal({ showModal, onClose }) {
       setExistingBoardCerts(d.board_cert_images || []);
       setExistingIdPics(d.id_pictures || []);
     } catch (e) {
-      console.error(e);
+      console.error("loadProfile error:", e);
     } finally {
       setLoading(false);
     }
@@ -1346,22 +1651,16 @@ function AccountSetupModal({ showModal, onClose }) {
     }
   }, [showModal, loadProfile]);
 
-  /* ── Remove server file ── */
+  /* ── Remove server file — uses axiosClient ── */
   const removeExistingFile = async (field, index, setter) => {
     const paths =
       field === "board_cert_images" ? existingBoardCerts : existingIdPics;
     try {
-      await fetch(`${API_BASE}/doctor/profile/files`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ field, path: paths[index] }),
+      await axiosClient.delete("/doctor/profile/files", {
+        data: { field, path: paths[index] },
       });
     } catch (e) {
-      console.error(e);
+      console.error("removeExistingFile error:", e);
     }
     setter((p) => p.filter((_, i) => i !== index));
   };
@@ -1372,11 +1671,10 @@ function AccountSetupModal({ showModal, onClose }) {
   };
   const goPrev = () => setStep((s) => Math.max(s - 1, 0));
 
-  /* ── Save profile (called from last step) ── */
+  /* ── Save profile — uses axiosClient ── */
   async function handleUpload() {
     setErrors({});
     setSubmitting(true);
-
     const fd = new FormData();
     fd.append("professional_title", formData.professionalTitle);
     fd.append("description", formData.description);
@@ -1394,28 +1692,14 @@ function AccountSetupModal({ showModal, onClose }) {
     idPicFiles.forEach((f) => fd.append("id_pictures[]", f));
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/profile/setup`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
+      const { data: json } = await axiosClient.post(
+        "/doctor/profile/setup",
+        fd,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
         },
-        body: fd,
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (json.errors) {
-          setErrors(json.errors);
-          alert(
-            `Validation failed:\n\n${Object.entries(json.errors)
-              .map(([f, m]) => `• ${f}: ${Array.isArray(m) ? m[0] : m}`)
-              .join("\n")}`,
-          );
-        } else {
-          alert(json.message || `Error ${res.status}`);
-        }
-        return;
-      }
+      );
+
       setProfileSaved(true);
       setBoardCertFiles([]);
       setIdPicFiles([]);
@@ -1423,41 +1707,42 @@ function AccountSetupModal({ showModal, onClose }) {
       setCompleted((p) => new Set([...p, step]));
       await loadProfile();
 
-      // ← renamed from `const res` to avoid duplicate declaration
-      const profileRes = await fetch(`${API_BASE}/doctor/profile`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      const { data } = await profileRes.json();
-
+      // Refresh sidebar cache
+      const {
+        data: { data },
+      } = await axiosClient.get("/doctor/profile");
       window.dispatchEvent(
         new CustomEvent("doctorProfileUpdated", {
           detail: {
             firstName: data.firstName || data.first_name || "",
             lastName: data.lastName || data.last_name || "",
             middleInitial: data.middleInitial || data.middle_initial || "",
-            // AFTER — /api/doctor/profile returns snake_case, /api/me returns camelCase
             prcLicenseNo: data.prcLicenseNo || data.prc_number || "",
             profilePicture: data.profilePicture || data.profile_picture || null,
           },
         }),
       );
 
-      // Move to password step
       setStep(STEPS.findIndex((s) => s.key === "security"));
     } catch (e) {
-      alert("Network error: " + e.message);
+      // Axios wraps validation errors in e.response.data
+      const json = e.response?.data || {};
+      if (json.errors) {
+        setErrors(json.errors);
+        alert(
+          `Validation failed:\n\n${Object.entries(json.errors)
+            .map(([f, m]) => `• ${f}: ${Array.isArray(m) ? m[0] : m}`)
+            .join("\n")}`,
+        );
+      } else {
+        alert(json.message || `Error ${e.response?.status ?? "unknown"}`);
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
-  /* ── Change password ──
-     FIX: uses DoctorController endpoint PUT /doctor/change-password
-     which matches the existing DoctorController::changePassword method
-  ── */
+  /* ── Change password — uses axiosClient ── */
   async function handleChangePassword() {
     setPwErrors({});
     setPwSuccess("");
@@ -1478,35 +1763,11 @@ function AccountSetupModal({ showModal, onClose }) {
     }
 
     try {
-      /* ── FIXED endpoint: PUT /api/doctor/change-password
-         matches DoctorController::changePassword which expects:
-           current_password, password, password_confirmation             ── */
-      const res = await fetch(`${API_BASE}/doctor/change-password`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          current_password: pwForm.currentPassword,
-          password: pwForm.newPassword,
-          password_confirmation: pwForm.confirmPassword,
-        }),
+      await axiosClient.put("/doctor/change-password", {
+        current_password: pwForm.currentPassword,
+        password: pwForm.newPassword,
+        password_confirmation: pwForm.confirmPassword,
       });
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        if (json.errors) {
-          setPwErrors(json.errors);
-        } else {
-          /* Laravel returns { success:false, message:"..." } on wrong password */
-          setPwErrors({
-            currentPassword: json.message || `Error ${res.status}`,
-          });
-        }
-        return;
-      }
 
       setPwSuccess(
         "Password changed successfully! You can now close this setup.",
@@ -1514,7 +1775,13 @@ function AccountSetupModal({ showModal, onClose }) {
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setCompleted((p) => new Set([...p, step]));
     } catch (e) {
-      setPwErrors({ currentPassword: "Network error: " + e.message });
+      const json = e.response?.data || {};
+      if (json.errors) setPwErrors(json.errors);
+      else
+        setPwErrors({
+          currentPassword:
+            json.message || `Error ${e.response?.status ?? "unknown"}`,
+        });
     } finally {
       setPwSubmitting(false);
     }
@@ -1523,11 +1790,9 @@ function AccountSetupModal({ showModal, onClose }) {
   if (!showModal) return null;
 
   const currentStepKey = STEPS[step].key;
-
   const isDocsStep = currentStepKey === "docs";
   const isSecurityStep = currentStepKey === "security";
 
-  /* ── Step content ── */
   const renderStep = () => {
     if (loading) {
       return (
@@ -1545,21 +1810,16 @@ function AccountSetupModal({ showModal, onClose }) {
               }}
             />
           ))}
-          <style>{`
-            @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-            @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-          `}</style>
+          <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}} @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
       );
     }
 
     switch (currentStepKey) {
-      /* ── STEP 0: Profile ── */
       case "profile":
         return (
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Personal Identity</p>
-
             <ProfilePictureInput
               file={profilePicFile}
               existingUrl={existingProfilePic}
@@ -1599,7 +1859,6 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── STEP 1: Practice ── */
       case "practice":
         return (
           <div className={styles.section}>
@@ -1675,7 +1934,7 @@ function AccountSetupModal({ showModal, onClose }) {
             </Field>
             <DropdownListInput
               label="Specializations *"
-              fieldKey="specialization"
+              options={STATIC_OPTIONS.specialization}
               selected={specializationList}
               onAdd={(item) => {
                 if (!specializationList.includes(item))
@@ -1687,7 +1946,7 @@ function AccountSetupModal({ showModal, onClose }) {
             />
             <DropdownListInput
               label="Sub-specializations"
-              fieldKey="subSpecialization"
+              options={STATIC_OPTIONS.subSpecialization}
               selected={subSpecializationList}
               onAdd={(item) => {
                 if (!subSpecializationList.includes(item))
@@ -1700,14 +1959,13 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── STEP 2: Credentials ── */
       case "certs":
         return (
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Board Credentials</p>
             <DropdownListInput
               label="Board Certificate Names"
-              fieldKey="boardCertificate"
+              options={STATIC_OPTIONS.boardCertificate}
               selected={boardCertificateList}
               onAdd={(item) => {
                 if (!boardCertificateList.includes(item))
@@ -1743,7 +2001,6 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── STEP 3: Services ── */
       case "services":
         return (
           <div className={styles.section}>
@@ -1759,13 +2016,11 @@ function AccountSetupModal({ showModal, onClose }) {
               Select all services you provide — patients will see these on your
               profile.
             </p>
-            <DropdownListInput
-              label="My Services"
-              fieldKey="myServices"
+            <ServicesDropdown
               selected={servicesList}
-              onAdd={(item) => {
-                if (!servicesList.includes(item))
-                  setServicesList((p) => [...p, item]);
+              onAdd={(name) => {
+                if (!servicesList.includes(name))
+                  setServicesList((p) => [...p, name]);
               }}
               onRemove={(i) =>
                 setServicesList((p) => p.filter((_, idx) => idx !== i))
@@ -1774,7 +2029,6 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── STEP 4: Documents — Next button goes to password step ── */
       case "docs":
         return (
           <div className={styles.section}>
@@ -1823,12 +2077,10 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── STEP 5: Security / Change Password ── */
       case "security":
         return (
           <div className={styles.section}>
             <p className={styles.sectionTitle}>Change Password</p>
-
             <div
               style={{
                 background: "#f0e8ff",
@@ -1872,7 +2124,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 )}
               </div>
             </div>
-
             <Field label="Current Password" error={pwErrors.currentPassword}>
               <PasswordInput
                 placeholder="Enter your current (admin-set) password"
@@ -1880,7 +2131,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 onChange={(e) => setPw("currentPassword", e.target.value)}
               />
             </Field>
-
             <Field label="New Password" error={pwErrors.newPassword}>
               <PasswordInput
                 placeholder="Create a strong new password"
@@ -1889,7 +2139,6 @@ function AccountSetupModal({ showModal, onClose }) {
               />
               <PasswordStrength password={pwForm.newPassword} />
             </Field>
-
             <Field
               label="Confirm New Password"
               error={pwErrors.confirmPassword}
@@ -1900,7 +2149,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 onChange={(e) => setPw("confirmPassword", e.target.value)}
               />
             </Field>
-
             {pwForm.newPassword && pwForm.confirmPassword && (
               <div
                 style={{
@@ -1926,7 +2174,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 )}
               </div>
             )}
-
             {pwSuccess && (
               <div
                 style={{
@@ -2032,7 +2279,6 @@ function AccountSetupModal({ showModal, onClose }) {
               {step + 1} / {STEPS.length}
             </span>
           </div>
-
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
               type="button"
@@ -2042,14 +2288,7 @@ function AccountSetupModal({ showModal, onClose }) {
             >
               Skip for now
             </button>
-
-            {/* ── Footer action logic:
-                Steps 0-3 (Profile/Practice/Certs/Services): Next →
-                Step 4 (Documents): "Save & Continue" → saves profile then goes to password step
-                Step 5 (Security/Password): "Change Password" button
-            ── */}
             {isSecurityStep ? (
-              /* Last step: change password */
               <button
                 type="button"
                 className={styles.btnUpload}
@@ -2067,7 +2306,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 )}
               </button>
             ) : isDocsStep ? (
-              /* Docs step: save everything then go to password */
               <button
                 type="button"
                 className={styles.btnUpload}
@@ -2085,7 +2323,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 )}
               </button>
             ) : (
-              /* All other steps: just go next */
               <button
                 type="button"
                 className={styles.btnNext}
