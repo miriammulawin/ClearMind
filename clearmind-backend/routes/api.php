@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get   ('appointments',      [AppointmentController::class, 'index']);
     Route::get   ('appointments/{id}', [AppointmentController::class, 'show']);
     Route::delete('appointments/{id}', [AppointmentController::class, 'destroy']);
-
+    Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedSlots']);
 
     Route::get('/doctor/profile',          [DoctorProfileController::class, 'show']);
     Route::post('/doctor/profile/setup',   [DoctorProfileController::class, 'setup']);
