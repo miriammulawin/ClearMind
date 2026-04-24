@@ -1771,33 +1771,7 @@ function TimePicker({
               {formatTimePH(scheduleForDate.end_time)}
             </div>
           )}
-          {bookedCount > 0 && (
-            <div
-              style={{
-                padding: "6px 12px",
-                background: "#fef2f2",
-                borderBottom: "1px solid #fecaca",
-                fontSize: "10px",
-                color: "#991b1b",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-              }}
-            >
-              <span
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: "#ef4444",
-                  display: "inline-block",
-                  flexShrink: 0,
-                }}
-              />
-              {bookedCount} booked slot{bookedCount > 1 ? "s" : ""} hidden
-            </div>
-          )}
+         
           <div ref={slotRef} style={{ maxHeight: "220px", overflowY: "auto" }}>
             {availableSlots.length === 0 ? (
               <div
