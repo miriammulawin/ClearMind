@@ -27,11 +27,10 @@ const DoctorCard = ({
   doctor,
   isSelected,
   compact,
-
   onViewProfile,
   onSetAppointment,
   onSelect,
-
+  hideViewProfileBtn = false,
   hideSetAppointment = false,
 }) => {
   return (
@@ -41,22 +40,22 @@ const DoctorCard = ({
         ${isSelected ? styles.doctorCardSelected : ""}
         ${compact ? styles.doctorCardCompact : ""}
       `}
-      onClick={compact && onSelect ? () => onSelect(doctor.id) : undefined}
+      onClick={compact && onSelect ? () => onSelect(doctor.id) : undefined} // ✅ FIXED
       style={{ cursor: compact && onSelect ? "pointer" : "default" }}
     >
-      <Card.Body className={styles.cardBody}>
-        {/* ── Header row (always visible) ── */}
+      <Card.Body
+        className={`${styles.cardBody} ${compact ? styles.cardBodyCompact : ""}`}
+      >
+        {" "}
         <div className={styles.doctorHeader}>
-          {/* Radio only on desktop sidebar */}
+          {/* Radio indicator */}
           {compact && onSelect && (
             <div
-              className={`${styles.radioIndicator} ${
-                isSelected ? styles.radioSelected : styles.radioUnselected
-              }`}
+              className={`${styles.radioIndicator} ${isSelected ? styles.radioSelected : styles.radioUnselected}`}
             />
           )}
 
-          {/* Avatar / Photo */}
+          {/* Avatar */}
           <div className={styles.doctorAvatar}>
             {doctor.photo ? (
               <img
@@ -75,8 +74,8 @@ const DoctorCard = ({
             <p className={styles.doctorCredentials}>{doctor.title}</p>
           </div>
 
-          {/* Compact mode: View Profile button on the right */}
-          {compact && (
+          {/* Compact header button */}
+          {compact && !hideViewProfileBtn && (
             <button
               className={styles.btnViewProfile}
               style={{ marginLeft: "auto", whiteSpace: "nowrap" }}
@@ -89,8 +88,7 @@ const DoctorCard = ({
             </button>
           )}
         </div>
-
-        {/* ── Full details: only when NOT compact ── */}
+        {/* ✅ FULL DETAILS - ADD THESE BACK */}
         {!compact && (
           <>
             {/* Consultation Availability */}
@@ -107,7 +105,6 @@ const DoctorCard = ({
                     </span>
                   </div>
                 )}
-
                 {doctor.schedule?.days && (
                   <div className={styles.availabilityItem}>
                     <FaCalendarCheck className={styles.iconSmall} />
@@ -117,38 +114,42 @@ const DoctorCard = ({
               </div>
             </div>
 
-            {/* Earliest Available Schedule */}
-            <div className={styles.earliestSchedule}>
-              <p className={styles.scheduleLabel}>
-                Earliest Available Schedule
-              </p>
-              <div className={styles.scheduleInfo}>
-                {doctor.schedule?.days && (
+            {/* Earliest Schedule */}
+            {doctor.schedule?.earliest && (
+              <div className={styles.earliestSchedule}>
+                <p className={styles.scheduleLabel}>
+                  Earliest Available Schedule
+                </p>
+                <div className={styles.scheduleInfo}>
                   <div className={styles.scheduleItem}>
                     <FaCalendarCheck className={styles.iconSmall} />
-                    <span>{formatScheduleDays(doctor.schedule.days)}</span>
+                    <span>{doctor.schedule.earliest}</span> {/* ← iisa lang */}
                   </div>
-                )}
-
-                {doctor.schedule?.time && (
-                  <p className={styles.scheduleTime}>{doctor.schedule.time}</p>
-                )}
-
-                {doctor.consultationFees?.initialConsultation && (
-                  <p className={styles.scheduleFee}>
-                    Fee: ₱
-                    {doctor.consultationFees.initialConsultation.toLocaleString()}
-                  </p>
-                )}
+                  {doctor.schedule?.time && (
+                    <p className={styles.scheduleTime}>
+                      {doctor.schedule.time}
+                    </p>
+                  )}
+                  {doctor.consultationFees?.initialConsultation && (
+                    <p className={styles.scheduleFee}>
+                      Fee: ₱
+                      {doctor.consultationFees.initialConsultation.toLocaleString()}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Footer buttons */}
             <div className={styles.cardActions}>
-              <button
-                className={styles.btnViewProfile}
-                onClick={() => onViewProfile(doctor.id)}
-              >
-                View Profile
-              </button>
+              {!hideViewProfileBtn && (
+                <button
+                  className={styles.btnViewProfile}
+                  onClick={() => onViewProfile(doctor.id)}
+                >
+                  View Profile
+                </button>
+              )}
               {!hideSetAppointment && (
                 <button
                   className={styles.btnBookAppointment}
@@ -164,5 +165,4 @@ const DoctorCard = ({
     </Card>
   );
 };
-
 export default DoctorCard;

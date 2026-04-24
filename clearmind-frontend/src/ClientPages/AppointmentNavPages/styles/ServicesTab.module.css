@@ -4,7 +4,12 @@
   max-width: 900px;
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 120px);
   background-color: transparent;
+  margin: 0 auto;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0.5rem;
 }
 
 .servicesHeading {
@@ -12,6 +17,7 @@
   font-weight: bold;
   margin: 25px;
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .appointmentServicesContainer :global(.accordion-item) {
@@ -20,6 +26,34 @@
   border-radius: 15px !important;
   margin-bottom: 12px !important;
   overflow: hidden;
+}
+
+.accordionScroll {
+  margin: 5px;
+  padding-top: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding-right: 8px;
+  height: 100%;
+}
+
+.accordionScroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.accordionScroll::-webkit-scrollbar-track {
+  background: #f0e6ff;
+  border-radius: 10px;
+}
+
+.accordionScroll::-webkit-scrollbar-thumb {
+  background: #825cad;
+  border-radius: 10px;
+}
+
+.accordionScroll::-webkit-scrollbar-thumb:hover {
+  background: #4a2273;
 }
 
 .accordionHeaderCustom {
@@ -295,4 +329,51 @@
   font-weight: 700;
   color: #4a1d96;
   white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .appointmentServicesContainer {
+    padding: 0.25rem;
+    height: calc(100vh - 180px);
+  }
+}
+
+@media (min-width: 361px) and (max-width: 389px) {
+  .appointmentServicesContainer {
+    padding: 0.35rem;
+    height: calc(100vh - 180px);
+  }
+}
+
+@media (min-width: 390px) and (max-width: 429px) {
+  .appointmentServicesContainer {
+    padding: 0.4rem;
+    height: calc(100vh - 185px);
+  }
+}
+
+@media (min-width: 430px) and (max-width: 575px) {
+  .appointmentServicesContainer {
+    padding: 0.5rem;
+    height: calc(100vh - 190px);
+  }
+}
+
+@media (min-width: 576px) and (max-width: 768px) {
+  .appointmentServicesContainer {
+    padding: 0.75rem;
+    height: calc(100vh - 160px);
+  }
+}
+
+@media (min-width: 769px) {
+  .appointmentServicesContainer {
+    padding: 1rem;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .appointmentServicesContainer {
+    height: calc(100vh - 100px);
+  }
 }

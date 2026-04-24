@@ -141,6 +141,96 @@
   display: none;
 }
 
+/* Doctor Card Selection Styles */
+.doctorCardWrapper {
+  position: relative;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.doctorRadio {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  z-index: 2;
+}
+
+.doctorCardLabel {
+  display: block;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  transition: all 0.2s ease;
+}
+
+.doctorCardLabel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(77, 34, 124, 0.15);
+}
+
+.selectedDoctorLabel {
+  border: 3px solid #4d227c !important;
+  box-shadow: 0 0 0 4px rgba(77, 34, 124, 0.1) !important;
+  transform: scale(1.02);
+}
+
+/* Custom Radio Appearance */
+.doctorCardWrapper:has(input:checked) .doctorCardLabel::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #4d227c;
+  border-radius: 50%;
+  background: white;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(77, 34, 124, 0.3);
+}
+
+.doctorCardWrapper:has(input:checked) .doctorCardLabel::after {
+  content: "✓";
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  width: 12px;
+  height: 12px;
+  background: #4d227c;
+  border-radius: 50%;
+  color: white;
+  font-size: 8px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+/* Selection Summary */
+.doctorSelectionSummary {
+  background: linear-gradient(135deg, #4d227c, #6b46c1);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.doctorSelectionSummary h6 {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.doctorSelectionSummary p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
 /* ─────────────────────────────────────────
    TWO-COLUMN DESKTOP LAYOUT
 ───────────────────────────────────────── */

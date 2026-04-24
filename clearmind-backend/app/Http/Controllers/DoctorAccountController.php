@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use App\Models\DoctorSchedule;
 
 class DoctorAccountController extends Controller
 {
@@ -101,46 +102,48 @@ class DoctorAccountController extends Controller
        After this fix the response looks like:
          { id: 3, doctor_id: 7, firstName: "...", doctor: { ... } }
     ───────────────────────────────────────────────────────────────── */
-    public function index(): JsonResponse
-    {
-        $doctors = User::with('doctor')
-            ->where('role', 'Doctor')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function (User $user) {
-                return [
-                    // users.id — used as doctor_user_id on appointments
-                    'id'            => $user->id,
+   public function index(): JsonResponse
+{
+    $doctors = User::with(['doctor', 'doctor.schedules' => function($q) {
+            $q->where('is_active', true)->orderBy('day_of_week');
+        }])
+        ->where('role', 'Doctor')
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function (User $user) {
+            $schedules = $user->doctor?->schedules?->map(fn($s) => [
+                'day_num'    => $s->day_of_week,
+                'day'        => DoctorSchedule::DAY_NAMES[$s->day_of_week],
+                'start_time' => $s->start_time,
+                'end_time'   => $s->end_time,
+                'slot_type'  => $s->slot_type,
+            ]) ?? collect();
 
-                    // doctors.doctor_id — used for schedule route /doctors/{doctor_id}/schedules
-                    // This is the key field the frontend was missing
-                    'doctor_id'     => $user->doctor?->doctor_id,
+            return [
+                'id'                 => $user->id,
+                'doctor_id'          => $user->doctor?->doctor_id,
+                'firstName'          => $user->firstName,
+                'lastName'           => $user->lastName,
+                'middleInitial'      => $user->middleInitial,
+                'email'              => $user->email,
+                'contactNo'          => $user->contactNo,
+                'role'               => $user->role,
+                'is_active'          => $user->is_active,
+                'created_at'         => $user->created_at,
+                'specialization'     => $user->doctor?->main_specialty,
+                'specializations'    => $user->doctor?->specializations,
+                'professional_title' => $user->doctor?->professional_title,
+                'license_number'     => $user->doctor?->license_number,
+                'profile_completed'  => $user->doctor?->profile_completed,
+                'doctor'             => $user->doctor,
+                'schedules'          => $schedules, // ← DAGDAG
+            ];
+        });
 
-                    // Basic user info
-                    'firstName'     => $user->firstName,
-                    'lastName'      => $user->lastName,
-                    'middleInitial' => $user->middleInitial,
-                    'email'         => $user->email,
-                    'contactNo'     => $user->contactNo,
-                    'role'          => $user->role,
-                    'is_active'     => $user->is_active,
-                    'created_at'    => $user->created_at,
-
-                    // Doctor-specific fields (still available if needed)
-                    'specialization'     => $user->doctor?->main_specialty,
-                    'professional_title' => $user->doctor?->professional_title,
-                    'license_number'     => $user->doctor?->license_number,
-                    'profile_completed'  => $user->doctor?->profile_completed,
-
-                    // Keep full nested doctor object too for anything else
-                    'doctor'        => $user->doctor,
-                ];
-            });
-
-        return response()->json([
-            'data' => $doctors,
-        ]);
-    }
+    return response()->json([
+        'data' => $doctors,
+    ]);
+}
 
     /* ─────────────────────────────────────────────────────────────────
        GET /api/admin/doctors/{id}

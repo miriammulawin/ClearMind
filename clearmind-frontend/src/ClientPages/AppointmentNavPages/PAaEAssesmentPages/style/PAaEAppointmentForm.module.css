@@ -772,7 +772,7 @@
 /* ─── RPm Grid ──────────────────────────────────────────────── */
 .rpmGrid {
   display: grid;
-  grid-template-rows: repeat(auto-fill, minmax(clamp(200px, 45vw, 280px), 1fr));
+  grid-template-columns: 1fr; /* o repeat(2, 1fr) sa tablet */
   gap: clamp(8px, 2vw, 12px);
 }
 .rpmCard {

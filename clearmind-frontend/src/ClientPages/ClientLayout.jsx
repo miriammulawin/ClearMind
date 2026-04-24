@@ -12,6 +12,7 @@ function ClientLayout() {
   const isSchedule = location.pathname === "/client/appointment/upcoming";
   const isPending = location.pathname === "/client/appointment/pending";
   const isSessions = location.pathname === "/client/appointment/sessions";
+  const isServices = location.pathname === "/client/appointment/services";
   const isHistory = location.pathname === "/client/appointment/history";
   const isPACAppointment =
     location.pathname === "/client/appointment/psychotherapy-and-counseling";
@@ -49,6 +50,7 @@ function ClientLayout() {
             isSchedule ||
             isPending ||
             isSessions ||
+            isServices ||
             isHistory ||
             isPACAppointment ||
             isPAEAppointment ||

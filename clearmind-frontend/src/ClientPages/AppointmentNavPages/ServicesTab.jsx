@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import styles from "./styles/ServicesTab.module.css";
 import { IHelpTrigger } from "./iHelp";
-import axiosClient from "../../axiosClient"; 
+import axiosClient from "../../axiosClient";
 
 const ServicesTab = () => {
   const navigate = useNavigate();
@@ -62,74 +62,77 @@ const ServicesTab = () => {
       <h5 className={styles.servicesHeading}>
         What services would you be needing?
       </h5>
+      <div className={styles.accordionScroll}>
+        <IHelpTrigger onSelectService={(title) => handleContinue(title)} />
 
-      <IHelpTrigger onSelectService={(title) => handleContinue(title)} />
+        <Accordion>
+          {services.map((service) => {
+            const isPsych = service.service_name
+              .toLowerCase()
+              .includes("psychological assessment");
+            const activePurposes = (service.purposes || []).filter(
+              (p) => p.is_active === true || p.is_active === 1,
+            );
 
-      <Accordion>
-        {services.map((service) => {
-          const isPsych = service.service_name
-            .toLowerCase()
-            .includes("psychological assessment");
-          const activePurposes = (service.purposes || []).filter(
-            (p) => p.is_active === true || p.is_active === 1,
-          );
+            return (
+              <Accordion.Item
+                key={service.service_id}
+                eventKey={String(service.service_id)}
+                className={styles.accordionItemCustom}
+              >
+                <Accordion.Header className={styles.accordionHeaderCustom}>
+                  <span className={styles.accordionTitle}>
+                    {service.service_name}
+                  </span>
+                </Accordion.Header>
+                <Accordion.Body className={styles.accordionBodyCustom}>
+                  <p className={styles.serviceDescription}>
+                    {service.description}
+                  </p>
 
-          return (
-            <Accordion.Item
-              key={service.service_id}
-              eventKey={String(service.service_id)}
-              className={styles.accordionItemCustom}
-            >
-              <Accordion.Header className={styles.accordionHeaderCustom}>
-                <span className={styles.accordionTitle}>
-                  {service.service_name}
-                </span>
-              </Accordion.Header>
-              <Accordion.Body className={styles.accordionBodyCustom}>
-                <p className={styles.serviceDescription}>
-                  {service.description}
-                </p>
+                  {/* Consultation fee */}
+                  {formatPrice(service.price) && (
+                    <div className={styles.servicePriceRow}>
+                      <span className={styles.priceLabel}>
+                        Consultation Fee:
+                      </span>
+                      <span className={styles.priceValue}>
+                        {formatPrice(service.price)}
+                      </span>
+                    </div>
+                  )}
 
-                {/* Consultation fee */}
-                {formatPrice(service.price) && (
-                  <div className={styles.servicePriceRow}>
-                    <span className={styles.priceLabel}>Consultation Fee:</span>
-                    <span className={styles.priceValue}>
-                      {formatPrice(service.price)}
-                    </span>
-                  </div>
-                )}
+                  {/* Purposes — only for Psychological Assessment */}
+                  {isPsych && activePurposes.length > 0 && (
+                    <div className={styles.purposeList}>
+                      <p className={styles.purposeListLabel}>
+                        Assessment Purposes &amp; Fees:
+                      </p>
+                      {activePurposes.map((p) => (
+                        <div key={p.purpose_id} className={styles.purposeRow}>
+                          <span className={styles.purposeName}>
+                            {p.purpose_name}
+                          </span>
+                          <span className={styles.purposePrice}>
+                            {formatPrice(p.price) || "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                {/* Purposes — only for Psychological Assessment */}
-                {isPsych && activePurposes.length > 0 && (
-                  <div className={styles.purposeList}>
-                    <p className={styles.purposeListLabel}>
-                      Assessment Purposes &amp; Fees:
-                    </p>
-                    {activePurposes.map((p) => (
-                      <div key={p.purpose_id} className={styles.purposeRow}>
-                        <span className={styles.purposeName}>
-                          {p.purpose_name}
-                        </span>
-                        <span className={styles.purposePrice}>
-                          {formatPrice(p.price) || "—"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <Button
-                  className={styles.continueButton}
-                  onClick={() => handleContinue(service.service_name)}
-                >
-                  CONTINUE
-                </Button>
-              </Accordion.Body>
-            </Accordion.Item>
-          );
-        })}
-      </Accordion>
+                  <Button
+                    className={styles.continueButton}
+                    onClick={() => handleContinue(service.service_name)}
+                  >
+                    CONTINUE
+                  </Button>
+                </Accordion.Body>
+              </Accordion.Item>
+            );
+          })}
+        </Accordion>
+      </div>
     </div>
   );
 };

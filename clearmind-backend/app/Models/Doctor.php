@@ -52,4 +52,13 @@ public function user()
 {
     return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
 }
+
+public function schedules()
+{
+    return $this->hasMany(
+        \App\Models\DoctorSchedule::class,
+        'doctor_id',
+        'doctor_id'
+    );
+}
 }
