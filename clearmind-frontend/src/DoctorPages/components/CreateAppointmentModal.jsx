@@ -1715,7 +1715,31 @@ function TimePicker({
       </div>
 
       {/* Show how many slots are already taken */}
-   
+      {!disabled && bookedCount > 0 && !loadingSlots && (
+        <div
+          style={{
+            marginTop: "4px",
+            fontSize: "10px",
+            color: "#9a3412",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#ef4444",
+              display: "inline-block",
+              flexShrink: 0,
+            }}
+          />
+          {bookedCount} slot{bookedCount > 1 ? "s" : ""} already booked on this
+          date
+        </div>
+      )}
 
       {open && !disabled && (
         <div
@@ -1747,7 +1771,33 @@ function TimePicker({
               {formatTimePH(scheduleForDate.end_time)}
             </div>
           )}
-        
+          {bookedCount > 0 && (
+            <div
+              style={{
+                padding: "6px 12px",
+                background: "#fef2f2",
+                borderBottom: "1px solid #fecaca",
+                fontSize: "10px",
+                color: "#991b1b",
+                fontWeight: "600",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <span
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  background: "#ef4444",
+                  display: "inline-block",
+                  flexShrink: 0,
+                }}
+              />
+              {bookedCount} booked slot{bookedCount > 1 ? "s" : ""} hidden
+            </div>
+          )}
           <div ref={slotRef} style={{ maxHeight: "220px", overflowY: "auto" }}>
             {availableSlots.length === 0 ? (
               <div

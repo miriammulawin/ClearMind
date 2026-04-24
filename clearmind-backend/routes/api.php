@@ -53,7 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get   ('appointments',      [AppointmentController::class, 'index']);
     Route::get   ('appointments/{id}', [AppointmentController::class, 'show']);
     Route::delete('appointments/{id}', [AppointmentController::class, 'destroy']);
-
+    Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedSlots']);
 
     Route::get('/doctor/profile',          [DoctorProfileController::class, 'show']);
     Route::post('/doctor/profile/setup',   [DoctorProfileController::class, 'setup']);
@@ -63,13 +63,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/doctor/account-security', [DoctorController::class, 'updateAccountSecurity']);
     Route::get('/doctor/patients', [DoctorPatientController::class, 'index']);
     Route::get('/doctor/patients/{patientId}', [DoctorPatientController::class, 'show']);
+    Route::put('/appointments/{id}/status', [DoctorPatientController::class, 'updateAppointmentStatus']);
     // ── Doctor profile ────────────────────────────────────────────
     Route::get   ('/doctor/profile',        [DoctorProfileController::class, 'show']);
     Route::post  ('/doctor/profile/setup',  [DoctorProfileController::class, 'setup']);
     Route::delete('/doctor/profile/files',  [DoctorProfileController::class, 'deleteFile']);
     Route::put   ('/doctor/change-password',[DoctorController::class,        'changePassword']);
-
-    // ── Doctor Schedule Routes ────────────────────────────────────
+  // ── Clinical notes (per appointment) — ALL in DoctorPatientController ──
+    // IMPORTANT: must be registered BEFORE the generic admin appointment routes
+    Route::get   ('appointments/{id}/clinical-notes',           [DoctorPatientController::class, 'getClinicalNotes']);
+    Route::post  ('appointments/{id}/clinical-notes',           [DoctorPatientController::class, 'storeClinicalNote']);
+    Route::put   ('appointments/{id}/clinical-notes/{noteId}',  [DoctorPatientController::class, 'updateClinicalNote']);
+    Route::delete('appointments/{id}/clinical-notes/{noteId}',  [DoctorPatientController::class, 'deleteClinicalNote']);
+ 
+    // ── Progression note (per appointment) ───────────────────────
+    Route::post('appointments/{id}/progression-note', [DoctorPatientController::class, 'saveProgressionNote']);
     // IMPORTANT: /bulk must be registered BEFORE /{id} to avoid
     // Laravel treating "bulk" as an integer schedule ID.
     Route::prefix('doctors/{doctorId}/schedules')->group(function () {
