@@ -28,6 +28,7 @@ Route::post('/verify-email',    [AuthController::class, 'verifyEmail']);
 Route::get('/services', [ServiceController::class, 'index']);
 // Public: available slots for patient booking (no auth required)
 Route::get('/schedules/available', [DoctorScheduleController::class, 'available']);
+Route::get('doctors/list',  [DoctorAccountController::class, 'index']);
 
 // ── Protected Routes ──────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -46,7 +47,6 @@ Route::get('/appointments/booked-slots', [AppointmentController::class, 'bookedS
 
     // ── Shared lookup lists ───────────────────────────────────────
     Route::get('patients/list', [PatientController::class, 'all']);
-    Route::get('doctors/list',  [DoctorAccountController::class, 'index']);
 
     // ── Client: appointments ──────────────────────────────────────
     Route::post  ('appointments',      [AppointmentController::class, 'store']);
