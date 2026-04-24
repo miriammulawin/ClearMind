@@ -1714,32 +1714,7 @@ function TimePicker({
         )}
       </div>
 
-      {/* Show how many slots are already taken */}
-      {!disabled && bookedCount > 0 && !loadingSlots && (
-        <div
-          style={{
-            marginTop: "4px",
-            fontSize: "10px",
-            color: "#9a3412",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          <span
-            style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              background: "#ef4444",
-              display: "inline-block",
-              flexShrink: 0,
-            }}
-          />
-          {bookedCount} slot{bookedCount > 1 ? "s" : ""} already booked on this
-          date
-        </div>
-      )}
+     
 
       {open && !disabled && (
         <div
