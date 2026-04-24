@@ -79,32 +79,37 @@ const AvatarPlaceholder = ({ name = "?", size = 80 }) => {
 const resolveReceiptUrl = (appointment) => {
   if (!appointment) return null;
 
-  const fixUrl = (path) => {
+  const buildUrl = (path) => {
     if (!path) return null;
 
-    // already full URL
-    if (path.startsWith("http")) return path;
+    // already full URL (correct)
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
 
-    // always force backend origin
-    return `${API_BASE}/storage/${path.replace(/^\/+/, "")}`;
+    // remove duplicate "storage/" if exists
+    const clean = path.replace(/^storage\//, "").replace(/^\/+/, "");
+
+    return `${API_BASE}/storage/${clean}`;
   };
 
+  // ✅ priority order
   if (
     Array.isArray(appointment.receipt_urls) &&
-    appointment.receipt_urls.length > 0
+    appointment.receipt_urls.length
   ) {
-    return fixUrl(appointment.receipt_urls[0]);
+    return buildUrl(appointment.receipt_urls[0]);
   }
 
   if (appointment.receiptUrl) {
-    return fixUrl(appointment.receiptUrl);
+    return buildUrl(appointment.receiptUrl);
   }
 
   if (
     Array.isArray(appointment.receipt_paths) &&
-    appointment.receipt_paths.length > 0
+    appointment.receipt_paths.length
   ) {
-    return fixUrl(appointment.receipt_paths[0]);
+    return buildUrl(appointment.receipt_paths[0]);
   }
 
   return null;
@@ -181,10 +186,9 @@ function DoctorPatient() {
           patientType: p.patientType,
           totalVisits: p.totalVisits,
 
-            profilePicture: p.user?.profilePicture
-    ? `${API_BASE}/storage/${p.user.profilePicture}`
-    : null,
-
+          profilePicture: p.user?.profilePicture
+            ? `${API_BASE}/storage/${p.user.profilePicture}`
+            : null,
 
           date: latest?.date ?? "—",
           time: latest?.time ?? "—",
@@ -212,10 +216,11 @@ function DoctorPatient() {
           assessmentPurpose: latest?.pae_purpose ?? null,
           reason: latest?.reason_for_consultation ?? latest?.notes ?? null,
 
-          receipt_urls: latest?.receipt_urls ?? [],
-          receipt_paths: latest?.receipt_paths ?? [],
-          receiptUrl: resolveReceiptUrl(latest),
-
+          receiptUrl: resolveReceiptUrl({
+            receipt_urls: latest?.receipt_urls,
+            receipt_paths: latest?.receipt_paths,
+            receiptUrl: latest?.receiptUrl,
+          }),
           progressionNote: latest?.progression_note ?? null,
 
           appointments: appointments.map((a) => ({
@@ -635,22 +640,22 @@ function DoctorPatient() {
                 <FiX />
               </button>
               <div className={styles.modalProfileRow}>
-              {selectedPatient.profilePicture ? (
-  <img
-    src={selectedPatient.profilePicture}
-    alt={selectedPatient.name}
-    style={{
-      width: 68,
-      height: 68,
-      borderRadius: "50%",
-      objectFit: "cover",
-      border: "3px solid #fff",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-    }}
-  />
-) : (
-  <AvatarPlaceholder name={selectedPatient.name} size={68} />
-)}
+                {selectedPatient.profilePicture ? (
+                  <img
+                    src={selectedPatient.profilePicture}
+                    alt={selectedPatient.name}
+                    style={{
+                      width: 68,
+                      height: 68,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "3px solid #fff",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}
+                  />
+                ) : (
+                  <AvatarPlaceholder name={selectedPatient.name} size={68} />
+                )}
                 <div className={styles.patientProfileInfo}>
                   <h3 className={styles.patientProfileName}>
                     {selectedPatient.name}
@@ -1134,11 +1139,22 @@ function DoctorPatient() {
                             src={selectedPatient.receiptUrl}
                             alt="Payment Proof"
                             className={styles.paymentProofImg}
-                            style={{ cursor: "zoom-in" }}
+                            style={{
+                              cursor: "zoom-in",
+                              objectFit: "cover",
+                              width: "100%",
+                              height: "180px",
+                              borderRadius: "10px",
+                              border: "1px solid #e5e7eb",
+                            }}
                             onClick={() =>
                               setZoomImage(selectedPatient.receiptUrl)
                             }
                             onError={(e) => {
+                              console.error(
+                                "❌ Image failed:",
+                                selectedPatient.receiptUrl,
+                              );
                               e.target.style.display = "none";
                             }}
                           />
