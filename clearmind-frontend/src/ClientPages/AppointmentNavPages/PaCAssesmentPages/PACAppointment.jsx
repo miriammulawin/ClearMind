@@ -4,11 +4,13 @@ import { Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 
-import MOCK_DOCTORS from "../../../MockData/MockDoctors.js";
+import axiosClient from "../../../axiosClient"; // adjust path as needed
 import DoctorCard from "../AppointmentComponents/DoctorCard.jsx";
 import DoctorProfile from "../AppointmentComponents/DoctorProfile.jsx";
 import ServiceAlert from "../AppointmentComponents/ServiceAlert.jsx";
 import styles from "./style/PACSetAppointment.module.css";
+
+const STORAGE_BASE = "http://localhost:8000/storage/";
 
 // ── Specialist Info ───────────────────────────────────────────────────────────
 const SPECIALIST_INFO = {
@@ -22,18 +24,95 @@ const SPECIALIST_INFO = {
   },
 };
 
+// ── Normalize raw API doctor entry into a flat shape DoctorCard expects ───────
+const normalizeDoctor = (raw) => {
+  const d = raw.doctor || {};
+  return {
+    // identity
+    id: raw.id, // user id — used as the key
+    doctor_id: raw.doctor_id,
+    name: `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim(),
+    firstName: raw.firstName,
+    lastName: raw.lastName,
+    middleInitial: raw.middleInitial,
+    email: raw.email,
+    contactNo: raw.contactNo,
+    is_active: raw.is_active,
+
+    // profile
+    title: d.professional_title ?? "",
+    professional_title: d.professional_title ?? "",
+    description: d.description ?? "",
+    profile_picture: d.profile_picture
+      ? STORAGE_BASE + d.profile_picture
+      : null,
+    profile_completed: raw.profile_completed,
+
+    // practice
+    years_of_experience: d.years_of_experience,
+    practicing_since: d.practicing_since,
+    main_specialty: d.main_specialty ?? raw.specialization ?? "",
+    license_number: d.license_number ?? raw.license_number ?? "",
+    prc_number: d.prc_number ?? "",
+
+    // arrays
+    specializations: d.specializations ?? [],
+    sub_specializations: d.sub_specializations ?? [],
+    board_cert_names: d.board_cert_names ?? [],
+    board_cert_images: (d.board_cert_images ?? []).map((p) => STORAGE_BASE + p),
+    id_pictures: (d.id_pictures ?? []).map((p) => STORAGE_BASE + p),
+    services: d.services ?? [],
+  };
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 const PACAppointment = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const selectedService = location.state?.selectedService;
 
+  // ── Data state ─────────────────────────────────────────────────────────────
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [doctorsError, setDoctorsError] = useState(null);
+
+  // ── UI state ───────────────────────────────────────────────────────────────
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [activeSpecialist, setActiveSpecialist] = useState("Psychologist");
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
+  // ── Fetch from /admin/doctors ──────────────────────────────────────────────
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        setLoadingDoctors(true);
+        setDoctorsError(null);
+        const response = await axiosClient.get("/admin/doctors");
+        const raw = Array.isArray(response.data)
+          ? response.data
+          : (response.data.data ?? []);
+        setDoctors(raw.map(normalizeDoctor));
+      } catch (err) {
+        console.error("Failed to fetch doctors:", err);
+        setDoctorsError("Failed to load doctors. Please try again.");
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    fetchDoctors();
+  }, []);
+
+  // ── Resize listener ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleViewProfile = (doctorId) => {
     setSelectedDoctor(doctorId);
     setSelectedDate(null);
@@ -42,7 +121,7 @@ const PACAppointment = () => {
   };
 
   const handleSetAppointment = (doctorId) => {
-    const doctor = MOCK_DOCTORS.find((d) => d.id === doctorId);
+    const doctor = doctors.find((d) => d.id === doctorId);
     if (doctor) {
       navigate(
         "/client/appointment/psychotherapy-and-counseling/set-appointment-form",
@@ -52,7 +131,7 @@ const PACAppointment = () => {
   };
 
   const handleConfirmBooking = () => {
-    const doctor = MOCK_DOCTORS.find((d) => d.id === selectedDoctor);
+    const doctor = doctors.find((d) => d.id === selectedDoctor);
     if (doctor && selectedDate && selectedTime) {
       alert(
         `Appointment Confirmed!\n\nDoctor: ${doctor.name}\nDate: ${selectedDate.date}\nTime: ${selectedTime}\n\nThis will be connected to backend soon.`,
@@ -71,30 +150,27 @@ const PACAppointment = () => {
     });
   };
 
-  const filteredDoctors = activeSpecialist
-    ? MOCK_DOCTORS.filter((d) =>
-        d.title
-          .toLowerCase()
-          .includes(SPECIALIST_INFO[activeSpecialist].role.toLowerCase()),
-      )
-    : MOCK_DOCTORS;
+  // ── Filter by specializations array (the nested field) ────────────────────
+  const filteredDoctors = doctors.filter((d) => {
+    // Only show active doctors with a completed profile
+    if (!d.is_active || !d.profile_completed) return false;
+
+    // If no specialist tab is active, show all
+    if (!activeSpecialist) return true;
+
+    // Match against the specializations array from the nested doctor object
+    return d.specializations.some((spec) =>
+      spec.toLowerCase().includes(activeSpecialist.toLowerCase()),
+    );
+  });
 
   const doctorData = selectedDoctor
-    ? MOCK_DOCTORS.find((d) => d.id === selectedDoctor)
+    ? doctors.find((d) => d.id === selectedDoctor)
     : null;
-
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   return (
     <Container className={`${styles.bookAppointmentContainer} py-4`}>
-      {/* ── Specialist Info Modal ── (unchanged) ── */}
+      {/* ── Specialist Info Modal ── */}
       {showSpecialistModal && (
         <div
           className={styles.modalOverlay}
@@ -149,14 +225,12 @@ const PACAppointment = () => {
         </div>
       )}
 
-      {/* ── Main content: two-col on desktop, single-col on mobile ── */}
+      {/* ── Main content ── */}
       <div className={styles.desktopColumns}>
-        {/* LEFT / MOBILE-FULL: Doctor list — hidden on mobile when profile is open */}
-
+        {/* LEFT column */}
         <div
           className={`${styles.leftColumn} ${selectedDoctor ? styles.hideOnMobile : ""}`}
         >
-          {/* ── Header ── */}
           <div className={styles.titleContainerBook}>
             <h5 className={styles.titleBookAppointment}>SET AN APPOINTMENT</h5>
             <Button
@@ -170,7 +244,6 @@ const PACAppointment = () => {
 
           <ServiceAlert selectedService={selectedService} />
 
-          {/* ── Learn More Link ── */}
           <p
             className={styles.specialistLearnMore}
             onClick={() => setShowSpecialistModal(true)}
@@ -182,26 +255,70 @@ const PACAppointment = () => {
           {/* ── Specialist Toggle ── */}
           <div style={{ marginBottom: "14px", marginTop: "4px" }}>
             <div className={styles.specialistToggle}>
-              {Object.keys(SPECIALIST_INFO).map((key) => (
-                <button
-                  key={key}
-                  className={`${styles.specialistToggleBtn} ${activeSpecialist === key ? styles.specialistToggleActive : ""}`}
-                  onClick={() =>
-                    setActiveSpecialist((prev) => (prev === key ? null : key))
-                  }
-                >
-                  {SPECIALIST_INFO[key].label}
-                </button>
-              ))}
+              {Object.keys(SPECIALIST_INFO).map((key) => {
+                // Count how many doctors match this tab
+                const count = doctors.filter(
+                  (d) =>
+                    d.is_active &&
+                    d.profile_completed &&
+                    d.specializations.some((s) =>
+                      s.toLowerCase().includes(key.toLowerCase()),
+                    ),
+                ).length;
+
+                return (
+                  <button
+                    key={key}
+                    className={`${styles.specialistToggleBtn} ${
+                      activeSpecialist === key
+                        ? styles.specialistToggleActive
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setActiveSpecialist((prev) => (prev === key ? null : key))
+                    }
+                  >
+                    {SPECIALIST_INFO[key].label}
+                    {/* Badge showing available doctor count */}
+                    {!loadingDoctors && (
+                      <span
+                        style={{
+                          marginLeft: "6px",
+                          background:
+                            activeSpecialist === key
+                              ? "rgba(255,255,255,0.25)"
+                              : "rgba(77,34,124,0.12)",
+                          color: activeSpecialist === key ? "#fff" : "#4d227c",
+                          borderRadius: "20px",
+                          padding: "1px 7px",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
+          {/* ── Doctor list ── */}
           <div
-            className={`${styles.doctorsList} ${selectedDoctor ? styles.doctorsListHidden : ""}`}
+            className={`${styles.doctorsList} ${
+              selectedDoctor ? styles.doctorsListHidden : ""
+            }`}
           >
-            {filteredDoctors.length === 0 ? (
+            {loadingDoctors ? (
+              <p className={styles.noDoctorsMsg}>Loading doctors…</p>
+            ) : doctorsError ? (
+              <p className={styles.noDoctorsMsg} style={{ color: "red" }}>
+                {doctorsError}
+              </p>
+            ) : filteredDoctors.length === 0 ? (
               <p className={styles.noDoctorsMsg}>
-                No doctors available for this specialization.
+                No {activeSpecialist ?? "doctors"} available at the moment.
               </p>
             ) : (
               filteredDoctors.map((doctor) => (
@@ -223,14 +340,14 @@ const PACAppointment = () => {
           </div>
         </div>
 
-        {/* RIGHT / MOBILE-FULL: Profile panel */}
+        {/* RIGHT column */}
         <div
-          className={`${styles.profilePanel} ${selectedDoctor ? styles.profilePanelActive : ""}`}
+          className={`${styles.profilePanel} ${
+            selectedDoctor ? styles.profilePanelActive : ""
+          }`}
         >
-          {/* <h5> Doctor's Profile:</h5> */}
           {selectedDoctor && doctorData ? (
             <>
-              {/* Back button — mobile only */}
               {!isDesktop && (
                 <div className={styles.profilePanelHeader}>
                   <h5>Doctor's Profile:</h5>

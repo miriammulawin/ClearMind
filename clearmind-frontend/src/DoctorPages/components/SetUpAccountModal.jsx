@@ -20,12 +20,11 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import styles from "../DoctorStyle/AccountSetupModal.module.css";
+import axiosClient from "../../axiosClient";
 
 /* ─────────────────────────────────────────────
    Config
 ───────────────────────────────────────────── */
-const API_BASE = "http://localhost:8000/api";
-const getToken = () => localStorage.getItem("token");
 const STORAGE_BASE = "http://localhost:8000/storage/";
 
 /* ─────────────────────────────────────────────
@@ -41,16 +40,10 @@ const STEPS = [
 ];
 
 /* ─────────────────────────────────────────────
-   Static dropdown options (specializations only)
-   Services now come from the API /services endpoint
+   Static dropdown options
 ───────────────────────────────────────────── */
 const STATIC_OPTIONS = {
-  specialization: [
-    "Psychologist",
-    "Psychiattrist",
-    "Psychometrician",
- 
-  ],
+  specialization: ["Psychologist", "Psychiatrist", "Psychometrician"],
   subSpecialization: [
     "Cognitive Behavioral Therapy (CBT)",
     "Dialectical Behavior Therapy (DBT)",
@@ -217,7 +210,7 @@ function Lightbox({ src, name, onClose }) {
 }
 
 /* ─────────────────────────────────────────────
-   DropdownListInput  — works with static string arrays
+   DropdownListInput
 ───────────────────────────────────────────── */
 function DropdownListInput({
   label,
@@ -232,7 +225,6 @@ function DropdownListInput({
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Keep options in sync if parent passes new ones after async load
   useEffect(() => {
     setOptions(propOptions);
   }, [propOptions]);
@@ -315,7 +307,6 @@ function DropdownListInput({
       >
         {label}
       </div>
-
       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1 }}>
           <input
@@ -376,7 +367,6 @@ function DropdownListInput({
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            transition: "background .15s",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "#3d1870")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "#4d227c")}
@@ -452,8 +442,6 @@ function DropdownListInput({
                         alignItems: "center",
                         justifyContent: "space-between",
                         background: isSel ? "#f0eaff" : "transparent",
-                        transition: "background .12s",
-                        color: "#333",
                       }}
                       onMouseEnter={(e) =>
                         (e.currentTarget.style.background = isSel
@@ -529,7 +517,6 @@ function DropdownListInput({
                   padding: 0,
                   display: "flex",
                   alignItems: "center",
-                  lineHeight: 1,
                 }}
               >
                 <FiX size={11} strokeWidth={2.5} />
@@ -543,11 +530,10 @@ function DropdownListInput({
 }
 
 /* ─────────────────────────────────────────────
-   ServicesDropdown — fetches from /api/services
-   Stores service_name strings in doctor.services JSON
+   ServicesDropdown — uses axiosClient
 ───────────────────────────────────────────── */
 function ServicesDropdown({ selected, onAdd, onRemove }) {
-  const [apiOptions, setApiOptions] = useState([]); // { service_id, service_name, description, price }
+  const [apiOptions, setApiOptions] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [open, setOpen] = useState(false);
@@ -555,15 +541,10 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Fetch services from backend on mount
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${API_BASE}/services`, {
-          headers: { Accept: "application/json" },
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
+        const { data: json } = await axiosClient.get("/services");
         setApiOptions(json.data || []);
       } catch (e) {
         setFetchError("Could not load services. Please refresh.");
@@ -591,11 +572,8 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
   );
 
   const handleSelect = (serviceName) => {
-    if (selected.includes(serviceName)) {
-      onRemove(selected.indexOf(serviceName));
-    } else {
-      onAdd(serviceName);
-    }
+    if (selected.includes(serviceName)) onRemove(selected.indexOf(serviceName));
+    else onAdd(serviceName);
     setSearch("");
     inputRef.current?.focus();
   };
@@ -745,7 +723,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
             alignItems: "center",
             justifyContent: "center",
             flexShrink: 0,
-            transition: "background .15s",
           }}
           onMouseEnter={(e) => {
             if (!fetching) e.currentTarget.style.background = "#3d1870";
@@ -798,7 +775,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
                       alignItems: "center",
                       justifyContent: "space-between",
                       background: isSel ? "#f0eaff" : "transparent",
-                      transition: "background .12s",
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.background = isSel
@@ -838,7 +814,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
                         marginLeft: "12px",
                       }}
                     >
-        
                       {isSel && (
                         <FiCheck size={14} style={{ color: "#4d227c" }} />
                       )}
@@ -864,7 +839,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
         </div>
       )}
 
-      {/* Selected chips */}
       {selected.length > 0 && (
         <div
           style={{
@@ -902,7 +876,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
                   padding: 0,
                   display: "flex",
                   alignItems: "center",
-                  lineHeight: 1,
                 }}
               >
                 <FiX size={11} strokeWidth={2.5} />
@@ -981,7 +954,6 @@ function MultiFileInput({
           background: "#f8f4fd",
           padding: "14px 16px",
           cursor: "pointer",
-          transition: "background .2s",
           display: "flex",
           alignItems: "center",
           gap: "12px",
@@ -1219,11 +1191,11 @@ function Thumb({ src, name, isNew, onView, onRemove, isImg }) {
 function ProfilePictureInput({ file, existingUrl, onChange }) {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const objUrl = useMemo(
     () => (file ? URL.createObjectURL(file) : null),
     [file],
   );
-  const [hovered, setHovered] = useState(false);
   useEffect(() => {
     return () => {
       if (objUrl) URL.revokeObjectURL(objUrl);
@@ -1609,7 +1581,7 @@ function AccountSetupModal({ showModal, onClose }) {
   const [specializationList, setSpecializationList] = useState([]);
   const [subSpecializationList, setSubSpecializationList] = useState([]);
   const [boardCertificateList, setBoardCertificateList] = useState([]);
-  const [servicesList, setServicesList] = useState([]); // stores service_name strings
+  const [servicesList, setServicesList] = useState([]);
 
   const [pwForm, setPwForm] = useState({
     currentPassword: "",
@@ -1632,14 +1604,9 @@ function AccountSetupModal({ showModal, onClose }) {
   const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/doctor/profile`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) return;
-      const { data: d = {} } = await res.json();
+      const {
+        data: { data: d = {} },
+      } = await axiosClient.get("/doctor/profile");
 
       setDoctorName(
         `${d.firstName || ""} ${d.middleInitial ? d.middleInitial + ". " : ""}${d.lastName || ""}`.trim(),
@@ -1661,12 +1628,12 @@ function AccountSetupModal({ showModal, onClose }) {
       setSpecializationList(d.specializations || []);
       setSubSpecializationList(d.sub_specializations || []);
       setBoardCertificateList(d.board_cert_names || []);
-      setServicesList(d.services || []); // saved as array of service_name strings
+      setServicesList(d.services || []);
       setExistingProfilePic(d.profile_picture || null);
       setExistingBoardCerts(d.board_cert_images || []);
       setExistingIdPics(d.id_pictures || []);
     } catch (e) {
-      console.error(e);
+      console.error("loadProfile error:", e);
     } finally {
       setLoading(false);
     }
@@ -1684,22 +1651,16 @@ function AccountSetupModal({ showModal, onClose }) {
     }
   }, [showModal, loadProfile]);
 
-  /* ── Remove server file ── */
+  /* ── Remove server file — uses axiosClient ── */
   const removeExistingFile = async (field, index, setter) => {
     const paths =
       field === "board_cert_images" ? existingBoardCerts : existingIdPics;
     try {
-      await fetch(`${API_BASE}/doctor/profile/files`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ field, path: paths[index] }),
+      await axiosClient.delete("/doctor/profile/files", {
+        data: { field, path: paths[index] },
       });
     } catch (e) {
-      console.error(e);
+      console.error("removeExistingFile error:", e);
     }
     setter((p) => p.filter((_, i) => i !== index));
   };
@@ -1710,7 +1671,7 @@ function AccountSetupModal({ showModal, onClose }) {
   };
   const goPrev = () => setStep((s) => Math.max(s - 1, 0));
 
-  /* ── Save profile ── */
+  /* ── Save profile — uses axiosClient ── */
   async function handleUpload() {
     setErrors({});
     setSubmitting(true);
@@ -1725,32 +1686,20 @@ function AccountSetupModal({ showModal, onClose }) {
     fd.append("specializations", JSON.stringify(specializationList));
     fd.append("sub_specializations", JSON.stringify(subSpecializationList));
     fd.append("board_cert_names", JSON.stringify(boardCertificateList));
-    fd.append("services", JSON.stringify(servicesList)); // array of service_name strings
+    fd.append("services", JSON.stringify(servicesList));
     if (profilePicFile) fd.append("profile_picture", profilePicFile);
     boardCertFiles.forEach((f) => fd.append("board_cert_images[]", f));
     idPicFiles.forEach((f) => fd.append("id_pictures[]", f));
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/profile/setup`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
+      const { data: json } = await axiosClient.post(
+        "/doctor/profile/setup",
+        fd,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
         },
-        body: fd,
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (json.errors) {
-          setErrors(json.errors);
-          alert(
-            `Validation failed:\n\n${Object.entries(json.errors)
-              .map(([f, m]) => `• ${f}: ${Array.isArray(m) ? m[0] : m}`)
-              .join("\n")}`,
-          );
-        } else alert(json.message || `Error ${res.status}`);
-        return;
-      }
+      );
+
       setProfileSaved(true);
       setBoardCertFiles([]);
       setIdPicFiles([]);
@@ -1758,13 +1707,10 @@ function AccountSetupModal({ showModal, onClose }) {
       setCompleted((p) => new Set([...p, step]));
       await loadProfile();
 
-      const profileRes = await fetch(`${API_BASE}/doctor/profile`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      const { data } = await profileRes.json();
+      // Refresh sidebar cache
+      const {
+        data: { data },
+      } = await axiosClient.get("/doctor/profile");
       window.dispatchEvent(
         new CustomEvent("doctorProfileUpdated", {
           detail: {
@@ -1776,19 +1722,32 @@ function AccountSetupModal({ showModal, onClose }) {
           },
         }),
       );
+
       setStep(STEPS.findIndex((s) => s.key === "security"));
     } catch (e) {
-      alert("Network error: " + e.message);
+      // Axios wraps validation errors in e.response.data
+      const json = e.response?.data || {};
+      if (json.errors) {
+        setErrors(json.errors);
+        alert(
+          `Validation failed:\n\n${Object.entries(json.errors)
+            .map(([f, m]) => `• ${f}: ${Array.isArray(m) ? m[0] : m}`)
+            .join("\n")}`,
+        );
+      } else {
+        alert(json.message || `Error ${e.response?.status ?? "unknown"}`);
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
-  /* ── Change password ── */
+  /* ── Change password — uses axiosClient ── */
   async function handleChangePassword() {
     setPwErrors({});
     setPwSuccess("");
     setPwSubmitting(true);
+
     const errs = {};
     if (!pwForm.currentPassword)
       errs.currentPassword = "Current password is required.";
@@ -1804,35 +1763,25 @@ function AccountSetupModal({ showModal, onClose }) {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/doctor/change-password`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          current_password: pwForm.currentPassword,
-          password: pwForm.newPassword,
-          password_confirmation: pwForm.confirmPassword,
-        }),
+      await axiosClient.put("/doctor/change-password", {
+        current_password: pwForm.currentPassword,
+        password: pwForm.newPassword,
+        password_confirmation: pwForm.confirmPassword,
       });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        if (json.errors) setPwErrors(json.errors);
-        else
-          setPwErrors({
-            currentPassword: json.message || `Error ${res.status}`,
-          });
-        return;
-      }
+
       setPwSuccess(
         "Password changed successfully! You can now close this setup.",
       );
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setCompleted((p) => new Set([...p, step]));
     } catch (e) {
-      setPwErrors({ currentPassword: "Network error: " + e.message });
+      const json = e.response?.data || {};
+      if (json.errors) setPwErrors(json.errors);
+      else
+        setPwErrors({
+          currentPassword:
+            json.message || `Error ${e.response?.status ?? "unknown"}`,
+        });
     } finally {
       setPwSubmitting(false);
     }
@@ -2052,7 +2001,6 @@ function AccountSetupModal({ showModal, onClose }) {
           </div>
         );
 
-      /* ── SERVICES STEP — now uses ServicesDropdown fetching from API ── */
       case "services":
         return (
           <div className={styles.section}>
