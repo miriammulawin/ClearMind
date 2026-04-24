@@ -53,30 +53,29 @@ class AppointmentController extends Controller
          doctor_user_id  — required
          date            — required (YYYY-MM-DD)
     ══════════════════════════════════════════════ */
-   public function bookedSlots(Request $request): JsonResponse
-{
-    try {
-        if (!$request->doctor_user_id || !$request->date) {
-            return response()->json([
-                'error' => 'doctor_user_id and date are required'
-            ], 400);
-        }
+    public function bookedSlots(Request $request): JsonResponse
+    {
+        $request->validate([
+            'doctor_user_id' => ['required', 'integer', 'exists:users,id'],
+            'date'           => ['required', 'date'],
+        ]);
 
+        // Only confirmed appointments block the slot.
+        // pending / cancelled / no_show do NOT block.
         $slots = Appointment::where('doctor_user_id', $request->doctor_user_id)
             ->whereDate('appointment_date', $request->date)
             ->whereIn('status', ['confirmed', 'completed'])
-            ->get();
+            ->get(['appointment_id', 'start_time', 'end_time', 'status']);
 
         return response()->json([
-            'debug' => $slots
+            'data' => $slots->map(fn($s) => [
+                'appointment_id' => $s->appointment_id,
+                'start_time'     => substr($s->start_time, 0, 5), // HH:MM
+                'end_time'       => substr($s->end_time,   0, 5),
+                'status'         => $s->status,
+            ]),
         ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
     /* ══════════════════════════════════════════════
        POST /appointments
