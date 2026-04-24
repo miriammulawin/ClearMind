@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
-import { FiX, FiEye, FiEyeOff } from "react-icons/fi";
+import {
+  FiX,
+  FiEye,
+  FiEyeOff,
+  FiCheck,
+  FiAlertCircle,
+  FiLock,
+} from "react-icons/fi";
 import styles from "../DoctorStyle/Modal.module.css";
 import toast from "react-hot-toast";
+import axiosClient from "../../axiosClient"; // ✅ same as AccountSetupModal
 
-const API_BASE = "http://localhost:8000/api";
-
+// ... keep toastSuccess / toastError constants unchanged ...
 const toastSuccess = {
   duration: 1500,
   style: {
@@ -53,6 +60,8 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
     confirm: false,
   });
 
+  const [pwSubmitting, setPwSubmitting] = useState(false); // ✅ added
+
   useEffect(() => {
     if (doctorData && show) {
       setFormData({
@@ -65,10 +74,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
   }, [doctorData, show]);
 
   const toggleVisibility = (key) => {
-    setShowPasswords((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleChange = (field, value) => {
@@ -77,83 +83,104 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
 
   const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-  const isStrongPassword = (password) =>
-    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}|:"<>?\[\]\\;',./]).{6,}$/.test(
-      password,
-    );
+  // ✅ Same password validation as AccountSetupModal (PasswordStrength checks)
+  const password = formData.newPassword || "";
+  const checks = [
+    { label: "At least 8 characters", ok: password.length >= 8 },
+    { label: "Uppercase letter (A–Z)", ok: /[A-Z]/.test(password) },
+    { label: "Lowercase letter (a–z)", ok: /[a-z]/.test(password) },
+    { label: "Number (0–9)", ok: /\d/.test(password) },
+    { label: "Special character (!@#…)", ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = checks.filter((c) => c.ok).length;
+  const strengthColors = [
+    "#e2d5f5",
+    "#e53e3e",
+    "#f97316",
+    "#eab308",
+    "#22c55e",
+    "#15803d",
+  ];
+  const strengthLabels = ["", "Too weak", "Weak", "Fair", "Good", "Strong"];
 
+  // ✅ Matches handleChangePassword() in AccountSetupModal exactly
   const handleSave = async () => {
-    const token = localStorage.getItem("token");
+    if (!isValidEmail(formData.email)) {
+      return toast.error("Invalid email format", toastError);
+    }
+
+    // Email-only update (no password fields filled)
+    if (!formData.newPassword && !formData.currentPassword) {
+      try {
+        setPwSubmitting(true);
+        await axiosClient.put("/doctor/change-password", {
+          email: formData.email,
+        });
+        toast.success("Account updated successfully", toastSuccess);
+        window.dispatchEvent(new Event("doctorProfileUpdated"));
+        onSave?.();
+        onClose();
+      } catch (e) {
+        const json = e.response?.data || {};
+        toast.error(json.message || "Update failed", toastError);
+      } finally {
+        setPwSubmitting(false);
+      }
+      return;
+    }
+
+    // ✅ Same validation order as AccountSetupModal
+    if (!formData.currentPassword) {
+      return toast.error("Current password is required.", toastError);
+    }
+    if (!formData.newPassword) {
+      return toast.error("New password is required.", toastError);
+    }
+    if (formData.newPassword.length < 8) {
+      return toast.error("Password must be at least 8 characters.", toastError);
+    }
+    if (formData.newPassword !== formData.confirmPassword) {
+      return toast.error("Passwords do not match.", toastError);
+    }
 
     try {
-      if (!isValidEmail(formData.email)) {
-        return toast.error("Invalid email format", toastError);
-      }
+      setPwSubmitting(true);
 
-      const payload = {
-        email: formData.email,
-      };
-
-      if (formData.newPassword?.length > 0) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          return toast.error("Passwords do not match", toastError);
-        }
-
-        if (!formData.currentPassword) {
-          return toast.error("Current password required", toastError);
-        }
-
-        if (!isStrongPassword(formData.newPassword)) {
-          return toast.error(
-            "Password must contain 1 capital letter, 1 number, 1 special character, and 6+ characters",
-            toastError,
-          );
-        }
-
-        payload.current_password = formData.currentPassword;
-        payload.password = formData.newPassword;
-        payload.password_confirmation = formData.confirmPassword;
-      }
-
-      const res = await fetch(`${API_BASE}/doctor/account-security`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+      // ✅ Same endpoint + same payload field names as AccountSetupModal
+      await axiosClient.put("/doctor/change-password", {
+        current_password: formData.currentPassword,
+        password: formData.newPassword,
+        password_confirmation: formData.confirmPassword,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        return toast.error(data.message || "Update failed", toastError);
-      }
-
-      toast.success("Account updated successfully", toastSuccess);
-
+      toast.success("Password changed successfully!", toastSuccess);
       window.dispatchEvent(new Event("doctorProfileUpdated"));
-
-      onSave?.(data);
+      setFormData((p) => ({
+        ...p,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+      onSave?.();
       onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error", toastError);
+    } catch (e) {
+      const json = e.response?.data || {};
+      // ✅ Same error handling as AccountSetupModal
+      if (json.errors) {
+        const firstError = Object.values(json.errors)[0];
+        toast.error(
+          Array.isArray(firstError) ? firstError[0] : firstError,
+          toastError,
+        );
+      } else {
+        toast.error(
+          json.message || `Error ${e.response?.status ?? "unknown"}`,
+          toastError,
+        );
+      }
+    } finally {
+      setPwSubmitting(false);
     }
-  };
-
-  const password = formData.newPassword || "";
-
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasNumber = /[0-9]/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+{}|:"<>?\[\]\\;',./]/.test(password);
-  const hasMinLength = password.length >= 6;
-
-  const strength = {
-    hasUppercase,
-    hasNumber,
-    hasSpecialChar,
-    hasMinLength,
   };
 
   const renderPasswordField = (label, field, visKey) => (
@@ -203,6 +230,7 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
         </div>
 
         <div className={styles["modal-body"]}>
+          {/* Email */}
           <div className={styles["modal-section"]}>
             <h4>Account Details</h4>
             <input
@@ -213,63 +241,123 @@ function EditAccountSecurityModal({ show, onClose, doctorData, onSave }) {
             />
           </div>
 
+          {/* Password */}
           <div className={styles["modal-section"]}>
             <h4>Change Password</h4>
-
             {renderPasswordField(
               "Current Password",
               "currentPassword",
               "current",
             )}
+            <br></br>
             {renderPasswordField("New Password", "newPassword", "newPass")}
 
+            {/* ✅ Same strength meter as AccountSetupModal */}
             {formData.newPassword && (
-              <div style={{ fontSize: "11px", marginTop: "6px" }}>
-                <p
+              <div style={{ marginTop: "8px" }}>
+                <div
+                  style={{ display: "flex", gap: "4px", marginBottom: "6px" }}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <div
+                      key={n}
+                      style={{
+                        flex: 1,
+                        height: "4px",
+                        borderRadius: "2px",
+                        background:
+                          n <= score ? strengthColors[score] : "#e2d5f5",
+                        transition: "background .3s",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div
                   style={{
-                    color: strength.hasUppercase ? "#16a34a" : "#ef4444",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: strengthColors[score],
+                    marginBottom: "8px",
                   }}
                 >
-                  {strength.hasUppercase ? "✓" : "✗"} At least 1 uppercase
-                  letter
-                </p>
-
-                <p
-                  style={{ color: strength.hasNumber ? "#16a34a" : "#ef4444" }}
-                >
-                  {strength.hasNumber ? "✓" : "✗"} At least 1 number
-                </p>
-
-                <p
+                  {strengthLabels[score]}
+                </div>
+                <div
                   style={{
-                    color: strength.hasSpecialChar ? "#16a34a" : "#ef4444",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
                   }}
                 >
-                  {strength.hasSpecialChar ? "✓" : "✗"} At least 1 special
-                  character
-                </p>
-
-                <p
-                  style={{
-                    color: strength.hasMinLength ? "#16a34a" : "#ef4444",
-                  }}
-                >
-                  {strength.hasMinLength ? "✓" : "✗"} Minimum 6 characters
-                </p>
+                  {checks.map((c) => (
+                    <div
+                      key={c.label}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        fontSize: "11.5px",
+                        color: c.ok ? "#15803d" : "#aaa",
+                      }}
+                    >
+                      <FiCheck size={11} style={{ opacity: c.ok ? 1 : 0.3 }} />
+                      {c.label}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
+            <br></br>
             {renderPasswordField(
               "Confirm New Password",
               "confirmPassword",
               "confirm",
             )}
+
+            {/* ✅ Match indicator like AccountSetupModal */}
+            {formData.newPassword && formData.confirmPassword && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  marginTop: "6px",
+                  color:
+                    formData.newPassword === formData.confirmPassword
+                      ? "#15803d"
+                      : "#e53e3e",
+                }}
+              >
+                {formData.newPassword === formData.confirmPassword ? (
+                  <>
+                    <FiCheck size={12} /> Passwords match
+                  </>
+                ) : (
+                  <>
+                    <FiAlertCircle size={12} /> Passwords do not match
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         <div className={styles["modal-footer"]}>
-          <button className={styles["btn-completed"]} onClick={handleSave}>
-            Save Changes
+          <button
+            className={styles["btn-completed"]}
+            onClick={handleSave}
+            disabled={pwSubmitting}
+          >
+            {pwSubmitting ? (
+              "Saving…"
+            ) : (
+              <>
+                <FiLock size={13} style={{ marginRight: 6 }} />
+                Save Changes
+              </>
+            )}
           </button>
         </div>
       </div>
