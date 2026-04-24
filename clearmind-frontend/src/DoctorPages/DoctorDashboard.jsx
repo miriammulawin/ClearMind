@@ -87,7 +87,8 @@ function DoctorDashboard() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
   const [today, setToday] = useState(new Date());
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
-  const [showSetupModal, setShowSetupModal] = useState(true);
+  // Change initial state to false — don't show until we check
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   /* ── Announcements ── */
   const [announcements, setAnnouncements] = useState([]);
@@ -195,11 +196,26 @@ function DoctorDashboard() {
     setCurrentWeekStart(startOfWeek);
   }, []);
 
+  /* Check profile_completed — only show modal if NOT yet done */
   useEffect(() => {
-    setShowSetupModal(true);
+    const checkProfile = async () => {
+      try {
+        const { data } = await axiosClient.get("/doctor/profile");
+        const isCompleted = !!data?.data?.profile_completed;
+        setShowSetupModal(!isCompleted); // ✅ only show if not yet complete
+      } catch (err) {
+        console.error("checkProfile:", err);
+        setShowSetupModal(false); // fail safe — don't block the doctor
+      }
+    };
+    checkProfile();
   }, []);
 
-  const closeModal = () => setShowSetupModal(false);
+  const closeModal = async () => {
+    setShowSetupModal(false);
+    // Re-fetch appointments to reflect any profile changes
+    fetchAppointments();
+  };
 
   /* ══════════════════════════════════════════════
      DERIVED DATA
