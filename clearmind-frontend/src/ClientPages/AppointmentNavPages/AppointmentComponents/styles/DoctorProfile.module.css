@@ -120,8 +120,9 @@
    DIVIDER
 ───────────────────────────────────────── */
 .divider {
-  border-top: 4px solid #c1a3c8;
-  margin: 0px;
+  border-top: 2px solid #c1a3c8;
+  /* margin: 0px; */
+  margin-bottom: 1rem;
 }
 
 /* ─────────────────────────────────────────

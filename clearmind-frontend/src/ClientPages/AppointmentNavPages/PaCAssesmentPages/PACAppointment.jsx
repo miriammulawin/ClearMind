@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { flushSync } from "react-dom";
 import { Container, Button } from "react-bootstrap";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 
-import axiosClient from "../../../axiosClient"; // adjust path as needed
+import axiosClient from "../../../axiosClient";
 import DoctorCard from "../AppointmentComponents/DoctorCard.jsx";
 import DoctorProfile from "../AppointmentComponents/DoctorProfile.jsx";
 import ServiceAlert from "../AppointmentComponents/ServiceAlert.jsx";
@@ -12,24 +12,15 @@ import styles from "./style/PACSetAppointment.module.css";
 
 const STORAGE_BASE = "http://localhost:8000/storage/";
 
-// ── Specialist Info ───────────────────────────────────────────────────────────
 const SPECIALIST_INFO = {
-  Psychologist: {
-    label: "PSYCHOLOGIST",
-    role: "Psychologist",
-  },
-  Psychiatrist: {
-    label: "PSYCHIATRIST",
-    role: "Psychiatrist",
-  },
+  Psychologist: { label: "PSYCHOLOGIST", role: "Psychologist" },
+  Psychiatrist: { label: "PSYCHIATRIST", role: "Psychiatrist" },
 };
 
-// ── Normalize raw API doctor entry into a flat shape DoctorCard expects ───────
 const normalizeDoctor = (raw) => {
   const d = raw.doctor || {};
   return {
-    // identity
-    id: raw.id, // user id — used as the key
+    id: raw.id,
     doctor_id: raw.doctor_id,
     name: `${raw.firstName ?? ""} ${raw.lastName ?? ""}`.trim(),
     firstName: raw.firstName,
@@ -38,8 +29,6 @@ const normalizeDoctor = (raw) => {
     email: raw.email,
     contactNo: raw.contactNo,
     is_active: raw.is_active,
-
-    // profile
     title: d.professional_title ?? "",
     professional_title: d.professional_title ?? "",
     description: d.description ?? "",
@@ -47,15 +36,11 @@ const normalizeDoctor = (raw) => {
       ? STORAGE_BASE + d.profile_picture
       : null,
     profile_completed: raw.profile_completed,
-
-    // practice
     years_of_experience: d.years_of_experience,
     practicing_since: d.practicing_since,
     main_specialty: d.main_specialty ?? raw.specialization ?? "",
     license_number: d.license_number ?? raw.license_number ?? "",
     prc_number: d.prc_number ?? "",
-
-    // arrays
     specializations: d.specializations ?? [],
     sub_specializations: d.sub_specializations ?? [],
     board_cert_names: d.board_cert_names ?? [],
@@ -76,6 +61,13 @@ const PACAppointment = () => {
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [doctorsError, setDoctorsError] = useState(null);
 
+  // ── Schedule state ─────────────────────────────────────────────────────────
+  // Map of doctor_id → raw schedule array (null = not fetched yet)
+  const [doctorSchedules, setDoctorSchedules] = useState({});
+  // Schedule for the currently selected doctor's profile panel
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [selectedScheduleLoading, setSelectedScheduleLoading] = useState(false);
+
   // ── UI state ───────────────────────────────────────────────────────────────
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -84,7 +76,7 @@ const PACAppointment = () => {
   const [showSpecialistModal, setShowSpecialistModal] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
-  // ── Fetch from /admin/doctors ──────────────────────────────────────────────
+  // ── 1. Fetch doctors ───────────────────────────────────────────────────────
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -105,6 +97,50 @@ const PACAppointment = () => {
     fetchDoctors();
   }, []);
 
+  // ── 2. Once doctors load, fetch ALL their schedules in parallel ────────────
+  useEffect(() => {
+    if (doctors.length === 0) return;
+
+    const fetchAllSchedules = async () => {
+      const results = await Promise.allSettled(
+        doctors.map((d) =>
+          axiosClient.get(`/doctors/${d.doctor_id}/schedules`).then((res) => ({
+            doctor_id: d.doctor_id,
+            schedule: res.data?.data?.schedule ?? [],
+          })),
+        ),
+      );
+
+      const map = {};
+      results.forEach((r) => {
+        if (r.status === "fulfilled") {
+          map[r.value.doctor_id] = r.value.schedule;
+        }
+      });
+      setDoctorSchedules(map);
+    };
+
+    fetchAllSchedules();
+  }, [doctors]);
+
+  // ── 3. Fetch schedule for selected doctor (for the profile panel) ──────────
+  const fetchSelectedSchedule = async (doctor) => {
+    if (!doctor?.doctor_id) return;
+    try {
+      setSelectedScheduleLoading(true);
+      setSelectedSchedule(null);
+      const res = await axiosClient.get(
+        `/doctors/${doctor.doctor_id}/schedules`,
+      );
+      setSelectedSchedule(res.data?.data?.schedule ?? []);
+    } catch (err) {
+      console.error("Failed to fetch doctor schedule:", err);
+      setSelectedSchedule([]);
+    } finally {
+      setSelectedScheduleLoading(false);
+    }
+  };
+
   // ── Resize listener ────────────────────────────────────────────────────────
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 768);
@@ -114,9 +150,11 @@ const PACAppointment = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleViewProfile = (doctorId) => {
+    const doctor = doctors.find((d) => d.id === doctorId);
     setSelectedDoctor(doctorId);
     setSelectedDate(null);
     setSelectedTime(null);
+    fetchSelectedSchedule(doctor); // ← fetch this doctor's schedule
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -134,7 +172,7 @@ const PACAppointment = () => {
     const doctor = doctors.find((d) => d.id === selectedDoctor);
     if (doctor && selectedDate && selectedTime) {
       alert(
-        `Appointment Confirmed!\n\nDoctor: ${doctor.name}\nDate: ${selectedDate.date}\nTime: ${selectedTime}\n\nThis will be connected to backend soon.`,
+        `Appointment Confirmed!\n\nDoctor: ${doctor.name}\nDate: ${selectedDate.date}\nTime: ${selectedTime}`,
       );
       setSelectedDoctor(null);
       setSelectedDate(null);
@@ -147,18 +185,14 @@ const PACAppointment = () => {
       setSelectedDoctor(null);
       setSelectedDate(null);
       setSelectedTime(null);
+      setSelectedSchedule(null); // ← clear profile schedule on back
     });
   };
 
-  // ── Filter by specializations array (the nested field) ────────────────────
+  // ── Filter doctors ─────────────────────────────────────────────────────────
   const filteredDoctors = doctors.filter((d) => {
-    // Only show active doctors with a completed profile
     if (!d.is_active || !d.profile_completed) return false;
-
-    // If no specialist tab is active, show all
     if (!activeSpecialist) return true;
-
-    // Match against the specializations array from the nested doctor object
     return d.specializations.some((spec) =>
       spec.toLowerCase().includes(activeSpecialist.toLowerCase()),
     );
@@ -186,7 +220,6 @@ const PACAppointment = () => {
                 ✕
               </button>
             </div>
-
             <div className={styles.modalBody}>
               <div className={styles.modalCard}>
                 <p className={styles.modalCardTitle}>🧠 Psychologist</p>
@@ -196,9 +229,7 @@ const PACAppointment = () => {
                   help through therapy and assessments — no medication involved.
                 </p>
               </div>
-
               <div className={styles.modalDivider} />
-
               <div className={styles.modalCard}>
                 <p className={styles.modalCardTitle}>🩺 Psychiatrist</p>
                 <p className={styles.modalCardDesc}>
@@ -208,13 +239,11 @@ const PACAppointment = () => {
                   complex conditions.
                 </p>
               </div>
-
               <div className={styles.modalTip}>
                 💡 <strong>Not sure?</strong> Start with a Psychologist — they
                 can refer you to a Psychiatrist if needed.
               </div>
             </div>
-
             <button
               className={styles.modalConfirmBtn}
               onClick={() => setShowSpecialistModal(false)}
@@ -256,7 +285,6 @@ const PACAppointment = () => {
           <div style={{ marginBottom: "14px", marginTop: "4px" }}>
             <div className={styles.specialistToggle}>
               {Object.keys(SPECIALIST_INFO).map((key) => {
-                // Count how many doctors match this tab
                 const count = doctors.filter(
                   (d) =>
                     d.is_active &&
@@ -269,17 +297,12 @@ const PACAppointment = () => {
                 return (
                   <button
                     key={key}
-                    className={`${styles.specialistToggleBtn} ${
-                      activeSpecialist === key
-                        ? styles.specialistToggleActive
-                        : ""
-                    }`}
+                    className={`${styles.specialistToggleBtn} ${activeSpecialist === key ? styles.specialistToggleActive : ""}`}
                     onClick={() =>
                       setActiveSpecialist((prev) => (prev === key ? null : key))
                     }
                   >
                     {SPECIALIST_INFO[key].label}
-                    {/* Badge showing available doctor count */}
                     {!loadingDoctors && (
                       <span
                         style={{
@@ -306,9 +329,7 @@ const PACAppointment = () => {
 
           {/* ── Doctor list ── */}
           <div
-            className={`${styles.doctorsList} ${
-              selectedDoctor ? styles.doctorsListHidden : ""
-            }`}
+            className={`${styles.doctorsList} ${selectedDoctor ? styles.doctorsListHidden : ""}`}
           >
             {loadingDoctors ? (
               <p className={styles.noDoctorsMsg}>Loading doctors…</p>
@@ -325,6 +346,8 @@ const PACAppointment = () => {
                 <DoctorCard
                   key={doctor.id}
                   doctor={doctor}
+                  // ← pass this doctor's schedule (null while loading, array once fetched)
+                  schedule={doctorSchedules[doctor.doctor_id] ?? null}
                   isSelected={selectedDoctor === doctor.id}
                   compact={
                     isDesktop &&
@@ -342,9 +365,7 @@ const PACAppointment = () => {
 
         {/* RIGHT column */}
         <div
-          className={`${styles.profilePanel} ${
-            selectedDoctor ? styles.profilePanelActive : ""
-          }`}
+          className={`${styles.profilePanel} ${selectedDoctor ? styles.profilePanelActive : ""}`}
         >
           {selectedDoctor && doctorData ? (
             <>
@@ -362,6 +383,8 @@ const PACAppointment = () => {
               )}
               <DoctorProfile
                 doctorData={doctorData}
+                schedule={selectedSchedule} // ← real schedule data
+                scheduleLoading={selectedScheduleLoading} // ← loading flag
                 selectedDate={selectedDate}
                 selectedTime={selectedTime}
                 onSelectDate={setSelectedDate}

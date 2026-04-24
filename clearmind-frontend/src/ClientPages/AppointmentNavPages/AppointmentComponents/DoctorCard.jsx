@@ -1,6 +1,5 @@
-// DoctorCard.jsx
-import React from "react";
-import { Card, Button } from "react-bootstrap";
+import React, { useMemo } from "react";
+import { Card } from "react-bootstrap";
 import {
   FaVideo,
   FaClinicMedical,
@@ -9,28 +8,91 @@ import {
 } from "react-icons/fa";
 import styles from "./styles/DoctorCard.module.css";
 
-const getConsultationIcon = (mode) =>
-  mode === "Virtual" ? (
-    <FaVideo className={styles.consultationIcon} />
-  ) : (
-    <FaClinicMedical className={styles.consultationIcon} />
-  );
-
-const formatScheduleDays = (days) => {
-  if (!days || days.length === 0) return "";
-  if (days.length === 1) return days[0];
-  if (days.length === 2) return days.join(" & ");
-  return `${days.slice(0, -1).join(", ")} & ${days[days.length - 1]}`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const DAY_NUM_TO_NAME = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
 };
 
+const DAY_ORDER = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const formatTime = (time) => {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":");
+  const hour = parseInt(hours, 10);
+  return `${hour % 12 || 12}:${minutes} ${hour >= 12 ? "PM" : "AM"}`;
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
 const DoctorCard = ({
   doctor,
+  schedule, // ← NEW: raw array from API or null
   isSelected,
-  compact, // true only on DESKTOP when ANOTHER doctor is selected
+  compact,
   onViewProfile,
   onSetAppointment,
-  onSelect, // desktop-only radio select
+  onSelect,
 }) => {
+  // Build sorted schedule entries from the raw API array
+  const scheduleEntries = useMemo(() => {
+    if (!schedule || schedule.length === 0) return [];
+    return schedule
+      .map((s) => ({
+        day: DAY_NUM_TO_NAME[s.day_num],
+        startTime: s.start_time?.slice(0, 5),
+        endTime: s.end_time?.slice(0, 5),
+        slotType: s.slot_type,
+      }))
+      .filter((s) => s.day)
+      .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day));
+  }, [schedule]);
+
+  const earliest = scheduleEntries[0] ?? null;
+
+  // Slot type icon + label
+  const SlotBadge = ({ type }) => {
+    const map = {
+      online: {
+        icon: <FaVideo className={styles.consultationIcon} />,
+        label: "Online",
+      },
+      physical: {
+        icon: <FaClinicMedical className={styles.consultationIcon} />,
+        label: "Physical",
+      },
+      both: {
+        icon: (
+          <>
+            <FaVideo className={styles.consultationIcon} />
+            <FaClinicMedical className={styles.consultationIcon} />
+          </>
+        ),
+        label: "Online & Physical",
+      },
+    };
+    const item = map[type];
+    if (!item) return null;
+    return (
+      <div className={styles.availabilityItem}>
+        {item.icon}
+        <span>{item.label}</span>
+      </div>
+    );
+  };
+
   return (
     <Card
       className={`
@@ -44,35 +106,37 @@ const DoctorCard = ({
       <Card.Body className={styles.cardBody}>
         {/* ── Header row (always visible) ── */}
         <div className={styles.doctorHeader}>
-          {/* Radio only on desktop sidebar */}
           {compact && onSelect && (
             <div
-              className={`${styles.radioIndicator} ${
-                isSelected ? styles.radioSelected : styles.radioUnselected
-              }`}
+              className={`${styles.radioIndicator} ${isSelected ? styles.radioSelected : styles.radioUnselected}`}
             />
           )}
 
           {/* Avatar / Photo */}
           <div className={styles.doctorAvatar}>
-            {doctor.photo ? (
+            {doctor.profile_picture ? (
               <img
-                src={doctor.photo}
+                src={doctor.profile_picture}
                 alt={doctor.name}
                 className={styles.avatarImg}
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  flexShrink: 0,
+                }}
               />
             ) : (
               <FaUserCircle className={styles.avatarIcon} />
             )}
           </div>
 
-          {/* Name + Title */}
           <div className={styles.doctorInfo}>
             <h6 className={styles.doctorName}>{doctor.name}</h6>
             <p className={styles.doctorCredentials}>{doctor.title}</p>
           </div>
 
-          {/* Compact mode: View Profile button on the right */}
           {compact && (
             <button
               className={styles.btnViewProfile}
@@ -90,55 +154,86 @@ const DoctorCard = ({
         {/* ── Full details: only when NOT compact ── */}
         {!compact && (
           <>
-            {/* Consultation Availability */}
+            {/* ── Consultation Availability ── */}
             <div className={styles.consultationAvailability}>
               <p className={styles.availabilityLabel}>
                 Consultation Availability
               </p>
-              <div className={styles.availabilityDetails}>
-                {doctor.consultationMode && (
-                  <div className={styles.availabilityItem}>
-                    {getConsultationIcon(doctor.consultationMode)}
-                    <span>
-                      {doctor.consultationType || doctor.consultationMode}
-                    </span>
-                  </div>
-                )}
 
-                {doctor.schedule?.days && (
+              {schedule === null ? (
+                // Still loading
+                <p className={styles.scheduleTime} style={{ color: "#9e84c2" }}>
+                  Loading availability…
+                </p>
+              ) : scheduleEntries.length === 0 ? (
+                // Loaded but empty
+                <p className={styles.scheduleTime} style={{ color: "#aaa" }}>
+                  No availability set
+                </p>
+              ) : (
+                <div className={styles.availabilityDetails}>
+                  {/* Day pills */}
                   <div className={styles.availabilityItem}>
                     <FaCalendarCheck className={styles.iconSmall} />
-                    <span>{formatScheduleDays(doctor.schedule.days)}</span>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {scheduleEntries.map((entry) => (
+                        <span
+                          key={entry.day}
+                          style={{
+                            background: "#ede7f6",
+                            color: "#4D227C",
+                            borderRadius: 20,
+                            padding: "2px 8px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {entry.day.slice(0, 3)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Unique slot types across all days */}
+                  {[...new Set(scheduleEntries.map((e) => e.slotType))].map(
+                    (type) => (
+                      <SlotBadge key={type} type={type} />
+                    ),
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Earliest Available Schedule */}
+            {/* ── Earliest Available Schedule ── */}
             <div className={styles.earliestSchedule}>
               <p className={styles.scheduleLabel}>
                 Earliest Available Schedule
               </p>
-              <div className={styles.scheduleInfo}>
-                {doctor.schedule?.days && (
+
+              {schedule === null ? (
+                <p className={styles.scheduleTime} style={{ color: "#9e84c2" }}>
+                  Loading…
+                </p>
+              ) : earliest ? (
+                <div className={styles.scheduleInfo}>
                   <div className={styles.scheduleItem}>
                     <FaCalendarCheck className={styles.iconSmall} />
-                    <span>{formatScheduleDays(doctor.schedule.days)}</span>
+                    <span style={{ fontWeight: 600 }}>{earliest.day}</span>
                   </div>
-                )}
-
-                {doctor.schedule?.time && (
-                  <p className={styles.scheduleTime}>{doctor.schedule.time}</p>
-                )}
-
-                {doctor.consultationFees?.initialConsultation && (
-                  <p className={styles.scheduleFee}>
-                    Fee: ₱
-                    {doctor.consultationFees.initialConsultation.toLocaleString()}
+                  <p className={styles.scheduleTime}>
+                    {formatTime(earliest.startTime)} –{" "}
+                    {formatTime(earliest.endTime)}
                   </p>
-                )}
-              </div>
+                  <SlotBadge type={earliest.slotType} />
+                </div>
+              ) : (
+                <p className={styles.scheduleTime} style={{ color: "#aaa" }}>
+                  —
+                </p>
+              )}
             </div>
+
+            {/* ── Action buttons ── */}
             <div className={styles.cardActions}>
               <button
                 className={styles.btnViewProfile}
