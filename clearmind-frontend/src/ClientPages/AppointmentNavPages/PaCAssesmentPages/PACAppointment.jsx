@@ -11,18 +11,117 @@ import ServiceAlert from "../AppointmentComponents/ServiceAlert.jsx";
 import styles from "./style/PACSetAppointment.module.css";
 
 const SPECIALIST_INFO = {
-  Psychologist: { label: "PSYCHOLOGIST", role: "psychologist" },
-  Psychiatrist: { label: "PSYCHIATRIST", role: "psychiatrist" },
+  Psychologist: {
+    label: "PSYCHOLOGIST",
+    // exact strings to match against (lowercase)
+    match: ["psychologist", "psychology", "clinical psychology"],
+  },
+  Psychiatrist: {
+    label: "PSYCHIATRIST",
+    match: ["psychiatrist", "psychiatry", "clinical psychiatry"],
+  },
+};
+// ── Backend → DoctorCard shape ────────────────────────────────────
+const DAY_NUM_TO_NAME = {
+  0: "Sunday",
+  1: "Monday",
+  2: "Tuesday",
+  3: "Wednesday",
+  4: "Thursday",
+  5: "Friday",
+  6: "Saturday",
 };
 
-// ── Backend → DoctorCard shape ────────────────────────────────────
-const mapDoctor = (d) => ({
-  id: d.doctor_id,
-  name: `${d.firstName}${d.middleInitial ? " " + d.middleInitial + "." : ""} ${d.lastName}`,
-  title: d.professional_title || d.specialization || "",
-  sex: d.sex,
-  photo: d.doctor?.profile_photo_url || null,
-});
+const formatTime = (time) => {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":");
+  const hour = parseInt(hours, 10);
+  return `${hour % 12 || 12}:${minutes} ${hour >= 12 ? "PM" : "AM"}`;
+};
+
+const mapDoctor = (d) => {
+  const schedules = Array.isArray(d.schedules) ? d.schedules : [];
+
+  const DAY_ORDER_NUM = [1, 2, 3, 4, 5, 6, 0]; // Mon→Sun
+
+  // ── Find earliest UPCOMING available day ──
+  const today = new Date();
+  const todayNum = today.getDay(); // 0=Sun, 1=Mon...
+
+  // Get all scheduled day_nums
+  const scheduledDayNums = schedules.map((s) => s.day_num);
+
+  // Find next available day starting from TOMORROW
+  let earliestSchedule = null;
+  for (let i = 1; i <= 7; i++) {
+    const checkDay = (todayNum + i) % 7;
+    const found = schedules.find((s) => s.day_num === checkDay);
+    if (found) {
+      earliestSchedule = found;
+      break;
+    }
+  }
+
+  const hasOnline = schedules.some(
+    (s) => s.slot_type === "online" || s.slot_type === "both",
+  );
+  const hasPhysical = schedules.some(
+    (s) => s.slot_type === "physical" || s.slot_type === "both",
+  );
+
+  const consultationMode =
+    hasOnline && hasPhysical ? "Both" : hasOnline ? "Virtual" : "Onsite";
+
+  const consultationType =
+    hasOnline && hasPhysical
+      ? "Online & On-site"
+      : hasOnline
+        ? "Virtual Consultation"
+        : "On-site Consultation";
+
+  // All available days sorted Mon→Sun for Consultation Availability display
+  const sorted = [...schedules].sort(
+    (a, b) =>
+      DAY_ORDER_NUM.indexOf(a.day_num) - DAY_ORDER_NUM.indexOf(b.day_num),
+  );
+
+  return {
+    ...d,
+    id: d.doctor_id,
+    name: `${d.firstName}${d.middleInitial ? " " + d.middleInitial + "." : ""} ${d.lastName}`,
+    title: d.professional_title || d.doctor?.professional_title || "",
+    photo: d.doctor?.profile_picture
+      ? `http://localhost:8000/storage/${d.doctor.profile_picture}`
+      : null,
+    profile_picture: d.doctor?.profile_picture
+      ? `http://localhost:8000/storage/${d.doctor.profile_picture}`
+      : null,
+    professional_title:
+      d.professional_title || d.doctor?.professional_title || "",
+    main_specialty: d.doctor?.main_specialty || "",
+    description: d.doctor?.description || "",
+    license_number: d.license_number || d.doctor?.license_number || "",
+    prc_number: d.doctor?.prc_number || "",
+    practicing_since: d.doctor?.practicing_since || "",
+    years_of_experience: d.doctor?.years_of_experience || null,
+    specializations: d.doctor?.specializations || d.specializations || [],
+    sub_specializations: d.doctor?.sub_specializations || [],
+    services: d.doctor?.services || [],
+    board_cert_names: d.doctor?.board_cert_names || [],
+    consultationMode,
+    consultationType,
+    schedule: {
+      days: sorted.map((s) => s.day), // all days — para sa Consultation Availability
+      time: earliestSchedule
+        ? `${formatTime(earliestSchedule.start_time)} - ${formatTime(earliestSchedule.end_time)}`
+        : null,
+      earliest: earliestSchedule?.day || null, // ← iisa lang na araw
+    },
+    consultationFees: {
+      initialConsultation: d.doctor?.initial_consultation_fee || null,
+    },
+  };
+};
 
 // ── Component ─────────────────────────────────────────────────────
 const PACAppointment = () => {
@@ -38,7 +137,10 @@ const PACAppointment = () => {
   useEffect(() => {
     axiosClient
       .get("/doctors/list")
-      .then(({ data }) => setDoctors(data.data || []))
+      .then(({ data }) => {
+        console.log("FIRST DOCTOR schedules:", data.data?.[0]?.schedules);
+        setDoctors(data.data || []);
+      })
       .catch(() => setError("Failed to load doctors."))
       .finally(() => setLoading(false));
   }, []);
@@ -60,10 +162,18 @@ const PACAppointment = () => {
   // ── Filter by specialist toggle ───────────────────────────────
   const filteredDoctors = doctors.filter((d) => {
     if (!activeSpecialist) return true;
-    const role = SPECIALIST_INFO[activeSpecialist].role;
-    const title = (d.professional_title || "").toLowerCase();
-    const spec = (d.specialization || "").toLowerCase();
-    return title.includes(role) || spec.includes(role);
+
+    const { match } = SPECIALIST_INFO[activeSpecialist];
+
+    // Use specializations array first, fallback to main_specialty
+    const specs = Array.isArray(d.specializations)
+      ? d.specializations.map((s) => s.toLowerCase().trim())
+      : (d.specialization || "")
+          .toLowerCase()
+          .split(",")
+          .map((s) => s.trim());
+
+    return match.some((keyword) => specs.includes(keyword));
   });
 
   // mapped version of the selected doctor (for DoctorProfile)
@@ -75,11 +185,21 @@ const PACAppointment = () => {
     : null;
 
   // ── Handlers ─────────────────────────────────────────────────
-  const handleViewProfile = (doctorId) => {
+  const handleDoctorSelect = (doctorId) => {
     setSelectedDoctor(doctorId);
-    setSelectedDate(null);
-    setSelectedTime(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleViewProfile = (doctorId) => {
+    if (isDesktop) {
+      // Desktop/Tablet: Just select (collapsible)
+      handleDoctorSelect(doctorId);
+    } else {
+      // Mobile: Full profile view
+      setSelectedDoctor(doctorId);
+      setSelectedDate(null);
+      setSelectedTime(null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleSetAppointment = (doctorId) => {
@@ -183,9 +303,7 @@ const PACAppointment = () => {
                 <button
                   key={key}
                   className={`${styles.specialistToggleBtn} ${activeSpecialist === key ? styles.specialistToggleActive : ""}`}
-                  onClick={() =>
-                    setActiveSpecialist((prev) => (prev === key ? null : key))
-                  }
+                  onClick={() => setActiveSpecialist(key)}
                 >
                   {SPECIALIST_INFO[key].label}
                 </button>
@@ -211,16 +329,15 @@ const PACAppointment = () => {
               filteredDoctors.map((d) => (
                 <DoctorCard
                   key={d.doctor_id}
-                  doctor={mapDoctor(d)} // ← mapped shape
+                  doctor={mapDoctor(d)}
                   isSelected={selectedDoctor === d.doctor_id}
                   compact={
-                    isDesktop &&
-                    selectedDoctor !== null &&
-                    selectedDoctor !== d.doctor_id
+                    selectedDoctor !== null && selectedDoctor !== d.doctor_id // Always compact OTHER doctors
                   }
+                  onSelect={isDesktop ? handleDoctorSelect : null} //
                   onViewProfile={handleViewProfile}
                   onSetAppointment={handleSetAppointment}
-                  onSelect={isDesktop ? (id) => setSelectedDoctor(id) : null}
+                  hideViewProfileBtn={!isDesktop} //
                 />
               ))}
           </div>
