@@ -25,6 +25,7 @@ function Login() {
   const [error, setError] = useState("");
   const [showTerms, setShowTerms] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const showError = (message) => {
     setError(message);
@@ -52,11 +53,12 @@ function Login() {
     }
 
     try {
+      setLoading(true); // 🔥 START LOADING
+
       const response = await axiosClient.post("/login", { email, password });
       const data = response.data;
 
       if (data.success) {
-        // Save to localStorage
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("role", data.data.role);
         localStorage.setItem("user", JSON.stringify(data.data.user));
@@ -99,6 +101,8 @@ function Login() {
       } else {
         showError("Server error. Please try again later.");
       }
+    } finally {
+      setLoading(false); // 🔥 STOP LOADING
     }
   };
 
@@ -238,9 +242,20 @@ function Login() {
                   <Button
                     variant="primary"
                     type="submit"
-                    className="login-button w-100"
+                    className="login-button w-100 d-flex align-items-center justify-content-center"
+                    disabled={loading}
                   >
-                    LOG IN
+                    {loading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                        ></span>
+                        Logging in...
+                      </>
+                    ) : (
+                      "LOG IN"
+                    )}
                   </Button>
 
                   <p className="register-text text-center mb-0">
