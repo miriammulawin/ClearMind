@@ -35,9 +35,7 @@ const RequiredNotice = () => (
   </div>
 );
 
-// ─── Pre-loaded Profile Card ───────────────────────────────────────────────────
 const PreloadedProfile = ({ user }) => {
-  // Guard: user not yet loaded
   if (!user) {
     return (
       <div className={styles.profileCard}>
@@ -54,42 +52,63 @@ const PreloadedProfile = ({ user }) => {
     );
   }
 
-  // useCurrentUser returns: sex as string e.g. "Male" / "Female"
-  const GenderIcon = user.sex === "Male" ? BsGenderMale : BsGenderFemale;
+  // ✅ Build full name (same as ProfilePage)
+  const fullName = [user.firstName, user.middleInitial, user.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  // ✅ Compute age from dob
+  const computeAge = (dob) => {
+    if (!dob) return "";
+    const today = new Date();
+    const birth = new Date(dob);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+
+  const age = computeAge(user.dob);
+
+  // ✅ initials
+  const initials =
+    user.firstName?.[0]?.toUpperCase() + user.lastName?.[0]?.toUpperCase();
+
+  const GenderIcon =
+    user.sex === "male"
+      ? BsGenderMale
+      : user.sex === "female"
+        ? BsGenderFemale
+        : FaVenusMars;
 
   return (
     <div className={styles.profileCard}>
       {/* Avatar */}
-      {user.profilePic ? (
+      {user.profilePicture ? (
         <img
-          src={user.profilePic}
-          alt={user.fullName}
+          src={user.profilePicture}
+          alt={fullName}
           className={styles.avatar}
           style={{ objectFit: "cover", borderRadius: "50%" }}
         />
       ) : (
-        <div className={styles.avatar}>{user.initials}</div>
+        <div className={styles.avatar}>{initials || "?"}</div>
       )}
 
-      {/* Info */}
       <div className={styles.profileInfo}>
-        <span className={styles.preloadedBadge}>
-          <BsPersonCheckFill /> Pre-loaded from your account
-        </span>
+        
 
-        {/* Full name */}
-        <div className={styles.profileName}>{user.fullName}</div>
+        <div className={styles.profileName}>{fullName || "—"}</div>
 
-        {/* 2-col grid */}
         <div className={styles.metaGrid}>
           <div className={styles.metaRow}>
             <BsCalendar2CheckFill className={styles.metaIcon} />
-            <span>{user.age} yrs old</span>
+            <span>{age ? `${age} yrs old` : "—"}</span>
           </div>
 
           <div className={styles.metaRow}>
             <GenderIcon className={styles.metaIcon} />
-            <span>{user.sex}</span>
+            <span>{user.sex || "—"}</span>
           </div>
 
           {user.genderIdentity && (
@@ -99,31 +118,31 @@ const PreloadedProfile = ({ user }) => {
             </div>
           )}
 
-          {user.preferredPronouns && (
+          {user.displayPronoun && (
             <div className={styles.metaRow}>
               <BsPersonCheckFill className={styles.metaIcon} />
-              <span>{user.preferredPronouns}</span>
+              <span>{user.displayPronoun}</span>
             </div>
           )}
+
           <div className={styles.metaRow}>
             <BsPersonCheckFill className={styles.metaIcon} />
-            <span>{user.civilStatus}</span>
+            <span>{user.civilStatus || "—"}</span>
           </div>
 
           <div className={styles.metaRow}>
             <BsTelephoneFill className={styles.metaIcon} />
-            <span>{user.contactNo}</span>
+            <span>{user.contactNo || "—"}</span>
           </div>
 
           <div className={styles.metaRow}>
             <BsEnvelopeFill className={styles.metaIcon} />
-            <span>{user.email}</span>
+            <span>{user.email || "—"}</span>
           </div>
 
-          {/* Address — full width */}
           <div className={`${styles.metaRow} ${styles.metaFull}`}>
             <BsGeoAltFill className={styles.metaIcon} />
-            <span>{user.homeAddress}</span>
+            <span>{user.address || "—"}</span>
           </div>
         </div>
       </div>
