@@ -1,79 +1,59 @@
-// hooks/useCurrentUser.js
-//
-// PURPOSE: Single source of truth for the logged-in user's profile.
-//
-// HOW TO SWAP TO A REAL BACKEND:
-//   1. Remove the mockUser import below.
-//   2. Replace the body of useCurrentUser() with a real data-fetching call,
-//      e.g. React Query, SWR, useEffect + fetch, or your auth context:
-//
-//      import { useContext } from 'react';
-//      import { AuthContext } from '../context/AuthContext';
-//      export function useCurrentUser() { return useContext(AuthContext).user; }
-//
-//   3. Make sure the returned object keeps the same field names so every
-//      consumer (PAaESetAppointmentForm, etc.) works without any changes.
-//
-// RETURNED SHAPE:
-//   {
-//     id, firstName, middleName, lastName, fullName, initials,
-//     dateOfBirth, age, sex, genderIdentity, preferredPronouns,
-//     contactNo, email, homeAddress, profilePic
-//   }
+import { useEffect, useState } from "react";
+import axiosClient from "../axiosClient";
 
-import { useMemo } from "react";
-import { mockUser } from "../MockData/MockUser"; // ← only this line changes when going live
+export const useCurrentUser = () => {
+  const [user, setUser] = useState(null);
 
-function computeAge(dateOfBirth) {
-  if (!dateOfBirth) return null;
-  const today = new Date();
-  const dob = new Date(dateOfBirth);
-  let age = today.getFullYear() - dob.getFullYear();
-  const hasHadBirthdayThisYear =
-    today.getMonth() > dob.getMonth() ||
-    (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
-  if (!hasHadBirthdayThisYear) age -= 1;
-  return age;
-}
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axiosClient.get("/me");
+        const u = res.data.data;
 
-function computeInitials(firstName, lastName) {
-  const f = (firstName || "").charAt(0).toUpperCase();
-  const l = (lastName || "").charAt(0).toUpperCase();
-  return `${f}${l}` || "??";
-}
+        // ✅ NORMALIZE HERE (IMPORTANT FIX)
+        setUser({
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          middleInitial: u.middleInitial,
 
-export function useCurrentUser() {
-  // Swap `mockUser` for your real auth/user object and nothing else changes.
-  const raw = mockUser;
+          fullName:
+            `${u.firstName ?? ""} ${u.middleInitial ?? ""} ${u.lastName ?? ""}`.trim(),
 
-  return useMemo(
-    () => ({
-      // — identifiers —
-      id: raw.id,
+          dob: u.dob,
+          age: u.dob
+            ? (() => {
+                const today = new Date();
+                const birth = new Date(u.dob);
+                let age = today.getFullYear() - birth.getFullYear();
+                const m = today.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birth.getDate()))
+                  age--;
+                return age;
+              })()
+            : null,
 
-      // — name helpers —
-      firstName: raw.firstName,
-      middleName: raw.middleName,
-      lastName: raw.lastName,
-      fullName: `${raw.firstName} ${raw.lastName}`,
-      initials: computeInitials(raw.firstName, raw.lastName),
+          sex: u.sex,
+          genderIdentity: u.genderIdentity,
+          civilStatus: u.civilStatus,
 
-      // — demographics —
-      dateOfBirth: raw.dateOfBirth,
-      age: computeAge(raw.dateOfBirth),
-      sex: raw.sex,
-      civilStatus: raw.civilStatus,
-      genderIdentity: raw.genderIdentity,
-      preferredPronouns: raw.preferredPronouns,
+          contactNo: u.contactNo,
+          email: u.email,
 
-      // — contact —
-      contactNo: raw.contactNo,
-      email: raw.email,
-      homeAddress: raw.homeAddress,
+          address: u.address,
+          homeAddress: u.address,
 
-      // — avatar —
-      profilePic: raw.profilePic || null,
-    }),
-    [raw],
-  );
-}
+          profilePicture: u.profilePicture,
+
+          initials: (u.firstName?.[0] || "") + (u.lastName?.[0] || ""),
+        });
+      } catch (err) {
+        console.error("Failed to load user", err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  return user;
+};
