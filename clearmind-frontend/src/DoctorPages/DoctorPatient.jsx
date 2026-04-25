@@ -482,13 +482,13 @@ function DoctorPatient() {
               <table className={styles.patientTable}>
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Names</th>
                     <th>Patient Type</th>
                     <th>Age</th>
                     <th>Gender</th>
                     <th>Address</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -552,7 +552,7 @@ function DoctorPatient() {
                               className={styles.btnView}
                               onClick={() => handleView(row)}
                             >
-                              View
+                              Views
                             </button>
                             <button
                               style={{
