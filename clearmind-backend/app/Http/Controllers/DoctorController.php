@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * DoctorController
@@ -42,8 +43,7 @@ class DoctorController extends Controller
         'description'         => $doctor?->description,
         'license_number'      => $doctor?->license_number,
         'practicing_since'    => $doctor?->practicing_since,
-        'main_specialty'      => $doctor?->main_specialty,
-
+        'specializations' => $doctor?->specializations ?? [],
         'sub_specializations' => $doctor?->sub_specializations ?? [],
         'board_cert_names'    => $doctor?->board_cert_names ?? [],
 
@@ -94,6 +94,87 @@ class DoctorController extends Controller
             'data'    => $user->fresh(),
         ]);
     }
+
+    public function updateProfilePicture(Request $request): JsonResponse
+{
+    $user = $request->user();
+
+    $request->validate([
+        'profilePicture' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+    ]);
+
+    // delete old
+    if ($user->profilePicture) {
+        Storage::disk('public')->delete($user->profilePicture);
+    }
+
+    $path = $request->file('profilePicture')
+        ->store('profile_pictures', 'public');
+
+    $user->profilePicture = $path;
+    $user->save();
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'profilePicture' => asset('storage/' . $path),
+        ],
+    ]);
+}
+
+public function uploadDocuments(Request $request): JsonResponse
+{
+    $user = $request->user();
+    $doctor = $user->doctor;
+
+    if (!$doctor) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Doctor not found',
+        ], 404);
+    }
+
+    $request->validate([
+        'board_cert_images.*' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
+        'id_pictures.*'       => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
+    ]);
+
+    $boardCertPaths = [];
+    $idPicPaths = [];
+
+    // BOARD CERTS
+    if ($request->hasFile('board_cert_images')) {
+        foreach ($request->file('board_cert_images') as $file) {
+            $boardCertPaths[] = $file->store('doctor/board_certs', 'public');
+        }
+    }
+
+    // IDS
+    if ($request->hasFile('id_pictures')) {
+        foreach ($request->file('id_pictures') as $file) {
+            $idPicPaths[] = $file->store('doctor/id_pictures', 'public');
+        }
+    }
+
+    // Merge with existing
+    $doctor->board_cert_images = array_merge(
+        $doctor->board_cert_images ?? [],
+        $boardCertPaths
+    );
+
+    $doctor->id_pictures = array_merge(
+        $doctor->id_pictures ?? [],
+        $idPicPaths
+    );
+
+    $doctor->save();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Documents uploaded successfully',
+        'data' => $doctor->fresh(),
+    ]);
+}
 
     public function updateDoctorProfile(Request $request): JsonResponse
 {
