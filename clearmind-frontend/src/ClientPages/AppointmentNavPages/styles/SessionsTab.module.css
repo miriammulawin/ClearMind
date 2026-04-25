@@ -17,6 +17,23 @@
   padding: 0.5rem;
 }
 
+/* Sa SessionsTab.module.css, palitan ang lahat ng mobile media queries */
+
+@media (max-width: 768px) {
+  .sessionsContainer {
+    height: auto;
+    min-height: unset;
+    overflow: visible;
+    padding-bottom: 20px;
+  }
+
+  .sessionsListWrapper {
+    overflow: visible;
+    height: auto;
+    flex: unset;
+  }
+}
+
 .headerSection {
   flex-shrink: 0;
   margin-bottom: 1rem;
@@ -255,7 +272,7 @@
 @media (max-width: 360px) {
   .sessionsContainer {
     padding: 0.25rem;
-    height: calc(100vh - 180px);
+    height: auto;
   }
   .titleSessions {
     font-size: 0.95rem;
@@ -291,7 +308,7 @@
 @media (min-width: 361px) and (max-width: 389px) {
   .sessionsContainer {
     padding: 0.35rem;
-    height: calc(100vh - 180px);
+    height: auto;
   }
   .titleSessions {
     font-size: 1.2rem;
@@ -329,7 +346,7 @@
 @media (min-width: 390px) and (max-width: 429px) {
   .sessionsContainer {
     padding: 0.4rem;
-    height: calc(100vh - 185px);
+    height: auto;
   }
   .titleSessions {
     font-size: 1.3rem;
@@ -368,7 +385,7 @@
 @media (min-width: 430px) and (max-width: 575px) {
   .sessionsContainer {
     padding: 0.5rem;
-    height: calc(100vh - 190px);
+    height: auto;
   }
   .titleSessions {
     font-size: 1.35rem;
@@ -405,7 +422,7 @@
 @media (min-width: 576px) and (max-width: 768px) {
   .sessionsContainer {
     padding: 0.75rem;
-    height: calc(100vh - 160px);
+    height: auto;
   }
   .titleSessions {
     font-size: 1.3rem;

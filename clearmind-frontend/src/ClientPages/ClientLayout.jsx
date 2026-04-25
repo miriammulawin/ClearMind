@@ -24,6 +24,16 @@ function ClientLayout() {
 
   const [navCollapsed, setNavCollapsed] = useState(false);
 
+  const isNoScrollPage =
+    isSchedule ||
+    isPending ||
+    isSessions ||
+    isServices ||
+    isHistory ||
+    isPACAppointment ||
+    isPAEAppointment ||
+    isHelp;
+
   return (
     <div className={styles.pageWrapper}>
       {/* Side nav — desktop only */}
@@ -47,19 +57,9 @@ function ClientLayout() {
 
         <div
           className={`${styles.bodyWrapper} ${
-            isSchedule ||
-            isPending ||
-            isSessions ||
-            isServices ||
-            isHistory ||
-            isPACAppointment ||
-            isPAEAppointment ||
-            isHelp
-              ? styles.noScroll
-              : ""
-          }`}
+            isNoScrollPage ? styles.noScroll : ""
+          } ${isNoScrollPage ? styles.mobileScroll : ""}`}
         >
-          {/* I-pass ang setIsInChat sa Outlet via context */}
           <Outlet context={{ setIsInChat }} />
         </div>
       </div>

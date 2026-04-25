@@ -26,7 +26,7 @@
   margin: 0;
   color: #5e4b8b;
   font-weight: 700;
-  font-size: 20px;
+  font-size: clamp(16px, 2.5vw, 20px);
   letter-spacing: 0.5px;
 }
 
@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 20px;
+  font-size: clamp(16px, 2vw, 20px);
   font-weight: 600;
   font-family: "Google Sans", Roboto, sans-serif;
   letter-spacing: 0.5px;
@@ -110,19 +110,19 @@
   margin: 0;
   color: #5e4b8b;
   font-weight: 600;
-  font-size: 18px;
+  font-size: clamp(15px, 2.2vw, 18px);
 }
 
 .user-email {
   margin: 5px 0 0 0;
   color: #666;
-  font-size: 14px;
+  font-size: clamp(12px, 1.5vw, 14px);
 }
 
 .edit-button {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: clamp(16px, 2vw, 20px);
   cursor: pointer;
   padding: 5px 10px;
   color: #5e4b8b;
@@ -137,9 +137,8 @@
   padding: 0 20px 12px 20px;
 }
 
-/* ✅ Section title for grouped menus */
 .menu-section-title {
-  font-size: 0.72rem;
+  font-size: clamp(10px, 1.2vw, 12px);
   font-weight: 600;
   color: #999;
   text-transform: uppercase;
@@ -182,7 +181,7 @@
 }
 
 .menu-icon {
-  font-size: 22px;
+  font-size: clamp(18px, 2.2vw, 22px);
   width: 30px;
   text-align: center;
   color: #5e4b8b;
@@ -190,13 +189,13 @@
 
 .menu-label {
   color: #333;
-  font-size: 15px;
+  font-size: clamp(13px, 1.8vw, 15px);
   font-weight: 400;
 }
 
 .menu-arrow {
   color: #999;
-  font-size: 24px;
+  font-size: clamp(18px, 2.5vw, 24px);
   font-weight: 300;
 }
 
@@ -207,10 +206,10 @@
 }
 
 .branding-text {
-  font-size: 16px;
+  font-size: clamp(13px, 1.8vw, 16px);
   font-weight: 600;
   color: #4a3968;
-  margin: 0px;
+  margin: 0;
 }
 
 .branding-logo {
@@ -225,8 +224,15 @@
   width: 100%;
 }
 
+.branding-year {
+  font-size: clamp(12px, 1.5vw, 14px);
+  font-weight: 500;
+  color: #4a3968;
+  margin: 0;
+}
+
 .year-branding-dev-version {
-  font-size: 14px;
+  font-size: clamp(12px, 1.5vw, 14px);
   font-weight: 500;
   color: #4a3968;
   margin: 0;
@@ -245,11 +251,12 @@
 .logout-modal h5 {
   font-weight: 600;
   color: #333;
+  font-size: clamp(15px, 2vw, 18px);
 }
 
 .logout-modal .text-muted {
   color: #6c757d !important;
-  font-size: 0.95rem;
+  font-size: clamp(13px, 1.5vw, 15px);
 }
 
 .logout-modal .btn-outline-secondary {
@@ -257,6 +264,7 @@
   color: #cd0707;
   font-weight: 500;
   border-radius: 8px;
+  font-size: clamp(12px, 1.5vw, 14px);
 }
 
 .logout-modal .btn-outline-secondary:hover {
@@ -270,6 +278,7 @@
   border-color: #5a3e9f;
   font-weight: 500;
   border-radius: 8px;
+  font-size: clamp(12px, 1.5vw, 14px);
 }
 
 .logout-modal .btn-primary:hover {
@@ -279,32 +288,6 @@
 
 .text-custom {
   color: #4a2e8f;
-}
-
-.branding-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #4a3968;
-  margin: 0px;
-}
-
-.branding-logo {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.logo-image {
-  max-width: 280px;
-  height: auto;
-  width: 100%;
-}
-
-.branding-year {
-  font-size: 14px;
-  font-weight: 500;
-  color: #4a3968;
-  margin: 0;
 }
 
 /* Mobile Responsiveness */

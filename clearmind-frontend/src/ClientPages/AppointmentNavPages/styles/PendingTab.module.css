@@ -9,6 +9,12 @@
   flex-direction: column;
 }
 
+@media (max-width: 768px) {
+  .upcomingContainer {
+    height: auto;
+  }
+}
+
 .headerSection {
   flex-shrink: 0;
 }

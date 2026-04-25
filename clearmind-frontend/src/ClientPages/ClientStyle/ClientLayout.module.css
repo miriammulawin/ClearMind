@@ -34,6 +34,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Desktop: noScroll = let the child handle its own scroll */
 .noScroll {
   overflow: visible;
 }
@@ -56,6 +57,7 @@
 .bodyWrapper::-webkit-scrollbar-thumb:hover {
   background: #4a2273;
 }
+
 /* Side nav — nakatago sa mobile */
 .sideNavWrapper {
   display: none;
@@ -91,5 +93,14 @@
     left: 0;
     right: 0;
     z-index: 100;
+  }
+
+  /* Mobile: override noScroll — let bodyWrapper scroll naturally */
+  .mobileScroll {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    height: calc(100dvh - 60px); /* minus bottom nav */
+    padding-bottom: 80px;
+    box-sizing: border-box;
   }
 }

@@ -94,11 +94,19 @@ export default function AccountPage({ userData, onEditClick }) {
 
               <div className="user-details">
                 <h5 className="user-name">
-                  {userData.firstName}{" "}
+                  {userData.firstName
+                    ?.toLowerCase()
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}{" "}
                   {userData.middleInitial && userData.middleInitial !== "N/A"
-                    ? `${userData.middleInitial[0]}. `
+                    ? `${userData.middleInitial.charAt(0).toUpperCase()}. `
                     : ""}
-                  {userData.lastName}
+                  {userData.lastName
+                    ?.toLowerCase()
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
                 </h5>
                 <p className="user-email">{userData.email}</p>
               </div>

@@ -287,6 +287,22 @@
 
 /* Mobile: profilePanel needs a bounded height to scroll */
 @media (max-width: 767px) {
+  .bookAppointmentContainer {
+    height: auto;
+    min-height: unset;
+    padding-bottom: 120px; /* space para sa bottom nav */
+  }
+
+  .doctorsList {
+    overflow-y: visible; /* huwag i-clip ang content */
+    padding-bottom: 40px; /* extra breathing room */
+  }
+
+  .leftColumn {
+    height: auto;
+    overflow-y: visible;
+    padding-bottom: 0;
+  }
   .profilePanel {
     height: calc(100dvh - 60px - 48px); /* navbar + back button bar */
     overflow-y: auto;
