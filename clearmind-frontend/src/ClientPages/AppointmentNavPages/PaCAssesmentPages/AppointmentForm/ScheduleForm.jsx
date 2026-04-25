@@ -1,23 +1,15 @@
 // ScheduleForm.jsx — Step 1
+// FIXED: passes doctorSchedule + consultationMode to SelectDateAndTime
+// so the calendar properly disables dates that don't support the selected mode.
+
 import React, { useMemo, useEffect } from "react";
-import { FaVideo, FaHome } from "react-icons/fa";
+import { FaVideo, FaHome, FaCheck } from "react-icons/fa";
 import styles from "../../../ClientStyle/ScheduleForm.module.css";
 import SelectDateAndTime, {
   getEndTime,
 } from "../../AppointmentComponents/SelectDateandTime";
 
-const getDayMode = (dateStr, doctorData) => {
-  if (!dateStr || !doctorData) return null;
-  const dayOfWeek = new Date(dateStr + "T00:00:00").getDay();
-  const onSiteDays = doctorData.onSiteDays || [];
-  const virtualDays = doctorData.virtualDays || [];
-  if (onSiteDays.includes(dayOfWeek) && !virtualDays.includes(dayOfWeek))
-    return "ON-SITE";
-  if (virtualDays.includes(dayOfWeek) && !onSiteDays.includes(dayOfWeek))
-    return "VIRTUAL";
-  return null;
-};
-
+/* ─── Formatters ──────────────────────────────────────────────────────────── */
 const formatTimePH = (time24) => {
   if (!time24) return "—";
   const [hourStr, minuteStr] = time24.split(":");
@@ -37,20 +29,27 @@ const formatPeso = (amt) =>
       }).format(amt)
     : null;
 
+/* ─────────────────────────────────────────────────────────────────────────── */
 const ScheduleForm = ({
+  /* Doctor info */
   doctorData,
-  // ── Live API data from SetAppointmentForm ──
+  /* Real schedule from backend */
   doctorSchedule = [],
   scheduleLoading = false,
-  availableDayNums = [],
+  availableDayNums = [], // day-of-week nums already filtered by mode in parent
   scheduleForDate = null,
+  /* Real booked slots */
   bookedSlots = [],
   bookedSlotsLoading = false,
-  // ── Service already chosen (passed from location.state) ──
+  /* Fully-booked calendar data */
+  fullyBookedDates = new Set(),
+  loadingBookedDates = false,
+  onMonthChange,
+  /* Service */
   selectedService = "",
   selectedServiceFee = null,
   serviceFromState = null,
-  // ── Form state ──
+  /* Lifted form state */
   consultationMode,
   setConsultationMode,
   selectedDate,
@@ -60,17 +59,8 @@ const ScheduleForm = ({
   consultationFee,
   onSameDayClick,
 }) => {
-  // Derive available consultation modes from schedule slot_type
-  const availableModes = useMemo(() => {
-    if (doctorData?.consultationMode) {
-      const mode = doctorData.consultationMode;
-      const modes = [];
-      if (mode === "Both" || mode === "In-Person" || mode === "Onsite")
-        modes.push("ON-SITE");
-      if (mode === "Both" || mode === "Online" || mode === "Virtual")
-        modes.push("VIRTUAL");
-      if (modes.length) return modes;
-    }
+  /* ── Which modes does this doctor offer at all? ─────────────────────────── */
+  const allAvailableModes = useMemo(() => {
     const modes = new Set();
     doctorSchedule.forEach((s) => {
       if (s.slot_type === "physical" || s.slot_type === "both")
@@ -79,49 +69,48 @@ const ScheduleForm = ({
         modes.add("VIRTUAL");
     });
     return [...modes];
-  }, [doctorData, doctorSchedule]);
+  }, [doctorSchedule]);
 
+  /* ── Auto-select when only one mode available ───────────────────────────── */
   useEffect(() => {
-    if (availableModes.length === 1 && consultationMode !== availableModes[0])
-      setConsultationMode(availableModes[0]);
-  }, [availableModes, consultationMode, setConsultationMode]);
+    if (
+      allAvailableModes.length === 1 &&
+      consultationMode !== allAvailableModes[0]
+    ) {
+      setConsultationMode(allAvailableModes[0]);
+    }
+  }, [allAvailableModes]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!selectedDate || availableModes.length !== 2) return;
-    const dayMode = getDayMode(selectedDate, doctorData);
-    if (dayMode && consultationMode !== dayMode) setConsultationMode(dayMode);
-  }, [
-    selectedDate,
-    availableModes,
-    doctorData,
-    consultationMode,
-    setConsultationMode,
-  ]);
+  /* ── Handle mode button click ───────────────────────────────────────────── */
+  const handleModeSelect = (mode) => {
+    if (consultationMode === mode) return;
+    setConsultationMode(mode);
+    // Clear date/time when mode changes — dates valid for one mode may not be valid for another
+    setSelectedDate(null);
+    setSelectedTime(null);
+  };
 
+  /* ── Derived ────────────────────────────────────────────────────────────── */
   const isFormComplete = consultationMode && selectedDate && selectedTime;
-
-  const resolvedDateStr =
-    typeof selectedDate === "string"
-      ? selectedDate
-      : selectedDate?.isoDate || selectedDate?.date || "";
-
+  const resolvedDateStr = typeof selectedDate === "string" ? selectedDate : "";
   const serviceDisplayName =
     serviceFromState?.service_name ||
     serviceFromState?.title ||
     selectedService ||
     "";
 
+  /* ─────────────────────────────────────────────────────────────────────── */
   return (
     <>
-      {/* ══ Selected Service — read-only banner (already chosen on prev page) ══ */}
+      {/* ══ Service Banner ══ */}
       {serviceDisplayName && (
         <div
           style={{
-            margin: "0 0 20px",
+            margin: "0 0 22px",
             padding: "14px 18px",
             background: "#f5f0fb",
             border: "2px solid #4D227C",
-            borderRadius: "12px",
+            borderRadius: "14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -131,11 +120,11 @@ const ScheduleForm = ({
           <div>
             <div
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
                 color: "#4D227C",
                 textTransform: "uppercase",
-                letterSpacing: "0.06em",
+                letterSpacing: "0.07em",
                 marginBottom: "4px",
               }}
             >
@@ -172,33 +161,30 @@ const ScheduleForm = ({
               flexShrink: 0,
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path
-                d="M2.5 8.5L6 12L13.5 4"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <FaCheck size={14} color="#fff" />
           </div>
         </div>
       )}
 
-      {/* ══ Consultation Mode ══ */}
-      <div className={styles.section}>
+      {/* ══ STEP 1: Consultation Mode ══ */}
+      <div className={styles.section} style={{ marginBottom: "28px" }}>
         <p className={styles.sectionTitle}>
           <span className={styles.required}>*</span> Consultation Mode
         </p>
 
-        {scheduleLoading ? (
+        {/* Loading */}
+        {scheduleLoading && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
+              gap: "10px",
               color: "#aaa",
               fontSize: "13px",
+              padding: "16px",
+              background: "#f9f7fd",
+              borderRadius: "12px",
+              border: "1.5px solid #e8d8f8",
             }}
           >
             <div
@@ -212,82 +198,271 @@ const ScheduleForm = ({
                 flexShrink: 0,
               }}
             />
-            Loading schedule…
+            Loading doctor schedule…
             <style>{`@keyframes pac_spin { to { transform: rotate(360deg); } }`}</style>
           </div>
-        ) : availableModes.length === 0 ? (
-          <p
+        )}
+
+        {/* No schedule */}
+        {!scheduleLoading && allAvailableModes.length === 0 && (
+          <div
             style={{
-              color: "#9a3412",
-              fontSize: "13px",
-              padding: "10px 14px",
+              padding: "14px 18px",
               background: "#fff8f0",
               border: "1px solid #fed7aa",
-              borderRadius: "8px",
+              borderRadius: "12px",
+              fontSize: "13px",
+              color: "#9a3412",
             }}
           >
-            ⚠ No schedule available for this doctor.
-          </p>
-        ) : availableModes.length === 1 ? (
-          <div className={styles.singleModeInfo}>
-            {availableModes[0] === "VIRTUAL" ? (
-              <>
-                <FaVideo className={styles.singleModeIcon} /> Virtual
-                Consultation
-              </>
-            ) : (
-              <>
-                <FaHome className={styles.singleModeIcon} /> On-Site
-                Consultation
-              </>
-            )}
+            ⚠ No schedule available for this doctor. Please go back and select a
+            different doctor.
           </div>
-        ) : (
-          <div className={styles.modeToggleRow}>
-            {[
-              ["ON-SITE", "On-Site", FaHome],
-              ["VIRTUAL", "Virtual", FaVideo],
-            ].map(([val, lbl, Icon]) => (
-              <button
-                key={val}
-                className={`${styles.modeToggle} ${consultationMode === val ? styles.modeToggleActive : ""}`}
-                onClick={() => {
-                  setConsultationMode(val);
-                  setSelectedDate(null);
-                  setSelectedTime(null);
+        )}
+
+        {/* Single mode — auto-selected, show as read-only */}
+        {!scheduleLoading && allAvailableModes.length === 1 && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "14px 20px",
+              background: "#f5f0fb",
+              border: "2px solid #4D227C",
+              borderRadius: "14px",
+              color: "#4D227C",
+              fontSize: "14px",
+              fontWeight: 700,
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: "#4D227C",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {allAvailableModes[0] === "VIRTUAL" ? (
+                <FaVideo size={16} color="#fff" />
+              ) : (
+                <FaHome size={16} color="#fff" />
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: 700 }}>
+                {allAvailableModes[0] === "VIRTUAL"
+                  ? "Virtual Consultation"
+                  : "On-Site Consultation"}
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#7c3aed",
+                  fontWeight: 400,
+                  marginTop: "2px",
                 }}
               >
-                <Icon className={styles.modeToggleIcon} />
-                <span>{lbl}</span>
-              </button>
-            ))}
+                Only available mode for this doctor
+              </div>
+            </div>
+            <span
+              style={{
+                marginLeft: "8px",
+                background: "#4D227C",
+                color: "#fff",
+                borderRadius: "20px",
+                fontSize: "10px",
+                padding: "3px 10px",
+                fontWeight: 700,
+              }}
+            >
+              AUTO-SELECTED
+            </span>
           </div>
+        )}
+
+        {/* Both modes — user chooses FIRST */}
+        {!scheduleLoading && allAvailableModes.length === 2 && (
+          <>
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#7c3aed",
+                marginBottom: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Choose your preferred mode first. The calendar will only show
+              dates available for that mode.
+            </p>
+
+            <div style={{ display: "flex", gap: "14px" }}>
+              {[
+                {
+                  val: "ON-SITE",
+                  label: "On-Site",
+                  sub: "Visit the clinic in person",
+                  Icon: FaHome,
+                },
+                {
+                  val: "VIRTUAL",
+                  label: "Virtual",
+                  sub: "Online / video consultation",
+                  Icon: FaVideo,
+                },
+              ].map(({ val, label, sub, Icon }) => {
+                const isActive = consultationMode === val;
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => handleModeSelect(val)}
+                    style={{
+                      flex: 1,
+                      padding: "18px 14px",
+                      borderRadius: "16px",
+                      border: isActive
+                        ? "2.5px solid #4D227C"
+                        : "2px solid #e8d8f8",
+                      background: isActive ? "#f5f0fb" : "#fff",
+                      cursor: "pointer",
+                      transition: "all .2s",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "10px",
+                      fontFamily: "Poppins, sans-serif",
+                      boxShadow: isActive
+                        ? "0 0 0 4px rgba(77,34,124,0.12)"
+                        : "0 1px 4px rgba(0,0,0,0.06)",
+                      position: "relative",
+                      outline: "none",
+                    }}
+                  >
+                    {isActive && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          right: "10px",
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: "#4D227C",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <FaCheck size={10} color="#fff" />
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        width: "54px",
+                        height: "54px",
+                        borderRadius: "50%",
+                        background: isActive ? "#4D227C" : "#f0eaf8",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all .2s",
+                      }}
+                    >
+                      <Icon size={22} color={isActive ? "#fff" : "#9c7dd4"} />
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          color: isActive ? "#4D227C" : "#374151",
+                        }}
+                      >
+                        {label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: isActive ? "#7c3aed" : "#aaa",
+                          marginTop: "3px",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {sub}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {!consultationMode && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  padding: "10px 14px",
+                  background: "#faf7ff",
+                  border: "1px dashed #d4b8f0",
+                  borderRadius: "10px",
+                  fontSize: "12px",
+                  color: "#7c3aed",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span>💡</span>
+                <span>Select a mode above to unlock the date calendar.</span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* ══ Calendar + Time — real API data ══ */}
-      <SelectDateAndTime
-        availableDayNums={availableDayNums}
-        scheduleForDate={scheduleForDate}
-        bookedSlots={bookedSlots}
-        bookedSlotsLoading={bookedSlotsLoading}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        selectedTime={selectedTime}
-        setSelectedTime={setSelectedTime}
-        onSameDayClick={onSameDayClick}
-      />
+      {/* ══ STEP 2: Calendar + Time (only shown after mode is selected) ══ */}
+      {consultationMode && !scheduleLoading && (
+        <SelectDateAndTime
+          /* Mode-filtered available days (day-of-week nums) */
+          availableDayNums={availableDayNums}
+          /* FIXED: pass full schedule + mode so calendar can filter by slot_type */
+          doctorSchedule={doctorSchedule}
+          consultationMode={consultationMode}
+          /* Schedule entry for the selected date */
+          scheduleForDate={scheduleForDate}
+          /* Booked slots */
+          bookedSlots={bookedSlots}
+          bookedSlotsLoading={bookedSlotsLoading}
+          /* Fully-booked calendar data */
+          fullyBookedDates={fullyBookedDates}
+          loadingBookedDates={loadingBookedDates}
+          onMonthChange={onMonthChange}
+          /* Form state */
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          selectedTime={selectedTime}
+          setSelectedTime={setSelectedTime}
+          onSameDayClick={onSameDayClick}
+        />
+      )}
 
-      {/* ══ Booking Summary ══ */}
+      {/* ══ Booking Summary (shown when all 3 fields filled) ══ */}
       {isFormComplete && (
-        <div className={styles.summaryCard}>
-          <p className={styles.summaryTitle}>Booking Summary</p>
+        <div className={styles.summaryCard} style={{ marginTop: "24px" }}>
+          <p className={styles.summaryTitle}>📋 Booking Summary</p>
           <div className={styles.summaryGrid}>
             <span className={styles.summaryLabel}>Doctor</span>
             <span className={styles.summaryValue}>{doctorData?.name}</span>
 
             <span className={styles.summaryLabel}>Mode</span>
-            <span className={styles.summaryValue}>{consultationMode}</span>
+            <span className={styles.summaryValue}>
+              {consultationMode === "VIRTUAL" ? "🖥 Virtual" : "🏥 On-Site"}
+            </span>
 
             <span className={styles.summaryLabel}>Date</span>
             <span className={styles.summaryValue}>{resolvedDateStr}</span>
@@ -311,7 +486,7 @@ const ScheduleForm = ({
                 <span
                   className={`${styles.summaryLabel} ${styles.summaryFeeLabel}`}
                 >
-                  Consultation Fee
+                  Fee
                 </span>
                 <span className={`${styles.summaryValue} ${styles.summaryFee}`}>
                   ₱{Number(consultationFee).toLocaleString()}

@@ -40,9 +40,6 @@ class DoctorSchedule extends Model
         return $this->belongsTo(Doctor::class, 'doctor_id', 'doctor_id');
     }
 
-    /**
-     * Accessor: return formatted time strings for API output.
-     */
     public function getStartTimeFormattedAttribute(): string
     {
         return $this->start_time ? substr($this->start_time, 0, 5) : '';

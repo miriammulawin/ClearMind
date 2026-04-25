@@ -42,16 +42,13 @@ const formatTime = (time) => {
 const mapDoctor = (d) => {
   const schedules = Array.isArray(d.schedules) ? d.schedules : [];
 
-  const DAY_ORDER_NUM = [1, 2, 3, 4, 5, 6, 0]; // Mon→Sun
+  const DAY_ORDER_NUM = [1, 2, 3, 4, 5, 6, 0];
 
-  // ── Find earliest UPCOMING available day ──
   const today = new Date();
-  const todayNum = today.getDay(); // 0=Sun, 1=Mon...
+  const todayNum = today.getDay();
 
-  // Get all scheduled day_nums
   const scheduledDayNums = schedules.map((s) => s.day_num);
 
-  // Find next available day starting from TOMORROW
   let earliestSchedule = null;
   for (let i = 1; i <= 7; i++) {
     const checkDay = (todayNum + i) % 7;
@@ -71,7 +68,6 @@ const mapDoctor = (d) => {
 
   const consultationMode =
     hasOnline && hasPhysical ? "Both" : hasOnline ? "Virtual" : "Onsite";
-
   const consultationType =
     hasOnline && hasPhysical
       ? "Online & On-site"
@@ -79,7 +75,6 @@ const mapDoctor = (d) => {
         ? "Virtual Consultation"
         : "On-site Consultation";
 
-  // All available days sorted Mon→Sun for Consultation Availability display
   const sorted = [...schedules].sort(
     (a, b) =>
       DAY_ORDER_NUM.indexOf(a.day_num) - DAY_ORDER_NUM.indexOf(b.day_num),
@@ -88,6 +83,7 @@ const mapDoctor = (d) => {
   return {
     ...d,
     id: d.doctor_id,
+    doctor_user_id: d.id, // ← ITO LANG ANG BAGO — users.id para sa booked-slots endpoint
     name: `${d.firstName}${d.middleInitial ? " " + d.middleInitial + "." : ""} ${d.lastName}`,
     title: d.professional_title || d.doctor?.professional_title || "",
     photo: d.doctor?.profile_picture
@@ -111,11 +107,11 @@ const mapDoctor = (d) => {
     consultationMode,
     consultationType,
     schedule: {
-      days: sorted.map((s) => s.day), // all days — para sa Consultation Availability
+      days: sorted.map((s) => s.day),
       time: earliestSchedule
         ? `${formatTime(earliestSchedule.start_time)} - ${formatTime(earliestSchedule.end_time)}`
         : null,
-      earliest: earliestSchedule?.day || null, // ← iisa lang na araw
+      earliest: earliestSchedule?.day || null,
     },
     consultationFees: {
       initialConsultation: d.doctor?.initial_consultation_fee || null,

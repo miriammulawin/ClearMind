@@ -1,9 +1,8 @@
 // SetAppointmentForm.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Modal } from "react-bootstrap";
 import { FiCheckCircle } from "react-icons/fi";
-import { CONSULTATION_FEES } from "../../../../MockData/MockDoctors.js";
 import styles from "../style/PACSetAppointmentForm.module.css";
 import SetAppointmentFormHeader from "./SetAppointmentFormHeader.jsx";
 import ScheduleForm from "./ScheduleForm.jsx";
@@ -18,48 +17,33 @@ import {
   BOOKING_POLICY_RADIO_LABEL,
 } from "../../AppointmentComponents/PolicyModalContent.js";
 import AppointmentSuccessScreen from "../../AppointmentComponents/AppointmentSuccessScreen.jsx";
+import axiosClient from "../../../../axiosClient";
 
-// ─── Derive initial consultation fee from a doctor object ─────────────────────
-// Each doctor has a consultationFees object with keys like initialConsultation,
-// followUpConsultation, etc. We always show the initialConsultation fee on Step 1.
-// Falls back to the role-based CONSULTATION_FEES map if the doctor has no fees.
 const getInitialFee = (doctor) => {
   if (!doctor) return null;
-  // Prefer the doctor's own fee record
   if (doctor.consultationFees?.initialConsultation)
     return doctor.consultationFees.initialConsultation;
-  // Fallback: guess role from title
-  const title = (doctor.title || "").toLowerCase();
-  if (title.includes("psychiatrist"))
-    return CONSULTATION_FEES.psychiatrist?.initialConsultation ?? null;
-  if (title.includes("psychometrician"))
-    return CONSULTATION_FEES.psychometrician?.initialConsultation ?? null;
-  return CONSULTATION_FEES.psychologist?.initialConsultation ?? null;
+  return null;
 };
 
-// ─── Total steps (must match STEPS array in SetAppointmentFormHeader) ─────────
 const TOTAL_STEPS = 3;
 
 const SetAppointmentForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const doctorData = location.state?.doctor;
+  const selectedService = location.state?.selectedService;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errorModal, setErrorModal] = useState({ show: false, message: "" });
   const [confirmModal, setConfirmModal] = useState(false);
-
-  // ── Policy modal gates (Step 1 → Step 2 flow) ────────────────────────────
   const [declarationModal, setDeclarationModal] = useState(false);
   const [bookingPolicyModal, setBookingPolicyModal] = useState(false);
-
-  // ── Same-day toast — owned here so it renders outside overflow:hidden ─────
-  // SameDayToast uses position:fixed. Any overflow:hidden/auto ancestor clips it.
-  // pageWrapper is position:fixed + overflow:hidden, so the toast must be a
-  // direct child of pageWrapper — NOT inside scrollContent or ScheduleForm.
   const [sameDayToast, setSameDayToast] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [declarationAgreed, setDeclarationAgreed] = useState(false);
+  const [bookingPolicyAgreed, setBookingPolicyAgreed] = useState(false);
 
-  // ── Shared form state ─────────────────────────────────────────────────────
   const [consultationMode, setConsultationMode] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -68,18 +52,64 @@ const SetAppointmentForm = () => {
     patientType: "New Patient",
     classification: "Regular",
   });
-  const [paymentData, setPaymentData] = useState({
-    paymentMode: "G-Cash",
-  });
+  const [paymentData, setPaymentData] = useState({ paymentMode: "G-Cash" });
 
-  // ─── Navigation ──────────────────────────────────────────────────────────
+  // ── NEW: Doctor schedule from API ─────────────────────────────
+  const [doctorSchedule, setDoctorSchedule] = useState([]);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!doctorData?.id) return;
+    setScheduleLoading(true);
+    axiosClient
+      .get(`/doctors/${doctorData.id}/schedules`)
+      .then(({ data }) => setDoctorSchedule(data.data?.schedule || []))
+      .catch((e) => console.error("Failed to fetch schedule:", e))
+      .finally(() => setScheduleLoading(false));
+  }, [doctorData?.id]);
+
+  // ── NEW: Derived values from schedule ────────────────────────
+  const availableDayNums = useMemo(
+    () => doctorSchedule.map((s) => s.day_num),
+    [doctorSchedule],
+  );
+
+  const scheduleForDate = useMemo(() => {
+    if (!selectedDate || doctorSchedule.length === 0) return null;
+    const dayNum = new Date(selectedDate + "T00:00:00").getDay();
+    return doctorSchedule.find((s) => s.day_num === dayNum) || null;
+  }, [selectedDate, doctorSchedule]);
+
+  // ── NEW: Booked slots from API ────────────────────────────────
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
+
+  useEffect(() => {
+    // doctor_user_id = users.id (set in mapDoctor as doctor_user_id: d.id)
+    const doctorUserId = doctorData?.doctor_user_id;
+    if (!doctorUserId || !selectedDate) {
+      setBookedSlots([]);
+      return;
+    }
+
+    setBookedSlotsLoading(true);
+    axiosClient
+      .get("/appointments/booked-slots", {
+        params: { doctor_user_id: doctorUserId, date: selectedDate },
+      })
+      .then(({ data }) => setBookedSlots(data.data || []))
+      .catch((e) => {
+        console.error("Failed to fetch booked slots:", e);
+        setBookedSlots([]);
+      })
+      .finally(() => setBookedSlotsLoading(false));
+  }, [doctorData?.doctor_user_id, selectedDate]);
+
+  // ── Navigation ────────────────────────────────────────────────
   const handleBack = () => {
     if (currentStep === 1) navigate(-1);
     else setCurrentStep((prev) => prev - 1);
   };
-
-  const [declarationAgreed, setDeclarationAgreed] = useState(false);
-  const [bookingPolicyAgreed, setBookingPolicyAgreed] = useState(false);
 
   const handleContinue = () => {
     const error = getStepError();
@@ -87,44 +117,33 @@ const SetAppointmentForm = () => {
       setErrorModal({ show: true, message: error });
       return;
     }
-
     if (currentStep === 1) {
       setCurrentStep(2);
-      setDeclarationModal(true); // auto-open Declaration when entering Step 2
+      setDeclarationModal(true);
       return;
     }
-
     if (currentStep === 2) {
       setCurrentStep(3);
-      setBookingPolicyModal(true); // auto-open Booking Policy when entering Step 3
+      setBookingPolicyModal(true);
       return;
     }
-
     setConfirmModal(true);
   };
 
-  // Declaration confirmed → open Booking Policy next
   const handleDeclarationConfirm = () => {
     setDeclarationModal(false);
-    setDeclarationAgreed(true); // auto-check yung radio sa Step 2
+    setDeclarationAgreed(true);
   };
-
-  // Booking Policy confirmed → advance to Step 2
   const handleBookingPolicyConfirm = () => {
     setBookingPolicyModal(false);
-    setBookingPolicyAgreed(true); // auto-check yung radio sa Step 3
+    setBookingPolicyAgreed(true);
   };
-
-  const [showSuccess, setShowSuccess] = useState(false);
-
   const handleConfirmBook = () => {
     setConfirmModal(false);
-    setShowSuccess(true); // ← show success screen
+    setShowSuccess(true);
   };
-
   const closeErrorModal = () => setErrorModal({ show: false, message: "" });
 
-  // ─── Per-step validation ──────────────────────────────────────────────────
   const getStepError = () => {
     if (currentStep === 1) {
       if (!consultationMode)
@@ -132,14 +151,10 @@ const SetAppointmentForm = () => {
       if (!selectedDate) return "Please select a date before continuing.";
       if (!selectedTime) return "Please select a time slot before continuing.";
     }
-
     if (currentStep === 2) {
       if (!declarationAgreed)
         return "Please acknowledge the Declaration of Participation.";
       if (!profileData.reason) return "Please enter a reason for consultation.";
-
-      if (!profileData.reason) return "Please enter a reason for consultation.";
-
       if (profileData.isInformant === true) {
         if (!profileData.complainantName) return "Please enter your full name.";
         if (!profileData.complainantRelation)
@@ -164,31 +179,40 @@ const SetAppointmentForm = () => {
           return "Please enter the patient's home address.";
       }
     }
-
     if (currentStep === 3) {
       if (!bookingPolicyAgreed)
         return "Please acknowledge the Cancellation & Rebooking Policy.";
-      if (!paymentData.paymentMode) return "Please select a payment mode.";
       if (!paymentData.paymentMode) return "Please select a payment mode.";
       if (!paymentData.referenceNo) return "Please enter the reference number.";
       if (!paymentData.receiptFile)
         return "Please upload your payment receipt.";
     }
-
     return "";
   };
 
-  // ─── Step body ────────────────────────────────────────────────────────────
   const renderStepBody = () => {
     switch (currentStep) {
       case 1:
         return (
           <ScheduleForm
             doctorData={doctorData}
+            // ── Real API data — NEW ──
+            doctorSchedule={doctorSchedule}
+            scheduleLoading={scheduleLoading}
+            availableDayNums={availableDayNums}
+            scheduleForDate={scheduleForDate}
+            bookedSlots={bookedSlots}
+            bookedSlotsLoading={bookedSlotsLoading}
+            // ── Service ──
+            selectedService={selectedService}
+            // ── Form state ──
             consultationMode={consultationMode}
             setConsultationMode={setConsultationMode}
             selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
+            setSelectedDate={(date) => {
+              setSelectedDate(date);
+              setSelectedTime(null); // reset time when date changes
+            }}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
             consultationFee={getInitialFee(doctorData)}
@@ -238,44 +262,35 @@ const SetAppointmentForm = () => {
       </div>
     );
   }
-  //success screen
+
   if (showSuccess) {
     return (
       <AppointmentSuccessScreen
-        serviceTitle="Psychotherapy & Counseling" // o anong service
+        serviceTitle="Psychotherapy & Counseling"
         refPrefix="PAC"
         onBack={() => navigate("/client/appointment/services")}
       />
     );
   }
+
   return (
     <div className={styles.pageWrapper}>
-      {/* ── Header ── */}
       <SetAppointmentFormHeader
         doctorData={doctorData}
         currentStep={currentStep}
         onBack={handleBack}
       />
 
-      {/* ── Same-Day Toast ────────────────────────────────────────────────────
-          MUST live here as a direct child of pageWrapper.
-          position:fixed is clipped by any overflow:hidden or overflow:auto
-          ancestor — scrollContent has overflow-y:auto so anything inside it
-          with position:fixed will be invisible. Rendering it here bypasses
-          that entirely.
-      ── */}
       <SameDayToast
         show={sameDayToast}
         onClose={() => setSameDayToast(false)}
       />
 
-      {/* ── Scrollable Body ── */}
       <div className={styles.scrollContent}>
         {renderStepBody()}
         <div className={styles.footerSpacer} />
       </div>
 
-      {/* ── Sticky Footer ── */}
       <div className={styles.stickyFooter}>
         {currentStep === TOTAL_STEPS && (
           <button className={styles.cancelButton} onClick={() => navigate(-1)}>
@@ -291,7 +306,6 @@ const SetAppointmentForm = () => {
         </button>
       </div>
 
-      {/* ── Step 1 Gate: Declaration of Participation ── */}
       <PolicyModal
         show={declarationModal}
         initialAgreed={declarationAgreed}
@@ -306,7 +320,6 @@ const SetAppointmentForm = () => {
         size="md"
       />
 
-      {/* ── Step 1 Gate: Booking & Cancellation Policy ── */}
       <PolicyModal
         show={bookingPolicyModal}
         initialAgreed={bookingPolicyAgreed}
@@ -322,7 +335,6 @@ const SetAppointmentForm = () => {
         size="lg"
       />
 
-      {/* ── Confirm & Book Modal ── */}
       <Modal
         show={confirmModal}
         onHide={() => setConfirmModal(false)}
@@ -354,7 +366,6 @@ const SetAppointmentForm = () => {
         </Modal.Body>
       </Modal>
 
-      {/* ── Validation Error Modal ── */}
       <Modal
         show={errorModal.show}
         onHide={closeErrorModal}

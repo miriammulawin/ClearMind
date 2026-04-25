@@ -1,10 +1,6 @@
 // AppointmentComponents/SelectDateandTime.jsx
-// Rebuilt to use REAL API schedule data (same pattern as CreateAppointmentModal.jsx)
-// Instead of doctorData.availability (mock), it now accepts:
-//   - availableDayNums   → number[] from GET /doctors/{id}/schedules
-//   - scheduleForDate    → schedule entry for the selected date
-//   - bookedSlots        → [{start_time, end_time}] from GET /appointments/booked-slots
-//   - bookedSlotsLoading → boolean
+// FIXED v3: Derives availableDayNums internally from doctorSchedule+consultationMode
+// so it never depends on the parent passing correct day numbers.
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -14,7 +10,6 @@ import Holidays from "date-holidays";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const APPOINTMENT_DURATION_MINS = 60;
-
 const MONTH_NAMES = [
   "January",
   "February",
@@ -40,7 +35,6 @@ const getHolidayName = (year, month, day) => {
 };
 
 // ─── Time helpers ─────────────────────────────────────────────────────────────
-// Convert "HH:MM" 24h to "H:MM AM/PM"
 const formatTimePH = (time24) => {
   if (!time24) return "";
   const [hourStr, minuteStr] = time24.split(":");
@@ -51,10 +45,8 @@ const formatTimePH = (time24) => {
   return `${hour}:${minute} ${period}`;
 };
 
-// Add 60 min to "HH:MM" and return "H:MM AM/PM"
 export const getEndTime = (startTime) => {
   if (!startTime) return "";
-  // Handle both "HH:MM" and "H:MM AM/PM"
   let mins;
   if (startTime.includes("AM") || startTime.includes("PM")) {
     const [time, period] = startTime.split(" ");
@@ -75,7 +67,7 @@ export const getEndTime = (startTime) => {
   return `${displayH}:${displayM} ${period}`;
 };
 
-// ─── isSlotBooked — same logic as CreateAppointmentModal ──────────────────────
+// ─── isSlotBooked ─────────────────────────────────────────────────────────────
 function isSlotBooked(slotTime24, bookedSlots) {
   if (!bookedSlots || bookedSlots.length === 0) return false;
   const [sh, sm] = slotTime24.split(":").map(Number);
@@ -93,7 +85,7 @@ function isSlotBooked(slotTime24, bookedSlots) {
   });
 }
 
-// ─── Build time slots from a schedule entry — same as CreateAppointmentModal ──
+// ─── Build time slots ─────────────────────────────────────────────────────────
 function buildSlots(schedEntry) {
   if (!schedEntry) return [];
   const startH = parseInt(schedEntry.start_time.split(":")[0]);
@@ -101,18 +93,65 @@ function buildSlots(schedEntry) {
   const endH = parseInt(schedEntry.end_time.split(":")[0]);
   const endM = parseInt(schedEntry.end_time.split(":")[1]);
   const schedEndMins = endH * 60 + endM;
-
   const slots = [];
   for (let h = startH; h <= endH; h++) {
     for (let m = 0; m < 60; m += 30) {
       if (h === startH && m < startM) continue;
       const slotStart = h * 60 + m;
       const slotEnd = slotStart + APPOINTMENT_DURATION_MINS;
-      if (slotEnd > schedEndMins) continue; // full 60-min must fit
+      if (slotEnd > schedEndMins) continue;
       slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
   return slots;
+}
+
+// ─── Normalize day_of_week → JS getDay() number (0=Sun … 6=Sat) ──────────────
+// Handles: number 0-6, "Monday", "monday", "Mon", "mon", "1" (string number)
+const DAY_NAME_TO_NUM = {
+  sunday: 0,
+  sun: 0,
+  monday: 1,
+  mon: 1,
+  tuesday: 2,
+  tue: 2,
+  wednesday: 3,
+  wed: 3,
+  thursday: 4,
+  thu: 4,
+  friday: 5,
+  fri: 5,
+  saturday: 6,
+  sat: 6,
+};
+
+function normalizeDayOfWeek(raw) {
+  if (raw === null || raw === undefined) return null;
+  // Already a number
+  if (typeof raw === "number") return raw;
+  // String number e.g. "1", "0"
+  const asNum = Number(raw);
+  if (!isNaN(asNum) && String(raw).trim() !== "") return asNum;
+  // String name e.g. "Monday", "Mon"
+  const key = String(raw).toLowerCase().trim();
+  return DAY_NAME_TO_NUM[key] ?? null;
+}
+
+// ─── scheduleSupportsMode ─────────────────────────────────────────────────────
+// slot_type values: "physical", "online", "both"
+// consultationMode values: "ON-SITE", "VIRTUAL"
+function scheduleSupportsMode(entry, consultationMode) {
+  if (!entry || !consultationMode) return false;
+  const t = (entry.slot_type || "").toLowerCase().trim();
+  if (t === "both") return true;
+  if (
+    consultationMode === "ON-SITE" &&
+    (t === "physical" || t === "onsite" || t === "on-site")
+  )
+    return true;
+  if (consultationMode === "VIRTUAL" && (t === "online" || t === "virtual"))
+    return true;
+  return false;
 }
 
 // ─── Toast keyframes ──────────────────────────────────────────────────────────
@@ -121,19 +160,13 @@ const ensureKeyframes = () => {
   const s = document.createElement("style");
   s.id = "same-day-toast-kf";
   s.textContent = `
-    @keyframes sdToastIn {
-      from { opacity:0; transform:translateX(-50%) translateY(10px); }
-      to   { opacity:1; transform:translateX(-50%) translateY(0); }
-    }
-    @keyframes sdToastBar {
-      from { width:100%; }
-      to   { width:0%; }
-    }
+    @keyframes sdToastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    @keyframes sdToastBar { from{width:100%}to{width:0%} }
   `;
   document.head.appendChild(s);
 };
 
-// ─── SameDayToast — exported, used by SetAppointmentForm ──────────────────────
+// ─── SameDayToast ─────────────────────────────────────────────────────────────
 export const SameDayToast = ({ show, onClose }) => {
   useEffect(() => {
     if (!show) return;
@@ -225,10 +258,13 @@ export const SameDayToast = ({ show, onClose }) => {
   );
 };
 
-// ─── Calendar — uses availableDayNums from API (same logic as CreateAppointmentModal) ──
+// ─── Calendar ─────────────────────────────────────────────────────────────────
 const Calendar = ({
-  availableDayNums = [], // number[] e.g. [1,3,5]
-  selectedDateStr = null, // "yyyy-MM-dd"
+  doctorSchedule = [],
+  consultationMode = null,
+  fullyBookedDates = new Set(),
+  onMonthChange,
+  selectedDateStr = null,
   onSelectDate,
   onTodayClick,
 }) => {
@@ -244,16 +280,18 @@ const Calendar = ({
 
   const prevMonth = () => {
     if (!canGoPrev) return;
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear((y) => y - 1);
-    } else setViewMonth((m) => m - 1);
+    const [nm, ny] =
+      viewMonth === 0 ? [11, viewYear - 1] : [viewMonth - 1, viewYear];
+    setViewMonth(nm);
+    setViewYear(ny);
+    onMonthChange?.({ year: ny, month: nm });
   };
   const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear((y) => y + 1);
-    } else setViewMonth((m) => m + 1);
+    const [nm, ny] =
+      viewMonth === 11 ? [0, viewYear + 1] : [viewMonth + 1, viewYear];
+    setViewMonth(nm);
+    setViewYear(ny);
+    onMonthChange?.({ year: ny, month: nm });
   };
 
   const calendarDays = useMemo(() => {
@@ -265,31 +303,44 @@ const Calendar = ({
     return cells;
   }, [viewYear, viewMonth]);
 
-  const toIso = (day) => {
-    const m = String(viewMonth + 1).padStart(2, "0");
-    const d = String(day).padStart(2, "0");
-    return `${viewYear}-${m}-${d}`;
-  };
+  const toIso = (day) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   const isToday = (day) =>
     day === today.getDate() &&
     viewMonth === today.getMonth() &&
     viewYear === today.getFullYear();
-
   const isPast = (day) => {
     const d = new Date(viewYear, viewMonth, day);
     d.setHours(0, 0, 0, 0);
     return d < today;
   };
+  const isSelected = (day) => toIso(day) === selectedDateStr;
+  const isFullyBooked = (day) => fullyBookedDates.has(toIso(day));
 
-  // A day is available if the doctor works on that weekday
-  const isDoctorDay = (day) => {
-    if (availableDayNums.length === 0) return false;
-    const dayOfWeek = new Date(viewYear, viewMonth, day).getDay();
-    return availableDayNums.includes(dayOfWeek);
+  // ── KEY: derive valid days entirely from doctorSchedule + consultationMode ──
+  // No dependency on availableDayNums from parent at all.
+  const isDayValidForMode = (day) => {
+    if (!consultationMode || !doctorSchedule.length) return false;
+    const jsDay = new Date(viewYear, viewMonth, day).getDay(); // 0=Sun…6=Sat
+    const matches = doctorSchedule.filter(
+      (s) => normalizeDayOfWeek(s.day_num ?? s.day_of_week) === jsDay,
+    );
+    return matches.some((s) => scheduleSupportsMode(s, consultationMode));
   };
 
-  const isSelected = (day) => toIso(day) === selectedDateStr;
+  // Days to show in the "Available:" badge strip
+  const modeValidDayNums = useMemo(() => {
+    if (!consultationMode || !doctorSchedule.length) return [];
+    const days = new Set();
+    doctorSchedule.forEach((s) => {
+      if (scheduleSupportsMode(s, consultationMode)) {
+        const n = normalizeDayOfWeek(s.day_num ?? s.day_of_week);
+        if (n !== null) days.add(n);
+      }
+    });
+    return [...days].sort();
+  }, [doctorSchedule, consultationMode]);
 
   const handleClick = (day) => {
     if (isToday(day)) {
@@ -297,13 +348,27 @@ const Calendar = ({
       return;
     }
     if (isPast(day)) return;
-    const iso = toIso(day);
-    // Check PH holiday
-    const holiday = getHolidayName(viewYear, viewMonth, day);
-    if (holiday) return;
-    if (!isDoctorDay(day)) return;
-    onSelectDate(iso);
+    if (getHolidayName(viewYear, viewMonth, day)) return;
+    if (!isDayValidForMode(day)) return;
+    if (isFullyBooked(day)) return;
+    onSelectDate(toIso(day));
   };
+
+  const modeLabel =
+    consultationMode === "VIRTUAL"
+      ? "Virtual"
+      : consultationMode === "ON-SITE"
+        ? "On-Site"
+        : null;
+
+  // Debug — remove after confirming it works
+  useEffect(() => {
+    if (doctorSchedule.length) {
+      console.log("[Calendar] doctorSchedule sample:", doctorSchedule[0]);
+      console.log("[Calendar] consultationMode:", consultationMode);
+      console.log("[Calendar] modeValidDayNums:", modeValidDayNums);
+    }
+  }, [doctorSchedule, consultationMode]);
 
   return (
     <div
@@ -315,6 +380,27 @@ const Calendar = ({
         overflow: "hidden",
       }}
     >
+      {/* Mode filter notice */}
+      {modeLabel && (
+        <div
+          style={{
+            padding: "8px 14px",
+            background: "#eef6ff",
+            borderBottom: "1px solid #bfdbfe",
+            fontSize: "11px",
+            color: "#1d4ed8",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}
+        >
+          <span>🔍</span>
+          Showing dates available for{" "}
+          <strong style={{ marginLeft: "4px" }}>{modeLabel}</strong> only
+        </div>
+      )}
+
       {/* Header */}
       <div
         style={{
@@ -369,8 +455,8 @@ const Calendar = ({
         </button>
       </div>
 
-      {/* Available days hint */}
-      {availableDayNums.length > 0 && (
+      {/* Available days badge strip */}
+      {modeValidDayNums.length > 0 && (
         <div
           style={{
             padding: "8px 14px",
@@ -385,7 +471,7 @@ const Calendar = ({
           <span style={{ fontSize: "10px", color: "#056696", fontWeight: 700 }}>
             Available:
           </span>
-          {[...availableDayNums].sort().map((n) => (
+          {modeValidDayNums.map((n) => (
             <span
               key={n}
               style={{
@@ -403,7 +489,7 @@ const Calendar = ({
         </div>
       )}
 
-      {/* Day name headers */}
+      {/* Day headers */}
       <div
         style={{
           display: "grid",
@@ -441,24 +527,24 @@ const Calendar = ({
 
           const past = isPast(day);
           const todayCell = isToday(day);
-          const avail = !past && !todayCell && isDoctorDay(day);
+          const validMode = !past && !todayCell && isDayValidForMode(day);
+          const fullyBooked = validMode && isFullyBooked(day);
           const selected = isSelected(day);
           const holiday =
             !past && !todayCell
               ? getHolidayName(viewYear, viewMonth, day)
               : null;
 
-          // Color logic — mirrors CreateAppointmentModal
-          let bg = "transparent";
-          let color = "#d1d5db"; // disabled grey by default
-          let border = "1.5px solid transparent";
-          let cursor = "default";
-          let opacity = 1;
+          let bg = "transparent",
+            color = "#d1d5db",
+            border = "1.5px solid transparent",
+            cursor = "default",
+            opacity = 1,
+            dotColor = null;
 
           if (selected) {
             bg = "#4D227C";
             color = "#fff";
-            border = "1.5px solid transparent";
             cursor = "pointer";
           } else if (todayCell) {
             bg = "#f3ecfc";
@@ -470,18 +556,32 @@ const Calendar = ({
             cursor = "not-allowed";
           } else if (past) {
             color = "#d1d5db";
-          } else if (avail) {
+          } else if (fullyBooked) {
+            color = "#9ca3af";
+            cursor = "not-allowed";
+            dotColor = "#ef4444";
+          } else if (validMode) {
             color = "#374151";
             cursor = "pointer";
+            dotColor = "#056696";
           } else {
             color = "#d1d5db";
-            opacity = 0.5;
+            opacity = 0.35;
+            cursor = "not-allowed";
           }
 
           return (
             <div
               key={i}
-              title={holiday ?? undefined}
+              title={
+                holiday
+                  ? `Holiday: ${holiday}`
+                  : fullyBooked
+                    ? "Fully booked"
+                    : !validMode && !past && !todayCell
+                      ? `Not available for ${modeLabel}`
+                      : undefined
+              }
               onClick={() => handleClick(day)}
               style={{
                 height: "36px",
@@ -500,7 +600,7 @@ const Calendar = ({
                 position: "relative",
               }}
               onMouseEnter={(e) => {
-                if (avail && !selected)
+                if (validMode && !selected && !fullyBooked)
                   e.currentTarget.style.background = "#f5f0fb";
               }}
               onMouseLeave={(e) => {
@@ -511,8 +611,7 @@ const Calendar = ({
               }}
             >
               {day}
-              {/* Blue dot = available doctor day */}
-              {avail && !selected && (
+              {dotColor && !selected && (
                 <span
                   style={{
                     position: "absolute",
@@ -522,7 +621,7 @@ const Calendar = ({
                     width: "4px",
                     height: "4px",
                     borderRadius: "50%",
-                    background: "#056696",
+                    background: dotColor,
                   }}
                 />
               )}
@@ -543,24 +642,37 @@ const Calendar = ({
           alignItems: "center",
           justifyContent: "center",
           gap: "12px",
+          flexWrap: "wrap",
         }}
       >
-        {availableDayNums.length > 0 && (
+        <span
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+        >
           <span
-            style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
-          >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#056696",
-                display: "inline-block",
-              }}
-            />
-            Available day
-          </span>
-        )}
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#056696",
+              display: "inline-block",
+            }}
+          />
+          Available
+        </span>
+        <span
+          style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#ef4444",
+              display: "inline-block",
+            }}
+          />
+          Fully booked
+        </span>
         <span
           style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
         >
@@ -580,12 +692,12 @@ const Calendar = ({
   );
 };
 
-// ─── TimeDropdown — uses real schedule + booked slots (same as CreateAppointmentModal TimePicker) ──
+// ─── TimeDropdown ─────────────────────────────────────────────────────────────
 const TimeDropdown = ({
   scheduleForDate = null,
   bookedSlots = [],
   loadingSlots = false,
-  selectedTime = null, // "HH:MM" 24h
+  selectedTime = null,
   onSelectTime,
   disabled = false,
 }) => {
@@ -600,7 +712,6 @@ const TimeDropdown = ({
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  // Build all slots then filter out booked — exactly like CreateAppointmentModal TimePicker
   const allSlots = useMemo(
     () => buildSlots(scheduleForDate),
     [scheduleForDate],
@@ -609,16 +720,13 @@ const TimeDropdown = ({
     () => allSlots.filter((t) => !isSlotBooked(t, bookedSlots)),
     [allSlots, bookedSlots],
   );
-
   const displayLabel = selectedTime
     ? `${formatTimePH(selectedTime)} – ${getEndTime(selectedTime)}`
     : "Select a time slot";
-
   const canOpen = !disabled && !loadingSlots && scheduleForDate;
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      {/* Trigger */}
       <div
         onClick={() => {
           if (canOpen) setOpen((o) => !o);
@@ -699,7 +807,6 @@ const TimeDropdown = ({
         )}
       </div>
 
-      {/* Schedule range label */}
       {scheduleForDate && !loadingSlots && (
         <div
           style={{
@@ -714,7 +821,6 @@ const TimeDropdown = ({
         </div>
       )}
 
-      {/* Dropdown */}
       {open && canOpen && (
         <div
           style={{
@@ -743,7 +849,6 @@ const TimeDropdown = ({
             Schedule: {formatTimePH(scheduleForDate.start_time)} –{" "}
             {formatTimePH(scheduleForDate.end_time)}
           </div>
-
           <div style={{ maxHeight: "240px", overflowY: "auto" }}>
             {availableSlots.length === 0 ? (
               <div
@@ -821,36 +926,43 @@ const TimeDropdown = ({
 
 // ─── SelectDateandTime — main export ─────────────────────────────────────────
 const SelectDateandTime = ({
-  // Real API data (passed from SetAppointmentForm → ScheduleForm → here)
-  availableDayNums = [],
+  availableDayNums = [], // kept for backward-compat but no longer used for gating
+  doctorSchedule = [], // full schedule array from API ← used for all filtering
+  consultationMode = null, // "ON-SITE" | "VIRTUAL"
   scheduleForDate = null,
   bookedSlots = [],
   bookedSlotsLoading = false,
-  // Form state
-  selectedDate, // "yyyy-MM-dd" string or null
+  fullyBookedDates = new Set(),
+  loadingBookedDates = false,
+  onMonthChange,
+  selectedDate,
   setSelectedDate,
-  selectedTime, // "HH:MM" 24h string or null
+  selectedTime,
   setSelectedTime,
   onSameDayClick,
-  // Legacy prop — ignored (we use availableDayNums instead)
-  doctorData,
 }) => {
   const handleSelectDate = (isoStr) => {
     setSelectedDate(isoStr);
-    setSelectedTime(null); // reset time on date change
+    setSelectedTime(null);
   };
-
   const handleTodayClick = () => {
     onSameDayClick?.();
     setSelectedDate(null);
     setSelectedTime(null);
   };
 
-  // Resolve selectedDate to a string for the calendar
   const selectedDateStr =
     typeof selectedDate === "string"
       ? selectedDate
       : selectedDate?.isoDate || selectedDate?.date || null;
+
+  // Check if there are ANY valid days for the selected mode
+  const hasAnyValidDays = useMemo(() => {
+    if (!consultationMode || !doctorSchedule.length) return false;
+    return doctorSchedule.some((s) =>
+      scheduleSupportsMode(s, consultationMode),
+    );
+  }, [doctorSchedule, consultationMode]);
 
   return (
     <>
@@ -870,7 +982,7 @@ const SelectDateandTime = ({
           <span style={{ color: "#e53e3e" }}>*</span> Select Date
         </p>
 
-        {availableDayNums.length === 0 ? (
+        {!hasAnyValidDays ? (
           <div
             style={{
               padding: "16px",
@@ -881,12 +993,16 @@ const SelectDateandTime = ({
               color: "#9a3412",
             }}
           >
-            ⚠ No schedule available for this doctor. Please go back and select a
-            different doctor.
+            ⚠ No schedule available for this mode. Please go back and select a
+            different option.
           </div>
         ) : (
           <Calendar
-            availableDayNums={availableDayNums}
+            doctorSchedule={doctorSchedule}
+            consultationMode={consultationMode}
+            fullyBookedDates={fullyBookedDates}
+            loadingBookedDates={loadingBookedDates}
+            onMonthChange={onMonthChange}
             selectedDateStr={selectedDateStr}
             onSelectDate={handleSelectDate}
             onTodayClick={handleTodayClick}
@@ -894,7 +1010,7 @@ const SelectDateandTime = ({
         )}
       </div>
 
-      {/* ── Time Section — only shown after date selected ── */}
+      {/* ── Time Section ── */}
       {selectedDateStr && (
         <div style={{ marginBottom: "20px" }}>
           <p

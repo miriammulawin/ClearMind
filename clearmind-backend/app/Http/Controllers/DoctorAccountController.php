@@ -104,9 +104,7 @@ class DoctorAccountController extends Controller
     ───────────────────────────────────────────────────────────────── */
    public function index(): JsonResponse
 {
-    $doctors = User::with(['doctor', 'doctor.schedules' => function($q) {
-            $q->where('is_active', true)->orderBy('day_of_week');
-        }])
+   $doctors = User::with(['doctor', 'doctor.schedules'])
         ->where('role', 'Doctor')
         ->orderBy('created_at', 'desc')
         ->get()
