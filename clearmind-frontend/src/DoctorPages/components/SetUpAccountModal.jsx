@@ -1561,7 +1561,6 @@ function AccountSetupModal({ showModal, onClose }) {
     professionalTitle: "",
     yearsOfExperience: "",
     practicingSince: "",
-    mainSpecialty: "",
     licenseNumber: "",
     prcNumber: "",
   });
@@ -1620,7 +1619,6 @@ function AccountSetupModal({ showModal, onClose }) {
         yearsOfExperience:
           d.years_of_experience != null ? String(d.years_of_experience) : "",
         practicingSince: d.practicing_since || "",
-        mainSpecialty: d.main_specialty || "",
         licenseNumber: d.license_number || "",
         prcNumber: d.prc_number || "",
       });
@@ -1681,7 +1679,6 @@ function AccountSetupModal({ showModal, onClose }) {
     fd.append("years_of_experience", formData.yearsOfExperience);
     fd.append("license_number", formData.licenseNumber);
     fd.append("practicing_since", formData.practicingSince);
-    fd.append("main_specialty", formData.mainSpecialty);
     fd.append("prc_number", formData.prcNumber);
     fd.append("specializations", JSON.stringify(specializationList));
     fd.append("sub_specializations", JSON.stringify(subSpecializationList));
@@ -1921,17 +1918,6 @@ function AccountSetupModal({ showModal, onClose }) {
                 />
               </Field>
             </div>
-            <Field label="Main Specialty">
-              <input
-                type="text"
-                placeholder="e.g. Clinical Psychology"
-                value={formData.mainSpecialty}
-                onChange={(e) => set("mainSpecialty", e.target.value)}
-                style={inputSt}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
-            </Field>
             <DropdownListInput
               label="Specializations *"
               options={STATIC_OPTIONS.specialization}

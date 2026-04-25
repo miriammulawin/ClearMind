@@ -135,4 +135,8 @@ class Appointment extends Model
     {
         return $this->belongsTo(User::class, 'booked_by_user_id', 'id');
     }
+    public function assessmentRequirement()
+    {
+    return $this->hasOne(AssessmentRequirement::class, 'appointment_id', 'appointment_id');
+    }
 }

@@ -1,194 +1,347 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Form } from "react-bootstrap";
-import styles from "../../../ClientStyle/VerifyProfileForm.module.css";
-import FormHeader from "../../AppointmentComponents/FormHeader";
+// VerifyProfileForm.jsx
+// Receives schedule summary props from SetAppointmentForm and
+// displays a booking summary banner at the top of Step 2.
+
+import React from "react";
+import FormHeader from "../../AppointmentComponents/FormHeader.jsx";
 import { useCurrentUser } from "../../../../hooks/userCurrentUser";
 
-const VerifyProfileForm = ({
-  formData = {},
-  setFormData = () => {},
-  declarationAgreed = false,
-  onOpenDeclaration = () => {},
-}) => {
-  const rawUser = useCurrentUser();
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const formatTimePH = (time24) => {
+  if (!time24) return "—";
+  // Already formatted (e.g. "9:00 AM")
+  if (time24.includes("AM") || time24.includes("PM")) return time24;
+  const [hourStr, minuteStr] = time24.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr || "00";
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${period}`;
+};
 
-  const [emailError, setEmailError] = useState("");
-  const [ageError, setAgeError] = useState("");
-
-  const todayStr = new Date().toISOString().split("T")[0];
-
-  // ─────────────────────────────────────────────
-  // ✅ FIX: Normalize REAL backend user → UI user
-  // ─────────────────────────────────────────────
-  const user = useMemo(() => {
-    if (!rawUser) return null;
-
-    return {
-      id: rawUser.id,
-      firstName: rawUser.firstName,
-      lastName: rawUser.lastName,
-      middleInitial: rawUser.middleInitial,
-
-      fullName:
-        `${rawUser.firstName || ""} ${rawUser.middleInitial || ""} ${rawUser.lastName || ""}`.trim(),
-
-      initials: (rawUser.firstName?.[0] || "") + (rawUser.lastName?.[0] || ""),
-
-      dob: rawUser.dob,
-      sex: rawUser.sex,
-      genderIdentity: rawUser.genderIdentity,
-      civilStatus: rawUser.civilStatus,
-
-      contactNo: rawUser.contactNo,
-      email: rawUser.email,
-
-      address: rawUser.address, // backend field
-      homeAddress: rawUser.address, // UI alias
-
-      profilePicture: rawUser.profilePicture,
-    };
-  }, [rawUser]);
-
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const validateEmail = (value) => {
-    if (!value) return setEmailError("");
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmailError(
-      emailRegex.test(value)
-        ? ""
-        : "Please enter a valid email address (e.g. juan@email.com)",
-    );
-  };
-
-  const handleEmailChange = (value) => {
-    handleChange("email", value);
-    validateEmail(value);
-  };
-
-  const { isInformant = false, reason = "", dateOfBirth = "" } = formData;
-
-  // ─────────────────────────────────────────────
-  // Age calculation for Complainant mode
-  // ─────────────────────────────────────────────
-  const computedAge = useMemo(() => {
-    if (!isInformant || !dateOfBirth) return "";
-
-    const today = new Date();
-    const birth = new Date(dateOfBirth);
-
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-
-    if (age < 1) {
-      setAgeError("Age must be at least 1 year old.");
-      return "0";
-    }
-
-    setAgeError("");
-    return String(age);
-  }, [dateOfBirth, isInformant]);
-
-  useEffect(() => {
-    if (formData.age !== computedAge) {
-      setFormData((prev) => ({ ...prev, age: computedAge }));
-    }
-  }, [computedAge]); // eslint-disable-line
-
-  // ─────────────────────────────────────────────
-  // ✅ IMPORTANT: WAIT FOR USER DATA
-  // ─────────────────────────────────────────────
-  if (!user) {
-    return (
-      <div className={styles.formWrapper}>
-        <div style={{ padding: "20px", color: "#888" }}>
-          Loading your profile...
-        </div>
-      </div>
-    );
+const getEndTime = (startTime) => {
+  if (!startTime) return "—";
+  let mins;
+  if (startTime.includes("AM") || startTime.includes("PM")) {
+    const [time, period] = startTime.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (period === "PM" && h !== 12) h += 12;
+    if (period === "AM" && h === 12) h = 0;
+    mins = h * 60 + m;
+  } else {
+    const [h, m] = startTime.split(":").map(Number);
+    mins = h * 60 + m;
   }
+  mins += 60;
+  const hours = Math.floor(mins / 60) % 24;
+  const minutes = mins % 60;
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayH = hours % 12 || 12;
+  const displayM = String(minutes).padStart(2, "0");
+  return `${displayH}:${displayM} ${period}`;
+};
+
+const formatPeso = (amt) =>
+  amt !== null && amt !== undefined
+    ? new Intl.NumberFormat("en-PH", {
+        style: "currency",
+        currency: "PHP",
+        minimumFractionDigits: 2,
+      }).format(amt)
+    : null;
+
+const resolveDateStr = (selectedDate) => {
+  if (!selectedDate) return null;
+  if (typeof selectedDate === "string") return selectedDate;
+  if (selectedDate.date) return selectedDate.date;
+  return null;
+};
+
+// ─── Schedule Summary Banner ──────────────────────────────────────────────────
+const ScheduleSummaryBanner = ({
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
+  doctorData,
+}) => {
+  const dateStr = resolveDateStr(selectedDate);
+  if (!consultationMode || !dateStr || !selectedTime) return null;
+
+  const rows = [
+    {
+      label: "Doctor",
+      value: doctorData?.name || "—",
+      icon: "🩺",
+    },
+    {
+      label: "Mode",
+      value: consultationMode === "VIRTUAL" ? "🖥 Virtual" : "🏥 On-Site",
+      icon: null,
+    },
+    {
+      label: "Date",
+      value: dateStr,
+      icon: "📅",
+    },
+    {
+      label: "Time",
+      value: `${formatTimePH(selectedTime)} – ${getEndTime(selectedTime)}`,
+      icon: "🕐",
+    },
+    selectedService
+      ? { label: "Service", value: selectedService, icon: "📋" }
+      : null,
+    consultationFee !== null && consultationFee !== undefined
+      ? {
+          label: "Fee",
+          value: formatPeso(consultationFee),
+          icon: "💰",
+          highlight: true,
+        }
+      : null,
+  ].filter(Boolean);
 
   return (
-    <div className={styles.formWrapper}>
-      {/* ── HEADER (REAL USER NOW PASSED) ── */}
-      <FormHeader
-        isInformant={isInformant}
-        onToggle={(value) =>
-          setFormData((prev) => ({
-            ...prev,
-            isInformant: value,
+    <div
+      style={{
+        margin: "0 0 24px",
+        padding: "16px 18px",
+        background: "linear-gradient(135deg, #f5f0fb 0%, #eef6ff 100%)",
+        border: "2px solid #4D227C",
+        borderRadius: "16px",
+        boxShadow: "0 4px 16px rgba(77,34,124,0.10)",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginBottom: "12px",
+        }}
+      >
+        <div
+          style={{
+            width: "28px",
+            height: "28px",
+            borderRadius: "50%",
+            background: "#4D227C",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "13px",
+          }}
+        >
+          ✓
+        </div>
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 700,
+            color: "#4D227C",
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+          }}
+        >
+          Your Appointment Summary
+        </span>
+      </div>
 
-            // reset fields when switching back to Patient
-            ...(!value && {
-              complainantName: "",
-              complainantRelation: "",
-              firstName: "",
-              middleName: "",
-              lastName: "",
-              sex: "",
-              dateOfBirth: "",
-              age: "",
-              contactNo: "",
-              email: "",
-              address: "",
-            }),
-          }))
+      {/* Rows */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
+          gap: "6px 12px",
+          alignItems: "center",
+        }}
+      >
+        {rows.map(({ label, value, highlight }) => (
+          <React.Fragment key={label}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                color: "#7c3aed",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {label}
+            </span>
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: highlight ? 700 : 500,
+                color: highlight ? "#059669" : "#2d1254",
+              }}
+            >
+              {value}
+            </span>
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── VerifyProfileForm ────────────────────────────────────────────────────────
+const VerifyProfileForm = ({
+  formData,
+  setFormData,
+  declarationAgreed,
+  onOpenDeclaration,
+  // Schedule summary props (from SetAppointmentForm)
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
+  doctorData,
+}) => {
+  const currentUser = useCurrentUser();
+
+  return (
+    <div>
+      {/* ── Schedule summary banner at the top of Step 2 ── */}
+      <ScheduleSummaryBanner
+        consultationMode={consultationMode}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        consultationFee={consultationFee}
+        selectedService={selectedService}
+        doctorData={doctorData}
+      />
+
+      {/* ── Declaration acknowledgement prompt ── */}
+      {!declarationAgreed && (
+        <div
+          style={{
+            margin: "0 0 18px",
+            padding: "14px 16px",
+            background: "#fff8f0",
+            border: "1.5px solid #fed7aa",
+            borderRadius: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#9a3412",
+                marginBottom: "3px",
+              }}
+            >
+              ⚠ Declaration Required
+            </div>
+            <div style={{ fontSize: "12px", color: "#9a3412" }}>
+              Please read and acknowledge the Declaration of Participation to
+              continue.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenDeclaration}
+            style={{
+              padding: "8px 14px",
+              background: "#4D227C",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            View &amp; Agree
+          </button>
+        </div>
+      )}
+
+      {declarationAgreed && (
+        <div
+          style={{
+            margin: "0 0 18px",
+            padding: "10px 14px",
+            background: "#ecfdf5",
+            border: "1.5px solid #6ee7b7",
+            borderRadius: "10px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#065f46",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>✅</span> Declaration of Participation acknowledged
+        </div>
+      )}
+
+      {/* ── Reason for consultation ── */}
+      <div style={{ marginBottom: "20px" }}>
+        <label
+          style={{
+            fontSize: "13px",
+            fontWeight: 700,
+            color: "#2d1254",
+            display: "block",
+            marginBottom: "8px",
+          }}
+        >
+          <span style={{ color: "#e53e3e" }}>*</span> Reason for Consultation
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Briefly describe the reason for your visit…"
+          value={formData.reason || ""}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, reason: e.target.value }))
+          }
+          style={{
+            width: "100%",
+            padding: "10px 13px",
+            borderRadius: "9px",
+            border: formData.reason
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5",
+            background: formData.reason ? "#faf7ff" : "#fff",
+            fontSize: "13px",
+            fontFamily: "Poppins, sans-serif",
+            color: "#2d1254",
+            resize: "vertical",
+            outline: "none",
+            transition: "border 0.2s",
+            boxSizing: "border-box",
+          }}
+          onFocus={(e) => (e.target.style.border = "1.5px solid #4D227C")}
+          onBlur={(e) =>
+            (e.target.style.border = formData.reason
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5")
+          }
+        />
+      </div>
+
+      {/* ── FormHeader: isInformant toggle + profile / complainant fields ── */}
+      <FormHeader
+        isInformant={formData.isInformant}
+        onToggle={(val) =>
+          setFormData((prev) => ({ ...prev, isInformant: val }))
         }
-        user={user} // ✅ REAL DATA FIXED
+        user={currentUser}
         patientForm={formData}
         setPatientForm={setFormData}
       />
-
-      {/* ── REASON ── */}
-      <div className={styles.fieldGroup}>
-        <label className={styles.fieldLabel}>
-          Reason for Consultation <span className={styles.requiredStar}>*</span>
-        </label>
-        <Form.Control
-          as="textarea"
-          rows={3}
-          placeholder="Briefly describe your concern."
-          className={styles.textarea}
-          value={reason}
-          onChange={(e) => handleChange("reason", e.target.value)}
-        />
-      </div>
-
-      {/* ── ERRORS ── */}
-      {isInformant && (
-        <>
-          {ageError && <div className={styles.fieldErrorMsg}>{ageError}</div>}
-          {emailError && (
-            <div className={styles.fieldErrorMsg}>{emailError}</div>
-          )}
-        </>
-      )}
-
-      {/* ── DECLARATION ── */}
-      <div className={styles.acknowledgementRow}>
-        <input
-          type="radio"
-          className={styles.radioInput}
-          checked={declarationAgreed}
-          onChange={onOpenDeclaration}
-        />
-        <span>
-          I acknowledge and agree on the{" "}
-          <button
-            type="button"
-            className={styles.policyLink}
-            onClick={onOpenDeclaration}
-          >
-            Declaration of Participation
-          </button>
-          <span className={styles.requiredStar}>*</span>
-        </span>
-      </div>
     </div>
   );
 };

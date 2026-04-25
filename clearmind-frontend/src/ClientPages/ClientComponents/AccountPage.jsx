@@ -54,7 +54,7 @@ export default function AccountPage({ userData, onEditClick }) {
     {
       icon: <IoBookOutline />,
       label: "Therapy Appointment, Cancellation, and Rebooking Policy ",
-      link: "/client/privacy-policy",
+      link: "/client/other-policies",
     },
   ];
 
@@ -94,11 +94,19 @@ export default function AccountPage({ userData, onEditClick }) {
 
               <div className="user-details">
                 <h5 className="user-name">
-                  {userData.firstName}{" "}
+                  {userData.firstName
+                    ?.toLowerCase()
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}{" "}
                   {userData.middleInitial && userData.middleInitial !== "N/A"
-                    ? `${userData.middleInitial[0]}. `
+                    ? `${userData.middleInitial.charAt(0).toUpperCase()}. `
                     : ""}
-                  {userData.lastName}
+                  {userData.lastName
+                    ?.toLowerCase()
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")}
                 </h5>
                 <p className="user-email">{userData.email}</p>
               </div>
@@ -174,6 +182,14 @@ export default function AccountPage({ userData, onEditClick }) {
           </Card>
         </div>
       </Container>
+
+      <div className="branding-section">
+        <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
+        <div className="branding-logo">
+          <Image src={logo_login} className="logo-image" />
+        </div>
+        <p className="branding-year">Est. 2024 | v. 1.0</p>
+      </div>
 
       {/* Logout Modal */}
       <Modal

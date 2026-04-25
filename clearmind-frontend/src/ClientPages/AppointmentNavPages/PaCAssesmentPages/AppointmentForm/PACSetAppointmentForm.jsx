@@ -18,22 +18,80 @@ import {
 } from "../../AppointmentComponents/PolicyModalContent.js";
 import AppointmentSuccessScreen from "../../AppointmentComponents/AppointmentSuccessScreen.jsx";
 import axiosClient from "../../../../axiosClient";
+import { useCurrentUser } from "../../../../hooks/userCurrentUser";
 
-const getInitialFee = (doctor) => {
-  if (!doctor) return null;
-  if (doctor.consultationFees?.initialConsultation)
-    return doctor.consultationFees.initialConsultation;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve the consultation fee:
+ * Priority: selectedService fee → doctor initial consultation fee → null
+ */
+const resolveConsultationFee = (doctor, selectedService) => {
+  // Service-level fee (handle both object shapes)
+  if (selectedService && typeof selectedService === "object") {
+    const serviceFee =
+      selectedService.service_fee ??
+      selectedService.fee ??
+      selectedService.price ??
+      selectedService.amount ??
+      null;
+    if (serviceFee !== null && serviceFee !== undefined) return serviceFee;
+  }
+  // Fallback: doctor's initial consultation fee
+  return doctor?.consultationFees?.initialConsultation ?? null;
+};
+
+/**
+ * selectedDate may be a plain "YYYY-MM-DD" string OR { date: "YYYY-MM-DD" }
+ */
+const resolveDateStr = (selectedDate) => {
+  if (!selectedDate) return null;
+  if (typeof selectedDate === "string") return selectedDate;
+  if (selectedDate.date) return selectedDate.date;
   return null;
+};
+
+/**
+ * Convert any time string → "HH:MM" (24-hr) for Laravel date_format:H:i
+ * Handles:  "9:00 AM", "12:30 PM", "09:00", "9:00"
+ */
+const to24Hour = (timeStr) => {
+  if (!timeStr) return null;
+  if (!timeStr.includes("AM") && !timeStr.includes("PM")) {
+    const [h, m] = timeStr.split(":").map(Number);
+    return `${String(h).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
+  }
+  const [time, period] = timeStr.trim().split(" ");
+  let [hours, minutes] = time.split(":").map(Number);
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+};
+
+/**
+ * Add 60 min to any time string → "HH:MM"
+ */
+const addOneHour = (timeStr) => {
+  if (!timeStr) return null;
+  const base = to24Hour(timeStr);
+  if (!base) return null;
+  const [h, m] = base.split(":").map(Number);
+  const total = h * 60 + m + 60;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 };
 
 const TOTAL_STEPS = 3;
 
+// ─── Component ────────────────────────────────────────────────────────────────
 const SetAppointmentForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const doctorData = location.state?.doctor;
-  const selectedService = location.state?.selectedService;
+  const selectedService = location.state?.selectedService; // may be string or object
 
+  const currentUser = useCurrentUser();
+
+  // ── UI state ──────────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(1);
   const [errorModal, setErrorModal] = useState({ show: false, message: "" });
   const [confirmModal, setConfirmModal] = useState(false);
@@ -43,7 +101,9 @@ const SetAppointmentForm = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [declarationAgreed, setDeclarationAgreed] = useState(false);
   const [bookingPolicyAgreed, setBookingPolicyAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ── Form state ────────────────────────────────────────────────
   const [consultationMode, setConsultationMode] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -54,7 +114,7 @@ const SetAppointmentForm = () => {
   });
   const [paymentData, setPaymentData] = useState({ paymentMode: "G-Cash" });
 
-  // ── NEW: Doctor schedule from API ─────────────────────────────
+  // ── Doctor schedule ───────────────────────────────────────────
   const [doctorSchedule, setDoctorSchedule] = useState([]);
   const [scheduleLoading, setScheduleLoading] = useState(false);
 
@@ -68,47 +128,95 @@ const SetAppointmentForm = () => {
       .finally(() => setScheduleLoading(false));
   }, [doctorData?.id]);
 
-  // ── NEW: Derived values from schedule ────────────────────────
   const availableDayNums = useMemo(
     () => doctorSchedule.map((s) => s.day_num),
     [doctorSchedule],
   );
 
   const scheduleForDate = useMemo(() => {
-    if (!selectedDate || doctorSchedule.length === 0) return null;
-    const dayNum = new Date(selectedDate + "T00:00:00").getDay();
+    const dateStr = resolveDateStr(selectedDate);
+    if (!dateStr || !doctorSchedule.length) return null;
+    const dayNum = new Date(dateStr + "T00:00:00").getDay();
     return doctorSchedule.find((s) => s.day_num === dayNum) || null;
   }, [selectedDate, doctorSchedule]);
 
-  // ── NEW: Booked slots from API ────────────────────────────────
+  // ── Fully-booked calendar dates ───────────────────────────────
+  const [fullyBookedDates, setFullyBookedDates] = useState(new Set());
+  const [loadingBookedDates, setLoadingBookedDates] = useState(false);
+
+  const fetchFullyBookedDates = ({ year, month }) => {
+    if (!doctorData?.doctor_user_id) return;
+    setLoadingBookedDates(true);
+    axiosClient
+      .get("/appointments/fully-booked-dates", {
+        params: {
+          doctor_user_id: doctorData.doctor_user_id,
+          year,
+          month: month + 1, // JS month is 0-indexed
+        },
+      })
+      .then(({ data }) => {
+        setFullyBookedDates(new Set(data.data || []));
+      })
+      .catch(() => setFullyBookedDates(new Set()))
+      .finally(() => setLoadingBookedDates(false));
+  };
+
+  // ── Booked slots ──────────────────────────────────────────────
   const [bookedSlots, setBookedSlots] = useState([]);
   const [bookedSlotsLoading, setBookedSlotsLoading] = useState(false);
 
   useEffect(() => {
-    // doctor_user_id = users.id (set in mapDoctor as doctor_user_id: d.id)
     const doctorUserId = doctorData?.doctor_user_id;
-    if (!doctorUserId || !selectedDate) {
+    const dateStr = resolveDateStr(selectedDate);
+    if (!doctorUserId || !dateStr) {
       setBookedSlots([]);
       return;
     }
-
     setBookedSlotsLoading(true);
     axiosClient
       .get("/appointments/booked-slots", {
-        params: { doctor_user_id: doctorUserId, date: selectedDate },
+        params: { doctor_user_id: doctorUserId, date: dateStr },
       })
       .then(({ data }) => setBookedSlots(data.data || []))
-      .catch((e) => {
-        console.error("Failed to fetch booked slots:", e);
-        setBookedSlots([]);
-      })
+      .catch(() => setBookedSlots([]))
       .finally(() => setBookedSlotsLoading(false));
   }, [doctorData?.doctor_user_id, selectedDate]);
+
+  // ── Resolved fee — SERVICE FEE TAKES PRIORITY ────────────────
+  const consultationFee = useMemo(
+    () => resolveConsultationFee(doctorData, selectedService),
+    [doctorData, selectedService],
+  );
+
+  // ── Selected service display name ─────────────────────────────
+  const selectedServiceName = useMemo(() => {
+    if (!selectedService) return "";
+    if (typeof selectedService === "string") return selectedService;
+    return (
+      selectedService.service_name ||
+      selectedService.title ||
+      selectedService.name ||
+      ""
+    );
+  }, [selectedService]);
+
+  // ── Selected service fee (for display, separate from doctor fee) ──
+  const selectedServiceFee = useMemo(() => {
+    if (!selectedService || typeof selectedService === "string") return null;
+    return (
+      selectedService.service_fee ??
+      selectedService.fee ??
+      selectedService.price ??
+      selectedService.amount ??
+      null
+    );
+  }, [selectedService]);
 
   // ── Navigation ────────────────────────────────────────────────
   const handleBack = () => {
     if (currentStep === 1) navigate(-1);
-    else setCurrentStep((prev) => prev - 1);
+    else setCurrentStep((p) => p - 1);
   };
 
   const handleContinue = () => {
@@ -138,12 +246,121 @@ const SetAppointmentForm = () => {
     setBookingPolicyModal(false);
     setBookingPolicyAgreed(true);
   };
-  const handleConfirmBook = () => {
-    setConfirmModal(false);
-    setShowSuccess(true);
-  };
   const closeErrorModal = () => setErrorModal({ show: false, message: "" });
 
+  // ── Submit ────────────────────────────────────────────────────
+  const handleConfirmBook = async () => {
+    setConfirmModal(false);
+    setIsSubmitting(true);
+
+    try {
+      const dateStr = resolveDateStr(selectedDate);
+      const startTime24 = to24Hour(selectedTime);
+      const endTime24 = addOneHour(selectedTime);
+      const isInformant = profileData.isInformant === true;
+
+      const form = new FormData();
+
+      // doctor
+      if (doctorData?.doctor_user_id)
+        form.append("doctor_user_id", doctorData.doctor_user_id);
+
+      // schedule
+      form.append("appointment_date", dateStr);
+      form.append("start_time", startTime24);
+      form.append("end_time", endTime24);
+      form.append(
+        "visit_type",
+        consultationMode === "VIRTUAL" ? "virtual" : "onsite",
+      );
+
+      // service
+      if (selectedServiceName) form.append("service_type", selectedServiceName);
+
+      // reason
+      if (profileData.reason)
+        form.append("reason_for_consultation", profileData.reason);
+
+      // ── patient ──────────────────────────────────────────────
+      if (isInformant) {
+        form.append("informant_name", profileData.complainantName || "");
+        form.append(
+          "informant_relation",
+          profileData.complainantRelation || "",
+        );
+        form.append("patient_firstName", profileData.firstName || "");
+        form.append("patient_lastName", profileData.lastName || "");
+        form.append("patient_middleInitial", profileData.middleInitial || "");
+        form.append("patient_dob", profileData.dateOfBirth || "");
+        form.append("patient_sex", (profileData.sex || "").toLowerCase());
+        form.append("patient_contactNo", profileData.contactNo || "");
+        form.append("patient_email", profileData.email || "");
+        form.append("patient_address", profileData.address || "");
+        form.append(
+          "patient_classification",
+          profileData.classification || "Regular",
+        );
+        if (profileData.civilStatus)
+          form.append(
+            "patient_civilStatus",
+            profileData.civilStatus.toLowerCase(),
+          );
+      } else {
+        form.append("patient_firstName", currentUser?.firstName || "");
+        form.append("patient_lastName", currentUser?.lastName || "");
+        form.append("patient_middleInitial", currentUser?.middleInitial || "");
+        form.append("patient_dob", currentUser?.dateOfBirth || "");
+        form.append("patient_sex", (currentUser?.sex || "").toLowerCase());
+        form.append("patient_contactNo", currentUser?.contactNo || "");
+        form.append("patient_email", currentUser?.email || "");
+        form.append(
+          "patient_address",
+          currentUser?.homeAddress || currentUser?.address || "",
+        );
+        form.append(
+          "patient_classification",
+          profileData.classification || "Regular",
+        );
+        if (currentUser?.civilStatus)
+          form.append(
+            "patient_civilStatus",
+            currentUser.civilStatus.toLowerCase(),
+          );
+      }
+
+      // payment — use resolved consultationFee (service-first)
+      if (consultationFee !== null && consultationFee !== undefined)
+        form.append("bill_amount", consultationFee);
+      form.append("payment_status", "not_paid");
+      if (paymentData.referenceNo)
+        form.append("payment_reference", paymentData.referenceNo);
+      if (paymentData.paymentMode)
+        form.append("payment_mode", paymentData.paymentMode);
+
+      // receipt
+      if (paymentData.receiptFile)
+        form.append("receipts[]", paymentData.receiptFile);
+
+      await axiosClient.post("/appointments", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setShowSuccess(true);
+    } catch (err) {
+      console.error("Booking failed:", err);
+      const serverMsg =
+        err?.response?.data?.message ||
+        (err?.response?.data?.errors
+          ? Object.values(err.response.data.errors).flat().join(" ")
+          : null) ||
+        "Something went wrong. Please try again.";
+      setErrorModal({ show: true, message: serverMsg });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Validation ────────────────────────────────────────────────
   const getStepError = () => {
     if (currentStep === 1) {
       if (!consultationMode)
@@ -190,32 +407,40 @@ const SetAppointmentForm = () => {
     return "";
   };
 
+  // ── Step render ───────────────────────────────────────────────
   const renderStepBody = () => {
     switch (currentStep) {
       case 1:
         return (
           <ScheduleForm
             doctorData={doctorData}
-            // ── Real API data — NEW ──
             doctorSchedule={doctorSchedule}
             scheduleLoading={scheduleLoading}
             availableDayNums={availableDayNums}
             scheduleForDate={scheduleForDate}
             bookedSlots={bookedSlots}
             bookedSlotsLoading={bookedSlotsLoading}
-            // ── Service ──
-            selectedService={selectedService}
-            // ── Form state ──
+            fullyBookedDates={fullyBookedDates}
+            loadingBookedDates={loadingBookedDates}
+            onMonthChange={fetchFullyBookedDates}
+            // Service info
+            selectedService={selectedServiceName}
+            selectedServiceFee={selectedServiceFee}
+            serviceFromState={
+              typeof selectedService === "object" ? selectedService : null
+            }
+            // Lifted form state
             consultationMode={consultationMode}
             setConsultationMode={setConsultationMode}
             selectedDate={selectedDate}
             setSelectedDate={(date) => {
               setSelectedDate(date);
-              setSelectedTime(null); // reset time when date changes
+              setSelectedTime(null);
             }}
             selectedTime={selectedTime}
             setSelectedTime={setSelectedTime}
-            consultationFee={getInitialFee(doctorData)}
+            // Fee — service-first resolved
+            consultationFee={consultationFee}
             onSameDayClick={() => setSameDayToast(true)}
           />
         );
@@ -226,6 +451,13 @@ const SetAppointmentForm = () => {
             setFormData={setProfileData}
             declarationAgreed={declarationAgreed}
             onOpenDeclaration={() => setDeclarationModal(true)}
+            // ── FIX: pass schedule summary props ──
+            consultationMode={consultationMode}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+            consultationFee={consultationFee}
+            selectedService={selectedServiceName}
+            doctorData={doctorData}
           />
         );
       case 3:
@@ -235,7 +467,9 @@ const SetAppointmentForm = () => {
             selectedDate={selectedDate}
             selectedTime={selectedTime}
             consultationMode={consultationMode}
-            consultationFee={getInitialFee(doctorData)}
+            // ── FIX: use resolved fee (service-first) ──
+            consultationFee={consultationFee}
+            selectedService={selectedServiceName}
             profileData={profileData}
             paymentData={paymentData}
             setPaymentData={setPaymentData}
@@ -298,11 +532,17 @@ const SetAppointmentForm = () => {
           </button>
         )}
         <button
-          className={`${styles.continueButton} ${getStepError() ? styles.continueDisabled : ""}`}
-          disabled={!!getStepError()}
+          className={`${styles.continueButton} ${
+            getStepError() || isSubmitting ? styles.continueDisabled : ""
+          }`}
+          disabled={!!getStepError() || isSubmitting}
           onClick={handleContinue}
         >
-          {currentStep === TOTAL_STEPS ? "Confirm & Book" : "Continue"}
+          {currentStep === TOTAL_STEPS
+            ? isSubmitting
+              ? "Booking…"
+              : "Confirm & Book"
+            : "Continue"}
         </button>
       </div>
 
@@ -319,7 +559,6 @@ const SetAppointmentForm = () => {
         cancelLabel="Cancel"
         size="md"
       />
-
       <PolicyModal
         show={bookingPolicyModal}
         initialAgreed={bookingPolicyAgreed}
@@ -353,14 +592,16 @@ const SetAppointmentForm = () => {
             <button
               className={styles.confirmModalBtnBack}
               onClick={() => setConfirmModal(false)}
+              disabled={isSubmitting}
             >
               CANCEL
             </button>
             <button
               className={styles.confirmModalBtnConfirm}
               onClick={handleConfirmBook}
+              disabled={isSubmitting}
             >
-              YES, CONFIRM
+              {isSubmitting ? "Booking…" : "YES, CONFIRM"}
             </button>
           </div>
         </Modal.Body>

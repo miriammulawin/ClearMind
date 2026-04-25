@@ -143,7 +143,9 @@ function DoctorProfile() {
 
       credentials: d.professional_title || d.professionalTitle || "",
       bio: d.description || "",
-      specialty: d.main_specialty || "",
+      specialty: Array.isArray(d.specializations)
+        ? d.specializations.join(", ")
+        : d.specializations || "",
       practicingSince: d.practicing_since || "",
 
       licenseNo: d.license_number ? ` ${d.license_number}` : "",
@@ -408,8 +410,9 @@ function DoctorProfile() {
                               className="text-muted d-block mb-1"
                               style={{ color: "#4D227C" }}
                             >
-                              MAIN SPECIALTY
+                              SPECIALIZATION
                             </small>
+
                             <p
                               className="fw-semibold mb-0"
                               style={{ color: "#2D3748" }}

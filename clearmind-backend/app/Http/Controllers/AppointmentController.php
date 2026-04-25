@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AppointmentController extends Controller
 {
@@ -45,13 +46,6 @@ class AppointmentController extends Controller
 
     /* ══════════════════════════════════════════════
        GET /appointments/booked-slots
-       Returns all confirmed time slots for a doctor
-       on a specific date so the frontend can block
-       them out in the time picker.
-
-       Query params:
-         doctor_user_id  — required
-         date            — required (YYYY-MM-DD)
     ══════════════════════════════════════════════ */
     public function bookedSlots(Request $request): JsonResponse
     {
@@ -60,8 +54,6 @@ class AppointmentController extends Controller
             'date'           => ['required', 'date'],
         ]);
 
-        // Only confirmed appointments block the slot.
-        // pending / cancelled / no_show do NOT block.
         $slots = Appointment::where('doctor_user_id', $request->doctor_user_id)
             ->whereDate('appointment_date', $request->date)
             ->whereIn('status', ['confirmed', 'completed'])
@@ -70,7 +62,7 @@ class AppointmentController extends Controller
         return response()->json([
             'data' => $slots->map(fn($s) => [
                 'appointment_id' => $s->appointment_id,
-                'start_time'     => substr($s->start_time, 0, 5), // HH:MM
+                'start_time'     => substr($s->start_time, 0, 5),
                 'end_time'       => substr($s->end_time,   0, 5),
                 'status'         => $s->status,
             ]),
@@ -105,6 +97,7 @@ class AppointmentController extends Controller
             'pae_purpose'              => ['nullable', 'string', 'max:200'],
             'payment_status'           => ['nullable', 'in:paid,not_paid,probono'],
             'payment_reference'        => ['nullable', 'string', 'max:100'],
+            'payment_mode'             => ['nullable', 'string', 'max:50'],
             'bill_amount'              => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'receipts'                 => ['nullable', 'array', 'max:10'],
             'receipts.*'               => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
@@ -118,15 +111,7 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        /* ── Time-slot conflict check ────────────────────────────────
-           If a doctor is assigned, make sure the requested time window
-           does not overlap any existing CONFIRMED appointment for that
-           doctor on the same date.
-
-           Overlap condition (Allen's interval algebra):
-             existing.start_time < new.end_time
-             AND existing.end_time > new.start_time
-        ─────────────────────────────────────────────────────────── */
+        /* ── Time-slot conflict check ─────────────────────────── */
         if ($request->filled('doctor_user_id')) {
             $conflict = Appointment::where('doctor_user_id', $request->doctor_user_id)
                 ->whereDate('appointment_date', $request->appointment_date)
@@ -151,6 +136,7 @@ class AppointmentController extends Controller
         try {
             $user = Auth::user();
 
+            /* ── Patient ──────────────────────────────────────── */
             if ($request->filled('patient_id')) {
                 $patient = Patient::where('patient_id', $request->patient_id)->firstOrFail();
             } else {
@@ -160,7 +146,7 @@ class AppointmentController extends Controller
                     'firstName'             => $request->patient_firstName,
                     'lastName'              => $request->patient_lastName,
                     'middleInitial'         => $request->patient_middleInitial,
-                    'dob'                   => $request->patient_dob,
+                    'dob'                   => $request->patient_dob,   // FIX: stored correctly
                     'sex'                   => $request->patient_sex,
                     'civilStatus'           => $request->patient_civilStatus,
                     'patientClassification' => $request->patient_classification ?? 'Regular',
@@ -170,12 +156,31 @@ class AppointmentController extends Controller
                 ]);
             }
 
+            /* ── Receipts ─────────────────────────────────────── */
             if ($request->hasFile('receipts')) {
                 foreach ($request->file('receipts') as $file) {
                     $receiptPaths[] = $file->store('appointments/receipts', 'public');
                 }
             }
 
+            /* ── Auto-generate reference number ──────────────────
+               Format: PAC-YYYYMMDD-XXXXXX  (6 random alphanumeric)
+               Guaranteed unique within the appointments table.
+            ─────────────────────────────────────────────────────── */
+            $paymentReference = $request->payment_reference;
+
+            if (empty($paymentReference)) {
+                do {
+                    $paymentReference = 'PAC-'
+                        . now()->format('Ymd')
+                        . '-'
+                        . strtoupper(Str::random(6));
+                } while (
+                    Appointment::where('payment_reference', $paymentReference)->exists()
+                );
+            }
+
+            /* ── Appointment ──────────────────────────────────── */
             $appointment = Appointment::create([
                 'booked_by_user_id'       => $user->id,
                 'patient_id'              => $patient->patient_id,
@@ -190,9 +195,8 @@ class AppointmentController extends Controller
                 'service_type'            => $request->service_type,
                 'pae_purpose'             => $request->pae_purpose,
                 'payment_status'          => $request->payment_status ?? 'not_paid',
-                'payment_reference'       => $request->filled('payment_reference')
-                                                ? $request->payment_reference
-                                                : null,
+                'payment_reference'       => $paymentReference,   // always set now
+                'payment_mode'            => $request->payment_mode,
                 'bill_amount'             => $request->filled('bill_amount')
                                                 ? $request->bill_amount
                                                 : null,
@@ -203,9 +207,10 @@ class AppointmentController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Appointment created successfully.',
-                'data'    => Appointment::with(['patient', 'doctor', 'bookedBy'])
-                                ->find($appointment->appointment_id),
+                'message'   => 'Appointment created successfully.',
+                'reference' => $paymentReference,           // return ref to frontend
+                'data'      => Appointment::with(['patient', 'doctor', 'bookedBy'])
+                                    ->find($appointment->appointment_id),
             ], 201);
 
         } catch (\Exception $e) {
@@ -259,6 +264,7 @@ class AppointmentController extends Controller
             'doctor_user_id'    => ['nullable', 'exists:users,id'],
             'payment_status'    => ['nullable', 'in:paid,not_paid,probono'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
+            'payment_mode'      => ['nullable', 'string', 'max:50'],
             'bill_amount'       => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'notes'             => ['nullable', 'string'],
             'service_type'      => ['nullable', 'string', 'max:100'],
@@ -276,8 +282,8 @@ class AppointmentController extends Controller
         try {
             $appt->fill($request->only([
                 'status', 'doctor_user_id', 'payment_status', 'payment_reference',
-                'bill_amount', 'notes', 'visit_type', 'appointment_date',
-                'start_time', 'end_time', 'service_type',
+                'payment_mode', 'bill_amount', 'notes', 'visit_type',
+                'appointment_date', 'start_time', 'end_time', 'service_type',
             ]));
 
             if ($request->hasFile('receipts')) {

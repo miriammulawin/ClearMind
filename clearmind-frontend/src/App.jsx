@@ -48,6 +48,7 @@ import ProfilePage from "./ClientPages/ClientComponents/ProfilePage";
 import Help from "./ClientPages/ClientComponents/Help";
 import TermsAndConditions from "./ClientPages/ClientComponents/TermsAndConditions";
 import PrivacyPolicy from "./ClientPages/ClientComponents/PrivacyPolicy";
+import PoliciesPage from "./ClientPages/ClientComponents/PoliciesPage";
 import About from "./ClientPages/ClientComponents/About";
 import AppointmentDetails from "./ClientPages/AppointmentNavPages/AppointmentComponents/AppointmentDetails";
 import PACAppointment from "./ClientPages/AppointmentNavPages/PaCAssesmentPages/PACAppointment";
@@ -212,7 +213,6 @@ function App() {
             {/* ── Client Routes (all wrapped in ClientLayout) ── */}
             <Route element={<ClientLayout />}>
               <Route path="/client/home" element={<ClientHome />} />
-
               <Route path="/client/appointment" element={<ClientAppointment />}>
                 <Route index element={<Navigate to="services" replace />} />
                 <Route path="services" element={<ServicesTab />} />
@@ -243,12 +243,10 @@ function App() {
 
                 <Route path="history" element={<HistoryTab />} />
               </Route>
-
               <Route path="/client/messages" element={<ClientMessages />} />
               <Route path="/client/account" element={<ClientAccount />}>
                 <Route path="profile-page" element={<ProfilePage />}></Route>
               </Route>
-
               <Route path="/client/help" element={<Help />} />
               <Route
                 path="/client/terms-and-conditions"
@@ -258,8 +256,9 @@ function App() {
                 path="/client/privacy-policy"
                 element={<PrivacyPolicy />}
               />
-              <Route path="/client/about" element={<About />} />
+              <Route path="/client/other-policies" element={<PoliciesPage />} />
 
+              <Route path="/client/about" element={<About />} />
               <Route
                 path="/client/appointment/sessions/book-next"
                 element={<BookNextSession />}

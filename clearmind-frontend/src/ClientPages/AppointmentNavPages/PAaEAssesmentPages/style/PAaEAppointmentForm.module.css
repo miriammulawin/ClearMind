@@ -69,6 +69,23 @@
   margin-top: 1px;
 }
 
+/* ── Extra Fields Container ── */
+.extraFieldCard {
+  background: #f9f5ff;
+  border: 1.5px solid #ddd0f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.extraFieldCardTitle {
+  color: #4e237c;
+  font-size: clamp(12px, 3vw, 13px);
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
 /* ─── Stepper ───────────────────────────────────────────────── */
 .stepperOuter {
   background: #fff;
