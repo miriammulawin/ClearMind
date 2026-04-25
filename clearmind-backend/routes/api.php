@@ -34,6 +34,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get  ('/me',    [AuthController::class, 'me']);
     Route::match(['put', 'post'], '/me', [AuthController::class, 'update']);
+    Route::post('/assessment-requirements', [AssessmentRequirementController::class, 'store']);
+    Route::get('/assessment-requirements/{appointmentId}', [AssessmentRequirementController::class, 'show']);
+    Route::put('/assessment-requirements/{appointmentId}', [AssessmentRequirementController::class, 'update']);
+
 
     // ── Messages & Conversations ──────────────────────────────────
     Route::get  ('/conversations',                     [MessageController::class, 'conversations']);
