@@ -608,6 +608,7 @@
   font-size: 14px;
   color: #1f2937;
   font-weight: 500;
+  text-transform: capitalize;
 }
 
 .statusBadge {
@@ -1800,4 +1801,3 @@
     font-size: 12px;
   }
 }
-

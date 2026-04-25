@@ -24,11 +24,22 @@ import {
   FiDollarSign,
 } from "react-icons/fi";
 import { FaCalendarAlt, FaUserMd } from "react-icons/fa";
-import samplePayment from "../assets/payment/images.png";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../axiosClient";
 import toast from "react-hot-toast";
 import { format } from "date-fns";
+
+/* ─────────────────────────────────────────────────────────
+   Receipt helper
+───────────────────────────────────────────────────────── */
+const STORAGE_BASE = "http://localhost:8000";
+
+const toUrl = (path) => `${STORAGE_BASE}/storage/${path}`;
+
+const getReceiptPaths = (obj) =>
+  (Array.isArray(obj?.receipt_paths) && obj.receipt_paths.length > 0
+    ? obj.receipt_paths
+    : null) ?? (obj?.receipt_path ? [obj.receipt_path] : []);
 
 /* ─────────────────────────────────────────────────────────
    Helpers
@@ -144,6 +155,7 @@ const normalizeAppointment = (a) => {
     paePurpose: a.pae_purpose ?? null,
     paymentStatus: a.payment_status ?? "—",
     receiptPath: a.receipt_path ?? null,
+    receipt_paths: a.receipt_paths ?? null,
     informantName: a.informant_name ?? null,
     informantRelation: a.informant_relation ?? null,
     cancellationReason: a.notes ?? null,
@@ -193,10 +205,9 @@ function AdminPatient() {
   const [selectedReschedule, setSelectedReschedule] = useState(null);
   const navigate = useNavigate();
 
-  /* ── Data state ── */
   const [patients, setPatients] = useState([]);
-  const [consultationRequests, setConsultationRequests] = useState([]); // pending only
-  const [confirmedAppointments, setConfirmedAppointments] = useState([]); // confirmed
+  const [consultationRequests, setConsultationRequests] = useState([]);
+  const [confirmedAppointments, setConfirmedAppointments] = useState([]);
   const [cancelledAppointments, setCancelledAppointments] = useState([]);
   const [rescheduleRequests, setRescheduleRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -226,30 +237,24 @@ function AdminPatient() {
       const all = Array.isArray(data.data) ? data.data : [];
       const normalized = all.map(normalizeAppointment);
 
-      // ── pending only → Consultation Requests tab
-      const pending = normalized.filter(
-        (a) => (a.status ?? "").toLowerCase() === "pending",
+      setConsultationRequests(
+        normalized.filter((a) => (a.status ?? "").toLowerCase() === "pending"),
       );
-
-      // ── confirmed → Appointments tab + Calendar
-      const confirmed = normalized.filter(
-        (a) => (a.status ?? "").toLowerCase() === "confirmed",
+      setConfirmedAppointments(
+        normalized.filter(
+          (a) => (a.status ?? "").toLowerCase() === "confirmed",
+        ),
       );
-
-      // ── cancelled
-      const cancelled = normalized.filter(
-        (a) => (a.status ?? "").toLowerCase() === "cancelled",
+      setCancelledAppointments(
+        normalized.filter(
+          (a) => (a.status ?? "").toLowerCase() === "cancelled",
+        ),
       );
-
-      // ── reschedule
-      const reschedule = normalized.filter(
-        (a) => (a.status ?? "").toLowerCase() === "reschedule_requested",
+      setRescheduleRequests(
+        normalized.filter(
+          (a) => (a.status ?? "").toLowerCase() === "reschedule_requested",
+        ),
       );
-
-      setConsultationRequests(pending);
-      setConfirmedAppointments(confirmed);
-      setCancelledAppointments(cancelled);
-      setRescheduleRequests(reschedule);
     } catch (err) {
       console.error("fetchAppointments:", err);
       toast.error("Failed to load appointments");
@@ -268,15 +273,12 @@ function AdminPatient() {
   /* ══════════════════════════════════════════════════════
      ACTIONS
   ══════════════════════════════════════════════════════ */
-
-  // Confirm → remove from pending, add to confirmed
   const handleConfirmAppointment = async (id) => {
     try {
       await axiosClient.put(`/admin/appointments/${id}`, {
         status: "confirmed",
       });
       toast.success("Appointment confirmed");
-
       const appt = consultationRequests.find((a) => a.id === id);
       if (appt) {
         setConsultationRequests((prev) => prev.filter((a) => a.id !== id));
@@ -469,7 +471,6 @@ function AdminPatient() {
             {/* ── Tabs + Filter ── */}
             <div className={styles.patientTabsRow}>
               <div className={styles.patientTabs}>
-                {/* Total Patients */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "patients" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("patients")}
@@ -477,7 +478,6 @@ function AdminPatient() {
                   Total Patients <span>{patients.length}</span>
                 </button>
 
-                {/* Confirmed Appointments — new tab */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "confirmed" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("confirmed")}
@@ -485,8 +485,6 @@ function AdminPatient() {
                   Total Appointments <span>{confirmedAppointments.length}</span>
                 </button>
 
-
-                {/* Consultation Requests — pending only */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "consultation" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("consultation")}
@@ -503,7 +501,6 @@ function AdminPatient() {
                   </span>
                 </button>
 
-                {/* Reschedule */}
                 <button
                   className={`${styles.tabBtn} ${activeTab === "reschedule" ? styles.tabActive : ""}`}
                   onClick={() => handleTabChange("reschedule")}
@@ -526,7 +523,6 @@ function AdminPatient() {
                   </span>
                 </button>
 
-                {/* Cancelled */}
                 <button
                   className={`${styles.tabCancelledBtn} ${activeTab === "cancelled" ? styles.tabCancelledActive : ""}`}
                   onClick={() => handleTabChange("cancelled")}
@@ -621,7 +617,6 @@ function AdminPatient() {
                       </td>
                     </tr>
                   ) : activeTab === "confirmed" ? (
-                    /* ── Confirmed Appointments Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -675,7 +670,6 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : activeTab === "reschedule" ? (
-                    /* ── Reschedule Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -733,7 +727,6 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : activeTab === "consultation" ? (
-                    /* ── Consultation Requests Table (pending only) ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -788,7 +781,6 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : activeTab === "cancelled" ? (
-                    /* ── Cancelled Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -830,7 +822,6 @@ function AdminPatient() {
                       </tr>
                     ))
                   ) : (
-                    /* ── Patients Table ── */
                     displayedData.map((row) => (
                       <tr key={row.id}>
                         <td>{row.name}</td>
@@ -923,7 +914,8 @@ function AdminPatient() {
           onClick={() => setShowModal(false)}
         >
           <div className={styles.modalLg} onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
+
+            {/* ── Header ── */}
             <div className={styles.modalProfileHeader}>
               <button
                 className={styles.closeBtn}
@@ -975,9 +967,10 @@ function AdminPatient() {
               </div>
             </div>
 
-            {/* Body */}
+            {/* ── Body ── */}
             <div className={styles.modalBody}>
-              {/* ── Appointment Details (consultation, confirmed, cancelled) ── */}
+
+              {/* Appointment Details */}
               {(modalSource === "consultation" ||
                 modalSource === "confirmed" ||
                 modalSource === "cancelled") && (
@@ -991,55 +984,38 @@ function AdminPatient() {
                   />
                   <div className={styles.twoCol}>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiCalendar />
-                      </div>
+                      <div className={styles.infoIcon}><FiCalendar /></div>
                       <div>
                         <span className={styles.infoLabel}>Date</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.date}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.date}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiClock />
-                      </div>
+                      <div className={styles.infoIcon}><FiClock /></div>
                       <div>
                         <span className={styles.infoLabel}>Time</span>
                         <span className={styles.infoValue}>
                           {selectedPatient.time}
-                          {selectedPatient.endTime &&
-                            ` – ${selectedPatient.endTime}`}
+                          {selectedPatient.endTime && ` – ${selectedPatient.endTime}`}
                         </span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiFileText />
-                      </div>
+                      <div className={styles.infoIcon}><FiFileText /></div>
                       <div>
                         <span className={styles.infoLabel}>Service</span>
                         <span className={styles.infoValue}>
                           {selectedPatient.serviceType ?? selectedPatient.type}
                         </span>
                         {selectedPatient.paePurpose && (
-                          <span
-                            style={{
-                              fontSize: "11px",
-                              color: "#1d6fa4",
-                              display: "block",
-                            }}
-                          >
+                          <span style={{ fontSize: "11px", color: "#1d6fa4", display: "block" }}>
                             → {selectedPatient.paePurpose}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiUser />
-                      </div>
+                      <div className={styles.infoIcon}><FiUser /></div>
                       <div>
                         <span className={styles.infoLabel}>Status</span>
                         <span
@@ -1060,9 +1036,7 @@ function AdminPatient() {
                       </div>
                       <div>
                         <span className={styles.infoLabel}>Patient Type</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.patientType}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.patientType}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
@@ -1075,40 +1049,25 @@ function AdminPatient() {
                       </div>
                       <div>
                         <span className={styles.infoLabel}>Mode</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.consultationMode}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.consultationMode}</span>
                       </div>
                     </div>
                     {selectedPatient.reason && (
-                      <div
-                        className={styles.infoItem}
-                        style={{ gridColumn: "1/-1" }}
-                      >
-                        <div className={styles.infoIcon}>
-                          <FiFileText />
-                        </div>
+                      <div className={styles.infoItem} style={{ gridColumn: "1/-1" }}>
+                        <div className={styles.infoIcon}><FiFileText /></div>
                         <div>
                           <span className={styles.infoLabel}>Reason</span>
-                          <span className={styles.infoValue}>
-                            {selectedPatient.reason}
-                          </span>
+                          <span className={styles.infoValue}>{selectedPatient.reason}</span>
                         </div>
                       </div>
                     )}
                     {selectedPatient.informantName && (
-                      <div
-                        className={styles.infoItem}
-                        style={{ gridColumn: "1/-1" }}
-                      >
-                        <div className={styles.infoIcon}>
-                          <FiUser />
-                        </div>
+                      <div className={styles.infoItem} style={{ gridColumn: "1/-1" }}>
+                        <div className={styles.infoIcon}><FiUser /></div>
                         <div>
                           <span className={styles.infoLabel}>Informant</span>
                           <span className={styles.infoValue}>
-                            {selectedPatient.informantName} (
-                            {selectedPatient.informantRelation})
+                            {selectedPatient.informantName} ({selectedPatient.informantRelation})
                           </span>
                         </div>
                       </div>
@@ -1141,8 +1100,7 @@ function AdminPatient() {
                           display: "flex",
                           alignItems: "center",
                           gap: "12px",
-                          background:
-                            "linear-gradient(135deg, #f3eeff, #ede9f6)",
+                          background: "linear-gradient(135deg, #f3eeff, #ede9f6)",
                           border: "1px solid #d8ccf0",
                           borderRadius: "10px",
                           padding: "12px 14px",
@@ -1153,8 +1111,7 @@ function AdminPatient() {
                             width: 40,
                             height: 40,
                             borderRadius: "50%",
-                            background:
-                              "linear-gradient(135deg, #7341A8, #4D227C)",
+                            background: "linear-gradient(135deg, #7341A8, #4D227C)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1164,24 +1121,10 @@ function AdminPatient() {
                           <FaUserMd size={18} color="#fff" />
                         </div>
                         <div>
-                          <p
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 700,
-                              color: "#3b1f6e",
-                              margin: "0 0 2px 0",
-                            }}
-                          >
+                          <p style={{ fontSize: "14px", fontWeight: 700, color: "#3b1f6e", margin: "0 0 2px 0" }}>
                             {selectedPatient.assignedDoctor.name}
                           </p>
-                          <p
-                            style={{
-                              fontSize: "12px",
-                              color: "#7341A8",
-                              margin: 0,
-                              fontStyle: "italic",
-                            }}
-                          >
+                          <p style={{ fontSize: "12px", color: "#7341A8", margin: 0, fontStyle: "italic" }}>
                             {selectedPatient.assignedDoctor.specialization}
                           </p>
                         </div>
@@ -1191,7 +1134,7 @@ function AdminPatient() {
                 </div>
               )}
 
-              {/* ── Patient Details (patients tab) ── */}
+              {/* Patient Details (patients tab only) */}
               {modalSource === "patients" && (
                 <div
                   className={styles.modalCard}
@@ -1203,182 +1146,144 @@ function AdminPatient() {
                   />
                   <div className={styles.twoCol}>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiPhone />
-                      </div>
+                      <div className={styles.infoIcon}><FiPhone /></div>
                       <div>
                         <span className={styles.infoLabel}>Contact</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.contact}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.contact}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiUser />
-                      </div>
+                      <div className={styles.infoIcon}><FiUser /></div>
                       <div>
                         <span className={styles.infoLabel}>Email</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.email}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.email}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiHome />
-                      </div>
+                      <div className={styles.infoIcon}><FiHome /></div>
                       <div>
                         <span className={styles.infoLabel}>Address</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.address}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.address}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiUser />
-                      </div>
+                      <div className={styles.infoIcon}><FiUser /></div>
                       <div>
                         <span className={styles.infoLabel}>Civil Status</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.civilStatus}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.civilStatus}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiCalendar />
-                      </div>
+                      <div className={styles.infoIcon}><FiCalendar /></div>
                       <div>
                         <span className={styles.infoLabel}>Classification</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.classification}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.classification}</span>
                       </div>
                     </div>
                     <div className={styles.infoItem}>
-                      <div className={styles.infoIcon}>
-                        <FiActivity />
-                      </div>
+                      <div className={styles.infoIcon}><FiActivity /></div>
                       <div>
                         <span className={styles.infoLabel}>Total Visits</span>
-                        <span className={styles.infoValue}>
-                          {selectedPatient.totalVisits}
-                        </span>
+                        <span className={styles.infoValue}>{selectedPatient.totalVisits}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Cancellation Reason ── */}
-              {modalSource === "cancelled" &&
-                selectedPatient.cancellationReason && (
-                  <div
-                    className={styles.modalCard}
-                    style={{ marginBottom: "12px" }}
-                  >
-                    <div className={styles.cancellationHeader}>
-                      <div className={styles.cancellationIcon}>
-                        <FiAlertCircle size={14} color="#fff" />
-                      </div>
-                      <h4 className={styles.cancellationTitle}>
-                        Cancellation Reason
-                      </h4>
-                    </div>
-                    <div className={styles.cancellationBox}>
-                      <p className={styles.cancellationText}>
-                        {selectedPatient.cancellationReason}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-              {/* ── Payment ── */}
-              <div className={styles.modalCard}>
-                <button
-                  className={styles.paymentToggle}
-                  onClick={() => setPaymentOpen(!paymentOpen)}
+              {/* Cancellation Reason */}
+              {modalSource === "cancelled" && selectedPatient.cancellationReason && (
+                <div
+                  className={styles.modalCard}
+                  style={{ marginBottom: "12px" }}
                 >
-                  <span
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <div className={styles.cardSectionIcon}>
-                      <FiFileText size={13} color="#fff" />
+                  <div className={styles.cancellationHeader}>
+                    <div className={styles.cancellationIcon}>
+                      <FiAlertCircle size={14} color="#fff" />
                     </div>
-                    <span className={styles.paymentToggleTitle}>
-                      Payment Details
+                    <h4 className={styles.cancellationTitle}>Cancellation Reason</h4>
+                  </div>
+                  <div className={styles.cancellationBox}>
+                    <p className={styles.cancellationText}>
+                      {selectedPatient.cancellationReason}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Details — hidden for patients tab */}
+              {modalSource !== "patients" && (
+                <div className={styles.modalCard}>
+                  <button
+                    className={styles.paymentToggle}
+                    onClick={() => setPaymentOpen(!paymentOpen)}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div className={styles.cardSectionIcon}>
+                        <FiFileText size={13} color="#fff" />
+                      </div>
+                      <span className={styles.paymentToggleTitle}>Payment Details</span>
                     </span>
-                  </span>
-                  <span className={styles.paymentToggleIcon}>
-                    {paymentOpen ? (
-                      <FiChevronUp size={18} />
-                    ) : (
-                      <FiChevronDown size={18} />
-                    )}
-                    <span style={{ fontSize: 12, marginLeft: 4 }}>
-                      {paymentOpen ? "Hide" : "View"}
+                    <span className={styles.paymentToggleIcon}>
+                      {paymentOpen ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                      <span style={{ fontSize: 12, marginLeft: 4 }}>
+                        {paymentOpen ? "Hide" : "View"}
+                      </span>
                     </span>
-                  </span>
-                </button>
-                {paymentOpen && (
-                  <div className={styles.paymentCollapseBody}>
-                    <div className={styles.paymentLayout}>
-                      <div className={styles.paymentFields}>
-                        <div className={styles.infoItem}>
-                          <div
-                            className={styles.infoIcon}
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 700,
-                              color: "#888",
-                            }}
-                          >
-                            ₱
-                          </div>
-                          <div>
-                            <span className={styles.infoLabel}>
-                              Payment Status
-                            </span>
-                            <span className={styles.infoValue}>
-                              {selectedPatient.paymentStatus ?? "—"}
-                            </span>
+                  </button>
+
+                  {paymentOpen && (
+                    <div className={styles.paymentCollapseBody}>
+                      <div className={styles.paymentLayout}>
+                        <div className={styles.paymentFields}>
+                          <div className={styles.infoItem}>
+                            <div
+                              className={styles.infoIcon}
+                              style={{ fontSize: 13, fontWeight: 700, color: "#888" }}
+                            >
+                              ₱
+                            </div>
+                            <div>
+                              <span className={styles.infoLabel}>Payment Status</span>
+                              <span className={styles.infoValue}>
+                                {selectedPatient.paymentStatus
+                                  ? selectedPatient.paymentStatus
+                                      .replace(/_/g, " ")
+                                      .replace(/\b\w/g, (c) => c.toUpperCase())
+                                  : "—"}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className={styles.paymentProof}>
-                        <span className={styles.paymentProofLabel}>
-                          Payment Proof
-                        </span>
-                        <img
-                          src={
-                            selectedPatient.receiptPath
-                              ? `http://localhost:8000/storage/${selectedPatient.receiptPath}`
-                              : samplePayment
-                          }
-                          alt="Payment Proof"
-                          className={styles.paymentProofImg}
-                          onClick={() =>
-                            setZoomImage(
-                              selectedPatient.receiptPath
-                                ? `http://localhost:8000/storage/${selectedPatient.receiptPath}`
-                                : samplePayment,
-                            )
-                          }
-                        />
+
+                        {/* Payment Proof Image — only shown if receipt exists */}
+                        {getReceiptPaths(selectedPatient).length > 0 && (
+                          <div className={styles.paymentProof}>
+                            <span className={styles.paymentProofLabel}>Payment Proof</span>
+                            <img
+                              src={toUrl(getReceiptPaths(selectedPatient)[0])}
+                              alt="Payment Proof"
+                              className={styles.paymentProofImg}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.style.display = "none";
+                              }}
+                              onClick={() =>
+                                setZoomImage(toUrl(getReceiptPaths(selectedPatient)[0]))
+                              }
+                            />
+                          </div>
+                        )}
+
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
+                  )}
+                </div>
+              )}
 
-            {/* Footer */}
+            </div> {/* ── end modalBody ── */}
+
+            {/* ── Footer ── */}
             <div className={styles.modalFooter}>
               <button
                 className={styles.btnViewHistory}
@@ -1390,7 +1295,6 @@ function AdminPatient() {
               >
                 <FiFileText style={{ marginRight: "6px" }} /> View History
               </button>
-              {/* Confirm button only in consultation tab */}
               {modalSource === "consultation" && (
                 <button
                   className={styles.btnFooterConfirm}
@@ -1404,8 +1308,9 @@ function AdminPatient() {
                 </button>
               )}
             </div>
-          </div>
-        </div>
+
+          </div> {/* ── end modalLg ── */}
+        </div>   {/* ── end modalOverlay ── */}
       )}
 
       {/* ════════════════════════════
@@ -1453,10 +1358,9 @@ function AdminPatient() {
                 <button
                   className={styles.btnViewProfile}
                   onClick={() =>
-                    navigate(
-                      `/admin/patient-profile/${selectedReschedule.id}`,
-                      { state: { patient: selectedReschedule } },
-                    )
+                    navigate(`/admin/patient-profile/${selectedReschedule.id}`, {
+                      state: { patient: selectedReschedule },
+                    })
                   }
                 >
                   <FiExternalLink style={{ marginRight: "6px" }} /> View Profile
@@ -1475,57 +1379,37 @@ function AdminPatient() {
                 />
                 <div className={styles.twoCol}>
                   <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiCalendar />
-                    </div>
+                    <div className={styles.infoIcon}><FiCalendar /></div>
                     <div>
                       <span className={styles.infoLabel}>Original Date</span>
-                      <span className={styles.infoValue}>
-                        {selectedReschedule.date}
-                      </span>
+                      <span className={styles.infoValue}>{selectedReschedule.date}</span>
                     </div>
                   </div>
                   <div className={styles.infoItem}>
-                    <div className={styles.infoIcon}>
-                      <FiClock />
-                    </div>
+                    <div className={styles.infoIcon}><FiClock /></div>
                     <div>
                       <span className={styles.infoLabel}>Original Time</span>
-                      <span className={styles.infoValue}>
-                        {selectedReschedule.time}
-                      </span>
+                      <span className={styles.infoValue}>{selectedReschedule.time}</span>
                     </div>
                   </div>
                   <div className={styles.infoItem}>
-                    <div
-                      className={styles.infoIcon}
-                      style={{ color: "#4D227C" }}
-                    >
+                    <div className={styles.infoIcon} style={{ color: "#4D227C" }}>
                       <FiCalendar />
                     </div>
                     <div>
                       <span className={styles.infoLabel}>Requested Date</span>
-                      <span
-                        className={styles.infoValue}
-                        style={{ color: "#4D227C", fontWeight: 700 }}
-                      >
+                      <span className={styles.infoValue} style={{ color: "#4D227C", fontWeight: 700 }}>
                         {selectedReschedule.requestedDate ?? "—"}
                       </span>
                     </div>
                   </div>
                   <div className={styles.infoItem}>
-                    <div
-                      className={styles.infoIcon}
-                      style={{ color: "#4D227C" }}
-                    >
+                    <div className={styles.infoIcon} style={{ color: "#4D227C" }}>
                       <FiClock />
                     </div>
                     <div>
                       <span className={styles.infoLabel}>Requested Time</span>
-                      <span
-                        className={styles.infoValue}
-                        style={{ color: "#4D227C", fontWeight: 700 }}
-                      >
+                      <span className={styles.infoValue} style={{ color: "#4D227C", fontWeight: 700 }}>
                         {selectedReschedule.requestedTime ?? "—"}
                       </span>
                     </div>
@@ -1541,13 +1425,7 @@ function AdminPatient() {
                     gap: "10px",
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: "#6b7280",
-                    }}
-                  >
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#6b7280" }}>
                     Status:
                   </span>
                   <span
@@ -1564,6 +1442,7 @@ function AdminPatient() {
                   </span>
                 </div>
               </div>
+
               <div className={styles.modalCard}>
                 <SectionHeader
                   icon={<FiAlertCircle size={14} color="#fff" />}
@@ -1577,14 +1456,7 @@ function AdminPatient() {
                     padding: "16px 18px",
                   }}
                 >
-                  <p
-                    style={{
-                      fontSize: "13.5px",
-                      color: "#374151",
-                      margin: 0,
-                      lineHeight: "1.75",
-                    }}
-                  >
+                  <p style={{ fontSize: "13.5px", color: "#374151", margin: 0, lineHeight: "1.75" }}>
                     {selectedReschedule.reason}
                   </p>
                 </div>
@@ -1595,22 +1467,19 @@ function AdminPatient() {
               <button
                 className={styles.btnDecline}
                 disabled={selectedReschedule.status !== "Pending"}
-                onClick={() =>
-                  handleRescheduleAction(selectedReschedule.id, "decline")
-                }
+                onClick={() => handleRescheduleAction(selectedReschedule.id, "decline")}
               >
                 <FiXCircle style={{ marginRight: "6px" }} /> Decline
               </button>
               <button
                 className={styles.btnFooterConfirm}
                 disabled={selectedReschedule.status !== "Pending"}
-                onClick={() =>
-                  handleRescheduleAction(selectedReschedule.id, "approve")
-                }
+                onClick={() => handleRescheduleAction(selectedReschedule.id, "approve")}
               >
                 <FiCheck size={15} /> Approve
               </button>
             </div>
+
           </div>
         </div>
       )}
@@ -1646,23 +1515,23 @@ function AdminPatient() {
                 <p className={styles.refundInfoLabel}>Cancelled Appointment</p>
                 <p className={styles.refundInfoName}>{selectedRefund.name}</p>
                 <p className={styles.refundInfoMeta}>
-                  {selectedRefund.date} · {selectedRefund.time} ·{" "}
-                  {selectedRefund.type}
+                  {selectedRefund.date} · {selectedRefund.time} · {selectedRefund.type}
                 </p>
               </div>
               <div className={styles.refundGrid}>
                 <div className={styles.refundGridItem}>
-                  <span className={styles.refundGridItemLabel}>
-                    Payment Status
-                  </span>
+                  <span className={styles.refundGridItemLabel}>Payment Status</span>
                   <span className={styles.refundGridItemValue}>
-                    {selectedRefund.paymentStatus ?? "—"}
+                    {selectedRefund.paymentStatus
+                      ? selectedRefund.paymentStatus
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())
+                      : "—"}
                   </span>
                 </div>
               </div>
               <p className={styles.refundWarning}>
-                ⚠️ Confirming this will mark the payment as refunded. This
-                action cannot be undone.
+                ⚠️ Confirming this will mark the payment as refunded. This action cannot be undone.
               </p>
             </div>
             <div className={styles.refundFooter}>
@@ -1691,6 +1560,7 @@ function AdminPatient() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
