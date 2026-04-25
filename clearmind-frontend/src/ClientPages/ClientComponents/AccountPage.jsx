@@ -54,7 +54,7 @@ export default function AccountPage({ userData, onEditClick }) {
     {
       icon: <IoBookOutline />,
       label: "Therapy Appointment, Cancellation, and Rebooking Policy ",
-      link: "/client/privacy-policy",
+      link: "/client/other-policies",
     },
   ];
 
@@ -174,6 +174,14 @@ export default function AccountPage({ userData, onEditClick }) {
           </Card>
         </div>
       </Container>
+
+      <div className="branding-section">
+        <p className="branding-text">Clarity of Mind, Journey to Wellness.</p>
+        <div className="branding-logo">
+          <Image src={logo_login} className="logo-image" />
+        </div>
+        <p className="branding-year">Est. 2024 | v. 1.0</p>
+      </div>
 
       {/* Logout Modal */}
       <Modal

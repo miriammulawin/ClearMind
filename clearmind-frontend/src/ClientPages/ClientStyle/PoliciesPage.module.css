@@ -1,0 +1,184 @@
+.page {
+  padding: 1.5rem 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.hero {
+  background: #542982;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.heroTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.heroTitle {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.heroSub {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  margin: 0;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.backBtn:hover {
+  opacity: 0.8;
+}
+
+/* Section Cards */
+.sectionCard {
+  background: #fff;
+  border: 1px solid #ede8f9;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.sectionNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ede8f9;
+  color: #542982;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #542982;
+  margin: 0 0 10px;
+}
+
+.sectionBody {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.7;
+}
+
+.sectionBody p {
+  margin: 0 0 8px;
+}
+
+.sectionBody ul,
+.sectionBody ol {
+  padding-left: 1.25rem;
+  margin: 8px 0 0;
+}
+
+.sectionBody li {
+  margin-bottom: 6px;
+}
+
+/* Note box */
+.noteBox {
+  background: #f9f5ff;
+  border-left: 3px solid #542982;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #542982;
+  line-height: 1.6;
+}
+
+/* Agree card */
+.agreeCard {
+  background: #fff;
+  border: 1px solid #ede8f9;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #ede8f9;
+  margin: 0 0 1rem;
+}
+
+.agreeLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  line-height: 1.6;
+}
+
+.radio {
+  margin-top: 3px;
+  accent-color: #542982;
+}
+
+/* Buttons */
+.btnRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.btnCancel {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #d0c8e8;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #777;
+  cursor: pointer;
+}
+
+.btnCancel:hover {
+  background: #f5f3fc;
+}
+
+.btnConfirm {
+  flex: 2;
+  padding: 10px;
+  border: none;
+  background: #542982;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+
+.btnConfirmActive {
+  opacity: 1;
+}
+
+.btnConfirm:disabled {
+  cursor: not-allowed;
+}

@@ -203,7 +203,7 @@
 /* Branding Section */
 .branding-section {
   text-align: center;
-  padding: 10px 20px 100px 20px;
+  padding: 10px 20px 50px 20px;
 }
 
 .branding-text {
@@ -279,6 +279,32 @@
 
 .text-custom {
   color: #4a2e8f;
+}
+
+.branding-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a3968;
+  margin: 0px;
+}
+
+.branding-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-image {
+  max-width: 280px;
+  height: auto;
+  width: 100%;
+}
+
+.branding-year {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a3968;
+  margin: 0;
 }
 
 /* Mobile Responsiveness */

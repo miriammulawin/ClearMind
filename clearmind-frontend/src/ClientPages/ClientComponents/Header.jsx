@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Image } from "react-bootstrap";
 import { IoNotifications } from "react-icons/io5";
 import { IoMdInformationCircle } from "react-icons/io";
@@ -8,6 +9,7 @@ import axiosClient from "../../axiosClient";
 
 function ClientHeader() {
   const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     axiosClient
@@ -33,9 +35,17 @@ function ClientHeader() {
 
           <div className="welcome-text">
             <h1 className="greeting">
-              Hello, {user ? user.firstName : "Loading..."}!
+              Hello,{" "}
+              {user && user.firstName
+                ? user.firstName
+                    .toLowerCase()
+                    .split(" ")
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(" ")
+                : "Loading..."}
+              !
             </h1>
-            <p className="subtext">Welcome to ClearMind</p>
+            <p className="subtext"> Welcome to ClearMind</p>
           </div>
         </div>
 
@@ -43,7 +53,10 @@ function ClientHeader() {
           <button className="icon-btn notification-btn">
             <IoNotifications />
           </button>
-          <button className="icon-btn info-btn">
+          <button
+            className="icon-btn info-btn"
+            onClick={() => navigate("/client/about")}
+          >
             <IoMdInformationCircle />
           </button>
         </div>
