@@ -1,415 +1,602 @@
-import React, { useState } from "react";
-import { Form } from "react-bootstrap";
-import styles from "../../../ClientStyle/PaymentForm.module.css";
-import sampleQr from "../../../../assets/sample_qr_ara.jpg";
-import { useCurrentUser } from "../../../../hooks/userCurrentUser";
+// AppointmentComponents/PaymentForm.jsx
+// FIX: Shows full booking summary (date, time, mode, service, fee) at the top.
+// Fee displayed is the resolved consultationFee (service-first, from parent).
 
-/**
- * PaymentForm  –  Step 3 body
- *
- * Location: ClientComponent/AppointmentComponents/AppointmentForm/PaymentForm.jsx
- */
-const PaymentForm = ({
-  doctorData = {},
-  selectedDate = {},
-  selectedTime = "",
-  consultationMode = "",
-  consultationFee = 0,
-  profileData = {},
-  paymentData = {},
-  setPaymentData = () => {},
-  qrImages = { gcash: sampleQr, bankTransfer: sampleQr },
-  bookingPolicyAgreed = false,
-  onOpenBookingPolicy = () => {},
+import React, { useRef, useState } from "react";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const formatTimePH = (time24) => {
+  if (!time24) return "—";
+  if (time24.includes("AM") || time24.includes("PM")) return time24;
+  const [hourStr, minuteStr] = time24.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr || "00";
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${period}`;
+};
+
+const getEndTime = (startTime) => {
+  if (!startTime) return "—";
+  let mins;
+  if (startTime.includes("AM") || startTime.includes("PM")) {
+    const [time, period] = startTime.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (period === "PM" && h !== 12) h += 12;
+    if (period === "AM" && h === 12) h = 0;
+    mins = h * 60 + m;
+  } else {
+    const [h, m] = startTime.split(":").map(Number);
+    mins = h * 60 + m;
+  }
+  mins += 60;
+  const hours = Math.floor(mins / 60) % 24;
+  const minutes = mins % 60;
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayH = hours % 12 || 12;
+  const displayM = String(minutes).padStart(2, "0");
+  return `${displayH}:${displayM} ${period}`;
+};
+
+const formatPeso = (amt) =>
+  amt !== null && amt !== undefined
+    ? new Intl.NumberFormat("en-PH", {
+        style: "currency",
+        currency: "PHP",
+        minimumFractionDigits: 2,
+      }).format(amt)
+    : null;
+
+const resolveDateStr = (selectedDate) => {
+  if (!selectedDate) return null;
+  if (typeof selectedDate === "string") return selectedDate;
+  if (selectedDate.date) return selectedDate.date;
+  return null;
+};
+
+// ─── Booking Summary Card ─────────────────────────────────────────────────────
+const BookingSummaryCard = ({
+  doctorData,
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
 }) => {
-  const user = useCurrentUser();
+  const dateStr = resolveDateStr(selectedDate);
 
-  const [fileError, setFileError] = useState("");
-  const [showError, setShowError] = useState(false);
+  const summaryRows = [
+    { label: "Doctor", value: doctorData?.name || "—" },
+    {
+      label: "Mode",
+      value:
+        consultationMode === "VIRTUAL"
+          ? "🖥 Virtual Consultation"
+          : consultationMode === "ON-SITE"
+            ? "🏥 On-Site Consultation"
+            : "—",
+    },
+    { label: "Date", value: dateStr || "—" },
+    {
+      label: "Time",
+      value: selectedTime
+        ? `${formatTimePH(selectedTime)} – ${getEndTime(selectedTime)}`
+        : "—",
+    },
+    selectedService ? { label: "Service", value: selectedService } : null,
+  ].filter(Boolean);
 
-  const {
-    paymentMode = "G-Cash",
-    referenceNo = "",
-    receiptFile = null,
-  } = paymentData;
+  return (
+    <div
+      style={{
+        margin: "0 0 24px",
+        borderRadius: "16px",
+        border: "2px solid #4D227C",
+        overflow: "hidden",
+        boxShadow: "0 4px 18px rgba(77,34,124,0.10)",
+      }}
+    >
+      {/* Header bar */}
+      <div
+        style={{
+          background: "#4D227C",
+          padding: "12px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+      >
+        <span style={{ fontSize: "16px" }}>📋</span>
+        <span
+          style={{
+            fontSize: "12px",
+            fontWeight: 700,
+            color: "#fff",
+            textTransform: "uppercase",
+            letterSpacing: "0.07em",
+          }}
+        >
+          Appointment Summary
+        </span>
+      </div>
 
-  const handleChange = (field, value) => {
-    setPaymentData((prev) => ({ ...prev, [field]: value }));
+      {/* Summary rows */}
+      <div
+        style={{
+          background: "#f5f0fb",
+          padding: "14px 18px",
+        }}
+      >
+        {summaryRows.map(({ label, value }) => (
+          <div
+            key={label}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "12px",
+              padding: "6px 0",
+              borderBottom: "1px solid #e8d8f8",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "12px",
+                color: "#7c3aed",
+                fontWeight: 600,
+                minWidth: "60px",
+                flexShrink: 0,
+              }}
+            >
+              {label}
+            </span>
+            <span
+              style={{
+                fontSize: "13px",
+                color: "#2d1254",
+                fontWeight: 500,
+                textAlign: "right",
+              }}
+            >
+              {value}
+            </span>
+          </div>
+        ))}
+
+        {/* Fee row — highlighted */}
+        {consultationFee !== null && consultationFee !== undefined && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "12px",
+              marginTop: "8px",
+              padding: "10px 14px",
+              background: "#ecfdf5",
+              border: "1.5px solid #6ee7b7",
+              borderRadius: "10px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#065f46",
+              }}
+            >
+              💰 Consultation Fee
+            </span>
+            <span
+              style={{
+                fontSize: "16px",
+                fontWeight: 800,
+                color: "#059669",
+              }}
+            >
+              {formatPeso(consultationFee)}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── PaymentModeSelector ──────────────────────────────────────────────────────
+const PAYMENT_MODES = [
+  { value: "G-Cash", label: "GCash", emoji: "📱" },
+  { value: "PayMaya", label: "PayMaya", emoji: "💳" },
+  { value: "Bank Transfer", label: "Bank Transfer", emoji: "🏦" },
+];
+
+const PaymentModeSelector = ({ value, onChange }) => (
+  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+    {PAYMENT_MODES.map((mode) => {
+      const isActive = value === mode.value;
+      return (
+        <button
+          key={mode.value}
+          type="button"
+          onClick={() => onChange(mode.value)}
+          style={{
+            flex: "1 1 calc(33% - 10px)",
+            minWidth: "90px",
+            padding: "12px 10px",
+            borderRadius: "12px",
+            border: isActive ? "2px solid #4D227C" : "1.5px solid #e2d5f5",
+            background: isActive ? "#f5f0fb" : "#fff",
+            cursor: "pointer",
+            transition: "all .18s",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "4px",
+            fontFamily: "Poppins, sans-serif",
+            boxShadow: isActive ? "0 0 0 3px rgba(77,34,124,0.12)" : "none",
+            outline: "none",
+          }}
+        >
+          <span style={{ fontSize: "20px" }}>{mode.emoji}</span>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: isActive ? 700 : 500,
+              color: isActive ? "#4D227C" : "#374151",
+            }}
+          >
+            {mode.label}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+);
+
+// ─── PaymentForm (main export) ────────────────────────────────────────────────
+const PaymentForm = ({
+  doctorData,
+  selectedDate,
+  selectedTime,
+  consultationMode,
+  consultationFee, // Already resolved (service-first) from SetAppointmentForm
+  selectedService, // Display name string
+  profileData,
+  paymentData,
+  setPaymentData,
+  bookingPolicyAgreed,
+  onOpenBookingPolicy,
+}) => {
+  const fileInputRef = useRef(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const handlePaymentModeChange = (mode) => {
+    setPaymentData((prev) => ({ ...prev, paymentMode: mode }));
   };
 
-  const ALLOWED_IMAGE_TYPES = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/bmp",
-  ];
+  const handleReferenceChange = (e) => {
+    setPaymentData((prev) => ({ ...prev, referenceNo: e.target.value }));
+  };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0] || null;
-    if (!file) {
-      handleChange("receiptFile", null);
-      return;
-    }
-
-    const isValidMime = ALLOWED_IMAGE_TYPES.includes(file.type);
-    const allowedExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/i;
-    const isValidExtension = allowedExtensions.test(file.name);
-
-    if (!isValidMime || !isValidExtension) {
-      setFileError(
-        "Invalid file type. Only image files (JPG, PNG, GIF, WEBP, BMP) are allowed.",
-      );
-      setShowError(true);
-      e.target.value = "";
-      handleChange("receiptFile", null);
-      return;
-    }
-
-    setFileError("");
-    setShowError(false);
-    handleChange("receiptFile", file);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPaymentData((prev) => ({ ...prev, receiptFile: file }));
+    // Preview
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewUrl(ev.target.result);
+    reader.readAsDataURL(file);
   };
 
-  // ── Helpers ───────────────────────────────────────────────────
-  const timeToMinutes = (timeStr) => {
-    const [time, period] = timeStr.split(" ");
-    let [hours, minutes] = time.split(":").map(Number);
-    if (period === "PM" && hours !== 12) hours += 12;
-    if (period === "AM" && hours === 12) hours = 0;
-    return hours * 60 + minutes;
+  const handleRemoveFile = () => {
+    setPaymentData((prev) => ({ ...prev, receiptFile: null }));
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const getEndTime = (startTime) => {
-    if (!startTime) return "";
-    const mins = timeToMinutes(startTime) + 60;
-    const hours = Math.floor(mins / 60);
-    const minutes = mins % 60;
-    const period = hours >= 12 ? "PM" : "AM";
-    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    const displayMins = minutes === 0 ? "00" : String(minutes).padStart(2, "0");
-    return `${displayHours}:${displayMins} ${period}`;
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 13px",
+    borderRadius: "9px",
+    border: "1.5px solid #e2d5f5",
+    background: "#fff",
+    fontSize: "13px",
+    fontFamily: "Poppins, sans-serif",
+    color: "#2d1254",
+    outline: "none",
+    transition: "border 0.2s",
+    boxSizing: "border-box",
   };
 
-  const toTitleCase = (str) =>
-    str.replace(
-      /\w\S*/g,
-      (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
-    );
-
-  // ── Only show a summary row if the value is a real non-dash string ──
-  const hasValue = (val) => val && val !== "—";
-
-  // ── Resolve patient info ──────────────────────────────────────
-  const isComplainant = profileData.isInformant === true;
-
-  const patient = isComplainant
-    ? {
-        fullName:
-          toTitleCase(
-            [
-              profileData.firstName,
-              profileData.middleName,
-              profileData.lastName,
-            ]
-              .filter(Boolean)
-              .join(" "),
-          ) || "—",
-        dateOfBirth: profileData.dateOfBirth || "—",
-        age: profileData.age || "—",
-        sex: profileData.sex || "—",
-        genderIdentity: profileData.genderIdentity || "—",
-        preferredPronouns: profileData.preferredPronouns || "—",
-        civilStatus: profileData.civilStatus || "—",
-        contactNo: profileData.contactNo || "—",
-        email: profileData.email || "—",
-        address: profileData.address || "—",
-      }
-    : {
-        fullName: user?.fullName || "—",
-        dateOfBirth: user?.dateOfBirth || "—",
-        age: user?.age ? String(user.age) : "—",
-        sex: user?.sex || "—",
-        genderIdentity: user?.genderIdentity || "—",
-        preferredPronouns: user?.preferredPronouns || "—",
-        civilStatus: user?.civilStatus || "—",
-        contactNo: user?.contactNo || "—",
-        email: user?.email || "—",
-        address: user?.homeAddress || "—",
-      };
-
-  const visitType =
-    consultationMode === "ONLINE" ? "Online" : "On-site / Clinic";
-  const dateTimeDisplay =
-    selectedDate?.date && selectedTime
-      ? `${selectedDate.date}, ${selectedTime} – ${getEndTime(selectedTime)}`
-      : "—";
-
-  const QR_SOURCES = {
-    "G-Cash": qrImages?.gcash || null,
-    "Bank Transfer": qrImages?.bankTransfer || null,
+  const sectionTitleStyle = {
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#2d1254",
+    marginBottom: "10px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
   };
 
   return (
-    <div className={styles.formWrapper}>
-      {/* ── Appointment Summary ── */}
-      <div className={styles.sectionLabel}>Appointment Summary:</div>
-      <div className={styles.summaryCard}>
-        {/* ── Schedule ── */}
-        <div className={styles.summaryGroup}>
-          <div className={styles.summaryGroupTitle}>Schedule</div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Assigned Doctor:</span>
-            <span className={styles.summaryVal}>{doctorData?.name || "—"}</span>
+    <div>
+      {/* ── Full booking summary ── */}
+      <BookingSummaryCard
+        doctorData={doctorData}
+        consultationMode={consultationMode}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        consultationFee={consultationFee}
+        selectedService={selectedService}
+      />
+
+      {/* ── Booking Policy acknowledgement ── */}
+      {!bookingPolicyAgreed ? (
+        <div
+          style={{
+            margin: "0 0 18px",
+            padding: "14px 16px",
+            background: "#fff8f0",
+            border: "1.5px solid #fed7aa",
+            borderRadius: "12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#9a3412",
+                marginBottom: "3px",
+              }}
+            >
+              ⚠ Policy Acknowledgement Required
+            </div>
+            <div style={{ fontSize: "12px", color: "#9a3412" }}>
+              Please read and agree to the Cancellation & Rebooking Policy.
+            </div>
           </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Date and Time:</span>
-            <span className={styles.summaryVal}>{dateTimeDisplay}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Visit Type:</span>
-            <span className={styles.summaryVal}>{visitType}</span>
-          </div>
+          <button
+            type="button"
+            onClick={onOpenBookingPolicy}
+            style={{
+              padding: "8px 14px",
+              background: "#4D227C",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            View Policy
+          </button>
         </div>
-
-        <div className={styles.summaryDivider} />
-
-        {/* ── Patient Profile ── */}
-        <div className={styles.summaryGroup}>
-          <div className={styles.summaryGroupTitle}>Patient Profile</div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Patient Name:</span>
-            <span className={styles.summaryVal}>{patient.fullName}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Date of Birth:</span>
-            <span className={styles.summaryVal}>{patient.dateOfBirth}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Age:</span>
-            <span className={styles.summaryVal}>{patient.age}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Sex:</span>
-            <span className={styles.summaryVal}>{patient.sex}</span>
-          </div>
-          {hasValue(patient.genderIdentity) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Gender Identity:</span>
-              <span className={styles.summaryVal}>
-                {patient.genderIdentity}
-              </span>
-            </div>
-          )}
-          {hasValue(patient.preferredPronouns) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Preferred Pronouns:</span>
-              <span className={styles.summaryVal}>
-                {patient.preferredPronouns}
-              </span>
-            </div>
-          )}
-          {hasValue(patient.civilStatus) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Civil Status:</span>
-              <span className={styles.summaryVal}>{patient.civilStatus}</span>
-            </div>
-          )}
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Contact No.:</span>
-            <span className={styles.summaryVal}>{patient.contactNo}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Email:</span>
-            <span className={styles.summaryVal}>{patient.email}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Address:</span>
-            <span className={styles.summaryVal}>{patient.address}</span>
-          </div>
-
-          {/* Only shown when actually collected (PAC) — hidden for PAaE */}
-          {hasValue(profileData.patientType) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Patient Type:</span>
-              <span className={styles.summaryVal}>
-                {profileData.patientType}
-              </span>
-            </div>
-          )}
-          {hasValue(profileData.classification) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Classification:</span>
-              <span className={styles.summaryVal}>
-                {profileData.classification}
-              </span>
-            </div>
-          )}
+      ) : (
+        <div
+          style={{
+            margin: "0 0 18px",
+            padding: "10px 14px",
+            background: "#ecfdf5",
+            border: "1.5px solid #6ee7b7",
+            borderRadius: "10px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#065f46",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+        >
+          <span>✅</span> Cancellation & Rebooking Policy acknowledged
         </div>
-
-        {/* ── Complainant Info (only if complainant mode) ── */}
-        {isComplainant && (
-          <>
-            <div className={styles.summaryDivider} />
-            <div className={styles.summaryGroup}>
-              <div className={styles.summaryGroupTitle}>Complainant</div>
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryKey}>Name:</span>
-                <span className={styles.summaryVal}>
-                  {profileData.complainantName || "—"}
-                </span>
-              </div>
-              <div className={styles.summaryRow}>
-                <span className={styles.summaryKey}>Relation:</span>
-                <span className={styles.summaryVal}>
-                  {profileData.complainantRelation || "—"}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className={styles.summaryDivider} />
-
-        {/* ── Reason ── */}
-        <div className={styles.summaryGroup}>
-          <div className={styles.summaryGroupTitle}>
-            Reason for Consultation
-          </div>
-          <p className={styles.summaryReason}>
-            {profileData.reason && profileData.reason.trim()
-              ? profileData.reason
-              : "—"}
-          </p>
-        </div>
-      </div>
-
-      {/* ── Consultation Fee ── */}
-      <div className={styles.feeRow}>
-        <span className={styles.feeLabel}>Consultation Fee:</span>
-        <span className={styles.feeAmount}>
-          ₱ {consultationFee?.toLocaleString()}
-        </span>
-      </div>
+      )}
 
       {/* ── Payment Mode ── */}
-      <div className={styles.sectionLabel}>Choose mode of payment:</div>
-      <div className={styles.paymentModeCard}>
-        {["G-Cash", "Bank Transfer"].map((mode) => (
-          <label key={mode} className={styles.paymentRadioLabel}>
-            <input
-              type="radio"
-              name="paymentMode"
-              value={mode}
-              checked={paymentMode === mode}
-              onChange={() => handleChange("paymentMode", mode)}
-              className={styles.radioInput}
-            />
-            {mode}
-          </label>
-        ))}
-      </div>
-
-      {/* ── QR Code ── */}
-      <div className={styles.sectionLabel}>Scan the QR Code:</div>
-      <div className={styles.qrCard}>
-        <div className={styles.qrImageWrapper}>
-          {QR_SOURCES[paymentMode] ? (
-            <img
-              src={QR_SOURCES[paymentMode]}
-              alt={`${paymentMode} QR Code`}
-              className={styles.qrImage}
-            />
-          ) : (
-            <div className={styles.qrPlaceholder}>
-              <div className={styles.qrPlaceholderInner}>
-                <span className={styles.qrPlaceholderLabel}>
-                  {paymentMode === "G-Cash" ? "instaPay" : "Bank QR"}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-        <p className={styles.qrNote}>Transfer fees may apply.</p>
-        <p className={styles.accountName}>{paymentMode}</p>
+      <div style={{ marginBottom: "20px" }}>
+        <p style={sectionTitleStyle}>
+          <span style={{ color: "#e53e3e" }}>*</span> Payment Mode
+        </p>
+        <PaymentModeSelector
+          value={paymentData.paymentMode}
+          onChange={handlePaymentModeChange}
+        />
       </div>
 
       {/* ── Reference Number ── */}
-      <div className={styles.fieldGroup}>
-        <label className={styles.fieldLabel}>
-          Reference Number <span className={styles.requiredStar}>*</span>
+      <div style={{ marginBottom: "20px" }}>
+        <label style={sectionTitleStyle}>
+          <span style={{ color: "#e53e3e" }}>*</span> Reference Number
         </label>
-        <Form.Control
+        <input
           type="text"
-          placeholder="Reference Number"
-          className={styles.input}
-          value={referenceNo}
-          onChange={(e) => handleChange("referenceNo", e.target.value)}
+          style={{
+            ...inputStyle,
+            border: paymentData.referenceNo
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5",
+            background: paymentData.referenceNo ? "#faf7ff" : "#fff",
+          }}
+          placeholder="Enter your payment reference number"
+          value={paymentData.referenceNo || ""}
+          onChange={handleReferenceChange}
+          onFocus={(e) => (e.target.style.border = "1.5px solid #4D227C")}
+          onBlur={(e) =>
+            (e.target.style.border = paymentData.referenceNo
+              ? "1.5px solid #d4b8f0"
+              : "1.5px solid #e2d5f5")
+          }
         />
       </div>
 
-      {/* ── Upload Receipt ── */}
-      <div className={styles.fieldGroup}>
-        <label className={styles.fieldLabel}>
-          Upload receipt <span className={styles.requiredStar}>*</span>
+      {/* ── Receipt Upload ── */}
+      <div style={{ marginBottom: "20px" }}>
+        <label style={sectionTitleStyle}>
+          <span style={{ color: "#e53e3e" }}>*</span> Upload Receipt
         </label>
-        <div
-          className={`${styles.fileInputWrapper} ${showError ? styles.fileInputWrapperError : ""}`}
-        >
-          <label className={styles.fileBtn}>
-            Choose File
-            <input
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp"
-              className={styles.fileInputHidden}
-              onChange={handleFileChange}
-            />
-          </label>
-          <span
-            className={`${styles.fileName} ${showError ? styles.fileNameError : ""}`}
-          >
-            {receiptFile ? receiptFile.name : "No file selected"}
-          </span>
-        </div>
 
-        {showError && (
-          <div className={styles.fileErrorMsg}>
-            <svg
-              className={styles.fileErrorIcon}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
+        {!paymentData.receiptFile ? (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              border: "2px dashed #d4b8f0",
+              borderRadius: "12px",
+              padding: "28px 16px",
+              textAlign: "center",
+              cursor: "pointer",
+              background: "#faf7ff",
+              transition: "border-color .2s, background .2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#4D227C";
+              e.currentTarget.style.background = "#f5f0fb";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#d4b8f0";
+              e.currentTarget.style.background = "#faf7ff";
+            }}
+          >
+            <div style={{ fontSize: "32px", marginBottom: "8px" }}>📎</div>
+            <div
+              style={{ fontSize: "13px", fontWeight: 600, color: "#4D227C" }}
             >
-              <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5m.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2" />
-            </svg>
-            {fileError}
+              Click to upload receipt
+            </div>
+            <div style={{ fontSize: "11px", color: "#aaa", marginTop: "4px" }}>
+              JPG, PNG or PDF · Max 5MB
+            </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              border: "1.5px solid #6ee7b7",
+              borderRadius: "12px",
+              background: "#ecfdf5",
+              padding: "12px 14px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            {previewUrl &&
+            paymentData.receiptFile?.type?.startsWith("image/") ? (
+              <img
+                src={previewUrl}
+                alt="Receipt"
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "52px",
+                  height: "52px",
+                  borderRadius: "8px",
+                  background: "#d1fae5",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "22px",
+                  flexShrink: 0,
+                }}
+              >
+                📄
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#065f46",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {paymentData.receiptFile.name}
+              </div>
+              <div style={{ fontSize: "11px", color: "#6ee7b7" }}>
+                {(paymentData.receiptFile.size / 1024).toFixed(1)} KB
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveFile}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "16px",
+                cursor: "pointer",
+                color: "#9a3412",
+                padding: 0,
+                flexShrink: 0,
+              }}
+              title="Remove"
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        <p className={styles.fileHint}>
-          Accepted formats: JPG, PNG, GIF, WEBP, BMP
-        </p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
       </div>
 
-      <div className={styles.acknowledgementRow}>
-        <input
-          type="radio"
-          checked={bookingPolicyAgreed}
-          onChange={() => onOpenBookingPolicy()}
-          className={styles.radioInput}
-        />
-        <span>
-          {" "}
-          I acknowledge and agree on the{" "}
-          <button
-            type="button"
-            className={styles.policyLink}
-            onClick={onOpenBookingPolicy}
-          >
-            Cancellation & Rebooking Policy
-          </button>
-        </span>
-      </div>
+      {/* ── Payment instructions ── */}
+      {paymentData.paymentMode && (
+        <div
+          style={{
+            padding: "14px 16px",
+            background: "#f0f9ff",
+            border: "1px solid #bae6fd",
+            borderRadius: "12px",
+            fontSize: "12px",
+            color: "#0369a1",
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: "6px" }}>
+            💡 Payment Instructions
+          </div>
+          {paymentData.paymentMode === "G-Cash" && (
+            <div>
+              Send payment to <strong>GCash number: 09XX-XXX-XXXX</strong>{" "}
+              (Account Name: Clinic Name). Take a screenshot of the confirmation
+              and upload it above.
+            </div>
+          )}
+          {paymentData.paymentMode === "PayMaya" && (
+            <div>
+              Send payment to <strong>PayMaya number: 09XX-XXX-XXXX</strong>{" "}
+              (Account Name: Clinic Name). Upload the confirmation screenshot
+              above.
+            </div>
+          )}
+          {paymentData.paymentMode === "Bank Transfer" && (
+            <div>
+              Transfer to <strong>BDO Account: XXXX-XXXX-XXXX</strong> (Account
+              Name: Clinic Name). Upload the bank transfer confirmation above.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

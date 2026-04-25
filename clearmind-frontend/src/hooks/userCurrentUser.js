@@ -20,7 +20,7 @@ export const useCurrentUser = () => {
           fullName:
             `${u.firstName ?? ""} ${u.middleInitial ?? ""} ${u.lastName ?? ""}`.trim(),
 
-          dob: u.dob,
+          dateOfBirth: u.dob,
           age: u.dob
             ? (() => {
                 const today = new Date();

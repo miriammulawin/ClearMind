@@ -1,19 +1,13 @@
 // AppointmentComponents/FormHeader.jsx
 //
-// Handles:
-//   1. Required notice
-//   2. "I am the Patient / I am the Complainant" toggle
-//   3a. Patient     → PreloadedProfile card (read-only, from useCurrentUser)
-//   3b. Complainant → ComplainantFields (manual patient info entry)
+// FIXED: PreloadedProfile now accepts + displays the appointment schedule
+//        (mode, date, time, service, fee) below the patient info card.
 //
-// Props:
-//   isInformant     — bool (false = Patient, true = Complainant)
-//   onToggle        — (value: bool) => void
-//   user            — object returned by useCurrentUser()
-//                     fields used: fullName, initials, profilePic,
-//                                  age, sex, contactNo, email, homeAddress
-//   patientForm     — shared form state object
-//   setPatientForm  — functional setter for patientForm
+// Props added to FormHeader:
+//   consultationMode, selectedDate, selectedTime,
+//   consultationFee, selectedService, doctorData
+// These are forwarded to PreloadedProfile so the patient can see
+// what they booked while reviewing their own profile info.
 
 import React, { useMemo, useState } from "react";
 import {
@@ -28,6 +22,181 @@ import {
 import { FaVenusMars, FaChevronDown } from "react-icons/fa";
 import styles from "./styles/FormHeader.module.css";
 
+// ─── Schedule helpers ─────────────────────────────────────────────────────────
+const formatTimePH = (time24) => {
+  if (!time24) return "—";
+  if (time24.includes("AM") || time24.includes("PM")) return time24;
+  const [hourStr, minuteStr] = time24.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr || "00";
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${minute} ${period}`;
+};
+
+const getEndTime = (startTime) => {
+  if (!startTime) return "—";
+  let mins;
+  if (startTime.includes("AM") || startTime.includes("PM")) {
+    const [time, period] = startTime.split(" ");
+    let [h, m] = time.split(":").map(Number);
+    if (period === "PM" && h !== 12) h += 12;
+    if (period === "AM" && h === 12) h = 0;
+    mins = h * 60 + m;
+  } else {
+    const [h, m] = startTime.split(":").map(Number);
+    mins = h * 60 + m;
+  }
+  mins += 60;
+  const hours = Math.floor(mins / 60) % 24;
+  const minutes = mins % 60;
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayH = hours % 12 || 12;
+  const displayM = String(minutes).padStart(2, "0");
+  return `${displayH}:${displayM} ${period}`;
+};
+
+const formatPeso = (amt) => {
+  if (amt === null || amt === undefined || amt === "") return null;
+  const num = Number(amt);
+  if (isNaN(num)) return null;
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  }).format(num);
+};
+
+const resolveDateStr = (d) => {
+  if (!d) return null;
+  if (typeof d === "string") return d;
+  if (d.date) return d.date;
+  return null;
+};
+
+// ─── Inline schedule mini-card shown inside PreloadedProfile ──────────────────
+const ScheduleMiniCard = ({
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
+}) => {
+  const dateStr = resolveDateStr(selectedDate);
+  if (!consultationMode && !dateStr && !selectedTime) return null;
+
+  const feeStr = formatPeso(consultationFee);
+  const modeLabel =
+    consultationMode === "VIRTUAL"
+      ? "🖥 Virtual"
+      : consultationMode === "ON-SITE"
+        ? "🏥 On-Site"
+        : consultationMode || "—";
+
+  const rows = [
+    { icon: "📅", label: "Mode", value: modeLabel },
+    { icon: "🗓", label: "Date", value: dateStr || "—" },
+    selectedTime
+      ? {
+          icon: "🕐",
+          label: "Time",
+          value: `${formatTimePH(selectedTime)} – ${getEndTime(selectedTime)}`,
+        }
+      : null,
+    selectedService
+      ? { icon: "📋", label: "Service", value: selectedService }
+      : null,
+    feeStr
+      ? { icon: "💰", label: "Fee", value: feeStr, highlight: true }
+      : null,
+  ].filter(Boolean);
+
+  return (
+    <div
+      style={{
+        marginTop: "12px",
+        padding: "12px 14px",
+        background: "linear-gradient(135deg,#f5f0fb 0%,#eef6ff 100%)",
+        border: "1.5px solid #d4b8f0",
+        borderRadius: "12px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "10px",
+          fontWeight: 700,
+          color: "#4D227C",
+          textTransform: "uppercase",
+          letterSpacing: "0.07em",
+          marginBottom: "8px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <span
+          style={{
+            width: "16px",
+            height: "16px",
+            borderRadius: "50%",
+            background: "#4D227C",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg
+            width="8"
+            height="8"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#fff"
+            strokeWidth="3"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </span>
+        Appointment Schedule
+      </div>
+
+      {rows.map(({ icon, label, value, highlight }) => (
+        <div
+          key={label}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "4px 0",
+          }}
+        >
+          <span style={{ fontSize: "13px", flexShrink: 0 }}>{icon}</span>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#7c3aed",
+              minWidth: "44px",
+              flexShrink: 0,
+            }}
+          >
+            {label}
+          </span>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: highlight ? 700 : 500,
+              color: highlight ? "#059669" : "#2d1254",
+              flex: 1,
+            }}
+          >
+            {value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 // ─── Required Notice ──────────────────────────────────────────────────────────
 const RequiredNotice = () => (
   <div className={styles.requiredNotice}>
@@ -35,7 +204,16 @@ const RequiredNotice = () => (
   </div>
 );
 
-const PreloadedProfile = ({ user }) => {
+// ─── PreloadedProfile ─────────────────────────────────────────────────────────
+const PreloadedProfile = ({
+  user,
+  // Schedule props forwarded from FormHeader
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
+}) => {
   if (!user) {
     return (
       <div className={styles.profileCard}>
@@ -52,12 +230,10 @@ const PreloadedProfile = ({ user }) => {
     );
   }
 
-  // ✅ Build full name (same as ProfilePage)
   const fullName = [user.firstName, user.middleInitial, user.lastName]
     .filter(Boolean)
     .join(" ");
 
-  // ✅ Compute age from dob
   const computeAge = (dob) => {
     if (!dob) return "";
     const today = new Date();
@@ -68,11 +244,12 @@ const PreloadedProfile = ({ user }) => {
     return age;
   };
 
-  const age = computeAge(user.dob);
+  // useCurrentUser exposes `dateOfBirth` (normalized from dob in the hook)
+  const age = computeAge(user.dateOfBirth || user.dob);
 
-  // ✅ initials
   const initials =
-    user.firstName?.[0]?.toUpperCase() + user.lastName?.[0]?.toUpperCase();
+    (user.firstName?.[0]?.toUpperCase() || "") +
+    (user.lastName?.[0]?.toUpperCase() || "");
 
   const GenderIcon =
     user.sex === "male"
@@ -95,8 +272,10 @@ const PreloadedProfile = ({ user }) => {
         <div className={styles.avatar}>{initials || "?"}</div>
       )}
 
-      <div className={styles.profileInfo}>
-        
+      <div className={styles.profileInfo} style={{ flex: 1 }}>
+        <span className={styles.preloadedBadge}>
+          <BsPersonCheckFill /> Pre-loaded from your account
+        </span>
 
         <div className={styles.profileName}>{fullName || "—"}</div>
 
@@ -142,9 +321,18 @@ const PreloadedProfile = ({ user }) => {
 
           <div className={`${styles.metaRow} ${styles.metaFull}`}>
             <BsGeoAltFill className={styles.metaIcon} />
-            <span>{user.address || "—"}</span>
+            <span>{user.homeAddress || user.address || "—"}</span>
           </div>
         </div>
+
+        {/* ── Schedule mini-card ── */}
+        <ScheduleMiniCard
+          consultationMode={consultationMode}
+          selectedDate={selectedDate}
+          selectedTime={selectedTime}
+          consultationFee={consultationFee}
+          selectedService={selectedService}
+        />
       </div>
     </div>
   );
@@ -170,13 +358,13 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
     email = "",
     address = "",
   } = patientForm;
+
   const PRONOUN_OPTIONS = [
     { label: "She/Her", value: "she/her" },
     { label: "He/Him", value: "he/him" },
     { label: "They/Them", value: "they/them" },
     { label: "Other (specify)", value: "other" },
   ];
-  // for dropdown
   const [sexOpen, setSexOpen] = useState(false);
   const [genderOpen, setGenderOpen] = useState(false);
   const [pronounOpen, setPronounOpen] = useState(false);
@@ -199,7 +387,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
     "Prefer not to say",
     "Other (specify)",
   ];
-
   const CIVIL_STATUS_OPTIONS = [
     "Single",
     "Married",
@@ -220,7 +407,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
     return age >= 1 ? String(age) : "";
   }, [dateOfBirth]);
 
-  // Sync computed age into form
   React.useEffect(() => {
     if (computedAge && patientForm.age !== computedAge) {
       handle("age", computedAge);
@@ -229,7 +415,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
 
   return (
     <div className={styles.complainantCard}>
-      {/* ── Complainant details ── */}
       <div className={styles.complainantTitle}>Your Details (Complainant)</div>
 
       <div>
@@ -258,12 +443,10 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         />
       </div>
 
-      {/* ── Patient info ── */}
       <div className={styles.complainantTitle} style={{ marginTop: "0.5rem" }}>
         Patient's Information
       </div>
 
-      {/* First + Middle */}
       <div className={styles.inputRow}>
         <div>
           <label className={styles.inputLabel}>
@@ -289,7 +472,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         </div>
       </div>
 
-      {/* Last Name */}
       <div>
         <label className={styles.inputLabel}>
           Last Name <span className={styles.req}>*</span>
@@ -310,7 +492,7 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         </label>
         <div
           className={styles.selectWrapper}
-          onClick={() => setSexOpen((prev) => !prev)}
+          onClick={() => setSexOpen((p) => !p)}
         >
           <select
             className={`${styles.input} ${styles.select}`}
@@ -336,7 +518,7 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         <label className={styles.inputLabel}>Gender Identity</label>
         <div
           className={styles.selectWrapper}
-          onClick={() => setSexOpen((prev) => !prev)}
+          onClick={() => setGenderOpen((p) => !p)}
         >
           <select
             className={`${styles.input} ${styles.select}`}
@@ -364,7 +546,7 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         <label className={styles.inputLabel}>Preferred Pronouns</label>
         <div
           className={styles.selectWrapper}
-          onClick={() => setSexOpen((prev) => !prev)}
+          onClick={() => setPronounOpen((p) => !p)}
         >
           <select
             className={`${styles.input} ${styles.select}`}
@@ -394,7 +576,7 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         </label>
         <div
           className={styles.selectWrapper}
-          onClick={() => setSexOpen((prev) => !prev)}
+          onClick={() => setCivilOpen((p) => !p)}
         >
           <select
             className={`${styles.input} ${styles.select}`}
@@ -445,7 +627,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         </div>
       </div>
 
-      {/* Contact */}
       <div>
         <label className={styles.inputLabel}>
           Contact No. <span className={styles.req}>*</span>
@@ -459,7 +640,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         />
       </div>
 
-      {/* Email */}
       <div>
         <label className={styles.inputLabel}>
           Email <span className={styles.req}>*</span>
@@ -473,7 +653,6 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
         />
       </div>
 
-      {/* Address */}
       <div>
         <label className={styles.inputLabel}>
           Home Address <span className={styles.req}>*</span>
@@ -491,12 +670,24 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
 };
 
 // ─── FormHeader (default export) ──────────────────────────────────────────────
+/**
+ * NEW PROPS (all optional — forwarded to PreloadedProfile → ScheduleMiniCard):
+ *   consultationMode, selectedDate, selectedTime, consultationFee,
+ *   selectedService, doctorData
+ */
 const FormHeader = ({
   isInformant,
   onToggle,
   user,
   patientForm,
   setPatientForm,
+  // Schedule summary props (passed from VerifyProfileForm)
+  consultationMode,
+  selectedDate,
+  selectedTime,
+  consultationFee,
+  selectedService,
+  doctorData,
 }) => (
   <>
     <RequiredNotice />
@@ -526,8 +717,18 @@ const FormHeader = ({
       </div>
     </div>
 
-    {/* ── Patient → pre-loaded card ── */}
-    {isInformant === false && <PreloadedProfile user={user} />}
+    {/* ── Patient → pre-loaded card (with schedule mini-card inside) ── */}
+    {isInformant === false && (
+      <PreloadedProfile
+        user={user}
+        consultationMode={consultationMode}
+        selectedDate={selectedDate}
+        selectedTime={selectedTime}
+        consultationFee={consultationFee}
+        selectedService={selectedService}
+        doctorData={doctorData}
+      />
+    )}
 
     {/* ── Complainant → manual fields ── */}
     {isInformant === true && (
@@ -537,7 +738,7 @@ const FormHeader = ({
       />
     )}
 
-    {/* ── Patient Type — shown in both modes ── */}
+    {/* ── Patient Type ── */}
     <div className={styles.fieldGroup}>
       <label className={styles.fieldLabel}>
         Patient Type <span className={styles.requiredStar}>*</span>
@@ -562,7 +763,7 @@ const FormHeader = ({
       </div>
     </div>
 
-    {/* ── Patient Classification — shown in both modes ── */}
+    {/* ── Patient Classification ── */}
     <div className={styles.fieldGroup}>
       <label className={styles.fieldLabel}>
         Patient Classification <span className={styles.requiredStar}>*</span>
