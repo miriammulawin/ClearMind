@@ -62,7 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put   ('/doctor/account-security', [DoctorController::class, 'updateAccountSecurity']);
     Route::get   ('/doctor/patients',         [DoctorPatientController::class, 'index']);
     Route::get   ('/doctor/patients/{patientId}', [DoctorPatientController::class, 'show']);
-
+    Route::post('/doctor/profile-picture', [DoctorController::class, 'updateProfilePicture']);
+    Route::post('/doctor/upload-documents', [DoctorController::class, 'uploadDocuments']);
     // ── Doctor Schedule Routes ────────────────────────────────────
     // NOTE: /bulk BEFORE /{id} — avoid Laravel treating "bulk" as an integer
     Route::prefix('doctors/{doctorId}/schedules')->group(function () {
