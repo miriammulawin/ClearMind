@@ -1309,8 +1309,8 @@ function AdminPatient() {
               )}
             </div>
 
-          </div> {/* ── end modalLg ── */}
-        </div>   {/* ── end modalOverlay ── */}
+          </div> 
+        </div>  
       )}
 
       {/* ════════════════════════════
