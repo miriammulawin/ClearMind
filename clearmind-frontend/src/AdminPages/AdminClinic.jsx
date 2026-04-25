@@ -9,17 +9,20 @@ import {
   FiPlus,
   FiTrash2,
   FiImage,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { FaClinicMedical, FaBrain } from "react-icons/fa";
 import { TiVideo } from "react-icons/ti";
 import styles from "./AdminStyle/AdminClinic.module.css";
 import toast from "react-hot-toast";
-import { FiAlertTriangle } from "react-icons/fi";
+import axiosClient from "../axiosClient";
 
-/* ─── Config ─── */
-const API_BASE = "http://localhost:8000/api/admin";
-const getToken = () => localStorage.getItem("token");
-
+const Field = ({ label, children }) => (
+  <div className={styles.fieldRow}>
+    <label className={styles.fieldLabel}>{label}</label>
+    {children}
+  </div>
+);
 /* ─── Toast Styles ─── */
 const toastSuccess = {
   duration: 1500,
@@ -32,7 +35,7 @@ const toastSuccess = {
     textAlign: "center",
     maxWidth: "320px",
     borderRadius: "10px",
-    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
   },
   iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
 };
@@ -48,7 +51,7 @@ const toastError = {
     textAlign: "center",
     maxWidth: "320px",
     borderRadius: "10px",
-    boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
   },
   iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
 };
@@ -122,6 +125,10 @@ export default function AdminClinic() {
   const clinicImgRef = useRef(null);
   const qrImgRef = useRef(null);
 
+  /* debounce timer refs */
+  const svcSaveTimer = useRef({});
+  const subSaveTimer = useRef({});
+
   /* services */
   const [services, setServices] = useState([]);
   const [expandedIds, setExpandedIds] = useState([]);
@@ -137,6 +144,7 @@ export default function AdminClinic() {
   const [newPurpose, setNewPurpose] = useState("");
   const [newPurposePrice, setNewPurposePrice] = useState("");
 
+  /* confirm modal */
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
@@ -158,23 +166,16 @@ export default function AdminClinic() {
     fetchServices();
   }, []);
 
-  /* ── fetch services ── */
+  /* ════════════════════════════════════════════
+     FETCH SERVICES
+  ════════════════════════════════════════════ */
   async function fetchServices() {
     try {
-      const res = await fetch(`${API_BASE}/services`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch services");
-
+      const { data } = await axiosClient.get("/admin/services");
       const mapped = (data.data || []).map((s) => {
         const isPsych = s.service_name
           .toLowerCase()
           .includes("psychological assessment");
-
         return {
           id: String(s.service_id),
           title: s.service_name,
@@ -192,32 +193,23 @@ export default function AdminClinic() {
             : [],
         };
       });
-
       setServices(mapped);
     } catch (e) {
       console.error("Fetch Services Error:", e);
     }
   }
 
-  /* ── fetch clinics ── */
+  /* ════════════════════════════════════════════
+     FETCH CLINICS
+  ════════════════════════════════════════════ */
   async function fetchClinics() {
     setLoading(true);
     setApiError(null);
     try {
-      const res = await fetch(`${API_BASE}/clinics`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`${res.status} — ${txt.slice(0, 200)}`);
-      }
-      const json = await res.json();
-      setClinics((json.data || []).map(mapClinic));
+      const { data } = await axiosClient.get("/admin/clinics");
+      setClinics((data.data || []).map(mapClinic));
     } catch (e) {
-      setApiError(e.message);
+      setApiError(e.response?.data?.message || e.message);
     } finally {
       setLoading(false);
     }
@@ -313,7 +305,9 @@ export default function AdminClinic() {
     }));
   }
 
-  /* ── submit clinic ── */
+  /* ════════════════════════════════════════════
+     SUBMIT CLINIC
+  ════════════════════════════════════════════ */
   async function handleSubmit() {
     if (!form.name.trim()) {
       toast.error("Clinic name is required.", toastError);
@@ -325,6 +319,7 @@ export default function AdminClinic() {
     }
 
     setSubmitting(true);
+
     const fd = new FormData();
     fd.append("clinic_name", form.name.trim());
     fd.append("clinic_type", form.type);
@@ -342,39 +337,16 @@ export default function AdminClinic() {
     if (form.qrImageFile) fd.append("qr_image", form.qrImageFile);
     if (isEdit) fd.append("_method", "PUT");
 
-    const url = isEdit
-      ? `${API_BASE}/clinics/${editId}`
-      : `${API_BASE}/clinics`;
-
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          Accept: "application/json",
-        },
-        body: fd,
-      });
-      const text = await res.text();
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch {
-        toast.error(`Server error ${res.status}.`, toastError);
-        return;
-      }
+      const { data } = isEdit
+        ? await axiosClient.post(`/admin/clinics/${editId}`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+          })
+        : await axiosClient.post("/admin/clinics", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
 
-      if (!res.ok) {
-        if (result.errors) {
-          const messages = Object.values(result.errors).flat().join("\n");
-          toast.error(messages, toastError);
-        } else {
-          toast.error(result.message || `Error ${res.status}`, toastError);
-        }
-        return;
-      }
-
-      const mapped = mapClinic(result.data);
+      const mapped = mapClinic(data.data);
       setClinics((p) =>
         isEdit ? p.map((c) => (c.id === editId ? mapped : c)) : [...p, mapped],
       );
@@ -386,71 +358,61 @@ export default function AdminClinic() {
       );
       setShowModal(false);
     } catch (e) {
-      toast.error("Network error — make sure Laravel is running.", toastError);
+      const errors = e.response?.data?.errors;
+      if (errors) {
+        toast.error(Object.values(errors).flat().join("\n"), toastError);
+      } else {
+        toast.error(
+          e.response?.data?.message ||
+            "Network error — make sure Laravel is running.",
+          toastError,
+        );
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
+  /* ── delete clinic ── */
   async function handleDelete(id) {
     openConfirmModal("Delete this clinic?", async () => {
       try {
-        const res = await fetch(`${API_BASE}/clinics/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            Accept: "application/json",
-          },
-        });
-        if (res.ok) {
-          setClinics((p) => p.filter((c) => c.id !== id));
-          toast.success("Clinic deleted successfully.", toastSuccess);
-        } else {
-          const j = await res.json().catch(() => ({}));
-          toast.error(j.message || `Delete failed (${res.status})`, toastError);
-        }
-      } catch {
-        toast.error("Network error during delete.", toastError);
+        await axiosClient.delete(`/admin/clinics/${id}`);
+        setClinics((p) => p.filter((c) => c.id !== id));
+        toast.success("Clinic deleted successfully.", toastSuccess);
+      } catch (e) {
+        toast.error(e.response?.data?.message || "Delete failed.", toastError);
       }
     });
   }
-  /* ────────────────────────────────
+
+  /* ════════════════════════════════════════════
      SERVICE CRUD
-  ──────────────────────────────── */
+  ════════════════════════════════════════════ */
 
   /* add service */
   async function addSvc() {
     if (!newSvcTitle.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/services`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          service_name: newSvcTitle.trim(),
-          description: newSvcDesc.trim(),
-          price: newSvcPrice || 0,
-        }),
+      const { data } = await axiosClient.post("/admin/services", {
+        service_name: newSvcTitle.trim(),
+        description: newSvcDesc.trim(),
+        price: newSvcPrice || 0,
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to add service");
 
-      const isPsych = result.data.service_name
+      const isPsych = data.data.service_name
         .toLowerCase()
         .includes("psychological assessment");
 
       setServices((s) => [
         ...s,
         {
-          id: String(result.data.service_id),
-          title: result.data.service_name,
-          description: result.data.description,
-          price: result.data.price,
+          id: String(data.data.service_id),
+          title: data.data.service_name,
+          description: data.data.description,
+          price: data.data.price,
           available:
-            result.data.is_available === 1 || result.data.is_available === true,
+            data.data.is_available === 1 || data.data.is_available === true,
           isPsych,
           subServices: [],
         },
@@ -462,81 +424,77 @@ export default function AdminClinic() {
       setShowAddSvc(false);
       toast.success("Service added successfully.", toastSuccess);
     } catch (e) {
-      toast.error(e.message, toastError);
+      toast.error(e.response?.data?.message || e.message, toastError);
     }
   }
 
-  /* update service (price / toggle) */
+  /* update service — debounced price, immediate toggle */
   async function updSvc(id, patch) {
+    // Update UI instantly
     setServices((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-    try {
-      const svc = services.find((x) => x.id === id);
-      await fetch(`${API_BASE}/services/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          price: patch.price ?? svc.price,
-          is_available:
-            patch.available !== undefined
-              ? patch.available
-                ? 1
-                : 0
-              : svc.available
-                ? 1
-                : 0,
-        }),
-      });
-    } catch (e) {
-      console.error("Update service failed:", e);
+
+    if (patch.available !== undefined) {
+      // Toggle — call API immediately
+      try {
+        const svc = services.find((x) => x.id === id);
+        await axiosClient.put(`/admin/services/${id}`, {
+          price: svc?.price,
+          is_available: patch.available ? 1 : 0,
+        });
+      } catch (e) {
+        console.error("Update service toggle failed:", e);
+      }
+    } else {
+      // Price typing — debounce 700ms
+      clearTimeout(svcSaveTimer.current[id]);
+      svcSaveTimer.current[id] = setTimeout(async () => {
+        try {
+          // Read latest state via functional approach to avoid stale closure
+          setServices((current) => {
+            const svc = current.find((x) => x.id === id);
+            if (svc) {
+              axiosClient
+                .put(`/admin/services/${id}`, {
+                  price: patch.price ?? svc.price,
+                  is_available: svc.available ? 1 : 0,
+                })
+                .catch((e) => console.error("Update service price failed:", e));
+            }
+            return current; // no state change, just side-effect
+          });
+        } catch (e) {
+          console.error("Update service price failed:", e);
+        }
+      }, 700);
     }
   }
 
+  /* delete service */
   async function delSvc(id) {
     openConfirmModal("Delete this service?", async () => {
       try {
-        const res = await fetch(`${API_BASE}/services/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            Accept: "application/json",
-          },
-        });
-        if (!res.ok) throw new Error("Delete failed");
+        await axiosClient.delete(`/admin/services/${id}`);
         setServices((s) => s.filter((x) => x.id !== id));
         toast.success("Service deleted successfully.", toastSuccess);
       } catch (e) {
-        toast.error(e.message, toastError);
+        toast.error(e.response?.data?.message || e.message, toastError);
       }
     });
   }
 
-  /* ────────────────────────────────
+  /* ════════════════════════════════════════════
      PURPOSE CRUD
-  ──────────────────────────────── */
+  ════════════════════════════════════════════ */
 
   /* add purpose */
   async function addPurp(sId) {
     if (!newPurpose.trim()) return;
     try {
-      const res = await fetch(`${API_BASE}/assessment-purposes`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          service_id: sId,
-          purpose_name: newPurpose.trim(),
-          price: newPurposePrice || 0,
-        }),
+      const { data } = await axiosClient.post("/admin/assessment-purposes", {
+        service_id: sId,
+        purpose_name: newPurpose.trim(),
+        price: newPurposePrice || 0,
       });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || "Failed to add purpose");
 
       setServices((prev) =>
         prev.map((svc) =>
@@ -546,12 +504,11 @@ export default function AdminClinic() {
                 subServices: [
                   ...svc.subServices,
                   {
-                    id: String(result.data.purpose_id),
-                    title: result.data.purpose_name,
-                    price: result.data.price || "",
+                    id: String(data.data.purpose_id),
+                    title: data.data.purpose_name,
+                    price: data.data.price || "",
                     available:
-                      result.data.is_active === 1 ||
-                      result.data.is_active === true,
+                      data.data.is_active === 1 || data.data.is_active === true,
                   },
                 ],
               }
@@ -564,12 +521,13 @@ export default function AdminClinic() {
       setAddPurposeFor(null);
       toast.success("Assessment purpose added.", toastSuccess);
     } catch (e) {
-      toast.error(e.message, toastError);
+      toast.error(e.response?.data?.message || e.message, toastError);
     }
   }
 
-  /* update purpose (price / toggle) */
+  /* update purpose — debounced price, immediate toggle */
   async function updSub(sId, subId, patch) {
+    // Update UI instantly
     setServices((s) =>
       s.map((x) =>
         x.id === sId
@@ -582,45 +540,52 @@ export default function AdminClinic() {
           : x,
       ),
     );
-    try {
-      const sub = services
-        .find((x) => x.id === sId)
-        ?.subServices.find((b) => b.id === subId);
-      await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          price: patch.price ?? sub?.price,
-          is_active:
-            patch.available !== undefined
-              ? patch.available
-                ? 1
-                : 0
-              : sub?.available
-                ? 1
-                : 0,
-        }),
-      });
-    } catch (e) {
-      console.error("Update purpose failed:", e);
+
+    if (patch.available !== undefined) {
+      // Toggle — call API immediately
+      try {
+        const sub = services
+          .find((x) => x.id === sId)
+          ?.subServices.find((b) => b.id === subId);
+        await axiosClient.put(`/admin/assessment-purposes/${subId}`, {
+          price: sub?.price,
+          is_active: patch.available ? 1 : 0,
+        });
+      } catch (e) {
+        console.error("Update purpose toggle failed:", e);
+      }
+    } else {
+      // Price typing — debounce 700ms
+      const key = `${sId}-${subId}`;
+      clearTimeout(subSaveTimer.current[key]);
+      subSaveTimer.current[key] = setTimeout(async () => {
+        try {
+          setServices((current) => {
+            const sub = current
+              .find((x) => x.id === sId)
+              ?.subServices.find((b) => b.id === subId);
+            if (sub) {
+              axiosClient
+                .put(`/admin/assessment-purposes/${subId}`, {
+                  price: patch.price ?? sub.price,
+                  is_active: sub.available ? 1 : 0,
+                })
+                .catch((e) => console.error("Update purpose price failed:", e));
+            }
+            return current;
+          });
+        } catch (e) {
+          console.error("Update purpose price failed:", e);
+        }
+      }, 700);
     }
   }
 
+  /* delete purpose */
   async function delSub(sId, subId) {
     openConfirmModal("Delete this purpose?", async () => {
       try {
-        const res = await fetch(`${API_BASE}/assessment-purposes/${subId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-            Accept: "application/json",
-          },
-        });
-        if (!res.ok) throw new Error("Delete failed");
+        await axiosClient.delete(`/admin/assessment-purposes/${subId}`);
         setServices((s) =>
           s.map((x) =>
             x.id === sId
@@ -633,7 +598,7 @@ export default function AdminClinic() {
         );
         toast.success("Purpose deleted successfully.", toastSuccess);
       } catch (e) {
-        toast.error(e.message, toastError);
+        toast.error(e.response?.data?.message || e.message, toastError);
       }
     });
   }
@@ -644,12 +609,6 @@ export default function AdminClinic() {
     );
 
   /* ── small helpers ── */
-  const Field = ({ label, children }) => (
-    <div className={styles.fieldRow}>
-      <label className={styles.fieldLabel}>{label}</label>
-      {children}
-    </div>
-  );
 
   const ImgPreview = ({ preview, existing, label }) => {
     const src = preview || existing;
@@ -684,7 +643,9 @@ export default function AdminClinic() {
     );
   };
 
-  /* ════════ RENDER ════════ */
+  /* ════════════════════════════════════════════
+     RENDER
+  ════════════════════════════════════════════ */
   return (
     <div className="admin-layout">
       <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -699,6 +660,7 @@ export default function AdminClinic() {
             </button>
           </div>
 
+          {/* ── Confirm Modal ── */}
           {showConfirmModal && (
             <div
               className={styles.logoutOverlay}
@@ -707,18 +669,13 @@ export default function AdminClinic() {
               }}
             >
               <div className={styles.logoutModal}>
-                {/* Icon */}
                 <div className={styles.logoutIconWrap}>
                   <FiAlertTriangle className={styles.logoutIcon} />
                 </div>
-
-                {/* Content */}
                 <div className={styles.logoutContent}>
                   <h2 className={styles.logoutTitle}>Confirm Action</h2>
                   <p className={styles.logoutDesc}>{confirmMessage}</p>
                 </div>
-
-                {/* Actions */}
                 <div className={styles.logoutActions}>
                   <button
                     className={styles.cancelBtn}
@@ -726,7 +683,6 @@ export default function AdminClinic() {
                   >
                     Cancel
                   </button>
-
                   <button className={styles.confirmBtn} onClick={handleConfirm}>
                     Confirm
                   </button>
@@ -1206,12 +1162,12 @@ export default function AdminClinic() {
               {/* Clinic Info */}
               <div className={styles.section}>
                 <p className={styles.sectionTitle}>Clinic Information</p>
-                <Field label="Clinic Name *">
+                <Field label="Clinic Names *">
                   <input
                     className={styles.input}
                     type="text"
                     name="name"
-                    value={form.name}
+                    value={form.name || ""}
                     onChange={handleInput}
                     placeholder="e.g. ClearMind Wellness Clinic"
                   />

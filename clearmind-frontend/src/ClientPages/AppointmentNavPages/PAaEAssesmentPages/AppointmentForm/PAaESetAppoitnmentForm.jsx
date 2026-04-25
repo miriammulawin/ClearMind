@@ -18,7 +18,7 @@ import styles from "../../PAaEAssesmentPages/style/PAaEAppointmentForm.module.cs
 import { useCurrentUser } from "../../../../hooks/userCurrentUser";
 
 import PAaEFormHeader from "../AppointmentForm/PAaEFormHeader";
-import PAaEReason from "../AppointmentForm/PAaEReason";
+import VerifyProfileForm from "../../PaCAssesmentPages/AppointmentForm/VerifyProfileForm";
 import PAaEChooseRPm from "../AppointmentForm/PAaEChooseRPm";
 import PAeEDocuments from "../AppointmentForm/PAaEDocuments";
 import PAeEPayment from "../../AppointmentComponents/PaymentForm";
@@ -51,7 +51,7 @@ const PAAE_SERVICE_FEES = {
 ------------------------------------------------------------------ */
 const SERVICE_CONFIG = {
   "VAWC Purpose": {
-    steps: ["Reason", "Choose RPm", "Documents", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Documents", "Payment"],
     femaleOnly: true,
     mandatoryDocs: ["Blotter Report", "Police Report"],
     optionalDocs: [],
@@ -59,7 +59,7 @@ const SERVICE_CONFIG = {
     refPrefix: "VAWC",
   },
   "Adoption or Other Legal Purposes": {
-    steps: ["Reason", "Choose RPm", "Documents", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Documents", "Payment"],
     femaleOnly: false,
     mandatoryDocs: ["RACO or CSWD Endorsement"],
     optionalDocs: [],
@@ -68,7 +68,7 @@ const SERVICE_CONFIG = {
     extraField: "legalType",
   },
   "School / Academic Support": {
-    steps: ["Reason", "Choose RPm", "Documents", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Documents", "Payment"],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: ["Incident Report (if applicable)"],
@@ -77,7 +77,7 @@ const SERVICE_CONFIG = {
     extraField: "school",
   },
   "Work-related Purpose": {
-    steps: ["Reason", "Choose RPm", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Payment"],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: [],
@@ -87,7 +87,7 @@ const SERVICE_CONFIG = {
   },
   // ── Pre-Employment ────────────────────────────────────────────
   "Pre-Employment Purpose": {
-    steps: ["Reason", "Choose RPm", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Payment"],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: [],
@@ -99,7 +99,7 @@ const SERVICE_CONFIG = {
   },
   // ── ESA ───────────────────────────────────────────────────────
   "Emotional Support Animal (ESA) Certification": {
-    steps: ["Reason", "Choose RPm", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Payment"],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: [],
@@ -109,7 +109,7 @@ const SERVICE_CONFIG = {
   },
   // ── Mental Health Certification for Internship ────────────────
   "Mental Health Certification for Internship": {
-    steps: ["Reason", "Choose RPm", "Payment"],
+    steps: ["Verify Profile", "Choose RPm", "Payment"],
     femaleOnly: false,
     mandatoryDocs: [],
     optionalDocs: ["Incident Report (if applicable)"],
@@ -159,40 +159,10 @@ const PAaESetAppointmentForm = () => {
 
   /* ── Validation ────────────────────────────────────────────── */
   const getStepError = () => {
-    // Reason / Submit
-    if (currentLabel === "Reason" || currentLabel === "Submit") {
-      if (
-        config.extraField !== "preEmployment" &&
-        config.extraField !== "esa" &&
-        config.extraField !== "internship"
-      ) {
-        if (!form.reason) return "Please enter your reason for consultation.";
-      }
-
-      // ESA-specific validation
-      if (config.extraField === "esa") {
-        if (!form.travelType)
-          return "Please select a travel type (Local or International).";
-        if (form.hasDiagnosis === undefined)
-          return "Please indicate whether there is an existing diagnosis.";
-        if (form.hasDiagnosis === true && !form.diagnosisFile)
-          return "Please attach the diagnosis document (PDF).";
-      }
-
-      // Pre-Employment specific
-      if (config.extraField === "preEmployment") {
-        if (!form.employerName?.trim())
-          return "Please enter the name of the employer or company.";
-        if (!form.assessmentPurpose?.trim())
-          return "Please enter the purpose of the assessment.";
-      }
-
-      // Internship specific
-      if (config.extraField === "internship") {
-        if (!form.schoolName?.trim())
-          return "Please enter the name of the school or university.";
-        if (!form.program?.trim()) return "Please enter the program or course.";
-      }
+    // ── Verify Profile ─────────────────────────────────────────
+    if (currentLabel === "Verify Profile") {
+      if (!declarationAgreed)
+        return "Please agree to the Declaration of Participation.";
 
       if (form.isInformant) {
         if (!form.complainantName) return "Please enter your full name.";
@@ -213,19 +183,37 @@ const PAaESetAppointmentForm = () => {
           return "Please enter a valid email address.";
         if (!form.address) return "Please enter the patient's home address.";
       }
+    }
 
-      if (!config.steps.includes("Choose RPm")) {
-        if (!form.date) return "Please select a preferred date.";
-        if (!form.time) return "Please select a time slot.";
+    // ── Choose RPm ─────────────────────────────────────────────
+    if (currentLabel === "Choose RPm") {
+      if (!form.rpm) return "Please select an RPm / Psychometrician.";
+
+      // ESA-specific
+      if (config.extraField === "esa") {
+        if (!form.travelType)
+          return "Please select a travel type (Local or International).";
+        if (form.hasDiagnosis === undefined)
+          return "Please indicate whether there is an existing diagnosis.";
+        if (form.hasDiagnosis === true && !form.diagnosisFile)
+          return "Please attach the diagnosis document (PDF).";
+      }
+
+      // Pre-Employment specific
+      if (config.extraField === "preEmployment") {
+        if (!form.employerName?.trim())
+          return "Please enter the name of the employer or company.";
+      }
+
+      // Internship specific
+      if (config.extraField === "internship") {
+        if (!form.schoolName?.trim())
+          return "Please enter the name of the school or university.";
+        if (!form.program?.trim()) return "Please enter the program or course.";
       }
     }
 
-    // Choose RPm
-    if (currentLabel === "Choose RPm") {
-      if (!form.rpm) return "Please select an RPm / Psychometrician.";
-    }
-
-    // Documents
+    // ── Documents ──────────────────────────────────────────────
     if (currentLabel === "Documents") {
       const missing = config.mandatoryDocs.filter(
         (d) => !(form.docFiles || {})[d],
@@ -233,7 +221,7 @@ const PAaESetAppointmentForm = () => {
       if (missing.length > 0) return `Please upload: ${missing.join(", ")}.`;
     }
 
-    // Payment — Pre-Employment
+    // ── Payment — Pre-Employment ───────────────────────────────
     if (currentLabel === "Payment" && config.extraField === "preEmployment") {
       if (form.wantsPrintedReport === undefined)
         return "Please indicate whether you want the printed psychological report.";
@@ -241,7 +229,7 @@ const PAaESetAppointmentForm = () => {
       if (!form.proofFile) return "Please upload your proof of payment.";
     }
 
-    // Payment — Standard
+    // ── Payment — Standard ─────────────────────────────────────
     if (currentLabel === "Payment" && config.extraField !== "preEmployment") {
       if (!form.payMethod) return "Please select a payment method.";
       if (!form.proofFile) return "Please upload your proof of payment.";
@@ -278,6 +266,15 @@ const PAaESetAppointmentForm = () => {
 
   /* ── Step renderer ─────────────────────────────────────────── */
   const renderStep = () => {
+    if (currentLabel === "Verify Profile")
+      return (
+        <VerifyProfileForm
+          formData={form}
+          setFormData={setForm}
+          declarationAgreed={declarationAgreed}
+          onOpenDeclaration={() => setDeclarationModal(true)}
+        />
+      );
     // Pre-Employment details
     if (currentLabel === "Details" && config.extraField === "preEmployment")
       return <PreEmploymentDetails form={form} setForm={setForm} user={user} />;
@@ -289,19 +286,6 @@ const PAaESetAppointmentForm = () => {
     // ESA travel & diagnosis
     if (currentLabel === "Travel & Diagnosis")
       return <EsaTravelDiagnosis form={form} setForm={setForm} user={user} />;
-
-    // Reason / Submit
-    if (currentLabel === "Reason" || currentLabel === "Submit")
-      return (
-        <PAaEReason
-          config={config}
-          form={form}
-          setForm={setForm}
-          user={user}
-          declarationAgreed={declarationAgreed}
-          onOpenDeclaration={() => setDeclarationModal(true)}
-        />
-      );
 
     // Choose RPm
     if (currentLabel === "Choose RPm")
