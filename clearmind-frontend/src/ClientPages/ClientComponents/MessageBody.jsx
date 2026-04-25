@@ -5,6 +5,7 @@ import "../ClientStyle/MessageBody.css";
 import { FaSearch } from "react-icons/fa";
 import { IoMdAttach, IoMdArrowBack } from "react-icons/io";
 import { BiSolidMessageAdd } from "react-icons/bi";
+import { FiTrash2, FiFile, FiDownload, FiX } from "react-icons/fi";
 import { useMessages } from "../../hooks/useMessages";
 import axiosClient from "../../axiosClient";
 
@@ -15,7 +16,11 @@ export default function MessagingApp({ onChatStateChange }) {
   const [searchText, setSearchText] = useState("");
   const [showNewChat, setShowNewChat] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachPreview, setAttachPreview] = useState(null);
+  const [hoveredMsg, setHoveredMsg] = useState(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const {
     conversations,
@@ -27,6 +32,8 @@ export default function MessagingApp({ onChatStateChange }) {
     currentUserId,
     openConversation,
     sendMessage,
+    sendWithAttachment,
+    unsendMessage,
     startConversation,
     getOther,
     getInitials,
@@ -37,6 +44,13 @@ export default function MessagingApp({ onChatStateChange }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Cleanup preview URL
+  useEffect(() => {
+    return () => {
+      if (attachPreview) URL.revokeObjectURL(attachPreview);
+    };
+  }, [attachPreview]);
 
   const handleOpenChat = async (conv) => {
     await openConversation(conv);
@@ -49,17 +63,61 @@ export default function MessagingApp({ onChatStateChange }) {
     onChatStateChange?.(false);
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim()) return;
-    await sendMessage(inputText.trim());
-    setInputText("");
+  // File attachment
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setAttachedFile(file);
+    if (file.type.startsWith("image/")) {
+      setAttachPreview(URL.createObjectURL(file));
+    } else {
+      setAttachPreview(null);
+    }
+    e.target.value = "";
   };
 
-  // Load all messageable users for new conversation
+  const clearAttachment = () => {
+    setAttachedFile(null);
+    if (attachPreview) {
+      URL.revokeObjectURL(attachPreview);
+      setAttachPreview(null);
+    }
+  };
+
+  // Send — text or with attachment
+  const handleSend = async () => {
+    if (!inputText.trim() && !attachedFile) return;
+    if (attachedFile) {
+      await sendWithAttachment(inputText, attachedFile);
+    } else {
+      await sendMessage(inputText.trim());
+    }
+    setInputText("");
+    clearAttachment();
+  };
+
+  // Unsend
+  const handleUnsend = async (msgId) => {
+    if (window.confirm("Unsend this message?")) {
+      await unsendMessage(msgId);
+      setHoveredMsg(null);
+    }
+  };
+
+  // Resolve attachment URL
+  const getAttachmentUrl = (path) =>
+    `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/storage/${path}`;
+
+  const isImage = (path) => /\.(jpg|jpeg|png|gif|webp)$/i.test(path ?? "");
+
+  // Load messageable users (doctors + admins only)
   const handleNewChat = async () => {
     try {
       const { data } = await axiosClient.get("/users/messageable");
-      setAllUsers(data.data);
+      const doctorsAndAdmins = data.data.filter(
+        (u) => u.role === "Doctor" || u.role === "Admin",
+      );
+      setAllUsers(doctorsAndAdmins);
       setShowNewChat(true);
     } catch (err) {
       console.error(err);
@@ -68,7 +126,7 @@ export default function MessagingApp({ onChatStateChange }) {
 
   const handleStartNew = async (userId) => {
     setShowNewChat(false);
-    const conv = await startConversation(userId);
+    await startConversation(userId);
     setShowChat(true);
     onChatStateChange?.(true);
   };
@@ -79,6 +137,8 @@ export default function MessagingApp({ onChatStateChange }) {
       .toLowerCase()
       .includes(searchText.toLowerCase());
   });
+
+  const lastMsgId = messages[messages.length - 1]?.id;
 
   return (
     <div className="messaging-app-container">
@@ -102,9 +162,12 @@ export default function MessagingApp({ onChatStateChange }) {
               padding: 24,
               width: "90%",
               maxWidth: 360,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
             }}
           >
-            <h6 style={{ marginBottom: 16 }}>Start New Conversation</h6>
+            <h6 style={{ marginBottom: 16, fontWeight: 700, color: "#5e4b8b" }}>
+              Start New Conversation
+            </h6>
             {allUsers.length === 0 ? (
               <p style={{ color: "#888" }}>No users available.</p>
             ) : (
@@ -119,7 +182,14 @@ export default function MessagingApp({ onChatStateChange }) {
                     padding: "10px 0",
                     cursor: "pointer",
                     borderBottom: "1px solid #f0f0f0",
+                    transition: "background 0.15s",
                   }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "#f5f0ff")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   <div
                     style={{
@@ -133,12 +203,13 @@ export default function MessagingApp({ onChatStateChange }) {
                       justifyContent: "center",
                       fontWeight: 600,
                       fontSize: 14,
+                      flexShrink: 0,
                     }}
                   >
                     {`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 500 }}>
+                    <div style={{ fontWeight: 500, color: "#333" }}>
                       {u.firstName} {u.lastName}
                     </div>
                     <small style={{ color: "#888" }}>{u.role}</small>
@@ -156,6 +227,8 @@ export default function MessagingApp({ onChatStateChange }) {
                 borderRadius: 8,
                 background: "transparent",
                 cursor: "pointer",
+                color: "#5e4b8b",
+                fontWeight: 600,
               }}
             >
               Cancel
@@ -214,7 +287,11 @@ export default function MessagingApp({ onChatStateChange }) {
               filtered.map((conv) => {
                 const other = getOther(conv);
                 const initials = getInitials(other);
-                const lastMsg = conv.latest_message?.body ?? "No messages yet";
+                const lastMsg =
+                  conv.latest_message?.body ??
+                  (conv.latest_message?.attachment_path
+                    ? "📎 Attachment"
+                    : "No messages yet");
                 const lastTime = conv.latest_message?.created_at
                   ? new Date(
                       conv.latest_message.created_at,
@@ -286,10 +363,12 @@ export default function MessagingApp({ onChatStateChange }) {
               <>
                 {messages.map((msg, i) => {
                   const isMine = msg.sender_id === currentUserId;
+                  const isLast = msg.id === lastMsgId;
                   const showDate =
                     i === 0 ||
                     formatDate(msg.created_at) !==
                       formatDate(messages[i - 1]?.created_at);
+
                   return (
                     <div key={msg.id}>
                       {showDate && (
@@ -297,19 +376,94 @@ export default function MessagingApp({ onChatStateChange }) {
                           <small>{formatDate(msg.created_at)}</small>
                         </div>
                       )}
+
+                      {/* Bubble row */}
                       <div
                         className={`chat-message ${isMine ? "sent" : "received"}`}
+                        onMouseEnter={() =>
+                          isMine && !msg.unsent && setHoveredMsg(msg.id)
+                        }
+                        onMouseLeave={() => setHoveredMsg(null)}
                       >
                         {!isMine && (
                           <div className="chat-message-avatar">
                             {getInitials(getOther(activeConv))}
                           </div>
                         )}
-                        <div>
-                          <div className="chat-message-bubble">{msg.body}</div>
+
+                        <div className="bubble-wrapper">
+                          {/* Unsend button */}
+                          {isMine && hoveredMsg === msg.id && !msg.unsent && (
+                            <button
+                              className="unsend-btn"
+                              onClick={() => handleUnsend(msg.id)}
+                              title="Unsend"
+                            >
+                              <FiTrash2 size={12} />
+                            </button>
+                          )}
+
+                          {/* Bubble */}
+                          <div
+                            className={`chat-message-bubble ${msg.unsent ? "bubble-unsent" : ""}`}
+                          >
+                            {msg.unsent ? (
+                              <span className="unsent-label">
+                                Message unsent
+                              </span>
+                            ) : (
+                              <>
+                                {/* Attachment */}
+                                {msg.attachment_path && (
+                                  <div className="attachment-wrap">
+                                    {isImage(msg.attachment_path) ? (
+                                      <a
+                                        href={getAttachmentUrl(
+                                          msg.attachment_path,
+                                        )}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        <img
+                                          src={getAttachmentUrl(
+                                            msg.attachment_path,
+                                          )}
+                                          alt="attachment"
+                                          className="attach-img"
+                                        />
+                                      </a>
+                                    ) : (
+                                      <a
+                                        href={getAttachmentUrl(
+                                          msg.attachment_path,
+                                        )}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="attach-file-link"
+                                      >
+                                        <FiFile size={16} />
+                                        <span>
+                                          {msg.attachment_path.split("/").pop()}
+                                        </span>
+                                        <FiDownload size={13} />
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Text */}
+                                {msg.body && <span>{msg.body}</span>}
+                              </>
+                            )}
+                          </div>
+
                           <div className="chat-message-time">
                             {formatTime(msg.created_at)}
                           </div>
+
+                          {/* Seen indicator */}
+                          {isMine && isLast && msg.seen && (
+                            <div className="seen-label">Seen</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -320,9 +474,47 @@ export default function MessagingApp({ onChatStateChange }) {
             )}
           </div>
 
+          {/* Attachment preview strip */}
+          {attachedFile && (
+            <div className="attach-preview-bar">
+              {attachPreview ? (
+                <img
+                  src={attachPreview}
+                  alt="preview"
+                  className="attach-preview-img"
+                />
+              ) : (
+                <div className="attach-preview-file">
+                  <FiFile size={18} />
+                  <span>{attachedFile.name}</span>
+                </div>
+              )}
+              <button
+                className="attach-remove-btn"
+                onClick={clearAttachment}
+                title="Remove"
+              >
+                <FiX size={13} />
+              </button>
+            </div>
+          )}
+
+          {/* Input */}
           <div className="message-input-container">
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            />
             <InputGroup>
-              <button type="button" className="attach-button">
+              <button
+                type="button"
+                className="attach-button"
+                onClick={() => fileInputRef.current?.click()}
+                title="Attach file"
+              >
                 <IoMdAttach />
               </button>
               <Form.Control
@@ -343,7 +535,7 @@ export default function MessagingApp({ onChatStateChange }) {
                 type="button"
                 className="send-button"
                 onClick={handleSend}
-                disabled={sending || !inputText.trim()}
+                disabled={sending || (!inputText.trim() && !attachedFile)}
               >
                 {sending ? "..." : "➤"}
               </button>

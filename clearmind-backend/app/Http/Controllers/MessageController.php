@@ -1,7 +1,9 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Events\MessageEdited;
 use App\Events\MessageSent;
+use App\Events\MessageUnsent;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
@@ -14,38 +16,38 @@ class MessageController extends Controller
 {
     // GET /conversations — list all conversations for auth user
     public function conversations(): JsonResponse
-{
-    $userId = Auth::id();
+    {
+        $userId = Auth::id();
 
-    $conversations = Conversation::whereHas('participants', function($q) use ($userId) {
-        $q->where('user_id', $userId);
-    })
-    ->with([
-        'participants' => function($q) use ($userId) {
-            $q->select('users.id', 'firstName', 'lastName', 'profilePicture', 'role');
-        },
-        'latestMessage.sender:id,firstName,lastName',
-    ])
-    ->get()
-    ->map(function($conv) use ($userId) {
-        // Count unread manually
-        $lastRead = $conv->participants
-            ->where('id', $userId)
-            ->first()
-            ?->pivot->last_read_at;
+        $conversations = Conversation::whereHas('participants', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+        ->with([
+            'participants' => function ($q) use ($userId) {
+                $q->select('users.id', 'firstName', 'lastName', 'profilePicture', 'role');
+            },
+            'latestMessage.sender:id,firstName,lastName',
+        ])
+        ->get()
+        ->map(function ($conv) use ($userId) {
+            $lastRead = $conv->participants
+                ->where('id', $userId)
+                ->first()
+                ?->pivot->last_read_at;
 
-        $conv->unread_count = $conv->messages()
-            ->when($lastRead, fn($q) => $q->where('created_at', '>', $lastRead))
-            ->when(!$lastRead, fn($q) => $q)
-            ->count();
+            $conv->unread_count = $conv->messages()
+                ->when($lastRead, fn($q) => $q->where('created_at', '>', $lastRead))
+                ->when(!$lastRead, fn($q) => $q)
+                ->count();
 
-        return $conv;
-    })
-    ->sortByDesc(fn($c) => $c->latestMessage?->created_at)
-    ->values();
+            return $conv;
+        })
+        ->sortByDesc(fn($c) => $c->latestMessage?->created_at)
+        ->values();
 
-    return response()->json(['data' => $conversations]);
-}
+        return response()->json(['data' => $conversations]);
+    }
+
     // POST /conversations/start — find or create 1-on-1 conversation
     public function start(Request $request): JsonResponse
     {
@@ -66,7 +68,6 @@ class MessageController extends Controller
     {
         $conv = Conversation::findOrFail($id);
 
-        // Only participants can read
         abort_unless($conv->participants()->where('user_id', Auth::id())->exists(), 403);
 
         $messages = $conv->messages()
@@ -108,6 +109,55 @@ class MessageController extends Controller
         broadcast(new MessageSent($message))->toOthers();
 
         return response()->json(['data' => $message], 201);
+    }
+
+    // PATCH /messages/{id} — edit message body
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $message = Message::findOrFail($id);
+
+        // Only the original sender can edit
+        abort_unless($message->sender_id === Auth::id(), 403);
+
+        // Cannot edit an unsent (deleted) message
+        abort_if((bool) $message->unsent, 422, 'Cannot edit an unsent message.');
+
+        // Cannot edit messages with attachments (text-only edit)
+        abort_if($message->attachment_path !== null, 422, 'Cannot edit a message with an attachment.');
+
+        $request->validate([
+            'body' => 'required|string|max:5000',
+        ]);
+
+        $message->update(['body' => $request->body]);
+
+        broadcast(new MessageEdited($message))->toOthers();
+
+        return response()->json(['data' => $message]);
+    }
+
+    // DELETE /messages/{id} — unsend (soft-delete) a message
+    public function unsend(int $id): JsonResponse
+    {
+        $message = Message::findOrFail($id);
+
+        // Only the original sender can unsend
+        abort_unless($message->sender_id === Auth::id(), 403);
+
+        // Delete attachment from storage if present
+        if ($message->attachment_path) {
+            Storage::disk('public')->delete($message->attachment_path);
+        }
+
+        $message->update([
+            'body'            => null,
+            'attachment_path' => null,
+            'unsent'          => true,
+        ]);
+
+        broadcast(new MessageUnsent($message))->toOthers();
+
+        return response()->json(['data' => ['message_id' => $message->id]]);
     }
 
     // GET /users/messageable — list all users you can message

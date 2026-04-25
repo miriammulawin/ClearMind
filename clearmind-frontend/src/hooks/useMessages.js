@@ -10,8 +10,12 @@ export function useMessages() {
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
   const channelRef = useRef(null);
+  const activeConvRef = useRef(null);
 
-  // Get current user id from localStorage
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+  }, [activeConv]);
+
   const currentUserId = JSON.parse(localStorage.getItem("user") ?? "{}")?.id;
 
   const fetchConversations = useCallback(async () => {
@@ -30,38 +34,80 @@ export function useMessages() {
     fetchConversations();
   }, [fetchConversations]);
 
-  const openConversation = useCallback(async (conv) => {
-    // Leave previous channel
-    if (channelRef.current) {
-      echo.leave(`conversation.${channelRef.current}`);
-    }
+  const openConversation = useCallback(
+    async (conv) => {
+      if (channelRef.current) {
+        echo.leave(`conversation.${channelRef.current}`);
+      }
 
-    setActiveConv(conv);
-    setMessages([]);
-    setLoadingMsgs(true);
+      setActiveConv(conv);
+      setMessages([]);
+      setLoadingMsgs(true);
 
-    try {
-      const { data } = await axiosClient.get(
-        `/conversations/${conv.id}/messages`,
-      );
-      setMessages([...(data.data.data ?? [])].reverse());
-    } catch (err) {
-      console.error("Failed to load messages", err);
-    } finally {
-      setLoadingMsgs(false);
-    }
+      try {
+        const { data } = await axiosClient.get(
+          `/conversations/${conv.id}/messages`,
+        );
+        setMessages([...(data.data.data ?? [])].reverse());
+      } catch (err) {
+        console.error("Failed to load messages", err);
+      } finally {
+        setLoadingMsgs(false);
+      }
 
-    // Subscribe to real-time updates
-    channelRef.current = conv.id;
-    echo.private(`conversation.${conv.id}`).listen("MessageSent", (e) => {
-      setMessages((prev) => [...prev, e]);
       setConversations((prev) =>
-        prev.map((c) =>
-          c.id === conv.id ? { ...c, latest_message: e, unread_count: 0 } : c,
-        ),
+        prev.map((c) => (c.id === conv.id ? { ...c, unread_count: 0 } : c)),
       );
-    });
-  }, []);
+
+      channelRef.current = conv.id;
+      echo
+        .private(`conversation.${conv.id}`)
+        .listen("MessageSent", (e) => {
+          setMessages((prev) => [...prev, e]);
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === conv.id
+                ? {
+                    ...c,
+                    latest_message: e,
+                    unread_count:
+                      activeConvRef.current?.id === conv.id
+                        ? 0
+                        : (c.unread_count ?? 0) + 1,
+                  }
+                : c,
+            ),
+          );
+        })
+        .listen("MessageUnsent", (e) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === e.message_id
+                ? { ...m, body: null, attachment_path: null, unsent: true }
+                : m,
+            ),
+          );
+        })
+        // ── NEW: real-time edit listener ──────────────────────────────────
+        .listen("MessageEdited", (e) => {
+          // e = { message_id: number, body: string, edited_at: string }
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === e.message_id
+                ? { ...m, body: e.body, edited: true, edited_at: e.edited_at }
+                : m,
+            ),
+          );
+        })
+        // ─────────────────────────────────────────────────────────────────
+        .listen("MessageRead", (e) => {
+          if (e.reader_id !== currentUserId) {
+            setMessages((prev) => prev.map((m) => ({ ...m, seen: true })));
+          }
+        });
+    },
+    [currentUserId],
+  );
 
   const sendMessage = useCallback(
     async (body) => {
@@ -87,6 +133,75 @@ export function useMessages() {
     [activeConv, sending],
   );
 
+  const sendWithAttachment = useCallback(
+    async (body, file) => {
+      if (!activeConv || sending) return;
+      setSending(true);
+      try {
+        const formData = new FormData();
+        if (body?.trim()) formData.append("body", body.trim());
+        if (file) formData.append("attachment", file);
+
+        const { data } = await axiosClient.post(
+          `/conversations/${activeConv.id}/messages`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } },
+        );
+        setMessages((prev) => [...prev, data.data]);
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeConv.id ? { ...c, latest_message: data.data } : c,
+          ),
+        );
+      } catch (err) {
+        console.error("Failed to send attachment", err);
+      } finally {
+        setSending(false);
+      }
+    },
+    [activeConv, sending],
+  );
+
+  const unsendMessage = useCallback(async (messageId) => {
+    try {
+      await axiosClient.delete(`/messages/${messageId}`);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? { ...m, body: null, attachment_path: null, unsent: true }
+            : m,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to unsend message", err);
+    }
+  }, []);
+
+  // ── NEW: edit an existing message ─────────────────────────────────────────
+  const editMessage = useCallback(async (messageId, newBody) => {
+    if (!newBody.trim()) return;
+    try {
+      const { data } = await axiosClient.patch(`/messages/${messageId}`, {
+        body: newBody.trim(),
+      });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                body: data.data.body,
+                edited: true,
+                edited_at: data.data.updated_at,
+              }
+            : m,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to edit message", err);
+    }
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const startConversation = useCallback(
     async (userId) => {
       const { data } = await axiosClient.post("/conversations/start", {
@@ -102,7 +217,6 @@ export function useMessages() {
     [openConversation],
   );
 
-  // Helper: get the other participant (not current user)
   const getOther = (conv) =>
     conv.participants?.find((p) => p.id !== currentUserId) ??
     conv.participants?.[0] ??
@@ -151,6 +265,9 @@ export function useMessages() {
     currentUserId,
     openConversation,
     sendMessage,
+    sendWithAttachment,
+    unsendMessage,
+    editMessage, // ← NEW
     startConversation,
     getOther,
     getInitials,

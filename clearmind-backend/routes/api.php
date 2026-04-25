@@ -36,11 +36,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::match(['put', 'post'], '/me', [AuthController::class, 'update']);
 
     // ── Messages & Conversations ──────────────────────────────────
-    Route::get  ('/conversations',                     [MessageController::class, 'conversations']);
-    Route::post ('/conversations/start',               [MessageController::class, 'start']);
-    Route::get  ('/conversations/{id}/messages',       [MessageController::class, 'messages']);
-    Route::post ('/conversations/{id}/messages',       [MessageController::class, 'store']);
-    Route::get  ('/users/messageable',                 [MessageController::class, 'messageableUsers']);
+    Route::get   ('/conversations',               [MessageController::class, 'conversations']);
+    Route::post  ('/conversations/start',         [MessageController::class, 'start']);
+    Route::get   ('/conversations/{id}/messages', [MessageController::class, 'messages']);
+    Route::post  ('/conversations/{id}/messages', [MessageController::class, 'store']);
+    Route::get   ('/users/messageable',           [MessageController::class, 'messageableUsers']);
+    Route::patch ('/messages/{id}',               [MessageController::class, 'update']);  // edit
+    Route::delete('/messages/{id}',               [MessageController::class, 'unsend']); // unsend
 
     // ── Shared lookup lists ───────────────────────────────────────
     Route::get('patients/list', [PatientController::class, 'all']);
@@ -64,7 +66,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get   ('/doctor/patients/{patientId}', [DoctorPatientController::class, 'show']);
 
     // ── Doctor Schedule Routes ────────────────────────────────────
-    // NOTE: /bulk BEFORE /{id} — avoid Laravel treating "bulk" as an integer
     Route::prefix('doctors/{doctorId}/schedules')->group(function () {
         Route::get   ('/',      [DoctorScheduleController::class, 'index']);
         Route::post  ('/bulk',  [DoctorScheduleController::class, 'bulkStore']);
