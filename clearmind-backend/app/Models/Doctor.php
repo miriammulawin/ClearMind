@@ -17,11 +17,12 @@ class Doctor extends Model
         'professional_title',
         'description',
         'years_of_experience',
-        'license_number',
+        'license_number',       // keep for backward compat (old singular column)
+        'license_numbers',      // ← NEW: JSON array of license numbers
         'practicing_since',
         'main_specialty',
         'profile_picture',
-        'initial_consultation_fee', // ← dagdag para ma-expose sa frontend
+        'initial_consultation_fee',
 
         // JSON array fields
         'specializations',
@@ -39,9 +40,10 @@ class Doctor extends Model
         'years_of_experience'      => 'integer',
         'profile_completed'        => 'boolean',
         'profile_completed_at'     => 'datetime',
-        'initial_consultation_fee' => 'decimal:2', // ← dagdag
+        'initial_consultation_fee' => 'decimal:2',
 
-        // Automatically encode/decode JSON columns
+        // JSON columns — automatically encoded/decoded
+        'license_numbers'     => 'array',   // ← NEW
         'specializations'     => 'array',
         'sub_specializations' => 'array',
         'board_cert_names'    => 'array',
@@ -61,7 +63,7 @@ class Doctor extends Model
             \App\Models\DoctorSchedule::class,
             'doctor_id',
             'doctor_id'
-        )->where('is_active', true) // ← default: active schedules lang
+        )->where('is_active', true)
          ->orderBy('day_of_week');
     }
 }
