@@ -77,7 +77,7 @@ const ScheduleSummaryBanner = ({
     },
     {
       label: "Mode",
-      value: consultationMode === "VIRTUAL" ? "🖥 Virtual" : "🏥 On-Site",
+      value: consultationMode === "VIRTUAL" ? "🖥 Virtual" : "On-Site",
       icon: null,
     },
     {
@@ -264,26 +264,6 @@ const VerifyProfileForm = ({
           >
             View &amp; Agree
           </button>
-        </div>
-      )}
-
-      {declarationAgreed && (
-        <div
-          style={{
-            margin: "0 0 18px",
-            padding: "10px 14px",
-            background: "#ecfdf5",
-            border: "1.5px solid #6ee7b7",
-            borderRadius: "10px",
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "#065f46",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span>✅</span> Declaration of Participation acknowledged
         </div>
       )}
 

@@ -182,18 +182,16 @@ private function userPayload(User $user): array
 {
     $doctor = Doctor::where('user_id', $user->id)->first();
 
-    // Helper: safely build asset URL without double-prefixing
     $assetUrl = function (?string $path): ?string {
         if (!$path) return null;
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path; // already full URL
+            return $path;
         }
         $clean = ltrim($path, '/');
-        $clean = preg_replace('#^storage/#', '', $clean); // strip leading storage/ if present
+        $clean = preg_replace('#^storage/#', '', $clean);
         return asset('storage/' . $clean);
     };
 
-    // Doctor's profile_picture takes priority over User's profilePicture
     $profilePicture = $doctor?->profile_picture
         ? $assetUrl($doctor->profile_picture)
         : $assetUrl($user->profilePicture);
@@ -218,14 +216,11 @@ private function userPayload(User $user): array
         'is_active'             => $user->is_active,
         'email_verified_at'     => $user->email_verified_at,
         'created_at'            => $user->created_at,
-
-        // ── Profile picture: Doctor's first, then User's ──
         'profilePicture'        => $profilePicture,
-
-        // ── Doctor-specific fields (null for Admin/Client) ──
-        'prcLicenseNo'          => $doctor?->license_number,
-        'prcNumber'             => $doctor?->prc_number,
         'professionalTitle'     => $doctor?->professional_title,
+
+        // ✅ was prcLicenseNo (single string) — now license_numbers (array)
+        'license_numbers'       => $doctor?->license_numbers ?? [],
     ];
 }
     // for client

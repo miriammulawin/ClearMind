@@ -381,25 +381,6 @@ const Calendar = ({
       }}
     >
       {/* Mode filter notice */}
-      {modeLabel && (
-        <div
-          style={{
-            padding: "8px 14px",
-            background: "#eef6ff",
-            borderBottom: "1px solid #bfdbfe",
-            fontSize: "11px",
-            color: "#1d4ed8",
-            fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          <span>🔍</span>
-          Showing dates available for{" "}
-          <strong style={{ marginLeft: "4px" }}>{modeLabel}</strong> only
-        </div>
-      )}
 
       {/* Header */}
       <div

@@ -50,20 +50,20 @@ class DoctorController extends Controller
                 'specializations'     => $doctor?->specializations     ?? [],
                 'sub_specializations' => $doctor?->sub_specializations ?? [],
                 'board_cert_names'    => $doctor?->board_cert_names    ?? [],
+                'services'            => $doctor?->services            ?? [],
 
-                'board_cert_images' => array_map(
+                // FIX: board_cert_images already stored as relative paths — return full URLs
+                'board_cert_images' => array_values(array_map(
                     fn($p) => $p ? asset('storage/' . $p) : null,
                     $doctor?->board_cert_images ?? []
-                ),
+                )),
 
-                'id_pictures' => array_map(
+                'id_pictures' => array_values(array_map(
                     fn($p) => $p ? asset('storage/' . $p) : null,
                     $doctor?->id_pictures ?? []
-                ),
+                )),
 
-                'services' => $doctor?->services ?? [],
-
-                // PROFILE PIC
+                // Profile picture: prefer doctor record, fall back to user record
                 'profile_picture' => $doctor?->profile_picture
                     ? asset('storage/' . $doctor->profile_picture)
                     : ($user->profilePicture
@@ -74,7 +74,143 @@ class DoctorController extends Controller
     }
 
     // ──────────────────────────────────────────────
+    // POST /api/doctor/profile/setup
+    // Unified endpoint — saves all steps in one shot
+    // Called by the frontend's handleUpload() on the docs step
+    // ──────────────────────────────────────────────
+    public function setupProfile(Request $request): JsonResponse
+    {
+        $user   = $request->user();
+        $doctor = $user->doctor;
+
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor record not found.',
+            ], 404);
+        }
+
+        $request->validate([
+            'professional_title'  => 'required|string|max:255',
+            'description'         => 'nullable|string',
+            'years_of_experience' => 'nullable|integer|min:0|max:70',
+            'practicing_since'    => 'nullable|string|max:10',
+
+            // Sent as JSON-encoded strings from FormData
+            'license_numbers'     => 'nullable|string',
+            'specializations'     => 'nullable|string',
+            'sub_specializations' => 'nullable|string',
+            'board_cert_names'    => 'nullable|string',
+            'services'            => 'nullable|string',
+
+            'profile_picture'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'board_cert_images.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
+            'id_pictures.*'       => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:4096',
+        ]);
+
+        // ── Text / JSON fields ──────────────────────
+        $doctor->professional_title  = $request->input('professional_title');
+        $doctor->description         = $request->input('description');
+        $doctor->years_of_experience = $request->input('years_of_experience');
+        $doctor->practicing_since    = $request->input('practicing_since');
+
+        // Decode JSON arrays (frontend sends them via FormData as JSON strings)
+      $doctor->license_numbers = json_decode(
+    $request->input('license_numbers', '[]'),
+    true
+) ?? [];
+        $doctor->specializations     = json_decode($request->input('specializations',     '[]'), true) ?? [];
+        $doctor->sub_specializations = json_decode($request->input('sub_specializations', '[]'), true) ?? [];
+        $doctor->board_cert_names    = json_decode($request->input('board_cert_names',    '[]'), true) ?? [];
+        $doctor->services            = json_decode($request->input('services',            '[]'), true) ?? [];
+
+        // ── Profile picture ─────────────────────────
+        if ($request->hasFile('profile_picture')) {
+            // Delete old file if it exists
+            if ($doctor->profile_picture) {
+                Storage::disk('public')->delete($doctor->profile_picture);
+            }
+            $doctor->profile_picture = $request->file('profile_picture')
+                ->store('doctor/profile_pictures', 'public');
+        }
+
+        // ── Board certificate images (append to existing) ──
+        if ($request->hasFile('board_cert_images')) {
+            $new = [];
+            foreach ($request->file('board_cert_images') as $file) {
+                $new[] = $file->store('doctor/board_certs', 'public');
+            }
+            $doctor->board_cert_images = array_values(
+                array_merge($doctor->board_cert_images ?? [], $new)
+            );
+        }
+
+        // ── ID pictures (append to existing) ────────
+        if ($request->hasFile('id_pictures')) {
+            $new = [];
+            foreach ($request->file('id_pictures') as $file) {
+                $new[] = $file->store('doctor/id_pictures', 'public');
+            }
+            $doctor->id_pictures = array_values(
+                array_merge($doctor->id_pictures ?? [], $new)
+            );
+        }
+
+        // ── Mark profile as complete (only once) ────
+        if (!$doctor->profile_completed) {
+            $doctor->profile_completed    = true;
+            $doctor->profile_completed_at = now();
+        }
+
+        $doctor->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile saved successfully.',
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    // DELETE /api/doctor/profile/files
+    // Remove a single file from board_cert_images or id_pictures
+    // Body: { field: "board_cert_images"|"id_pictures", path: "<full URL>" }
+    // ──────────────────────────────────────────────
+    public function removeFile(Request $request): JsonResponse
+    {
+        $doctor = $request->user()->doctor;
+
+        if (!$doctor) {
+            return response()->json(['success' => false, 'message' => 'Doctor not found.'], 404);
+        }
+
+        $request->validate([
+            'field' => 'required|in:board_cert_images,id_pictures',
+            'path'  => 'required|string',
+        ]);
+
+        $field = $request->input('field');
+        $path  = $request->input('path');
+
+        // Frontend sends the full URL (e.g. http://localhost:8000/storage/doctor/…)
+        // Strip it down to the storage-relative path
+        $storagePath = ltrim(str_replace(asset('storage'), '', $path), '/');
+
+        // Delete physical file
+        Storage::disk('public')->delete($storagePath);
+
+        // Remove from the array and re-index
+        $current          = $doctor->{$field} ?? [];
+        $doctor->{$field} = array_values(
+            array_filter($current, fn($p) => $p !== $storagePath)
+        );
+        $doctor->save();
+
+        return response()->json(['success' => true, 'message' => 'File removed.']);
+    }
+
+    // ──────────────────────────────────────────────
     // PUT /api/doctor/profile
+    // Update basic user fields (name, contact, address)
     // ──────────────────────────────────────────────
     public function updateProfile(Request $request): JsonResponse
     {
@@ -90,8 +226,6 @@ class DoctorController extends Controller
 
         $user->update($validated);
 
-        $doctor = Doctor::where('user_id', $user->id)->first();
-
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully.',
@@ -99,137 +233,40 @@ class DoctorController extends Controller
         ]);
     }
 
+    // ──────────────────────────────────────────────
+    // POST /api/doctor/profile/picture
+    // Standalone profile picture update (outside of setup)
+    // ──────────────────────────────────────────────
     public function updateProfilePicture(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $request->validate([
-            'profilePicture' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
-
-        if ($user->profilePicture) {
-            Storage::disk('public')->delete($user->profilePicture);
-        }
-
-        $path = $request->file('profilePicture')
-            ->store('profile_pictures', 'public');
-
-        $user->profilePicture = $path;
-        $user->save();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'profilePicture' => asset('storage/' . $path),
-            ],
-        ]);
-    }
-
-    public function uploadDocuments(Request $request): JsonResponse
-    {
         $user   = $request->user();
         $doctor = $user->doctor;
 
-        if (!$doctor) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Doctor not found',
-            ], 404);
-        }
-
         $request->validate([
-            'board_cert_images.*' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
-            'id_pictures.*'       => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
+            'profilePicture' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
-        $boardCertPaths = [];
-        $idPicPaths     = [];
-
-        if ($request->hasFile('board_cert_images')) {
-            foreach ($request->file('board_cert_images') as $file) {
-                $boardCertPaths[] = $file->store('doctor/board_certs', 'public');
+        // Save to doctor record (consistent with setupProfile)
+        if ($doctor) {
+            if ($doctor->profile_picture) {
+                Storage::disk('public')->delete($doctor->profile_picture);
             }
-        }
-
-        if ($request->hasFile('id_pictures')) {
-            foreach ($request->file('id_pictures') as $file) {
-                $idPicPaths[] = $file->store('doctor/id_pictures', 'public');
+            $path                    = $request->file('profilePicture')->store('doctor/profile_pictures', 'public');
+            $doctor->profile_picture = $path;
+            $doctor->save();
+        } else {
+            // Fallback: save to user record if no doctor record exists yet
+            if ($user->profilePicture) {
+                Storage::disk('public')->delete($user->profilePicture);
             }
+            $path              = $request->file('profilePicture')->store('profile_pictures', 'public');
+            $user->profilePicture = $path;
+            $user->save();
         }
-
-        $doctor->board_cert_images = array_merge($doctor->board_cert_images ?? [], $boardCertPaths);
-        $doctor->id_pictures       = array_merge($doctor->id_pictures       ?? [], $idPicPaths);
-        $doctor->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Documents uploaded successfully',
-            'data'    => $doctor->fresh(),
-        ]);
-    }
-
-    public function updateDoctorProfile(Request $request): JsonResponse
-    {
-        $user   = $request->user();
-        $doctor = $user->doctor;
-
-        if (!$doctor) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Doctor profile not found.',
-            ], 404);
-        }
-
-        $validated = $request->validate([
-            'professional_title'  => 'sometimes|string|max:255',
-            'license_numbers'     => 'sometimes|array|min:1',
-            'license_numbers.*'   => 'string|digits_between:1,20',
-            'main_specialty'      => 'sometimes|string|max:255',
-            'practicing_since'    => 'sometimes|string|max:50',
-            'sub_specializations' => 'sometimes|array',
-            'services'            => 'sometimes|array',
-            'board_cert_names'    => 'sometimes|array',
-        ]);
-
-        $doctor->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Doctor profile updated successfully.',
-            'data'    => $doctor->fresh(),
-        ]);
-    }
-
-    public function updateAccountSecurity(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'email'            => 'sometimes|email|max:255',
-            'current_password' => 'required_with:password|string',
-            'password'         => ['nullable', 'confirmed', Password::min(6)],
-        ]);
-
-        if (isset($validated['email'])) {
-            $user->email = $validated['email'];
-        }
-
-        if (!empty($validated['password'])) {
-            if (!Hash::check($validated['current_password'], $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Current password is incorrect.',
-                ], 422);
-            }
-            $user->password = Hash::make($validated['password']);
-        }
-
-        $user->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Account updated successfully',
-            'data'    => $user->fresh(),
+            'data'    => ['profilePicture' => asset('storage/' . $path)],
         ]);
     }
 
@@ -240,7 +277,7 @@ class DoctorController extends Controller
     {
         $request->validate([
             'current_password' => 'required|string',
-            'password'         => ['required', 'confirmed', Password::min(6)],
+            'password'         => ['required', 'confirmed', Password::min(8)],
         ]);
 
         $user = $request->user();
@@ -249,6 +286,8 @@ class DoctorController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Current password is incorrect.',
+                // FIX: return as errors object so frontend setPwErrors() works
+                'errors'  => ['current_password' => ['Current password is incorrect.']],
             ], 422);
         }
 

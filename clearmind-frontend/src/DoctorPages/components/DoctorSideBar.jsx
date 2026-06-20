@@ -10,7 +10,6 @@ import logo from "../../assets/CMPS_Logo.png";
 
 const STORAGE_BASE = "http://127.0.0.1:8000/storage/";
 
-// ── Builds a full image URL, avoids double-prefixing ──
 const resolveImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -30,10 +29,17 @@ function DoctorSideBar() {
   });
 
   const [doctorProfile, setDoctorProfile] = useState({
+<<<<<<< HEAD
     firstName: "",
     lastName: "",
     middleInitial: "",
     licenseNumbers: [], // ← was prcLicenseNo: ""
+=======
+    firstName:      "",
+    lastName:       "",
+    middleInitial:  "",
+    licenseNumbers: [],
+>>>>>>> e516e8dcc07c814c9ec4c1ab5a93a321d5ca02e0
     profilePicture: null,
   });
 
@@ -42,6 +48,10 @@ function DoctorSideBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+<<<<<<< HEAD
+=======
+  // ── Fetch from /api/me (userPayload now includes license_numbers) ──
+>>>>>>> e516e8dcc07c814c9ec4c1ab5a93a321d5ca02e0
   const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -58,18 +68,14 @@ function DoctorSideBar() {
       if (!response.ok) throw new Error("Failed to fetch profile");
 
       const json = await response.json();
-      const data = json.data; // ← /api/doctor/profile wraps in data.data
+      const data = json.data;
 
       setDoctorProfile({
-        firstName: data.firstName || "",
-        lastName: data.lastName || "",
-        middleInitial: data.middleInitial || "",
-        licenseNumbers: Array.isArray(data.license_numbers)
-          ? data.license_numbers
-          : data.license_number 
-            ? [data.license_number]
-            : [],
-        profilePicture: resolveImageUrl(data.profile_picture), // ← doctor profile uses profile_picture
+        firstName:      data.firstName      || "",
+        lastName:       data.lastName       || "",
+        middleInitial:  data.middleInitial  || "",
+        licenseNumbers: Array.isArray(data.license_numbers) ? data.license_numbers : [],
+        profilePicture: resolveImageUrl(data.profilePicture),
       });
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
@@ -88,24 +94,19 @@ function DoctorSideBar() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // ── Real-time listener: fired by AccountSetupModal / profile page
-  //    after a successful save — no browser refresh needed ──
+  // ── Real-time listener: fired by AccountSetupModal after save ──
   useEffect(() => {
     const handleProfileUpdated = (e) => {
       if (e.detail) {
-        // Use the payload directly — zero extra network call
         setDoctorProfile({
-          firstName: e.detail.firstName || "",
-          lastName: e.detail.lastName || "",
-          middleInitial: e.detail.middleInitial || "",
-          licenseNumbers: Array.isArray(e.detail.licenseNumbers)
-            ? e.detail.licenseNumbers
-            : [],
+          firstName:      e.detail.firstName      || "",
+          lastName:       e.detail.lastName       || "",
+          middleInitial:  e.detail.middleInitial  || "",
+          licenseNumbers: Array.isArray(e.detail.licenseNumbers) ? e.detail.licenseNumbers : [],
           profilePicture: resolveImageUrl(e.detail.profilePicture),
         });
         setLoadingProfile(false);
       } else {
-        // Fallback: re-fetch from backend
         fetchProfile();
       }
     };
@@ -129,23 +130,11 @@ function DoctorSideBar() {
   }, []);
 
   const menus = [
-    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
-    {
-      name: "Appointment",
-      icon: <FaCalendarDays />,
-      path: "/doctor/appointment",
-    },
-    {
-      name: "Schedule",
-      icon: <BsCalendarCheckFill />,
-      path: "/doctor/schedule",
-    },
-    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
-    {
-      name: "My Profile",
-      icon: <BiSolidUserCircle />,
-      path: "/doctor/profile",
-    },
+    { name: "Dashboard",   icon: <RiDashboardFill />,    path: "/doctor/dashboard"   },
+    { name: "Appointment", icon: <FaCalendarDays />,      path: "/doctor/appointment" },
+    { name: "Schedule",    icon: <BsCalendarCheckFill />, path: "/doctor/schedule"    },
+    { name: "Patients",    icon: <BsPersonLinesFill />,   path: "/doctor/patient"     },
+    { name: "My Profile",  icon: <BiSolidUserCircle />,   path: "/doctor/profile"     },
   ];
 
   const toggleCollapsed = (e) => {
@@ -172,25 +161,48 @@ function DoctorSideBar() {
     return f + l || "?";
   };
 
-  // ── Shimmer block ──
-  const Shimmer = ({
-    width = "100%",
-    height = "12px",
-    borderRadius = "6px",
-  }) => (
+  const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
     <span
       style={{
         display: "block",
         width,
         height,
         borderRadius,
-        background:
-          "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
-        backgroundSize: "200% 100%",
-        animation: "sidebarShimmer 1.4s infinite",
+        background:      "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
+        backgroundSize:  "200% 100%",
+        animation:       "sidebarShimmer 1.4s infinite",
       }}
     />
   );
+
+  // ── Render license numbers ──
+  const renderLicenseNumbers = () => {
+    if (loadingProfile) return <Shimmer width="65%" height="10px" />;
+
+    const { licenseNumbers } = doctorProfile;
+
+    if (licenseNumbers.length === 0) {
+      return "PRC License No.: N/A";
+    }
+
+    if (licenseNumbers.length === 1) {
+      return `PRC License No.: ${licenseNumbers[0]}`;
+    }
+
+    // more than 1 — stack them
+    return (
+      <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <span style={{ fontWeight: 600, fontSize: "10px", opacity: 0.75 }}>
+          PRC License No.:
+        </span>
+        {licenseNumbers.map((num, i) => (
+          <span key={i} style={{ fontSize: "11px" }}>
+            {num}
+          </span>
+        ))}
+      </span>
+    );
+  };
 
   return (
     <>
@@ -214,7 +226,7 @@ function DoctorSideBar() {
                 <Shimmer width="100%" height="100%" borderRadius="50%" />
               ) : doctorProfile.profilePicture ? (
                 <img
-                  key={doctorProfile.profilePicture} // key forces re-render on URL change
+                  key={doctorProfile.profilePicture}
                   src={doctorProfile.profilePicture}
                   alt="Profile"
                   style={{
@@ -229,7 +241,7 @@ function DoctorSideBar() {
               )}
             </div>
 
-            {/* Name + PRC */}
+            {/* Name + License Numbers */}
             <div className={styles.profileInfo}>
               <h5 className={styles.profileName}>
                 {loadingProfile ? (
@@ -240,37 +252,7 @@ function DoctorSideBar() {
               </h5>
 
               <p className={styles.profileContact}>
-                {loadingProfile ? (
-                  <Shimmer width="65%" height="10px" />
-                ) : doctorProfile.licenseNumbers.length === 0 ? (
-                  "PRC License No.: N/A"
-                ) : doctorProfile.licenseNumbers.length === 1 ? (
-                  `PRC License No.: ${doctorProfile.licenseNumbers[0]}`
-                ) : (
-                  // more than 1 — stack them
-                  <span
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "2px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "10px",
-                        opacity: 0.75,
-                      }}
-                    >
-                      PRC License No.:
-                    </span>
-                    {doctorProfile.licenseNumbers.map((num, i) => (
-                      <span key={i} style={{ fontSize: "11px" }}>
-                        {num}
-                      </span>
-                    ))}
-                  </span>
-                )}
+                {renderLicenseNumbers()}
               </p>
 
               <FiEdit
@@ -325,7 +307,6 @@ function DoctorSideBar() {
         </div>
       )}
 
-      {/* ── Shimmer keyframe (injected once) ── */}
       <style>{`
         @keyframes sidebarShimmer {
           0%   { background-position:  200% 0; }

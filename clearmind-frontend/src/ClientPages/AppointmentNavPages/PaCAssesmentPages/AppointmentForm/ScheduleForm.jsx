@@ -289,18 +289,6 @@ const ScheduleForm = ({
         {/* Both modes — user chooses FIRST */}
         {!scheduleLoading && allAvailableModes.length === 2 && (
           <>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#7c3aed",
-                marginBottom: "14px",
-                fontWeight: 500,
-              }}
-            >
-              Choose your preferred mode first. The calendar will only show
-              dates available for that mode.
-            </p>
-
             <div style={{ display: "flex", gap: "14px" }}>
               {[
                 {
@@ -401,26 +389,6 @@ const ScheduleForm = ({
                 );
               })}
             </div>
-
-            {!consultationMode && (
-              <div
-                style={{
-                  marginTop: "12px",
-                  padding: "10px 14px",
-                  background: "#faf7ff",
-                  border: "1px dashed #d4b8f0",
-                  borderRadius: "10px",
-                  fontSize: "12px",
-                  color: "#7c3aed",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <span>💡</span>
-                <span>Select a mode above to unlock the date calendar.</span>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -454,14 +422,14 @@ const ScheduleForm = ({
       {/* ══ Booking Summary (shown when all 3 fields filled) ══ */}
       {isFormComplete && (
         <div className={styles.summaryCard} style={{ marginTop: "24px" }}>
-          <p className={styles.summaryTitle}>📋 Booking Summary</p>
+          <p className={styles.summaryTitle}>Booking Summary</p>
           <div className={styles.summaryGrid}>
             <span className={styles.summaryLabel}>Doctor</span>
             <span className={styles.summaryValue}>{doctorData?.name}</span>
 
             <span className={styles.summaryLabel}>Mode</span>
             <span className={styles.summaryValue}>
-              {consultationMode === "VIRTUAL" ? "🖥 Virtual" : "🏥 On-Site"}
+              {consultationMode === "VIRTUAL" ? "🖥 Virtual" : "On-Site"}
             </span>
 
             <span className={styles.summaryLabel}>Date</span>
