@@ -29,17 +29,10 @@ function DoctorSideBar() {
   });
 
   const [doctorProfile, setDoctorProfile] = useState({
-<<<<<<< HEAD
-    firstName: "",
-    lastName: "",
-    middleInitial: "",
-    licenseNumbers: [], // ← was prcLicenseNo: ""
-=======
     firstName:      "",
     lastName:       "",
     middleInitial:  "",
     licenseNumbers: [],
->>>>>>> e516e8dcc07c814c9ec4c1ab5a93a321d5ca02e0
     profilePicture: null,
   });
 
@@ -48,10 +41,7 @@ function DoctorSideBar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-<<<<<<< HEAD
-=======
   // ── Fetch from /api/me (userPayload now includes license_numbers) ──
->>>>>>> e516e8dcc07c814c9ec4c1ab5a93a321d5ca02e0
   const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
