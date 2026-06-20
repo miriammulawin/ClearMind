@@ -13,11 +13,10 @@ class Doctor extends Model
 
     protected $fillable = [
         'user_id',
-        'prc_number',
         'professional_title',
         'description',
         'years_of_experience',
-        'license_number',
+         'license_numbers', 
         'practicing_since',
         'main_specialty',
         'profile_picture',
@@ -48,6 +47,7 @@ class Doctor extends Model
         'board_cert_images'   => 'array',
         'id_pictures'         => 'array',
         'services'            => 'array',
+           'license_numbers' => 'array', 
     ];
 
     public function user()

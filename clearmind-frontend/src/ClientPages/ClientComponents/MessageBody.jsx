@@ -5,7 +5,14 @@ import "../ClientStyle/MessageBody.css";
 import { FaSearch } from "react-icons/fa";
 import { IoMdAttach, IoMdArrowBack } from "react-icons/io";
 import { BiSolidMessageAdd } from "react-icons/bi";
-import { FiTrash2, FiFile, FiDownload, FiX } from "react-icons/fi";
+import {
+  FiTrash2,
+  FiFile,
+  FiDownload,
+  FiX,
+  FiEdit2,
+  FiCheck,
+} from "react-icons/fi";
 import { useMessages } from "../../hooks/useMessages";
 import axiosClient from "../../axiosClient";
 
@@ -19,8 +26,14 @@ export default function MessagingApp({ onChatStateChange }) {
   const [attachedFile, setAttachedFile] = useState(null);
   const [attachPreview, setAttachPreview] = useState(null);
   const [hoveredMsg, setHoveredMsg] = useState(null);
+
+  // ── Edit state ──
+  const [editingMsgId, setEditingMsgId] = useState(null);
+  const [editText, setEditText] = useState("");
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const editInputRef = useRef(null);
 
   const {
     conversations,
@@ -34,6 +47,7 @@ export default function MessagingApp({ onChatStateChange }) {
     sendMessage,
     sendWithAttachment,
     unsendMessage,
+    editMessage, // ← expose this from your hook (see note below)
     startConversation,
     getOther,
     getInitials,
@@ -45,7 +59,12 @@ export default function MessagingApp({ onChatStateChange }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Cleanup preview URL
+  useEffect(() => {
+    if (editingMsgId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingMsgId]);
+
   useEffect(() => {
     return () => {
       if (attachPreview) URL.revokeObjectURL(attachPreview);
@@ -63,7 +82,6 @@ export default function MessagingApp({ onChatStateChange }) {
     onChatStateChange?.(false);
   };
 
-  // File attachment
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -84,7 +102,6 @@ export default function MessagingApp({ onChatStateChange }) {
     }
   };
 
-  // Send — text or with attachment
   const handleSend = async () => {
     if (!inputText.trim() && !attachedFile) return;
     if (attachedFile) {
@@ -96,7 +113,7 @@ export default function MessagingApp({ onChatStateChange }) {
     clearAttachment();
   };
 
-  // Unsend
+  // ── Unsend (delete) ──
   const handleUnsend = async (msgId) => {
     if (window.confirm("Unsend this message?")) {
       await unsendMessage(msgId);
@@ -104,19 +121,47 @@ export default function MessagingApp({ onChatStateChange }) {
     }
   };
 
-  // Resolve attachment URL
+  // ── Start editing ──
+  const handleStartEdit = (msg) => {
+    setEditingMsgId(msg.id);
+    setEditText(msg.body ?? "");
+    setHoveredMsg(null);
+  };
+
+  // ── Confirm edit ──
+  const handleConfirmEdit = async (msgId) => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    try {
+      // editMessage should PATCH /messages/{id} with { body: trimmed }
+      if (typeof editMessage === "function") {
+        await editMessage(msgId, trimmed);
+      } else {
+        // Fallback if hook doesn't export it yet
+        await axiosClient.patch(`/messages/${msgId}`, { body: trimmed });
+      }
+    } catch (err) {
+      console.error("Edit failed", err);
+    } finally {
+      setEditingMsgId(null);
+      setEditText("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMsgId(null);
+    setEditText("");
+  };
+
   const getAttachmentUrl = (path) =>
     `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/storage/${path}`;
 
   const isImage = (path) => /\.(jpg|jpeg|png|gif|webp)$/i.test(path ?? "");
 
-  // Load messageable users (doctors + admins only)
   const handleNewChat = async () => {
     try {
       const { data } = await axiosClient.get("/users/messageable");
-      const doctorsAndAdmins = data.data.filter(
-        (u) => u.role === "Doctor" || u.role === "Admin",
-      );
+      const doctorsAndAdmins = data.data.filter((u) => u.role === "Admin");
       setAllUsers(doctorsAndAdmins);
       setShowNewChat(true);
     } catch (err) {
@@ -364,6 +409,7 @@ export default function MessagingApp({ onChatStateChange }) {
                 {messages.map((msg, i) => {
                   const isMine = msg.sender_id === currentUserId;
                   const isLast = msg.id === lastMsgId;
+                  const isEditing = editingMsgId === msg.id;
                   const showDate =
                     i === 0 ||
                     formatDate(msg.created_at) !==
@@ -377,11 +423,14 @@ export default function MessagingApp({ onChatStateChange }) {
                         </div>
                       )}
 
-                      {/* Bubble row */}
+                      {/* ── Bubble row ── */}
                       <div
                         className={`chat-message ${isMine ? "sent" : "received"}`}
                         onMouseEnter={() =>
-                          isMine && !msg.unsent && setHoveredMsg(msg.id)
+                          isMine &&
+                          !msg.unsent &&
+                          !isEditing &&
+                          setHoveredMsg(msg.id)
                         }
                         onMouseLeave={() => setHoveredMsg(null)}
                       >
@@ -392,18 +441,7 @@ export default function MessagingApp({ onChatStateChange }) {
                         )}
 
                         <div className="bubble-wrapper">
-                          {/* Unsend button */}
-                          {isMine && hoveredMsg === msg.id && !msg.unsent && (
-                            <button
-                              className="unsend-btn"
-                              onClick={() => handleUnsend(msg.id)}
-                              title="Unsend"
-                            >
-                              <FiTrash2 size={12} />
-                            </button>
-                          )}
-
-                          {/* Bubble */}
+                          {/* ── Bubble ── */}
                           <div
                             className={`chat-message-bubble ${msg.unsent ? "bubble-unsent" : ""}`}
                           >
@@ -411,6 +449,41 @@ export default function MessagingApp({ onChatStateChange }) {
                               <span className="unsent-label">
                                 Message unsent
                               </span>
+                            ) : isEditing ? (
+                              /* ── Inline edit input ── */
+                              <div className="edit-input-wrap">
+                                <input
+                                  ref={editInputRef}
+                                  className="edit-inline-input"
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleConfirmEdit(msg.id);
+                                    }
+                                    if (e.key === "Escape") handleCancelEdit();
+                                  }}
+                                />
+                                <div className="edit-action-row">
+                                  <button
+                                    className="edit-confirm-btn"
+                                    onClick={() => handleConfirmEdit(msg.id)}
+                                    title="Save"
+                                  >
+                                    <FiCheck size={12} />
+                                    Save
+                                  </button>
+                                  <button
+                                    className="edit-cancel-btn"
+                                    onClick={handleCancelEdit}
+                                    title="Cancel"
+                                  >
+                                    <FiX size={12} />
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
                             ) : (
                               <>
                                 {/* Attachment */}
@@ -451,7 +524,17 @@ export default function MessagingApp({ onChatStateChange }) {
                                   </div>
                                 )}
                                 {/* Text */}
-                                {msg.body && <span>{msg.body}</span>}
+                                {msg.body && (
+                                  <span>
+                                    {msg.body}
+                                    {msg.edited && (
+                                      <span className="edited-label">
+                                        {" "}
+                                        (edited)
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
                               </>
                             )}
                           </div>
@@ -464,6 +547,31 @@ export default function MessagingApp({ onChatStateChange }) {
                           {isMine && isLast && msg.seen && (
                             <div className="seen-label">Seen</div>
                           )}
+
+                          {/* ══ ACTION BAR — icon-only circles below bubble ══ */}
+                          {isMine &&
+                            !msg.unsent &&
+                            !isEditing &&
+                            hoveredMsg === msg.id && (
+                              <div className="msg-action-bar">
+                                {msg.body && (
+                                  <button
+                                    className="msg-action-btn msg-action-edit"
+                                    onClick={() => handleStartEdit(msg)}
+                                    title="Edit"
+                                  >
+                                    <FiEdit2 size={13} />
+                                  </button>
+                                )}
+                                <button
+                                  className="msg-action-btn msg-action-delete"
+                                  onClick={() => handleUnsend(msg.id)}
+                                  title="Delete"
+                                >
+                                  <FiTrash2 size={13} />
+                                </button>
+                              </div>
+                            )}
                         </div>
                       </div>
                     </div>

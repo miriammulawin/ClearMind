@@ -19,7 +19,7 @@ const resolveImageUrl = (path) => {
 
 function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem("doctorSidebarCollapsed") === "true"
+    () => localStorage.getItem("doctorSidebarCollapsed") === "true",
   );
 
   const [tooltip, setTooltip] = useState({
@@ -33,20 +33,19 @@ function DoctorSideBar() {
     firstName: "",
     lastName: "",
     middleInitial: "",
-    prcLicenseNo: "",
+    licenseNumbers: [], // ← was prcLicenseNo: ""
     profilePicture: null,
   });
 
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // ── Fetch fresh data from /api/me ──
   const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:8000/api/me", {
+      const response = await fetch("http://127.0.0.1:8000/api/doctor/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -59,14 +58,18 @@ function DoctorSideBar() {
       if (!response.ok) throw new Error("Failed to fetch profile");
 
       const json = await response.json();
-      const data  = json.data;
+      const data = json.data; // ← /api/doctor/profile wraps in data.data
 
       setDoctorProfile({
-        firstName:      data.firstName      || "",
-        lastName:       data.lastName       || "",
-        middleInitial:  data.middleInitial  || "",
-        prcLicenseNo:   data.prcLicenseNo   || "",
-        profilePicture: resolveImageUrl(data.profilePicture),
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        middleInitial: data.middleInitial || "",
+        licenseNumbers: Array.isArray(data.license_numbers)
+          ? data.license_numbers
+          : data.license_number 
+            ? [data.license_number]
+            : [],
+        profilePicture: resolveImageUrl(data.profile_picture), // ← doctor profile uses profile_picture
       });
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
@@ -92,11 +95,12 @@ function DoctorSideBar() {
       if (e.detail) {
         // Use the payload directly — zero extra network call
         setDoctorProfile({
-          firstName:      e.detail.firstName      || "",
-          lastName:       e.detail.lastName       || "",
-          middleInitial:  e.detail.middleInitial  || "",
-          prcLicenseNo:   e.detail.prcLicenseNo   || "",
-          // Always resolve to full URL so <img> renders immediately
+          firstName: e.detail.firstName || "",
+          lastName: e.detail.lastName || "",
+          middleInitial: e.detail.middleInitial || "",
+          licenseNumbers: Array.isArray(e.detail.licenseNumbers)
+            ? e.detail.licenseNumbers
+            : [],
           profilePicture: resolveImageUrl(e.detail.profilePicture),
         });
         setLoadingProfile(false);
@@ -107,7 +111,8 @@ function DoctorSideBar() {
     };
 
     window.addEventListener("doctorProfileUpdated", handleProfileUpdated);
-    return () => window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
+    return () =>
+      window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
   }, [fetchProfile]);
 
   // ── Auto-collapse on small screens ──
@@ -124,11 +129,23 @@ function DoctorSideBar() {
   }, []);
 
   const menus = [
-    { name: "Dashboard",  icon: <RiDashboardFill />,     path: "/doctor/dashboard"  },
-    { name: "Appointment",icon: <FaCalendarDays />,       path: "/doctor/appointment"},
-    { name: "Schedule",   icon: <BsCalendarCheckFill />,  path: "/doctor/schedule"   },
-    { name: "Patients",   icon: <BsPersonLinesFill />,    path: "/doctor/patient"    },
-    { name: "My Profile", icon: <BiSolidUserCircle />,    path: "/doctor/profile"    },
+    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
+    {
+      name: "Appointment",
+      icon: <FaCalendarDays />,
+      path: "/doctor/appointment",
+    },
+    {
+      name: "Schedule",
+      icon: <BsCalendarCheckFill />,
+      path: "/doctor/schedule",
+    },
+    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
+    {
+      name: "My Profile",
+      icon: <BiSolidUserCircle />,
+      path: "/doctor/profile",
+    },
   ];
 
   const toggleCollapsed = (e) => {
@@ -145,30 +162,32 @@ function DoctorSideBar() {
   const getDisplayName = () => {
     const { firstName, lastName, middleInitial } = doctorProfile;
     if (!firstName && !lastName) return "...";
-    const mi = middleInitial
-      ? `${middleInitial.charAt(0).toUpperCase()}.`
-      : "";
+    const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
     return [firstName, mi, lastName].filter(Boolean).join(" ");
   };
 
   const getInitials = () => {
     const f = doctorProfile.firstName?.charAt(0).toUpperCase() || "";
-    const l = doctorProfile.lastName?.charAt(0).toUpperCase()  || "";
+    const l = doctorProfile.lastName?.charAt(0).toUpperCase() || "";
     return f + l || "?";
   };
 
   // ── Shimmer block ──
-  const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
+  const Shimmer = ({
+    width = "100%",
+    height = "12px",
+    borderRadius = "6px",
+  }) => (
     <span
       style={{
-        display:         "block",
+        display: "block",
         width,
         height,
         borderRadius,
         background:
           "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
-        backgroundSize:  "200% 100%",
-        animation:       "sidebarShimmer 1.4s infinite",
+        backgroundSize: "200% 100%",
+        animation: "sidebarShimmer 1.4s infinite",
       }}
     />
   );
@@ -181,7 +200,6 @@ function DoctorSideBar() {
         }`}
       >
         <div className={styles.sidebar}>
-
           {/* ── Header ── */}
           <div className={styles.sidebarHeader}>
             <img src={logo} alt="Logo" className={styles.sidebarLogo} />
@@ -190,20 +208,19 @@ function DoctorSideBar() {
 
           {/* ── Profile Section ── */}
           <div className={styles.profileSection}>
-
             {/* Avatar */}
             <div className={styles.profilePic}>
               {loadingProfile ? (
                 <Shimmer width="100%" height="100%" borderRadius="50%" />
               ) : doctorProfile.profilePicture ? (
                 <img
-                  key={doctorProfile.profilePicture}   // key forces re-render on URL change
+                  key={doctorProfile.profilePicture} // key forces re-render on URL change
                   src={doctorProfile.profilePicture}
                   alt="Profile"
                   style={{
-                    width:        "100%",
-                    height:       "100%",
-                    objectFit:    "cover",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
                     borderRadius: "50%",
                   }}
                 />
@@ -225,8 +242,34 @@ function DoctorSideBar() {
               <p className={styles.profileContact}>
                 {loadingProfile ? (
                   <Shimmer width="65%" height="10px" />
+                ) : doctorProfile.licenseNumbers.length === 0 ? (
+                  "PRC License No.: N/A"
+                ) : doctorProfile.licenseNumbers.length === 1 ? (
+                  `PRC License No.: ${doctorProfile.licenseNumbers[0]}`
                 ) : (
-                  `PRC License No.: ${doctorProfile.prcLicenseNo || "N/A"}`
+                  // more than 1 — stack them
+                  <span
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "10px",
+                        opacity: 0.75,
+                      }}
+                    >
+                      PRC License No.:
+                    </span>
+                    {doctorProfile.licenseNumbers.map((num, i) => (
+                      <span key={i} style={{ fontSize: "11px" }}>
+                        {num}
+                      </span>
+                    ))}
+                  </span>
                 )}
               </p>
 
@@ -254,9 +297,9 @@ function DoctorSideBar() {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
-                    text:    item.name,
-                    x:       rect.right + 10,
-                    y:       rect.top + rect.height / 2,
+                    text: item.name,
+                    x: rect.right + 10,
+                    y: rect.top + rect.height / 2,
                     visible: true,
                   });
                 }}
@@ -269,7 +312,6 @@ function DoctorSideBar() {
               </div>
             ))}
           </div>
-
         </div>
       </div>
 

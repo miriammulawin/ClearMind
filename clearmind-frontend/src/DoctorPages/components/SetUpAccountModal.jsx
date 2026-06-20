@@ -85,6 +85,154 @@ const STATIC_OPTIONS = {
   ],
 };
 
+// MultiTextInput — add numbersOnly prop
+function MultiTextInput({
+  label,
+  values,
+  onAdd,
+  onRemove,
+  placeholder,
+  error,
+  numbersOnly = false, // ← add this
+}) {
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef(null);
+
+  const commit = () => {
+    const v = draft.trim();
+    if (v && !values.includes(v)) onAdd(v);
+    setDraft("");
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label
+        style={{
+          fontSize: "11px",
+          fontWeight: 700,
+          color: "#4d227c",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          fontFamily: "Poppins, sans-serif",
+        }}
+      >
+        {label}
+      </label>
+
+      <div style={{ display: "flex", gap: "8px" }}>
+        <input
+          ref={inputRef}
+          type={numbersOnly ? "text" : "text"} // keep text so we control it
+          inputMode={numbersOnly ? "numeric" : "text"} // ← mobile numeric keyboard
+          pattern={numbersOnly ? "[0-9]*" : undefined}
+          placeholder={placeholder || "Type and press Enter or Add…"}
+          value={draft}
+          onChange={(e) => {
+            // strip any non-digit characters when numbersOnly
+            const val = numbersOnly
+              ? e.target.value.replace(/\D/g, "")
+              : e.target.value;
+            setDraft(val);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            }
+            if (e.key === "Escape") setDraft("");
+          }}
+          style={inputSt}
+          onFocus={onFocusInput}
+          onBlur={onBlurInput}
+        />
+        <button
+          type="button"
+          onClick={commit}
+          style={{
+            width: "42px",
+            height: "40px",
+            borderRadius: "8px",
+            border: "none",
+            background: "#4d227c",
+            color: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "#3d1870")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "#4d227c")}
+        >
+          <FiPlus size={17} />
+        </button>
+      </div>
+
+      {values.length > 0 && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "6px",
+            marginTop: "4px",
+          }}
+        >
+          {values.map((v, i) => (
+            <span
+              key={i}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "#4d227c",
+                color: "#fff",
+                padding: "4px 10px",
+                borderRadius: "20px",
+                fontSize: "11.5px",
+                fontWeight: 500,
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {v}
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "rgba(255,255,255,0.8)",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <FiX size={11} strokeWidth={2.5} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {error && (
+        <span
+          style={{
+            fontSize: "11px",
+            color: "#e53e3e",
+            fontFamily: "Poppins, sans-serif",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <FiAlertCircle size={11} />
+          {Array.isArray(error) ? error[0] : error}
+        </span>
+      )}
+    </div>
+  );
+}
 /* ─────────────────────────────────────────────
    Lightbox
 ───────────────────────────────────────────── */
@@ -1561,8 +1709,7 @@ function AccountSetupModal({ showModal, onClose }) {
     professionalTitle: "",
     yearsOfExperience: "",
     practicingSince: "",
-    licenseNumber: "",
-    prcNumber: "",
+    licenseNumbers: [],
   });
 
   const [_doctorName, setDoctorName] = useState("");
@@ -1619,8 +1766,11 @@ function AccountSetupModal({ showModal, onClose }) {
         yearsOfExperience:
           d.years_of_experience != null ? String(d.years_of_experience) : "",
         practicingSince: d.practicing_since || "",
-        licenseNumber: d.license_number || "",
-        prcNumber: d.prc_number || "",
+        licenseNumbers: Array.isArray(d.license_numbers)
+          ? d.license_numbers
+          : d.license_number
+            ? [d.license_number]
+            : [],
       });
 
       setSpecializationList(d.specializations || []);
@@ -1677,9 +1827,8 @@ function AccountSetupModal({ showModal, onClose }) {
     fd.append("professional_title", formData.professionalTitle);
     fd.append("description", formData.description);
     fd.append("years_of_experience", formData.yearsOfExperience);
-    fd.append("license_number", formData.licenseNumber);
+    formData.licenseNumbers.forEach((n) => fd.append("license_numbers[]", n));
     fd.append("practicing_since", formData.practicingSince);
-    fd.append("prc_number", formData.prcNumber);
     fd.append("specializations", JSON.stringify(specializationList));
     fd.append("sub_specializations", JSON.stringify(subSpecializationList));
     fd.append("board_cert_names", JSON.stringify(boardCertificateList));
@@ -1714,7 +1863,9 @@ function AccountSetupModal({ showModal, onClose }) {
             firstName: data.firstName || data.first_name || "",
             lastName: data.lastName || data.last_name || "",
             middleInitial: data.middleInitial || data.middle_initial || "",
-            prcLicenseNo: data.prcLicenseNo || data.prc_number || "",
+            licenseNumbers: Array.isArray(data.license_numbers)
+              ? data.license_numbers
+              : [], // ← updated
             profilePicture: data.profilePicture || data.profile_picture || null,
           },
         }),
@@ -1891,33 +2042,25 @@ function AccountSetupModal({ showModal, onClose }) {
                   onBlur={onBlurInput}
                 />
               </Field>
-              <Field
-                label="License Number"
-                required
-                error={errors.license_number}
-              >
-                <input
-                  type="text"
-                  placeholder="e.g. 0012345"
-                  value={formData.licenseNumber}
-                  onChange={(e) => set("licenseNumber", e.target.value)}
-                  style={inputSt}
-                  onFocus={onFocusInput}
-                  onBlur={onBlurInput}
-                />
-              </Field>
-              <Field label="PRC Number" error={errors.prc_number}>
-                <input
-                  type="text"
-                  placeholder="e.g. 0098765"
-                  value={formData.prcNumber}
-                  onChange={(e) => set("prcNumber", e.target.value)}
-                  style={inputSt}
-                  onFocus={onFocusInput}
-                  onBlur={onBlurInput}
-                />
-              </Field>
             </div>
+
+            {/* ← replaces the old single license_number Field */}
+            <MultiTextInput
+              label="PRC License Number(s) *"
+              values={formData.licenseNumbers}
+              placeholder="e.g. 0012345 — press Enter or click +"
+              error={errors.license_numbers}
+              onAdd={(v) =>
+                set("licenseNumbers", [...formData.licenseNumbers, v])
+              }
+              onRemove={(i) =>
+                set(
+                  "licenseNumbers",
+                  formData.licenseNumbers.filter((_, idx) => idx !== i),
+                )
+              }
+            />
+
             <DropdownListInput
               label="Specializations *"
               options={STATIC_OPTIONS.specialization}

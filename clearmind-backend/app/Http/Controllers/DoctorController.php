@@ -18,59 +18,63 @@ class DoctorController extends Controller
 {
     // ──────────────────────────────────────────────
     // GET /api/doctor/profile
-    // View own profile (includes doctor record with doctor_id)
     // ──────────────────────────────────────────────
- public function profile(Request $request): JsonResponse
-{
-    $user   = $request->user();
-    $doctor = $user->doctor; // eager-load via the hasOne relation
+    public function profile(Request $request): JsonResponse
+    {
+        $user   = $request->user();
+        $doctor = $user->doctor;
 
-   return response()->json([
-    'data' => [
-        // ✅ USER FIELDS (ADD THESE)
-        'firstName'      => $user->firstName,
-        'lastName'       => $user->lastName,
-        'middleInitial'  => $user->middleInitial,
-        'email'          => $user->email,
-        'contactNo'      => $user->contactNo,
-        'dob'            => $user->dob,
-        'sex'            => $user->sex,
-        'genderIdentity' => $user->genderIdentity,
-        'address'        => $user->address,
+        return response()->json([
+            'data' => [
+                // USER FIELDS
+                'firstName'      => $user->firstName,
+                'lastName'       => $user->lastName,
+                'middleInitial'  => $user->middleInitial,
+                'email'          => $user->email,
+                'contactNo'      => $user->contactNo,
+                'dob'            => $user->dob,
+                'sex'            => $user->sex,
+                'genderIdentity' => $user->genderIdentity,
+                'address'        => $user->address,
 
-        // ✅ DOCTOR FIELDS
-        'professional_title'  => $doctor?->professional_title,
-        'description'         => $doctor?->description,
-        'license_number'      => $doctor?->license_number,
-        'practicing_since'    => $doctor?->practicing_since,
-        'specializations' => $doctor?->specializations ?? [],
-        'sub_specializations' => $doctor?->sub_specializations ?? [],
-        'board_cert_names'    => $doctor?->board_cert_names ?? [],
+                // DOCTOR FIELDS
+                'professional_title'  => $doctor?->professional_title,
+                'description'         => $doctor?->description,
+                'years_of_experience' => $doctor?->years_of_experience,  // ✅ added
+                'practicing_since'    => $doctor?->practicing_since,
+                'profile_completed'   => $doctor?->profile_completed ?? false, // ✅ added
 
-        'board_cert_images'   => array_map(
-            fn($p) => $p ? asset('storage/' . $p) : null,
-            $doctor?->board_cert_images ?? []
-        ),
+                // ✅ was license_number (single string) — now license_numbers (array)
+                'license_numbers'     => $doctor?->license_numbers ?? [],
 
-        'id_pictures' => array_map(
-            fn($p) => $p ? asset('storage/' . $p) : null,
-            $doctor?->id_pictures ?? []
-        ),
+                'specializations'     => $doctor?->specializations     ?? [],
+                'sub_specializations' => $doctor?->sub_specializations ?? [],
+                'board_cert_names'    => $doctor?->board_cert_names    ?? [],
 
-        'services' => $doctor?->services ?? [],
+                'board_cert_images' => array_map(
+                    fn($p) => $p ? asset('storage/' . $p) : null,
+                    $doctor?->board_cert_images ?? []
+                ),
 
-        // ✅ PROFILE PIC
-        'profile_picture' => $doctor?->profile_picture
-            ? asset('storage/' . $doctor->profile_picture)
-            : ($user->profilePicture
-                ? asset('storage/' . $user->profilePicture)
-                : null),
-    ]
-]);
-}
+                'id_pictures' => array_map(
+                    fn($p) => $p ? asset('storage/' . $p) : null,
+                    $doctor?->id_pictures ?? []
+                ),
+
+                'services' => $doctor?->services ?? [],
+
+                // PROFILE PIC
+                'profile_picture' => $doctor?->profile_picture
+                    ? asset('storage/' . $doctor->profile_picture)
+                    : ($user->profilePicture
+                        ? asset('storage/' . $user->profilePicture)
+                        : null),
+            ],
+        ]);
+    }
+
     // ──────────────────────────────────────────────
     // PUT /api/doctor/profile
-    // Update own profile
     // ──────────────────────────────────────────────
     public function updateProfile(Request $request): JsonResponse
     {
@@ -96,154 +100,138 @@ class DoctorController extends Controller
     }
 
     public function updateProfilePicture(Request $request): JsonResponse
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    $request->validate([
-        'profilePicture' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-    ]);
+        $request->validate([
+            'profilePicture' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
 
-    // delete old
-    if ($user->profilePicture) {
-        Storage::disk('public')->delete($user->profilePicture);
-    }
-
-    $path = $request->file('profilePicture')
-        ->store('profile_pictures', 'public');
-
-    $user->profilePicture = $path;
-    $user->save();
-
-    return response()->json([
-        'success' => true,
-        'data' => [
-            'profilePicture' => asset('storage/' . $path),
-        ],
-    ]);
-}
-
-public function uploadDocuments(Request $request): JsonResponse
-{
-    $user = $request->user();
-    $doctor = $user->doctor;
-
-    if (!$doctor) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Doctor not found',
-        ], 404);
-    }
-
-    $request->validate([
-        'board_cert_images.*' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
-        'id_pictures.*'       => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
-    ]);
-
-    $boardCertPaths = [];
-    $idPicPaths = [];
-
-    // BOARD CERTS
-    if ($request->hasFile('board_cert_images')) {
-        foreach ($request->file('board_cert_images') as $file) {
-            $boardCertPaths[] = $file->store('doctor/board_certs', 'public');
+        if ($user->profilePicture) {
+            Storage::disk('public')->delete($user->profilePicture);
         }
-    }
 
-    // IDS
-    if ($request->hasFile('id_pictures')) {
-        foreach ($request->file('id_pictures') as $file) {
-            $idPicPaths[] = $file->store('doctor/id_pictures', 'public');
-        }
-    }
+        $path = $request->file('profilePicture')
+            ->store('profile_pictures', 'public');
 
-    // Merge with existing
-    $doctor->board_cert_images = array_merge(
-        $doctor->board_cert_images ?? [],
-        $boardCertPaths
-    );
+        $user->profilePicture = $path;
+        $user->save();
 
-    $doctor->id_pictures = array_merge(
-        $doctor->id_pictures ?? [],
-        $idPicPaths
-    );
-
-    $doctor->save();
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Documents uploaded successfully',
-        'data' => $doctor->fresh(),
-    ]);
-}
-
-    public function updateDoctorProfile(Request $request): JsonResponse
-{
-    $user = $request->user();
-    $doctor = $user->doctor;
-
-    if (!$doctor) {
         return response()->json([
-            'success' => false,
-            'message' => 'Doctor profile not found.',
-        ], 404);
+            'success' => true,
+            'data' => [
+                'profilePicture' => asset('storage/' . $path),
+            ],
+        ]);
     }
 
-    $validated = $request->validate([
-        'professional_title'  => 'sometimes|string|max:255',
-        'license_number'      => 'sometimes|string|max:100',
-        'main_specialty'      => 'sometimes|string|max:255',
-        'practicing_since'    => 'sometimes|string|max:50',
-        'sub_specializations' => 'sometimes|array',
-        'services'            => 'sometimes|array',
-        'board_cert_names'    => 'sometimes|array',
-    ]);
+    public function uploadDocuments(Request $request): JsonResponse
+    {
+        $user   = $request->user();
+        $doctor = $user->doctor;
 
-    $doctor->update($validated);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Doctor profile updated successfully.',
-        'data'    => $doctor->fresh(),
-    ]);
-}
-
-public function updateAccountSecurity(Request $request): JsonResponse
-{
-    $user = $request->user();
-
-    $validated = $request->validate([
-        'email' => 'sometimes|email|max:255',
-
-        'current_password' => 'required_with:password|string',
-        'password' => ['nullable', 'confirmed', Password::min(6)],
-    ]);
-
-    // 1. Update email
-    if (isset($validated['email'])) {
-        $user->email = $validated['email'];
-    }
-
-    // 2. Update password if provided
-    if (!empty($validated['password'])) {
-
-        if (!Hash::check($validated['current_password'], $user->password)) {
+        if (!$doctor) {
             return response()->json([
                 'success' => false,
-                'message' => 'Current password is incorrect.',
-            ], 422);
+                'message' => 'Doctor not found',
+            ], 404);
         }
 
-        $user->password = Hash::make($validated['password']);
+        $request->validate([
+            'board_cert_images.*' => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
+            'id_pictures.*'       => 'nullable|image|mimes:jpg,jpeg,png,pdf|max:4096',
+        ]);
+
+        $boardCertPaths = [];
+        $idPicPaths     = [];
+
+        if ($request->hasFile('board_cert_images')) {
+            foreach ($request->file('board_cert_images') as $file) {
+                $boardCertPaths[] = $file->store('doctor/board_certs', 'public');
+            }
+        }
+
+        if ($request->hasFile('id_pictures')) {
+            foreach ($request->file('id_pictures') as $file) {
+                $idPicPaths[] = $file->store('doctor/id_pictures', 'public');
+            }
+        }
+
+        $doctor->board_cert_images = array_merge($doctor->board_cert_images ?? [], $boardCertPaths);
+        $doctor->id_pictures       = array_merge($doctor->id_pictures       ?? [], $idPicPaths);
+        $doctor->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Documents uploaded successfully',
+            'data'    => $doctor->fresh(),
+        ]);
     }
 
-    $user->save();
+    public function updateDoctorProfile(Request $request): JsonResponse
+    {
+        $user   = $request->user();
+        $doctor = $user->doctor;
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Account updated successfully',
-        'data' => $user->fresh(),
-    ]);
-}
+        if (!$doctor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor profile not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'professional_title'  => 'sometimes|string|max:255',
+            'license_numbers'     => 'sometimes|array|min:1',
+            'license_numbers.*'   => 'string|digits_between:1,20',
+            'main_specialty'      => 'sometimes|string|max:255',
+            'practicing_since'    => 'sometimes|string|max:50',
+            'sub_specializations' => 'sometimes|array',
+            'services'            => 'sometimes|array',
+            'board_cert_names'    => 'sometimes|array',
+        ]);
+
+        $doctor->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Doctor profile updated successfully.',
+            'data'    => $doctor->fresh(),
+        ]);
+    }
+
+    public function updateAccountSecurity(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'email'            => 'sometimes|email|max:255',
+            'current_password' => 'required_with:password|string',
+            'password'         => ['nullable', 'confirmed', Password::min(6)],
+        ]);
+
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+
+        if (!empty($validated['password'])) {
+            if (!Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Current password is incorrect.',
+                ], 422);
+            }
+            $user->password = Hash::make($validated['password']);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Account updated successfully',
+            'data'    => $user->fresh(),
+        ]);
+    }
 
     // ──────────────────────────────────────────────
     // PUT /api/doctor/change-password
@@ -257,7 +245,7 @@ public function updateAccountSecurity(Request $request): JsonResponse
 
         $user = $request->user();
 
-        if (! Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Current password is incorrect.',
@@ -274,7 +262,6 @@ public function updateAccountSecurity(Request $request): JsonResponse
 
     // ──────────────────────────────────────────────
     // GET /api/doctor/clients
-    // View all client accounts
     // ──────────────────────────────────────────────
     public function listClients(): JsonResponse
     {

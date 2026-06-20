@@ -148,10 +148,12 @@ function DoctorProfile() {
         : d.specializations || "",
       practicingSince: d.practicing_since || "",
 
-      licenseNo: d.license_number ? ` ${d.license_number}` : "",
-
-      // ✅ ADD THIS
-      prcNumber: d.prc_number ? ` ${d.prc_number}` : "",
+      // ── Support both array (license_numbers) and single (license_number) ──
+      licenseNumbers: Array.isArray(d.license_numbers)
+        ? d.license_numbers
+        : d.license_number
+          ? [d.license_number]
+          : [],
 
       subspecialty: d.sub_specializations || [],
       services: d.services || [],
@@ -335,14 +337,14 @@ function DoctorProfile() {
                         {doctorData.credentials}
                       </p>
                       <div className="mt-2 small text-muted">
-                        {doctorData.licenseNo && (
+                        {doctorData.licenseNumbers?.length > 0 && (
                           <div>
-                            <strong>PRC License:</strong> {doctorData.licenseNo}
-                          </div>
-                        )}
-                        {doctorData.prcNumber && (
-                          <div>
-                            <strong>PRC Number:</strong> {doctorData.prcNumber}
+                            <strong>PRC License:</strong>{" "}
+                            {doctorData.prcNumberlength === 1
+                              ? doctorData.licenseNumbers[0]
+                              : doctorData.licenseNumbers.map((num, i) => (
+                                  <div key={i}>{num}</div>
+                                ))}
                           </div>
                         )}
                       </div>
