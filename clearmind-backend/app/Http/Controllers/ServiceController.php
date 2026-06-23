@@ -8,10 +8,40 @@ use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
+    /**
+     * Services allowed per profession.
+     */
+    private const PROFESSION_SERVICES = [
+        'Psychometrician' => [
+            'Psychological Assessment',
+            'Mental Health Certification',
+        ],
+        'Psychologist' => [
+            'Psychotherapy',
+        ],
+        'Psychiatrist' => [
+            'Psychiatric Evaluation',
+        ],
+    ];
     // GET /api/admin/services
-    public function index(): JsonResponse
+    // Optional query param: ?profession=Psychologist
+    public function index(Request $request): JsonResponse
     {
-        $services = Service::with('purposes')->orderBy('service_id')->get();
+        $profession = $request->query('profession');
+
+        $query = Service::with('purposes')->orderBy('service_id');
+
+        if ($profession && isset(self::PROFESSION_SERVICES[$profession])) {
+            $allowedNames = self::PROFESSION_SERVICES[$profession];
+            $query->whereIn('service_name', $allowedNames);
+        }
+
+        $services = $query->get();
+
+        // Attach which professions handle each service
+        $services->each(function ($service) {
+            $service->handled_by = $this->getProfessionsForService($service->service_name);
+        });
 
         return response()->json(['data' => $services]);
     }
@@ -32,7 +62,6 @@ class ServiceController extends Controller
             'is_available' => true,
         ]);
 
-        // Load purposes so the response shape matches index()
         return response()->json([
             'message' => 'Service created.',
             'data'    => $service->load('purposes'),
@@ -64,9 +93,21 @@ class ServiceController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $service = Service::findOrFail($id);
-        // Also deletes purposes via cascade (set in migration)
         $service->delete();
 
         return response()->json(['message' => 'Service deleted.']);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private function getProfessionsForService(string $serviceName): array
+    {
+        $professions = [];
+        foreach (self::PROFESSION_SERVICES as $profession => $names) {
+            if (in_array($serviceName, $names, true)) {
+                $professions[] = $profession;
+            }
+        }
+        return $professions;
     }
 }
