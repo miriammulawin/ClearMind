@@ -619,3 +619,184 @@ Here's the **complete fixed code** with **Solution 3 (Recommended)** - smaller, 
   color: #050505;
   margin: 0 0 16px;
 }
+
+/* ════════════════════════════════════════════════════════
+   MSG ACTION BAR — Floating icon-only buttons below bubble
+   ════════════════════════════════════════════════════════ */
+
+.bubble-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Action bar row ── */
+.msg-action-bar {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  justify-content: flex-end;
+  animation: actionBarFadeIn 0.18s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+
+.received .msg-action-bar {
+  justify-content: flex-start;
+  margin-left: 2px;
+}
+
+@keyframes actionBarFadeIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.85); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* ── Base icon button: circular with ring shadow ── */
+.msg-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  gap: 0;
+  font-size: 0;   /* hide any stray text from old rule */
+  line-height: 1;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1),
+              box-shadow 0.15s ease,
+              background 0.15s ease,
+              color 0.15s ease;
+}
+
+.msg-action-btn:hover {
+  transform: scale(1.22);
+  filter: none; /* override old rule */
+}
+
+/* ── Edit — blue ── */
+.msg-action-edit {
+  background: #e8f4ff;
+  color: #0084ff;
+  box-shadow: 0 1px 4px rgba(0,132,255,0.2),
+              0 0 0 1.5px rgba(0,132,255,0.14);
+}
+.msg-action-edit:hover {
+  background: #0084ff;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,132,255,0.42);
+}
+
+/* ── Delete — red ── */
+.msg-action-delete {
+  background: #fff0f2;
+  color: #e0566a;
+  box-shadow: 0 1px 4px rgba(224,86,106,0.2),
+              0 0 0 1.5px rgba(224,86,106,0.14);
+}
+.msg-action-delete:hover {
+  background: #e0566a;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(224,86,106,0.42);
+}
+
+/* ── Tooltip on hover ── */
+.msg-action-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  letter-spacing: 0.3px;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.msg-action-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ════════════════════════════════════════════
+   INLINE EDIT INPUT inside the bubble
+   ════════════════════════════════════════════ */
+
+.edit-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+}
+
+.edit-inline-input {
+  border: none;
+  border-bottom: 1.5px solid rgba(255,255,255,0.55);
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  outline: none;
+  padding: 2px 0 4px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.sent .edit-inline-input {
+  color: #fff;
+  border-bottom-color: rgba(255,255,255,0.5);
+}
+.received .edit-inline-input {
+  color: #050505;
+  border-bottom-color: rgba(0,132,255,0.4);
+}
+
+/* Save / Cancel row */
+.edit-action-row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.edit-confirm-btn,
+.edit-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: filter 0.15s, transform 0.12s;
+}
+.edit-confirm-btn:hover,
+.edit-cancel-btn:hover {
+  filter: brightness(0.88);
+  transform: scale(1.04);
+}
+
+.sent .edit-confirm-btn  { background: rgba(255,255,255,0.28); color: #fff; }
+.sent .edit-cancel-btn   { background: rgba(255,255,255,0.1);  color: rgba(255,255,255,0.75); }
+
+.received .edit-confirm-btn { background: #0084ff; color: #fff; }
+.received .edit-cancel-btn  { background: #e4e6eb; color: #444; }
+
+/* ════════════════════════════════════════════
+   "(edited)" label
+   ════════════════════════════════════════════ */
+
+.edited-label {
+  font-size: 10px;
+  opacity: 0.6;
+  font-style: italic;
+  margin-left: 3px;
+}

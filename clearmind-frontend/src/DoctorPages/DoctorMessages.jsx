@@ -5,12 +5,14 @@ import {
   FiSearch,
   FiPaperclip,
   FiSend,
-  FiEdit,
+  FiEdit2,
   FiX,
   FiTrash2,
   FiFile,
   FiDownload,
+  FiCheck,
 } from "react-icons/fi";
+import { BiSolidMessageAdd } from "react-icons/bi";
 import { useMessages } from "../hooks/useMessages";
 import axiosClient from "../axiosClient";
 
@@ -19,13 +21,23 @@ function DoctorMessages() {
   const [showList, setShowList] = useState(true);
   const [inputText, setInputText] = useState("");
   const [search, setSearch] = useState("");
+
+  // ── New conversation ──
   const [showNewChat, setShowNewChat] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
-  const [attachedFile, setAttachedFile] = useState(null); // File object
-  const [attachPreview, setAttachPreview] = useState(null); // preview URL
-  const [hoveredMsg, setHoveredMsg] = useState(null); // message id for unsend tooltip
+
+  // ── Attachment ──
+  const [attachedFile, setAttachedFile] = useState(null);
+  const [attachPreview, setAttachPreview] = useState(null);
+
+  // ── Hover / edit / unsend ──
+  const [hoveredMsg, setHoveredMsg] = useState(null);
+  const [editingMsgId, setEditingMsgId] = useState(null);
+  const [editText, setEditText] = useState("");
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const editInputRef = useRef(null);
 
   const {
     conversations,
@@ -39,6 +51,7 @@ function DoctorMessages() {
     sendMessage,
     sendWithAttachment,
     unsendMessage,
+    editMessage,
     startConversation,
     getOther,
     getInitials,
@@ -46,23 +59,32 @@ function DoctorMessages() {
     formatDate,
   } = useMessages();
 
-  // Auto-scroll to latest message
+  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Clean up preview URL on unmount
+  // Focus edit input
+  useEffect(() => {
+    if (editingMsgId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingMsgId]);
+
+  // Revoke object URLs
   useEffect(() => {
     return () => {
       if (attachPreview) URL.revokeObjectURL(attachPreview);
     };
   }, [attachPreview]);
 
+  /* ── Conversation select ── */
   const handleSelect = (conv) => {
     openConversation(conv);
     if (window.innerWidth < 768) setShowList(false);
   };
 
+  /* ── New conversation ── */
   const handleNewChat = async () => {
     try {
       const { data } = await axiosClient.get("/users/messageable");
@@ -80,7 +102,7 @@ function DoctorMessages() {
     if (window.innerWidth < 768) setShowList(false);
   };
 
-  // Handle file selection
+  /* ── Attachment ── */
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -90,7 +112,7 @@ function DoctorMessages() {
     } else {
       setAttachPreview(null);
     }
-    e.target.value = ""; // reset input
+    e.target.value = "";
   };
 
   const clearAttachment = () => {
@@ -101,7 +123,7 @@ function DoctorMessages() {
     }
   };
 
-  // Send handler — text only or with attachment
+  /* ── Send ── */
   const handleSend = async () => {
     if (!inputText.trim() && !attachedFile) return;
     if (attachedFile) {
@@ -113,7 +135,7 @@ function DoctorMessages() {
     clearAttachment();
   };
 
-  // Unsend handler
+  /* ── Unsend ── */
   const handleUnsend = async (msgId) => {
     if (window.confirm("Unsend this message?")) {
       await unsendMessage(msgId);
@@ -121,12 +143,42 @@ function DoctorMessages() {
     }
   };
 
-  // Resolve attachment URL
+  /* ── Edit ── */
+  const handleStartEdit = (msg) => {
+    setEditingMsgId(msg.id);
+    setEditText(msg.body ?? "");
+    setHoveredMsg(null);
+  };
+
+  const handleConfirmEdit = async (msgId) => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    try {
+      if (typeof editMessage === "function") {
+        await editMessage(msgId, trimmed);
+      } else {
+        await axiosClient.patch(`/messages/${msgId}`, { body: trimmed });
+      }
+    } catch (err) {
+      console.error("Edit failed", err);
+    } finally {
+      setEditingMsgId(null);
+      setEditText("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMsgId(null);
+    setEditText("");
+  };
+
+  /* ── Attachment helpers ── */
   const getAttachmentUrl = (path) =>
     `${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/storage/${path}`;
 
   const isImage = (path) => /\.(jpg|jpeg|png|gif|webp)$/i.test(path ?? "");
 
+  /* ── Filter conversations ── */
   const filtered = conversations.filter((c) => {
     const other = getOther(c);
     return `${other.firstName} ${other.lastName}`
@@ -134,7 +186,6 @@ function DoctorMessages() {
       .includes(search.toLowerCase());
   });
 
-  // Last message in list — used for "Seen" indicator
   const lastMsgId = messages[messages.length - 1]?.id;
 
   return (
@@ -142,105 +193,47 @@ function DoctorMessages() {
       {/* ══ NEW CHAT MODAL ══ */}
       {showNewChat && (
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className={styles.modalOverlay}
+          onClick={() => setShowNewChat(false)}
         >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              padding: 24,
-              width: "90%",
-              maxWidth: 360,
-              boxShadow: "0 8px 32px rgba(77,34,124,0.18)",
-            }}
-          >
-            <h6 style={{ marginBottom: 16, fontWeight: 700, color: "#2e104e" }}>
-              Start New Conversation
-            </h6>
-            {allUsers.length === 0 ? (
-              <p style={{ color: "#888" }}>No clients available.</p>
-            ) : (
-              allUsers.map((u) => (
-                <div
-                  key={u.id}
-                  onClick={() => handleStartNew(u.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "10px 0",
-                    cursor: "pointer",
-                    borderBottom: "1px solid #f0f0f0",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#f3eeff")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h6 className={styles.modalTitle}>New Conversation</h6>
+              <button
+                className={styles.modalClose}
+                onClick={() => setShowNewChat(false)}
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+
+            <div className={styles.modalList}>
+              {allUsers.length === 0 ? (
+                <p className={styles.modalEmpty}>No clients available.</p>
+              ) : (
+                allUsers.map((u) => (
                   <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, #7341A8, #4D227C)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 700,
-                      fontSize: 14,
-                      flexShrink: 0,
-                      boxShadow: "0 3px 10px rgba(77,34,124,0.25)",
-                    }}
+                    key={u.id}
+                    className={styles.modalItem}
+                    onClick={() => handleStartNew(u.id)}
                   >
-                    {`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        color: "#2e104e",
-                        fontSize: 14,
-                      }}
-                    >
-                      {u.firstName} {u.lastName}
+                    <div className={styles.modalAvatar}>
+                      {`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}
                     </div>
-                    <small style={{ color: "#9ca3af" }}>{u.role}</small>
+                    <div className={styles.modalItemInfo}>
+                      <span className={styles.modalItemName}>
+                        {u.firstName} {u.lastName}
+                      </span>
+                      <span className={styles.modalItemRole}>{u.role}</span>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
+            </div>
+
             <button
+              className={styles.modalCancelBtn}
               onClick={() => setShowNewChat(false)}
-              style={{
-                marginTop: 16,
-                width: "100%",
-                padding: "10px",
-                border: "1.5px solid #e5d6f5",
-                borderRadius: 8,
-                background: "transparent",
-                cursor: "pointer",
-                color: "#4D227C",
-                fontWeight: 600,
-                fontSize: 14,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#f3eeff")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
             >
               Cancel
             </button>
@@ -256,7 +249,16 @@ function DoctorMessages() {
           {/* ══ LEFT PANEL ══ */}
           <div className={styles.msgLeft}>
             <div className={styles.msgLeftTop}>
-              <h5 className={styles.msgLeftTitle}>Messages</h5>
+              <div className={styles.msgLeftHeader}>
+                <h5 className={styles.msgLeftTitle}>Messages</h5>
+                <button
+                  className={styles.fabBtn}
+                  onClick={handleNewChat}
+                  title="New conversation"
+                >
+                  <BiSolidMessageAdd size={18} />
+                </button>
+              </div>
               <div className={styles.msgSearch}>
                 <FiSearch />
                 <input
@@ -269,17 +271,9 @@ function DoctorMessages() {
 
             <div className={styles.msgList}>
               {loadingConvs ? (
-                <p
-                  style={{ padding: 16, color: "var(--color-text-secondary)" }}
-                >
-                  Loading…
-                </p>
+                <p className={styles.listPlaceholder}>Loading…</p>
               ) : filtered.length === 0 ? (
-                <p
-                  style={{ padding: 16, color: "var(--color-text-secondary)" }}
-                >
-                  No conversations yet.
-                </p>
+                <p className={styles.listPlaceholder}>No conversations yet.</p>
               ) : (
                 filtered.map((conv) => {
                   const other = getOther(conv);
@@ -307,15 +301,7 @@ function DoctorMessages() {
                         </h6>
                         <p>{lastMsg}</p>
                       </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          gap: 6,
-                          flexShrink: 0,
-                        }}
-                      >
+                      <div className={styles.msgItemMeta}>
                         <span className={styles.msgDate}>{lastTime}</span>
                         {conv.unread_count > 0 && (
                           <span className={styles.unreadDot} />
@@ -326,30 +312,19 @@ function DoctorMessages() {
                 })
               )}
             </div>
-
-            {/* ══ FAB NEW CONVERSATION ══ */}
-            <button
-              onClick={handleNewChat}
-              title="New conversation"
-              className={styles.fabBtn}
-            >
-              <FiEdit />
-            </button>
           </div>
 
           {/* ══ RIGHT PANEL ══ */}
           <div className={styles.msgRight}>
             {!activeConv ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                Select a conversation to start messaging
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>
+                  <BiSolidMessageAdd size={36} />
+                </div>
+                <p className={styles.emptyTitle}>No conversation selected</p>
+                <p className={styles.emptyHint}>
+                  Choose one from the list or start a new one
+                </p>
               </div>
             ) : (
               <>
@@ -376,21 +351,20 @@ function DoctorMessages() {
                   </div>
                 </div>
 
-                {/* Messages */}
+                {/* Messages body */}
                 <div className={styles.msgBody}>
                   {loadingMsgs ? (
-                    <p style={{ textAlign: "center", padding: 20 }}>
-                      Loading messages…
-                    </p>
+                    <p className={styles.bodyLoading}>Loading messages…</p>
                   ) : (
                     <>
                       {messages.map((m, i) => {
                         const isMine = m.sender_id === currentUserId;
+                        const isLast = m.id === lastMsgId;
+                        const isEditing = editingMsgId === m.id;
                         const showDate =
                           i === 0 ||
                           formatDate(m.created_at) !==
                             formatDate(messages[i - 1]?.created_at);
-                        const isLast = m.id === lastMsgId;
 
                         return (
                           <div key={m.id}>
@@ -400,95 +374,177 @@ function DoctorMessages() {
                               </div>
                             )}
 
-                            {/* Bubble row */}
                             <div
-                              className={styles.bubbleRow}
-                              style={{
-                                justifyContent: isMine
-                                  ? "flex-end"
-                                  : "flex-start",
-                              }}
+                              className={`${styles.msgRow} ${isMine ? styles.msgRowMine : styles.msgRowOther}`}
                               onMouseEnter={() =>
-                                isMine && !m.unsent && setHoveredMsg(m.id)
+                                isMine &&
+                                !m.unsent &&
+                                !isEditing &&
+                                setHoveredMsg(m.id)
                               }
                               onMouseLeave={() => setHoveredMsg(null)}
                             >
-                              {/* Unsend button — only mine, only on hover */}
-                              {isMine && hoveredMsg === m.id && !m.unsent && (
-                                <button
-                                  className={styles.unsendBtn}
-                                  onClick={() => handleUnsend(m.id)}
-                                  title="Unsend"
+                              {/* Other avatar */}
+                              {!isMine && (
+                                <div
+                                  className={`${styles.avatar} ${styles.avatarSm}`}
                                 >
-                                  <FiTrash2 size={13} />
-                                </button>
+                                  {getInitials(getOther(activeConv))}
+                                </div>
                               )}
 
-                              {/* Bubble */}
-                              <div
-                                className={`${styles.bubble} ${isMine ? styles.bubbleAdmin : styles.bubblePatient} ${m.unsent ? styles.bubbleUnsent : ""}`}
-                              >
-                                {m.unsent ? (
-                                  <span className={styles.unsentLabel}>
-                                    Message unsent
-                                  </span>
-                                ) : (
-                                  <>
-                                    {/* Attachment */}
-                                    {m.attachment_path && (
-                                      <div className={styles.attachmentWrap}>
-                                        {isImage(m.attachment_path) ? (
-                                          <a
-                                            href={getAttachmentUrl(
-                                              m.attachment_path,
-                                            )}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                          >
-                                            <img
-                                              src={getAttachmentUrl(
+                              <div className={styles.bubbleCol}>
+                                {/* Bubble */}
+                                <div
+                                  className={`${styles.bubble} ${
+                                    isMine
+                                      ? styles.bubbleAdmin
+                                      : styles.bubblePatient
+                                  } ${m.unsent ? styles.bubbleUnsent : ""}`}
+                                >
+                                  {m.unsent ? (
+                                    <span className={styles.unsentLabel}>
+                                      🚫 Message unsent
+                                    </span>
+                                  ) : isEditing ? (
+                                    /* ── Inline edit ── */
+                                    <div className={styles.editWrap}>
+                                      <input
+                                        ref={editInputRef}
+                                        className={styles.editInput}
+                                        value={editText}
+                                        onChange={(e) =>
+                                          setEditText(e.target.value)
+                                        }
+                                        onKeyDown={(e) => {
+                                          if (
+                                            e.key === "Enter" &&
+                                            !e.shiftKey
+                                          ) {
+                                            e.preventDefault();
+                                            handleConfirmEdit(m.id);
+                                          }
+                                          if (e.key === "Escape")
+                                            handleCancelEdit();
+                                        }}
+                                      />
+                                      <div className={styles.editActions}>
+                                        <button
+                                          className={styles.editSaveBtn}
+                                          onClick={() =>
+                                            handleConfirmEdit(m.id)
+                                          }
+                                        >
+                                          <FiCheck size={11} /> Save
+                                        </button>
+                                        <button
+                                          className={styles.editCancelBtn}
+                                          onClick={handleCancelEdit}
+                                        >
+                                          <FiX size={11} /> Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {/* Attachment */}
+                                      {m.attachment_path && (
+                                        <div className={styles.attachmentWrap}>
+                                          {isImage(m.attachment_path) ? (
+                                            <a
+                                              href={getAttachmentUrl(
                                                 m.attachment_path,
                                               )}
-                                              alt="attachment"
-                                              className={styles.attachImg}
-                                            />
-                                          </a>
-                                        ) : (
-                                          <a
-                                            href={getAttachmentUrl(
-                                              m.attachment_path,
-                                            )}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className={styles.attachFile}
-                                          >
-                                            <FiFile size={18} />
-                                            <span>
-                                              {m.attachment_path
-                                                .split("/")
-                                                .pop()}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                            >
+                                              <img
+                                                src={getAttachmentUrl(
+                                                  m.attachment_path,
+                                                )}
+                                                alt="attachment"
+                                                className={styles.attachImg}
+                                              />
+                                            </a>
+                                          ) : (
+                                            <a
+                                              href={getAttachmentUrl(
+                                                m.attachment_path,
+                                              )}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className={styles.attachFile}
+                                            >
+                                              <FiFile size={15} />
+                                              <span>
+                                                {m.attachment_path
+                                                  .split("/")
+                                                  .pop()}
+                                              </span>
+                                              <FiDownload size={12} />
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                      {/* Text */}
+                                      {m.body && (
+                                        <span>
+                                          {m.body}
+                                          {m.edited && (
+                                            <span
+                                              className={styles.editedLabel}
+                                            >
+                                              {" "}
+                                              (edited)
                                             </span>
-                                            <FiDownload size={14} />
-                                          </a>
-                                        )}
-                                      </div>
-                                    )}
-                                    {/* Text body */}
-                                    {m.body && <span>{m.body}</span>}
-                                  </>
-                                )}
-
-                                {/* Time */}
-                                <div className={styles.msgTime}>
-                                  {formatTime(m.created_at)}
+                                          )}
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
+
+                                {/* Time + seen */}
+                                <div
+                                  className={`${styles.msgTime} ${isMine ? styles.msgTimeMine : ""}`}
+                                >
+                                  {formatTime(m.created_at)}
+                                  {isMine && isLast && m.seen && (
+                                    <span className={styles.seenLabel}>
+                                      {" "}
+                                      · Seen
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Action bar */}
+                                {isMine &&
+                                  !m.unsent &&
+                                  !isEditing &&
+                                  hoveredMsg === m.id && (
+                                    <div
+                                      className={`${styles.actionBar} ${styles.actionBarMine}`}
+                                    >
+                                      {m.body && (
+                                        <button
+                                          className={`${styles.actionBtn} ${styles.actionEdit}`}
+                                          onClick={() => handleStartEdit(m)}
+                                          title="Edit"
+                                        >
+                                          <FiEdit2 size={12} />
+                                        </button>
+                                      )}
+                                      <button
+                                        className={`${styles.actionBtn} ${styles.actionDelete}`}
+                                        onClick={() => handleUnsend(m.id)}
+                                        title="Unsend"
+                                      >
+                                        <FiTrash2 size={12} />
+                                      </button>
+                                    </div>
+                                  )}
                               </div>
                             </div>
-
-                            {/* Seen indicator — only on last sent message by me */}
-                            {isMine && isLast && m.seen && (
-                              <div className={styles.seenRow}>Seen</div>
-                            )}
                           </div>
                         );
                       })}
@@ -508,23 +564,21 @@ function DoctorMessages() {
                       />
                     ) : (
                       <div className={styles.attachPreviewFile}>
-                        <FiFile size={20} />
+                        <FiFile size={18} />
                         <span>{attachedFile.name}</span>
                       </div>
                     )}
                     <button
                       className={styles.attachRemoveBtn}
                       onClick={clearAttachment}
-                      title="Remove"
                     >
-                      <FiX size={14} />
+                      <FiX size={13} />
                     </button>
                   </div>
                 )}
 
                 {/* Input bar */}
                 <div className={styles.msgInputBar}>
-                  {/* Hidden file input */}
                   <input
                     type="file"
                     ref={fileInputRef}

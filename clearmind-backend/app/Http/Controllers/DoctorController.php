@@ -26,7 +26,7 @@ class DoctorController extends Controller
 
         return response()->json([
             'data' => [
-                // User fields
+                // USER FIELDS
                 'firstName'      => $user->firstName,
                 'lastName'       => $user->lastName,
                 'middleInitial'  => $user->middleInitial,
@@ -37,15 +37,15 @@ class DoctorController extends Controller
                 'genderIdentity' => $user->genderIdentity,
                 'address'        => $user->address,
 
-                // Doctor fields
+                // DOCTOR FIELDS
                 'professional_title'  => $doctor?->professional_title,
                 'description'         => $doctor?->description,
-                'years_of_experience' => $doctor?->years_of_experience,
+                'years_of_experience' => $doctor?->years_of_experience,  // ✅ added
                 'practicing_since'    => $doctor?->practicing_since,
-                'profile_completed'   => $doctor?->profile_completed ?? false,
+                'profile_completed'   => $doctor?->profile_completed ?? false, // ✅ added
 
-                // FIX: return license_numbers (array), not the old singular license_number
-              'license_numbers' => $doctor?->license_numbers ?? [],
+                // ✅ was license_number (single string) — now license_numbers (array)
+                'license_numbers'     => $doctor?->license_numbers ?? [],
 
                 'specializations'     => $doctor?->specializations     ?? [],
                 'sub_specializations' => $doctor?->sub_specializations ?? [],

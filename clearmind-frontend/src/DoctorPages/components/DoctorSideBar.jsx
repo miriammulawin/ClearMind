@@ -45,7 +45,7 @@ function DoctorSideBar() {
   const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:8000/api/me", {
+      const response = await fetch("http://127.0.0.1:8000/api/doctor/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: "application/json",
@@ -147,14 +147,14 @@ function DoctorSideBar() {
 
   const getInitials = () => {
     const f = doctorProfile.firstName?.charAt(0).toUpperCase() || "";
-    const l = doctorProfile.lastName?.charAt(0).toUpperCase()  || "";
+    const l = doctorProfile.lastName?.charAt(0).toUpperCase() || "";
     return f + l || "?";
   };
 
   const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
     <span
       style={{
-        display:         "block",
+        display: "block",
         width,
         height,
         borderRadius,
@@ -202,7 +202,6 @@ function DoctorSideBar() {
         }`}
       >
         <div className={styles.sidebar}>
-
           {/* ── Header ── */}
           <div className={styles.sidebarHeader}>
             <img src={logo} alt="Logo" className={styles.sidebarLogo} />
@@ -211,7 +210,6 @@ function DoctorSideBar() {
 
           {/* ── Profile Section ── */}
           <div className={styles.profileSection}>
-
             {/* Avatar */}
             <div className={styles.profilePic}>
               {loadingProfile ? (
@@ -222,9 +220,9 @@ function DoctorSideBar() {
                   src={doctorProfile.profilePicture}
                   alt="Profile"
                   style={{
-                    width:        "100%",
-                    height:       "100%",
-                    objectFit:    "cover",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
                     borderRadius: "50%",
                   }}
                 />
@@ -271,9 +269,9 @@ function DoctorSideBar() {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
-                    text:    item.name,
-                    x:       rect.right + 10,
-                    y:       rect.top + rect.height / 2,
+                    text: item.name,
+                    x: rect.right + 10,
+                    y: rect.top + rect.height / 2,
                     visible: true,
                   });
                 }}
@@ -286,7 +284,6 @@ function DoctorSideBar() {
               </div>
             ))}
           </div>
-
         </div>
       </div>
 
