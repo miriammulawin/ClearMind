@@ -38,10 +38,10 @@ function DoctorSideBar() {
 
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  // ── Fetch from /api/me (userPayload now includes license_numbers) ──
+  // ── Fetch from /api/doctor/profile ──────────────────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -60,12 +60,22 @@ function DoctorSideBar() {
       const json = await response.json();
       const data = json.data;
 
+      // Normalize license_numbers — always produce a clean string array
+      const rawLicenses = data.license_numbers;
+      const licenseNumbers = Array.isArray(rawLicenses)
+        ? rawLicenses.filter((n) => n !== null && n !== undefined && String(n).trim() !== "")
+        : rawLicenses && String(rawLicenses).trim() !== ""
+          ? [String(rawLicenses).trim()]   // legacy single-string fallback
+          : [];
+
       setDoctorProfile({
-        firstName:      data.firstName      || "",
-        lastName:       data.lastName       || "",
-        middleInitial:  data.middleInitial  || "",
-        licenseNumbers: Array.isArray(data.license_numbers) ? data.license_numbers : [],
-        profilePicture: resolveImageUrl(data.profilePicture),
+        // API returns camelCase from the User model fields
+        firstName:      data.firstName     || "",
+        lastName:       data.lastName      || "",
+        middleInitial:  data.middleInitial || "",
+        licenseNumbers,
+        // API returns snake_case for the doctor table column
+        profilePicture: resolveImageUrl(data.profile_picture || data.profilePicture),
       });
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
@@ -74,7 +84,7 @@ function DoctorSideBar() {
     }
   }, []);
 
-  // ── On mount: clear stale cache then fetch ──
+  // ── On mount: clear stale cache then fetch ───────────────────────────────
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     if (currentUser?.id) {
@@ -84,16 +94,25 @@ function DoctorSideBar() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // ── Real-time listener: fired by AccountSetupModal after save ──
+  // ── Real-time listener: fired by AccountSetupModal after save ────────────
   useEffect(() => {
     const handleProfileUpdated = (e) => {
       if (e.detail) {
+        const rawLicenses = e.detail.licenseNumbers ?? e.detail.license_numbers;
+        const licenseNumbers = Array.isArray(rawLicenses)
+          ? rawLicenses.filter((n) => n !== null && n !== undefined && String(n).trim() !== "")
+          : rawLicenses && String(rawLicenses).trim() !== ""
+            ? [String(rawLicenses).trim()]
+            : [];
+
         setDoctorProfile({
-          firstName:      e.detail.firstName      || "",
-          lastName:       e.detail.lastName       || "",
-          middleInitial:  e.detail.middleInitial  || "",
-          licenseNumbers: Array.isArray(e.detail.licenseNumbers) ? e.detail.licenseNumbers : [],
-          profilePicture: resolveImageUrl(e.detail.profilePicture),
+          firstName:      e.detail.firstName     || "",
+          lastName:       e.detail.lastName      || "",
+          middleInitial:  e.detail.middleInitial || "",
+          licenseNumbers,
+          profilePicture: resolveImageUrl(
+            e.detail.profile_picture || e.detail.profilePicture
+          ),
         });
         setLoadingProfile(false);
       } else {
@@ -106,7 +125,7 @@ function DoctorSideBar() {
       window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
   }, [fetchProfile]);
 
-  // ── Auto-collapse on small screens ──
+  // ── Auto-collapse on small screens ──────────────────────────────────────
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 965) {
@@ -138,23 +157,35 @@ function DoctorSideBar() {
 
   const handleMenuClick = (item) => navigate(item.path);
 
+  // ── Build display name ───────────────────────────────────────────────────
   const getDisplayName = () => {
     const { firstName, lastName, middleInitial } = doctorProfile;
     if (!firstName && !lastName) return "...";
-    const mi = middleInitial ? `${middleInitial.charAt(0).toUpperCase()}.` : "";
-    return [firstName, mi, lastName].filter(Boolean).join(" ");
+
+    // If firstName already contains the full name (has comma = "LastName, First MI")
+    // return it directly to avoid duplication
+    if (firstName.includes(",") || firstName === lastName) {
+      return firstName.trim();
+    }
+
+    const rawMI = (middleInitial || "").trim();
+    const mi = rawMI ? `${rawMI.charAt(0).toUpperCase()}.` : "";
+
+    return [firstName.trim(), mi, lastName.trim()]
+      .filter(Boolean)
+      .join(" ");
   };
 
   const getInitials = () => {
-    const f = doctorProfile.firstName?.charAt(0).toUpperCase() || "";
-    const l = doctorProfile.lastName?.charAt(0).toUpperCase() || "";
+    const f = doctorProfile.firstName?.trim().charAt(0).toUpperCase() || "";
+    const l = doctorProfile.lastName?.trim().charAt(0).toUpperCase()  || "";
     return f + l || "?";
   };
 
   const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
     <span
       style={{
-        display: "block",
+        display:         "block",
         width,
         height,
         borderRadius,
@@ -165,32 +196,19 @@ function DoctorSideBar() {
     />
   );
 
-  // ── Render license numbers ──
+  // ── Render license numbers ───────────────────────────────────────────────
   const renderLicenseNumbers = () => {
     if (loadingProfile) return <Shimmer width="65%" height="10px" />;
 
     const { licenseNumbers } = doctorProfile;
 
-    if (licenseNumbers.length === 0) {
-      return "PRC License No.: N/A";
+    if (!licenseNumbers || licenseNumbers.length === 0) {
+      return <span>PRC License No.: N/A</span>;
     }
 
-    if (licenseNumbers.length === 1) {
-      return `PRC License No.: ${licenseNumbers[0]}`;
-    }
-
-    // more than 1 — stack them
+    // Single or multiple — always join with ", "
     return (
-      <span style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-        <span style={{ fontWeight: 600, fontSize: "10px", opacity: 0.75 }}>
-          PRC License No.:
-        </span>
-        {licenseNumbers.map((num, i) => (
-          <span key={i} style={{ fontSize: "11px" }}>
-            {num}
-          </span>
-        ))}
-      </span>
+      <span>PRC License No.: {licenseNumbers.join(", ")}</span>
     );
   };
 
@@ -220,9 +238,9 @@ function DoctorSideBar() {
                   src={doctorProfile.profilePicture}
                   alt="Profile"
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    width:        "100%",
+                    height:       "100%",
+                    objectFit:    "cover",
                     borderRadius: "50%",
                   }}
                 />
@@ -269,9 +287,9 @@ function DoctorSideBar() {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
-                    text: item.name,
-                    x: rect.right + 10,
-                    y: rect.top + rect.height / 2,
+                    text:    item.name,
+                    x:       rect.right + 10,
+                    y:       rect.top + rect.height / 2,
                     visible: true,
                   });
                 }}
