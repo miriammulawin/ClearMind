@@ -701,7 +701,7 @@ const FormHeader = ({
       <div className={styles.toggleRow}>
         {[
           { value: false, label: "I am the Patient" },
-          { value: true, label: "I am the Complainant" },
+          { value: true, label: "I am the Informant" },
         ].map((opt) => (
           <button
             key={String(opt.value)}
