@@ -13,15 +13,15 @@ class Doctor extends Model
 
     protected $fillable = [
         'user_id',
+    
         'professional_title',
         'description',
         'years_of_experience',
-        'license_number',       // keep for backward compat (old singular column)
-        'license_numbers',      // ← NEW: JSON array of license numbers
+        'license_numbers',
         'practicing_since',
         'main_specialty',
         'profile_picture',
-        'initial_consultation_fee',
+        'initial_consultation_fee', // ← dagdag para ma-expose sa frontend
 
         // JSON array fields
         'specializations',
@@ -39,17 +39,16 @@ class Doctor extends Model
         'years_of_experience'      => 'integer',
         'profile_completed'        => 'boolean',
         'profile_completed_at'     => 'datetime',
-        'initial_consultation_fee' => 'decimal:2',
+        'initial_consultation_fee' => 'decimal:2', // ← dagdag
 
-        // JSON columns — automatically encoded/decoded
-        'license_numbers'     => 'array',   // ← NEW
+        // Automatically encode/decode JSON columns
+        'license_numbers' => 'array',
         'specializations'     => 'array',
         'sub_specializations' => 'array',
         'board_cert_names'    => 'array',
         'board_cert_images'   => 'array',
         'id_pictures'         => 'array',
         'services'            => 'array',
-           'license_numbers' => 'array', 
     ];
 
     public function user()
@@ -63,7 +62,7 @@ class Doctor extends Model
             \App\Models\DoctorSchedule::class,
             'doctor_id',
             'doctor_id'
-        )->where('is_active', true)
+        )->where('is_active', true) // ← default: active schedules lang
          ->orderBy('day_of_week');
     }
 }

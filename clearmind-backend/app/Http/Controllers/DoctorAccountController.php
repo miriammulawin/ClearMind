@@ -165,7 +165,7 @@ class DoctorAccountController extends Controller
                 'is_active'          => $user->is_active,
                 'specialization'     => $user->doctor?->main_specialty,
                 'professional_title' => $user->doctor?->professional_title,
-                'license_number'     => $user->doctor?->license_number,
+                'license_numbers'     => $user->doctor?->license_numbers ?? [] ,
                 'profile_completed'  => $user->doctor?->profile_completed,
                 'doctor'             => $user->doctor,
             ],

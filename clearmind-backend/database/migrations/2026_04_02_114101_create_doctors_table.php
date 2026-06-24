@@ -19,8 +19,7 @@ return new class extends Migration
                   ->onDelete('cascade');
 
             // ── Basic credentials ────────────────────────────────────
-            $table->string('prc_number', 255)->nullable()->unique();
-            $table->string('license_number', 255)->nullable()->unique();
+         $table->json('license_numbers')->nullable();
             $table->string('professional_title', 255)->nullable();
             $table->text('description')->nullable();
 

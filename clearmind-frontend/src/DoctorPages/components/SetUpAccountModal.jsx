@@ -86,157 +86,6 @@ const STATIC_OPTIONS = {
 };
 
 /* ─────────────────────────────────────────────
-   MultiTextInput — free-text tag input
-   (single definition; supports optional numbersOnly mode)
-───────────────────────────────────────────── */
-function MultiTextInput({
-  label,
-  values,
-  onAdd,
-  onRemove,
-  placeholder,
-  error,
-  numbersOnly = false,
-}) {
-  const [draft, setDraft] = useState("");
-  const inputRef = useRef(null);
-
-  const commit = () => {
-    const v = draft.trim();
-    if (v && !values.includes(v)) onAdd(v);
-    setDraft("");
-    inputRef.current?.focus();
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-      <label
-        style={{
-          fontSize: "11px",
-          fontWeight: 700,
-          color: "#4d227c",
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          fontFamily: "Poppins, sans-serif",
-        }}
-      >
-        {label}
-      </label>
-
-      <div style={{ display: "flex", gap: "8px" }}>
-        <input
-          ref={inputRef}
-          type="text"
-          inputMode={numbersOnly ? "numeric" : "text"}
-          pattern={numbersOnly ? "[0-9]*" : undefined}
-          placeholder={placeholder || "Type and press Enter or Add…"}
-          value={draft}
-          onChange={(e) => {
-            const val = numbersOnly
-              ? e.target.value.replace(/\D/g, "")
-              : e.target.value;
-            setDraft(val);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commit();
-            }
-            if (e.key === "Escape") setDraft("");
-          }}
-          style={inputSt}
-          onFocus={onFocusInput}
-          onBlur={onBlurInput}
-        />
-        <button
-          type="button"
-          onClick={commit}
-          style={{
-            width: "42px",
-            height: "40px",
-            borderRadius: "8px",
-            border: "none",
-            background: "#4d227c",
-            color: "#fff",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "#3d1870")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "#4d227c")}
-        >
-          <FiPlus size={17} />
-        </button>
-      </div>
-
-      {values.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "6px",
-            marginTop: "4px",
-          }}
-        >
-          {values.map((v, i) => (
-            <span
-              key={i}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                background: "#4d227c",
-                color: "#fff",
-                padding: "4px 10px",
-                borderRadius: "20px",
-                fontSize: "11.5px",
-                fontWeight: 500,
-                fontFamily: "Poppins, sans-serif",
-              }}
-            >
-              {v}
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "rgba(255,255,255,0.8)",
-                  cursor: "pointer",
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <FiX size={11} strokeWidth={2.5} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <span
-          style={{
-            fontSize: "11px",
-            color: "#e53e3e",
-            fontFamily: "Poppins, sans-serif",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          <FiAlertCircle size={11} />
-          {Array.isArray(error) ? error[0] : error}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
    Lightbox
 ───────────────────────────────────────────── */
 function Lightbox({ src, name, onClose }) {
@@ -1769,11 +1618,7 @@ function AccountSetupModal({ showModal, onClose }) {
         yearsOfExperience:
           d.years_of_experience != null ? String(d.years_of_experience) : "",
         practicingSince: d.practicing_since || "",
-        licenseNumbers: Array.isArray(d.license_numbers)
-          ? d.license_numbers
-          : d.license_number
-            ? [d.license_number]
-            : [],
+        licenseNumbers: d.license_numbers || [],
       });
 
       setSpecializationList(d.specializations || []);
@@ -1830,8 +1675,9 @@ function AccountSetupModal({ showModal, onClose }) {
     fd.append("professional_title", formData.professionalTitle);
     fd.append("description", formData.description);
     fd.append("years_of_experience", formData.yearsOfExperience);
-    fd.append("license_numbers", JSON.stringify(formData.licenseNumbers));
+   fd.append("license_numbers", JSON.stringify(formData.licenseNumbers));
     fd.append("practicing_since", formData.practicingSince);
+   
     fd.append("specializations", JSON.stringify(specializationList));
     fd.append("sub_specializations", JSON.stringify(subSpecializationList));
     fd.append("board_cert_names", JSON.stringify(boardCertificateList));
@@ -1866,9 +1712,7 @@ function AccountSetupModal({ showModal, onClose }) {
             firstName: data.firstName || data.first_name || "",
             lastName: data.lastName || data.last_name || "",
             middleInitial: data.middleInitial || data.middle_initial || "",
-            licenseNumbers: Array.isArray(data.license_numbers)
-              ? data.license_numbers
-              : [],
+      
             profilePicture: data.profilePicture || data.profile_picture || null,
           },
         }),
@@ -2046,23 +1890,23 @@ function AccountSetupModal({ showModal, onClose }) {
                 />
               </Field>
             </div>
-
-            {/* Single, validated PRC license-number field (numbers only) */}
-            <MultiTextInput
-              label="PRC License Number(s) *"
-              values={formData.licenseNumbers}
-              placeholder="e.g. 0012345 — numbers only, press Enter or click +"
-              error={errors.license_numbers}
-              numbersOnly
-              onAdd={(v) => {
-                if (v && /^\d+$/.test(v))
-                  set("licenseNumbers", [...formData.licenseNumbers, v]);
-              }}
-              onRemove={(i) =>
-                set(
-                  "licenseNumbers",
-                  formData.licenseNumbers.filter((_, idx) => idx !== i),
-                )
+            <DropdownListInput
+              label="License Numbers"
+              options={[]}
+              selected={formData.licenseNumbers}
+              onAdd={(item) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  licenseNumbers: [...prev.licenseNumbers, item],
+                }))
+              }
+              onRemove={(index) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  licenseNumbers: prev.licenseNumbers.filter(
+                    (_, i) => i !== index,
+                  ),
+                }))
               }
             />
 

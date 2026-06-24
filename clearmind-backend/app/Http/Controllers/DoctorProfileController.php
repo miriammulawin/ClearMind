@@ -34,115 +34,129 @@ class DoctorProfileController extends Controller
         ]);
     }
 
-    /* ══════════════════════════════════════════════════════
-       POST /doctor/profile/setup
-       Called when the doctor fills in the Account Setup
-       modal for the first time (or updates it later).
 
-       Accepts multipart/form-data so files can be uploaded.
-    ══════════════════════════════════════════════════════ */
-    public function setup(Request $request): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            /* ── Text fields ── */
-            'professional_title'   => ['nullable', 'string', 'max:255'],
-            'description'          => ['nullable', 'string'],
-            'years_of_experience'  => ['nullable', 'integer', 'min:0', 'max:70'],
-            'license_number'       => ['nullable', 'string', 'max:255'],
-            'practicing_since'     => ['nullable', 'string', 'max:10'],
-            'main_specialty'       => ['nullable', 'string', 'max:255'],
-            'prc_number'           => ['nullable', 'string', 'max:255'],
+public function setup(Request $request): JsonResponse
+{
+    $validator = Validator::make($request->all(), [
+        'professional_title'   => ['nullable', 'string', 'max:255'],
+        'description'          => ['nullable', 'string'],
+        'years_of_experience'  => ['nullable', 'integer', 'min:0', 'max:70'],
 
-            /* ── JSON arrays sent as stringified JSON ── */
-            'specializations'      => ['nullable', 'string'],  // JSON
-            'sub_specializations'  => ['nullable', 'string'],  // JSON
-            'board_cert_names'     => ['nullable', 'string'],  // JSON
-            'services'             => ['nullable', 'string'],  // JSON
+        // Multiple License Numbers
+        'license_numbers'      => ['nullable', 'string'],
 
-            /* ── Single file ── */
-            'profile_picture'      => ['nullable', 'file', 'image', 'max:5120'],
+        'practicing_since'     => ['nullable', 'string', 'max:10'],
+        'main_specialty'       => ['nullable', 'string', 'max:255'],
 
-            /* ── Multiple files ── */
-            'board_cert_images'    => ['nullable', 'array', 'max:20'],
-            'board_cert_images.*'  => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-            'id_pictures'          => ['nullable', 'array', 'max:20'],
-            'id_pictures.*'        => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-        ]);
+        'specializations'      => ['nullable', 'string'],
+        'sub_specializations'  => ['nullable', 'string'],
+        'board_cert_names'     => ['nullable', 'string'],
+        'services'             => ['nullable', 'string'],
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed.',
-                'errors'  => $validator->errors(),
-            ], 422);
-        }
+        'profile_picture'      => ['nullable', 'file', 'image', 'max:5120'],
 
-        $user   = Auth::user();
-        $doctor = Doctor::where('user_id', $user->id)->first();
+        'board_cert_images'    => ['nullable', 'array', 'max:20'],
+        'board_cert_images.*'  => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
 
-        if (!$doctor) {
-            return response()->json(['message' => 'Doctor profile not found.'], 404);
-        }
+        'id_pictures'          => ['nullable', 'array', 'max:20'],
+        'id_pictures.*'        => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+    ]);
 
-        /* ── 1. Profile picture ── */
-        if ($request->hasFile('profile_picture')) {
-            // Delete old one if exists
-            if ($doctor->profile_picture) {
-                Storage::disk('public')->delete($doctor->profile_picture);
-            }
-            $doctor->profile_picture = $request->file('profile_picture')
-                ->store('doctors/profile_pictures', 'public');
-        }
-
-        /* ── 2. Board certificate images (append to existing) ── */
-        $existingCertImages = $doctor->board_cert_images ?? [];
-        if ($request->hasFile('board_cert_images')) {
-            foreach ($request->file('board_cert_images') as $file) {
-                $existingCertImages[] = $file->store('doctors/board_certs', 'public');
-            }
-        }
-
-        /* ── 3. ID pictures (append to existing) ── */
-        $existingIdPics = $doctor->id_pictures ?? [];
-        if ($request->hasFile('id_pictures')) {
-            foreach ($request->file('id_pictures') as $file) {
-                $existingIdPics[] = $file->store('doctors/id_pictures', 'public');
-            }
-        }
-
-        /* ── 4. Decode JSON arrays ── */
-        $decodeArray = fn($field) => $request->filled($field)
-            ? json_decode($request->input($field), true) ?? []
-            : null;
-
-        /* ── 5. Update the doctor record ── */
-        $doctor->fill([
-            'professional_title'  => $request->professional_title  ?? $doctor->professional_title,
-            'description'         => $request->description         ?? $doctor->description,
-            'years_of_experience' => $request->years_of_experience ?? $doctor->years_of_experience,
-            'license_number'      => $request->license_number      ?? $doctor->license_number,
-            'practicing_since'    => $request->practicing_since    ?? $doctor->practicing_since,
-            'main_specialty'      => $request->main_specialty      ?? $doctor->main_specialty,
-            'prc_number'          => $request->prc_number          ?? $doctor->prc_number,
-
-            'specializations'     => $decodeArray('specializations')     ?? $doctor->specializations,
-            'sub_specializations' => $decodeArray('sub_specializations') ?? $doctor->sub_specializations,
-            'board_cert_names'    => $decodeArray('board_cert_names')    ?? $doctor->board_cert_names,
-            'services'            => $decodeArray('services')            ?? $doctor->services,
-
-            'board_cert_images'   => $existingCertImages,
-            'id_pictures'         => $existingIdPics,
-
-            'profile_completed'    => true,
-            'profile_completed_at' => now(),
-        ]);
-
-        $doctor->save();
-
+    if ($validator->fails()) {
         return response()->json([
-            'message' => 'Profile setup completed.',
-            'data'    => $doctor->fresh(),
-        ], 200);
+            'message' => 'Validation failed.',
+            'errors'  => $validator->errors(),
+        ], 422);
     }
+
+    $user = Auth::user();
+
+    $doctor = Doctor::where('user_id', $user->id)->first();
+
+    if (!$doctor) {
+        return response()->json([
+            'message' => 'Doctor profile not found.'
+        ], 404);
+    }
+
+    // Profile Picture
+    if ($request->hasFile('profile_picture')) {
+
+        if ($doctor->profile_picture) {
+            Storage::disk('public')->delete($doctor->profile_picture);
+        }
+
+        $doctor->profile_picture = $request
+            ->file('profile_picture')
+            ->store('doctors/profile_pictures', 'public');
+    }
+
+    // Board Certificate Images
+    $existingCertImages = $doctor->board_cert_images ?? [];
+
+    if ($request->hasFile('board_cert_images')) {
+        foreach ($request->file('board_cert_images') as $file) {
+            $existingCertImages[] = $file->store(
+                'doctors/board_certs',
+                'public'
+            );
+        }
+    }
+
+    // ID Pictures
+    $existingIdPics = $doctor->id_pictures ?? [];
+
+    if ($request->hasFile('id_pictures')) {
+        foreach ($request->file('id_pictures') as $file) {
+            $existingIdPics[] = $file->store(
+                'doctors/id_pictures',
+                'public'
+            );
+        }
+    }
+
+    // Decode JSON fields
+    $decodeArray = function ($field) use ($request) {
+        if (!$request->filled($field)) {
+            return null;
+        }
+
+        return json_decode($request->input($field), true) ?? [];
+    };
+
+    // Decode License Numbers
+    $licenseNumbers = $decodeArray('license_numbers');
+
+    $doctor->fill([
+        'professional_title'  => $request->professional_title ?? $doctor->professional_title,
+        'description'         => $request->description ?? $doctor->description,
+        'years_of_experience' => $request->years_of_experience ?? $doctor->years_of_experience,
+
+        // SAVE MULTIPLE LICENSE NUMBERS
+        'license_numbers'     => $licenseNumbers ?? $doctor->license_numbers,
+
+        'practicing_since'    => $request->practicing_since ?? $doctor->practicing_since,
+        'main_specialty'      => $request->main_specialty ?? $doctor->main_specialty,
+
+        'specializations'     => $decodeArray('specializations') ?? $doctor->specializations,
+        'sub_specializations' => $decodeArray('sub_specializations') ?? $doctor->sub_specializations,
+        'board_cert_names'    => $decodeArray('board_cert_names') ?? $doctor->board_cert_names,
+        'services'            => $decodeArray('services') ?? $doctor->services,
+
+        'board_cert_images'   => $existingCertImages,
+        'id_pictures'         => $existingIdPics,
+
+        'profile_completed'   => true,
+        'profile_completed_at'=> now(),
+    ]);
+
+    $doctor->save();
+
+    return response()->json([
+        'message' => 'Profile setup completed.',
+        'data'    => $doctor->fresh(),
+    ], 200);
+}
 
     /* ══════════════════════════════════════════════════════
        DELETE /doctor/profile/files
