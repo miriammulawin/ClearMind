@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Sidebar from "./AdminSideBar";
 import AdminTopNavbar from "./AdminTopNavbar";
 import styles from "./AdminStyle/AdminMessages.module.css";
+import { useUnreadCount } from "../hooks/useUnreadCount";
 import {
   FiSearch,
   FiPaperclip,
@@ -79,12 +80,28 @@ function AdminMessages() {
     };
   }, [attachPreview]);
 
+  useEffect(() => {
+    return () => {
+      window.dispatchEvent(
+        new CustomEvent("messages:activeConv", { detail: null }),
+      );
+    };
+  }, []);
   /* ── Conversation select ── */
   const handleSelect = (conv) => {
+    const hadUnread = conv.unread_count ?? 0;
     openConversation(conv);
+
+    window.dispatchEvent(
+      new CustomEvent("messages:activeConv", { detail: conv.id }),
+    );
+    if (hadUnread > 0) {
+      window.dispatchEvent(
+        new CustomEvent("messages:cleared", { detail: hadUnread }),
+      );
+    }
     if (window.innerWidth < 768) setShowList(false);
   };
-
   /* ── Send ── */
   const handleSend = async () => {
     if (!inputText.trim() && !attachedFile) return;
@@ -231,7 +248,7 @@ function AdminMessages() {
                       className={styles.modalItem}
                       onClick={() => handleStartNew(u.id)}
                     >
-                      <div className={styles.modalAvatar}>x1
+                      <div className={styles.modalAvatar}>
                         {`${u.firstName?.[0] ?? u.first_name?.[0] ?? "?"}${u.lastName?.[0] ?? u.last_name?.[0] ?? ""}`.toUpperCase()}
                       </div>
                       <div className={styles.modalItemInfo}>

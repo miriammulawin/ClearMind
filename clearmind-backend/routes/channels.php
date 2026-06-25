@@ -8,3 +8,8 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
         ->where('user_id', $user->id)
         ->exists();
 });
+
+// 👇 new — a user can only listen to their own personal channel
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

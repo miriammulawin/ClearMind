@@ -5,6 +5,7 @@ import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosClient from "../../axiosClient";
+import { useUnreadCount } from "../../hooks/useUnreadCount";
 
 import "../../index.css";
 
@@ -13,6 +14,7 @@ import "../DoctorStyle/NotificationModal.css";
 import AllNotifications from "./AllNotifications";
 
 function DoctorTopNavbar({ activeMenu }) {
+  const unreadMsgCount = useUnreadCount();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const navigate = useNavigate();
@@ -105,7 +107,6 @@ function DoctorTopNavbar({ activeMenu }) {
 
       setShowLogoutModal(false);
 
-      // ✅ SUCCESS TOAST
       toast.success("Logout successful!", toastSuccess);
 
       setTimeout(() => {
@@ -120,7 +121,6 @@ function DoctorTopNavbar({ activeMenu }) {
 
       setShowLogoutModal(false);
 
-      // ❌ ERROR TOAST
       toast.error(
         error?.response?.data?.message || "Logout failed, session cleared.",
         toastError,
@@ -174,12 +174,19 @@ function DoctorTopNavbar({ activeMenu }) {
       </div>
 
       <div className={styles.topNavbarRight}>
-        <AiFillMessage
-          className={styles.topIcon}
-          onClick={() => navigate("/doctor/messages")}
-          style={{ cursor: "pointer" }}
-        />
+        {/* ══ MESSAGE ICON + RED BADGE ══ */}
+        <div className={styles.notificationContainer}>
+          <AiFillMessage
+            className={styles.topIcon}
+            onClick={() => navigate("/doctor/messages")}
+            style={{ cursor: "pointer" }}
+          />
+          {unreadMsgCount > 0 && (
+            <span className={styles.notificationBadge}>{unreadMsgCount}</span>
+          )}
+        </div>
 
+        {/* ══ NOTIFICATIONS BELL ══ */}
         <div className={styles.notificationContainer}>
           <IoNotifications
             className={styles.topIcon}
@@ -188,44 +195,6 @@ function DoctorTopNavbar({ activeMenu }) {
           />
           {unreadCount > 0 && (
             <span className={styles.notificationBadge}>{unreadCount}</span>
-          )}
-
-          {showLogoutModal && (
-            <div
-              className={styles.logoutOverlay}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setShowLogoutModal(false);
-              }}
-            >
-              <div className={styles.logoutModal}>
-                {/* Icon */}
-                <div className={styles.logoutIconWrap}>
-                  <FiLogOut className={styles.logoutIcon} />
-                </div>
-
-                {/* Content */}
-                <div className={styles.logoutContent}>
-                  <h2 className={styles.logoutTitle}>Log Out</h2>
-                  <p className={styles.logoutDesc}>
-                    Are you sure you want to logout?
-                  </p>
-                </div>
-
-                {/* Actions */}
-                <div className={styles.logoutActions}>
-                  <button
-                    className={styles.cancelBtn}
-                    onClick={() => setShowLogoutModal(false)}
-                  >
-                    Cancel
-                  </button>
-
-                  <button className={styles.confirmBtn} onClick={confirmLogout}>
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
 
           {showNotifications && (
@@ -318,6 +287,42 @@ function DoctorTopNavbar({ activeMenu }) {
           onClick={() => setShowLogoutModal(true)}
         />
       </div>
+
+      {/* ══ LOGOUT MODAL — moved to top-level sibling, out of notificationContainer ══ */}
+      {showLogoutModal && (
+        <div
+          className={styles.logoutOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLogoutModal(false);
+          }}
+        >
+          <div className={styles.logoutModal}>
+            <div className={styles.logoutIconWrap}>
+              <FiLogOut className={styles.logoutIcon} />
+            </div>
+
+            <div className={styles.logoutContent}>
+              <h2 className={styles.logoutTitle}>Log Out</h2>
+              <p className={styles.logoutDesc}>
+                Are you sure you want to logout?
+              </p>
+            </div>
+
+            <div className={styles.logoutActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setShowLogoutModal(false)}
+              >
+                Cancel
+              </button>
+
+              <button className={styles.confirmBtn} onClick={confirmLogout}>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAllNotifications && (
         <AllNotifications

@@ -5,6 +5,7 @@ import { IoNotifications } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axiosClient from "../axiosClient";
+import { useUnreadCount } from "../hooks/useUnreadCount";
 
 import styles from "./AdminStyle/AdminTopNavbar.module.css";
 import "./AdminStyle/NotificationModal.css";
@@ -47,6 +48,7 @@ function AdminTopNavbar({ activeMenu }) {
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const unreadMessageCount = useUnreadCount();
 
   const [notifications, setNotifications] = useState([
     {
@@ -128,7 +130,7 @@ function AdminTopNavbar({ activeMenu }) {
       }, 1200);
     }
   };
-  
+
   const markAllAsRead = () => {
     setNotifications(
       notifications.map((notif) => ({ ...notif, isRead: true })),
@@ -163,11 +165,18 @@ function AdminTopNavbar({ activeMenu }) {
       </div>
 
       <div className={styles.topNavbarRight}>
-        <AiFillMessage
-          className={styles.topIcon}
-          onClick={() => navigate("/admin/messages")}
-          style={{ cursor: "pointer" }}
-        />
+        <div className={styles.notificationContainer}>
+          <AiFillMessage
+            className={styles.topIcon}
+            onClick={() => navigate("/admin/messages")}
+            style={{ cursor: "pointer" }}
+          />
+          {unreadMessageCount > 0 && (
+            <span className={styles.notificationBadge}>
+              {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+            </span>
+          )}
+        </div>
 
         <div className={styles.notificationContainer}>
           <IoNotifications
