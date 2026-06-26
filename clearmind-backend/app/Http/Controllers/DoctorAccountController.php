@@ -104,7 +104,7 @@ class DoctorAccountController extends Controller
     ───────────────────────────────────────────────────────────────── */
    public function index(): JsonResponse
 {
-   $doctors = User::with(['doctor', 'doctor.schedules'])
+    $doctors = User::with(['doctor', 'doctor.schedules'])
         ->where('role', 'Doctor')
         ->orderBy('created_at', 'desc')
         ->get()
@@ -116,7 +116,7 @@ class DoctorAccountController extends Controller
                 'end_time'   => $s->end_time,
                 'slot_type'  => $s->slot_type,
             ]) ?? collect();
-
+ 
             return [
                 'id'                 => $user->id,
                 'doctor_id'          => $user->doctor?->doctor_id,
@@ -125,24 +125,33 @@ class DoctorAccountController extends Controller
                 'middleInitial'      => $user->middleInitial,
                 'email'              => $user->email,
                 'contactNo'          => $user->contactNo,
+ 
+                // ✅ These were missing — now included
+                'sex'                => $user->sex,
+                'dob'                => $user->dob,
+                'address'            => $user->address,
+ 
                 'role'               => $user->role,
                 'is_active'          => $user->is_active,
                 'created_at'         => $user->created_at,
+ 
                 'specialization'     => $user->doctor?->main_specialty,
-                'specializations'    => $user->doctor?->specializations,
+                'specializations'    => $user->doctor?->specializations    ?? [],
                 'professional_title' => $user->doctor?->professional_title,
-                'license_number'     => $user->doctor?->license_number,
+ 
+                // ✅ was license_number (single) — now license_numbers (array)
+                'license_numbers'    => $user->doctor?->license_numbers    ?? [],
+ 
                 'profile_completed'  => $user->doctor?->profile_completed,
                 'doctor'             => $user->doctor,
-                'schedules'          => $schedules, // ← DAGDAG
+                'schedules'          => $schedules,
             ];
         });
-
+ 
     return response()->json([
         'data' => $doctors,
     ]);
 }
-
     /* ─────────────────────────────────────────────────────────────────
        GET /api/admin/doctors/{id}
     ───────────────────────────────────────────────────────────────── */
