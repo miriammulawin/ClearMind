@@ -88,7 +88,13 @@ function DoctorMessages() {
   const handleNewChat = async () => {
     try {
       const { data } = await axiosClient.get("/users/messageable");
-      const clientsOnly = data.data.filter((u) => u.role === "Client");
+      const clientsOnly = data.data
+        .filter((u) => u.role === "Admin" || u.role === "Doctor")
+        .map((u) => ({
+          ...u,
+          firstName: u.firstName ?? u.first_name ?? "",
+          lastName: u.lastName ?? u.last_name ?? "",
+        }));
       setAllUsers(clientsOnly);
       setShowNewChat(true);
     } catch (err) {
@@ -218,7 +224,7 @@ function DoctorMessages() {
                     onClick={() => handleStartNew(u.id)}
                   >
                     <div className={styles.modalAvatar}>
-                      {`${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase()}
+                      {`${u.firstName?.[0] ?? "?"}${u.lastName?.[0] ?? ""}`.toUpperCase()}
                     </div>
                     <div className={styles.modalItemInfo}>
                       <span className={styles.modalItemName}>

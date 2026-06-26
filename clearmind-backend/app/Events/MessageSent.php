@@ -17,9 +17,17 @@ class MessageSent implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        return [
+        $channels = [
             new PrivateChannel('conversation.' . $this->message->conversation_id),
         ];
+
+        // Also notify every participant's personal channel, so navbars/badges
+        // update instantly even for conversations they haven't opened yet.
+        foreach ($this->message->conversation->participants as $participant) {
+            $channels[] = new PrivateChannel('user.' . $participant->id);
+        }
+
+        return $channels;
     }
 
     public function broadcastWith(): array

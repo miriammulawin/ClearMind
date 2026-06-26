@@ -6,6 +6,14 @@ import { FiX } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axiosClient from "../axiosClient";
 
+const STORAGE_BASE = "http://127.0.0.1:8000/storage/";
+
+const resolveStorageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return STORAGE_BASE + path;
+};
+
 function ManageAccounts() {
   const [activeMenu, setActiveMenu] = useState("Manage Accounts");
   const [showViewModal, setShowViewModal] = useState(false);
@@ -40,7 +48,73 @@ function ManageAccounts() {
   const formatArray = (value) => {
     if (!value) return "—";
     if (Array.isArray(value)) return value.length > 0 ? value.join(", ") : "—";
-    return value;
+    return value || "—";
+  };
+
+  // ── Calculate age from DOB ─────────────────────────────────────────
+  const calculateAge = (dob) => {
+    if (!dob) return null;
+    const today = new Date();
+    const birth = new Date(dob);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
+
+  // ── Map a raw API user record to our local shape ───────────────────
+  const mapDoctor = (user) => {
+    const doctor = user.doctor ?? {};
+    const dob = user.dob ?? null;
+
+    // license_numbers is now a JSON array in the DB
+    const rawLicenses = doctor.license_numbers ?? [];
+    const licenseNumbers = Array.isArray(rawLicenses)
+      ? rawLicenses.filter(Boolean)
+      : rawLicenses
+        ? [String(rawLicenses)]
+        : [];
+
+    return {
+      // ── IDs ──────────────────────────────────────────────────────
+      doctors_id: doctor.doctor_id ?? user.id,
+      user_id: user.id,
+
+      // ── User fields ───────────────────────────────────────────────
+      first_name: user.firstName ?? "",
+      last_name: user.lastName ?? "",
+      middle_initial: user.middleInitial ?? "",
+      sex: user.sex ?? null,
+      date_of_birth: dob,
+      age: user.age ?? calculateAge(dob),
+      email_address: user.email ?? "",
+      phone: user.contactNo ?? "",
+      address: user.address ?? "",
+      created_at: user.created_at ?? "",
+      roles: user.roles ?? [],
+
+      // ── Doctor fields ─────────────────────────────────────────────
+      professional_title: doctor.professional_title ?? null,
+      license_numbers: licenseNumbers, // ✅ array
+      years_of_experience: doctor.years_of_experience ?? null,
+      practicing_since: doctor.practicing_since ?? null,
+      description: doctor.description ?? null,
+      profile_completed: doctor.profile_completed ?? false,
+
+      // ── JSON array fields ─────────────────────────────────────────
+      specialization: doctor.specializations ?? [],
+      sub_specialization: doctor.sub_specializations ?? [],
+      board_certification: doctor.board_cert_names ?? [],
+      service: doctor.services ?? [],
+
+      // ── Images ───────────────────────────────────────────────────
+      profile_pic: resolveStorageUrl(
+        doctor.profile_picture ?? user.profilePicture,
+      ),
+
+      cert_images: (doctor.board_cert_images ?? []).map(resolveStorageUrl),
+      id_pictures: (doctor.id_pictures ?? []).map(resolveStorageUrl),
+    };
   };
 
   // ── Fetch doctors ──────────────────────────────────────────────────
@@ -49,86 +123,33 @@ function ManageAccounts() {
     try {
       const response = await axiosClient.get("/admin/doctors");
       const result = response.data;
-
-      const mapped = result.data.map((user) => ({
-        doctors_id: user.doctor?.doctor_id ?? user.id,
-        user_id: user.id,
-        first_name: user.firstName,
-        last_name: user.lastName,
-        middle_initial: user.middleInitial,
-        sex: user.sex,
-        date_of_birth: user.dob,
-        email_address: user.email,
-        phone: user.contactNo,
-        address: user.address,
-        age: user.age ?? null,
-        roles: user.roles ?? [],
-        created_at: user.created_at,
-        professional_title: user.doctor?.professional_title ?? null,
-        license_number: user.doctor?.license_number ?? null,
-        years_of_experience: user.doctor?.years_of_experience ?? null,
-        // Keep as arrays — format only at render time
-        specialization: user.doctor?.specializations ?? [],
-        sub_specialization: user.doctor?.sub_specializations ?? [],
-        board_certification: user.doctor?.board_cert_names ?? [],
-        service: user.doctor?.services ?? [],
-        description: user.doctor?.description ?? null,
-        profile_pic: user.doctor?.profile_picture
-          ? `http://127.0.0.1:8000/storage/${user.doctor.profile_picture}`
-          : null,
-        cert_image: user.doctor?.board_cert_images?.[0]
-          ? `http://127.0.0.1:8000/storage/${user.doctor.board_cert_images[0]}`
-          : null,
-        // All cert images for gallery
-        cert_images: (user.doctor?.board_cert_images ?? []).map(
-          (p) => `http://127.0.0.1:8000/storage/${p}`,
-        ),
-        id_pictures: (user.doctor?.id_pictures ?? []).map(
-          (p) => `http://127.0.0.1:8000/storage/${p}`,
-        ),
-        profile_completed: user.doctor?.profile_completed ?? false,
-      }));
-
-      setUsers(mapped);
+      setUsers(result.data.map(mapDoctor));
     } catch (err) {
       console.error("Network error:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchDoctors();
   }, [fetchDoctors]);
 
-  // ── Listen for doctor profile updates dispatched by AccountSetupModal ──
-  useEffect(() => {
-    const handleProfileUpdated = () => {
-      // Refetch all doctors so admin view stays in sync
-      fetchDoctors().then(() => {
-        // If the view modal is open, refresh selectedUser from updated list
-        setSelectedUser((prev) => {
-          if (!prev) return prev;
-          // Will be synced below in a separate effect
-          return prev;
-        });
-      });
-    };
-
-    window.addEventListener("doctorProfileUpdated", handleProfileUpdated);
-    return () =>
-      window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
-  }, [fetchDoctors]);
-
-  // ── When users list re-fetches, keep selectedUser in sync ─────────
+  // ── Keep selectedUser in sync when list refreshes ─────────────────
   useEffect(() => {
     if (!selectedUser) return;
     const updated = users.find((u) => u.user_id === selectedUser.user_id);
     if (updated) setSelectedUser(updated);
   }, [users]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Handlers ──────────────────────────────────────────────────────
+  // ── Listen for profile updates ─────────────────────────────────────
+  useEffect(() => {
+    const handler = () => fetchDoctors();
+    window.addEventListener("doctorProfileUpdated", handler);
+    return () => window.removeEventListener("doctorProfileUpdated", handler);
+  }, [fetchDoctors]);
 
+  // ── Handlers ──────────────────────────────────────────────────────
   const handleRoleChange = (userId, role) => {
     setUsers(
       users.map((user) => {
@@ -234,7 +255,6 @@ function ManageAccounts() {
         },
         body: JSON.stringify(formData),
       });
-
       const result = await response.json();
 
       if (!response.ok) {
@@ -261,7 +281,7 @@ function ManageAccounts() {
               textAlign: "center",
               maxWidth: "320px",
               borderRadius: "10px",
-              boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+              boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
             },
             iconTheme: { primary: "#C62828", secondary: "#FDECEA" },
           },
@@ -272,36 +292,8 @@ function ManageAccounts() {
 
       setUsers((prev) => [
         ...prev,
-        {
-          doctors_id: result.data.doctor?.doctor_id,
-          user_id: result.data.id,
-          first_name: result.data.firstName,
-          last_name: result.data.lastName,
-          middle_initial: result.data.middleInitial,
-          sex: result.data.sex,
-          date_of_birth: result.data.dob,
-          email_address: result.data.email,
-          phone: result.data.contactNo,
-          address: result.data.address,
-          age: null,
-          roles: [],
-          created_at: result.data.created_at,
-          professional_title: null,
-          license_number: null,
-          years_of_experience: null,
-          specialization: [],
-          sub_specialization: [],
-          board_certification: [],
-          service: [],
-          description: null,
-          profile_pic: null,
-          cert_image: null,
-          cert_images: [],
-          id_pictures: [],
-          profile_completed: false,
-        },
+        mapDoctor({ ...result.data, doctor: result.data.doctor ?? {} }),
       ]);
-
       toast.success(`Account created! Credentials sent to ${formData.email}.`, {
         duration: 1500,
         style: {
@@ -313,11 +305,10 @@ function ManageAccounts() {
           textAlign: "center",
           maxWidth: "320px",
           borderRadius: "10px",
-          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.15)",
+          boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
         },
         iconTheme: { primary: "#2E7D32", secondary: "#E2F7E3" },
       });
-
       setShowCreateModal(false);
     } catch (err) {
       console.error("Network error:", err);
@@ -327,7 +318,6 @@ function ManageAccounts() {
   };
 
   // ── Render ─────────────────────────────────────────────────────────
-
   return (
     <div className="admin-layout">
       <AdminSideBar activeMenu={activeMenu} setActiveMenu={setActiveMenu} />
@@ -407,9 +397,7 @@ function ManageAccounts() {
         </div>
       </div>
 
-      {/* ════════════════════════════
-          CREATE ACCOUNT MODAL
-      ════════════════════════════ */}
+      {/* ════ CREATE MODAL ════ */}
       {showCreateModal && (
         <div
           className={styles.overlay}
@@ -428,7 +416,6 @@ function ManageAccounts() {
                 <FiX />
               </button>
             </div>
-
             <div className={styles.createBody}>
               <div className={styles.formCard}>
                 <div className={styles.formGrid}>
@@ -439,13 +426,7 @@ function ManageAccounts() {
                     First Name
                     <input
                       type="text"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "firstName" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "firstName" || e.field === "all") ? styles.inputError : ""}`}
                       placeholder="e.g. Maria"
                       value={formData.firstName}
                       onChange={(e) =>
@@ -453,18 +434,11 @@ function ManageAccounts() {
                       }
                     />
                   </label>
-
                   <label className={styles.formLabel}>
                     Last Name
                     <input
                       type="text"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "lastName" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "lastName" || e.field === "all") ? styles.inputError : ""}`}
                       placeholder="e.g. Santos"
                       value={formData.lastName}
                       onChange={(e) =>
@@ -472,7 +446,6 @@ function ManageAccounts() {
                       }
                     />
                   </label>
-
                   <label className={styles.formLabel}>
                     M.I.
                     <input
@@ -489,17 +462,10 @@ function ManageAccounts() {
                       }
                     />
                   </label>
-
                   <label className={styles.formLabel}>
                     Sex
                     <select
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "sex" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "sex" || e.field === "all") ? styles.inputError : ""}`}
                       value={formData.sex}
                       onChange={(e) =>
                         setFormData({ ...formData, sex: e.target.value })
@@ -510,36 +476,22 @@ function ManageAccounts() {
                       <option value="male">Male</option>
                     </select>
                   </label>
-
                   <label className={styles.formLabel}>
                     Date of Birth
                     <input
                       type="date"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "dob" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "dob" || e.field === "all") ? styles.inputError : ""}`}
                       value={formData.dob}
                       onChange={(e) =>
                         setFormData({ ...formData, dob: e.target.value })
                       }
                     />
                   </label>
-
                   <label className={styles.formLabel}>
                     Email Address
                     <input
                       type="email"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "email" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "email" || e.field === "all") ? styles.inputError : ""}`}
                       placeholder="doctor@email.com"
                       value={formData.email}
                       onChange={(e) =>
@@ -547,18 +499,11 @@ function ManageAccounts() {
                       }
                     />
                   </label>
-
                   <label className={`${styles.formLabel} ${styles.col2}`}>
                     Contact Number
                     <input
                       type="tel"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "contactNo" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "contactNo" || e.field === "all") ? styles.inputError : ""}`}
                       placeholder="e.g. 09123456789"
                       value={formData.contactNo}
                       onChange={(e) =>
@@ -566,18 +511,11 @@ function ManageAccounts() {
                       }
                     />
                   </label>
-
                   <label className={styles.formLabel}>
                     Address
                     <input
                       type="text"
-                      className={`${styles.formInput} ${
-                        formErrors.some(
-                          (e) => e.field === "address" || e.field === "all",
-                        )
-                          ? styles.inputError
-                          : ""
-                      }`}
+                      className={`${styles.formInput} ${formErrors.some((e) => e.field === "address" || e.field === "all") ? styles.inputError : ""}`}
                       placeholder="e.g. Quezon City"
                       value={formData.address}
                       onChange={(e) =>
@@ -586,7 +524,6 @@ function ManageAccounts() {
                     />
                   </label>
                 </div>
-
                 <div className={styles.errorContainer}>
                   {formErrors.map((err, index) => (
                     <div
@@ -600,7 +537,6 @@ function ManageAccounts() {
                 </div>
               </div>
             </div>
-
             <div className={styles.createFooter}>
               <button
                 className={styles.btnCancel}
@@ -620,9 +556,7 @@ function ManageAccounts() {
         </div>
       )}
 
-      {/* ════════════════════════════
-          VIEW ACCOUNT MODAL
-      ════════════════════════════ */}
+      {/* ════ VIEW MODAL ════ */}
       {showViewModal && selectedUser && (
         <div className={styles.overlay} onClick={() => setShowViewModal(false)}>
           <div
@@ -631,7 +565,6 @@ function ManageAccounts() {
           >
             <div className={styles.viewHeader}>
               <div className={styles.viewHeaderLeft}>
-                {/* ── Profile picture with cache-bust so edits show immediately ── */}
                 <img
                   src={
                     selectedUser.profile_pic
@@ -664,6 +597,7 @@ function ManageAccounts() {
             </div>
 
             <div className={styles.viewBody}>
+              {/* Personal Information */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>Personal Information</p>
                 <div className={styles.viewInfoGrid}>
@@ -676,13 +610,19 @@ function ManageAccounts() {
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Sex</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.sex || "—"}
+                      {/* ✅ Capitalize first letter */}
+                      {selectedUser.sex
+                        ? selectedUser.sex.charAt(0).toUpperCase() +
+                          selectedUser.sex.slice(1)
+                        : "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
                     <span className={styles.viewInfoLabel}>Age</span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.age ? `${selectedUser.age} years old` : "—"}
+                      {selectedUser.age != null
+                        ? `${selectedUser.age} years old`
+                        : "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
@@ -711,18 +651,40 @@ function ManageAccounts() {
                       {selectedUser.phone || "—"}
                     </span>
                   </div>
+                  <div
+                    className={`${styles.viewInfoItem} ${styles.viewInfoFull}`}
+                  >
+                    <span className={styles.viewInfoLabel}>Address</span>
+                    <span className={styles.viewInfoValue}>
+                      {selectedUser.address || "—"}
+                    </span>
+                  </div>
                 </div>
               </div>
 
+              {/* Professional Information */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Professional Information
                 </p>
                 <div className={styles.viewInfoGrid}>
                   <div className={styles.viewInfoItem}>
-                    <span className={styles.viewInfoLabel}>License No.</span>
+                    <span className={styles.viewInfoLabel}>
+                      PRC License No.
+                    </span>
                     <span className={styles.viewInfoValue}>
-                      {selectedUser.license_number || "—"}
+                      {/* ✅ Show all license numbers joined, not single string */}
+                      {selectedUser.license_numbers?.length > 0
+                        ? selectedUser.license_numbers.join(", ")
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className={styles.viewInfoItem}>
+                    <span className={styles.viewInfoLabel}>
+                      Practicing Since
+                    </span>
+                    <span className={styles.viewInfoValue}>
+                      {selectedUser.practicing_since || "—"}
                     </span>
                   </div>
                   <div className={styles.viewInfoItem}>
@@ -772,6 +734,7 @@ function ManageAccounts() {
                 </div>
               </div>
 
+              {/* About */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>About</p>
                 <p className={styles.viewDescription}>
@@ -779,6 +742,7 @@ function ManageAccounts() {
                 </p>
               </div>
 
+              {/* Roles */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Assigned Roles & Permissions
@@ -796,14 +760,13 @@ function ManageAccounts() {
                 </div>
               </div>
 
-              {/* ── Board Cert Images (all of them) ── */}
+              {/* Certification Documents */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>
                   Certification Documents
                 </p>
                 <div className={styles.viewCertContainer}>
-                  {selectedUser.cert_images &&
-                  selectedUser.cert_images.length > 0 ? (
+                  {selectedUser.cert_images?.length > 0 ? (
                     <div
                       style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}
                     >
@@ -812,7 +775,6 @@ function ManageAccounts() {
                           key={i}
                           src={`${src}?t=${Date.now()}`}
                           alt={`Certificate ${i + 1}`}
-                          className={styles.viewCertImage}
                           onClick={() => setPreviewImage(src)}
                           style={{
                             width: "120px",
@@ -833,12 +795,11 @@ function ManageAccounts() {
                 </div>
               </div>
 
-              {/* ── ID Pictures ── */}
+              {/* ID Pictures */}
               <div className={styles.viewSection}>
                 <p className={styles.viewSectionTitle}>ID Pictures</p>
                 <div className={styles.viewCertContainer}>
-                  {selectedUser.id_pictures &&
-                  selectedUser.id_pictures.length > 0 ? (
+                  {selectedUser.id_pictures?.length > 0 ? (
                     <div
                       style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}
                     >
@@ -879,6 +840,8 @@ function ManageAccounts() {
           </div>
         </div>
       )}
+
+      {/* ════ IMAGE PREVIEW ════ */}
       {previewImage && (
         <div
           style={{
@@ -894,7 +857,6 @@ function ManageAccounts() {
             zIndex: 9999,
           }}
         >
-          {/* ❌ Close Button */}
           <button
             onClick={() => setPreviewImage(null)}
             style={{
@@ -911,8 +873,6 @@ function ManageAccounts() {
           >
             <FiX />
           </button>
-
-          {/* 🖼 Image */}
           <img
             src={previewImage}
             alt="Preview"

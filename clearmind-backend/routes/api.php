@@ -17,6 +17,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DoctorScheduleController;
 use App\Http\Controllers\DoctorPatientController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\AssessmentRequirementController;
 
 // ── Public Auth Routes ────────────────────────────────────────────
 Route::post('/register',        [AuthController::class, 'register']);
