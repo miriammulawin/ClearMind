@@ -277,7 +277,6 @@ function ProfilePictureInput({ file, existingUrl, onChange }) {
         padding: "4px 0",
       }}
     >
-      {/* Avatar */}
       <div
         onClick={() => inputRef.current?.click()}
         onMouseEnter={() => setHovered(true)}
@@ -325,7 +324,6 @@ function ProfilePictureInput({ file, existingUrl, onChange }) {
         )}
       </div>
 
-      {/* Info + actions */}
       <div style={{ flex: 1 }}>
         <div
           style={{
@@ -423,8 +421,124 @@ function ProfilePictureInput({ file, existingUrl, onChange }) {
 }
 
 /* ─────────────────────────────────────────────
-   DropdownListInput — searchable, add-new, no duplicates
-   (mirrors AccountSetupModal's DropdownListInput)
+   LicenseNumbersInput — dynamic list of PRC license numbers
+───────────────────────────────────────────── */
+function LicenseNumbersInput({ licenseNumbers, onChange }) {
+  const handleChange = (index, value) => {
+    // only allow digits
+    if (value !== "" && !/^\d+$/.test(value)) return;
+    const updated = [...licenseNumbers];
+    updated[index] = value;
+    onChange(updated);
+  };
+
+  const handleAdd = () => {
+    onChange([...licenseNumbers, ""]);
+  };
+
+  const handleRemove = (index) => {
+    const updated = licenseNumbers.filter((_, i) => i !== index);
+    // always keep at least one entry
+    onChange(updated.length > 0 ? updated : [""]);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {licenseNumbers.map((num, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <span
+              style={{
+                position: "absolute",
+                left: 10,
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontSize: 11,
+                color: "#9c7dd4",
+                fontWeight: 600,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            >
+              #{i + 1}
+            </span>
+            <input
+              className={styles["modal-input"]}
+              value={num}
+              placeholder="e.g. 0012345"
+              inputMode="numeric"
+              style={{ paddingLeft: 30 }}
+              onChange={(e) => handleChange(i, e.target.value)}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => handleRemove(i)}
+            title="Remove"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              border: "1.5px solid #fca5a5",
+              background: "#fff0f0",
+              color: "#e53e3e",
+              cursor: licenseNumbers.length === 1 ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              opacity: licenseNumbers.length === 1 ? 0.4 : 1,
+              transition: "background 0.15s",
+            }}
+            disabled={licenseNumbers.length === 1}
+            onMouseEnter={(e) => {
+              if (licenseNumbers.length > 1)
+                e.currentTarget.style.background = "#fdecea";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#fff0f0";
+            }}
+          >
+            <FiTrash2 size={14} />
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={handleAdd}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          alignSelf: "flex-start",
+          padding: "7px 14px",
+          borderRadius: 8,
+          border: "1.5px dashed #c4a8e8",
+          background: "#f8f4fd",
+          color: "#4d227c",
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+          marginTop: 2,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#ede5f7";
+          e.currentTarget.style.borderColor = "#4d227c";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "#f8f4fd";
+          e.currentTarget.style.borderColor = "#c4a8e8";
+        }}
+      >
+        <FiPlus size={13} /> Add Another License No.
+      </button>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   DropdownListInput
 ───────────────────────────────────────────── */
 function DropdownListInput({
   label,
@@ -522,7 +636,6 @@ function DropdownListInput({
           {label}
         </div>
       )}
-
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <div style={{ position: "relative", flex: 1 }}>
           <input
@@ -591,7 +704,6 @@ function DropdownListInput({
         </button>
       </div>
 
-      {/* Dropdown */}
       {open && (
         <div
           style={{
@@ -694,7 +806,6 @@ function DropdownListInput({
         </div>
       )}
 
-      {/* Pills */}
       {selected.length > 0 && (
         <div
           style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}
@@ -739,7 +850,7 @@ function DropdownListInput({
 }
 
 /* ─────────────────────────────────────────────
-   ServicesDropdown — fetches from API
+   ServicesDropdown
 ───────────────────────────────────────────── */
 function ServicesDropdown({ selected, onAdd, onRemove }) {
   const [apiOptions, setApiOptions] = useState([]);
@@ -775,7 +886,6 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
   const filtered = apiOptions.filter((s) =>
     s.service_name.toLowerCase().includes(search.toLowerCase()),
   );
-
   const handleSelect = (name) => {
     if (selected.includes(name)) onRemove(selected.indexOf(name));
     else onAdd(name);
@@ -827,7 +937,7 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
               fetching
                 ? "Loading services…"
                 : selected.length
-                  ? `${selected.length} selected — "search to select"`
+                  ? `${selected.length} selected — search to select`
                   : "Select from available services..."
             }
             disabled={fetching || !!fetchError}
@@ -1009,7 +1119,7 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
             ) : (
               <li style={{ padding: "12px 14px", fontSize: 13, color: "#aaa" }}>
                 {search
-                  ? "No matching services found. Please choose from available list."
+                  ? "No matching services found."
                   : "No services available."}
               </li>
             )}
@@ -1061,7 +1171,7 @@ function ServicesDropdown({ selected, onAdd, onRemove }) {
 }
 
 /* ─────────────────────────────────────────────
-   DocThumb — single thumbnail for doc carousel
+   DocThumb
 ───────────────────────────────────────────── */
 function DocThumb({ src, name, isNew, onView, onRemove }) {
   const [hovered, setHovered] = useState(false);
@@ -1070,7 +1180,6 @@ function DocThumb({ src, name, isNew, onView, onRemove }) {
     (typeof src === "string" &&
       (src.toLowerCase().endsWith(".pdf") ||
         src.startsWith("data:application/pdf")));
-
   const imgSrc = src instanceof File ? URL.createObjectURL(src) : src;
 
   return (
@@ -1202,7 +1311,7 @@ function DocThumb({ src, name, isNew, onView, onRemove }) {
 }
 
 /* ─────────────────────────────────────────────
-   MultiDocInput — drag-drop upload zone + thumbnails
+   MultiDocInput
 ───────────────────────────────────────────── */
 function MultiDocInput({
   label,
@@ -1242,8 +1351,6 @@ function MultiDocInput({
   return (
     <div className={styles["modal-section"]}>
       <h4>{label}</h4>
-
-      {/* Drop zone */}
       <div
         onClick={() => inputRef.current?.click()}
         onDragOver={handleDragOver}
@@ -1302,7 +1409,6 @@ function MultiDocInput({
         />
       </div>
 
-      {/* Thumbnails */}
       {(existingUrls.length > 0 || newFiles.length > 0) && (
         <div
           style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}
@@ -1362,9 +1468,10 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
     specialty: "",
     practicingSince: "",
     credentials: "",
-    licenseNo: "",
-    prcNumber: "",
   });
+
+  // ── Multi license numbers state ──────────────────────────────────────────
+  const [licenseNumbers, setLicenseNumbers] = useState([""]);
 
   const [subspecialty, setSubspecialty] = useState([]);
   const [services, setServices] = useState([]);
@@ -1402,9 +1509,15 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
       specialty: doctorData.specialty || "",
       practicingSince: doctorData.practicingSince || "",
       credentials: doctorData.credentials || "",
-      licenseNo: doctorData.licenseNo || "",
-      prcNumber: doctorData.prcNumber || "",
     });
+
+    // ── Load existing license numbers from storage ───────────────────────
+    const existing =
+      Array.isArray(doctorData.licenseNumbers) &&
+      doctorData.licenseNumbers.length > 0
+        ? doctorData.licenseNumbers.filter(Boolean)
+        : [""];
+    setLicenseNumbers(existing);
 
     setSubspecialty(doctorData.subspecialty || []);
     setServices(doctorData.services || []);
@@ -1418,7 +1531,6 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
     setNewIdPicFiles([]);
     setProfilePicFile(null);
 
-    // Merge doctor's custom items into option pools
     if (doctorData.subspecialty?.length) {
       setSubSpecOptions((prev) => {
         const merged = [...prev];
@@ -1452,9 +1564,9 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
       age: value ? calculateAge(value) : "",
     }));
   };
-  const handleSave = async () => {
-    if (saving) return; // prevent double click
 
+  const handleSave = async () => {
+    if (saving) return;
     setSaving(true);
 
     try {
@@ -1464,7 +1576,7 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         return;
       }
 
-      /* ───────── VALIDATIONS ───────── */
+      /* ── VALIDATIONS ── */
       if (
         formData.contactNumber &&
         formData.contactNumber !== originalData.contactNumber
@@ -1478,30 +1590,25 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
         }
       }
 
-      if (formData.licenseNo && formData.licenseNo !== originalData.licenseNo) {
-        if (!isNumericOnly(formData.licenseNo)) {
-          toast.error("License Number must be numbers only.", toastError);
+      // Validate all license numbers are numeric
+      const cleanedLicenses = licenseNumbers
+        .map((n) => n.trim())
+        .filter(Boolean);
+      for (const num of cleanedLicenses) {
+        if (!isNumericOnly(num)) {
+          toast.error(
+            `License number "${num}" must be numbers only.`,
+            toastError,
+          );
           return;
         }
       }
-      if (formData.prcNumber && formData.prcNumber !== originalData.prcNumber) {
-        if (!isNumericOnly(formData.prcNumber)) {
-          toast.error("PRC Number must be numbers only.", toastError);
-          return;
-        }
-      }
-      /* ───────── HEADERS ───────── */
-      const authHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
 
-      /* ───────── 1. UPDATE USER ───────── */
-      const userRes = await fetch("http://localhost:8000/api/me", {
-        method: "PUT",
-        headers: authHeaders,
-        body: JSON.stringify({
+      // ✅ All requests use axiosClient — base URL + auth headers already set, no CORS issues
+
+      /* ── 1. UPDATE USER ── */
+      await axiosClient
+        .put("/me", {
           firstName: formData.firstName,
           lastName: formData.lastName,
           middleInitial: formData.middleInitial,
@@ -1511,98 +1618,64 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
           dob: formData.dateOfBirth,
           age: formData.age,
           email: originalData.email,
-        }),
-      });
+        })
+        .catch((e) => {
+          throw new Error(e.response?.data?.message || "User update failed");
+        });
 
-      const userData = await userRes.json();
+      /* ── 2. UPDATE DOCTOR (includes license_numbers array) ── */
+      await axiosClient
+        .put("/doctor/update-doctor", {
+          professional_title: formData.credentials,
+          license_numbers: cleanedLicenses,
+          main_specialty: formData.specialty,
+          practicing_since: formData.practicingSince,
+          sub_specializations: subspecialty,
+          services: services,
+          board_cert_names: certifications,
+        })
+        .catch((e) => {
+          throw new Error(e.response?.data?.message || "Doctor update failed");
+        });
 
-      if (!userRes.ok) {
-        throw new Error(userData.message || "User update failed");
-      }
-
-      /* ───────── 2. UPDATE DOCTOR ───────── */
-      const doctorRes = await fetch(
-        "http://localhost:8000/api/doctor/update-doctor",
-        {
-          method: "PUT",
-          headers: authHeaders,
-          body: JSON.stringify({
-            professional_title: formData.credentials,
-            license_number: formData.licenseNo,
-            prc_number: formData.prcNumber,
-            main_specialty: formData.specialty,
-            practicing_since: formData.practicingSince,
-            sub_specializations: subspecialty,
-            services: services,
-            board_cert_names: certifications,
-          }),
-        },
-      );
-
-      const doctorJson = await doctorRes.json();
-
-      if (!doctorRes.ok) {
-        throw new Error(doctorJson.message || "Doctor update failed");
-      }
-
-      /* ───────── 3. PROFILE PICTURE ───────── */
+      /* ── 3. PROFILE PICTURE ── */
       if (profilePicFile) {
         const fd = new FormData();
         fd.append("profilePicture", profilePicFile);
-
-        const res = await fetch(
-          "http://localhost:8000/api/doctor/profile-picture",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-            body: fd,
-          },
-        );
-
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.message || "Upload failed");
-
+        const { data } = await axiosClient
+          .post("/doctor/profile-picture", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+          })
+          .catch((e) => {
+            throw new Error(
+              e.response?.data?.message || "Profile picture upload failed",
+            );
+          });
         setExistingProfilePic(data.data.profilePicture);
       }
 
-      /* ───────── 4. DOCUMENTS ───────── */
+      /* ── 4. DOCUMENTS ── */
       if (newBoardCertFiles.length || newIdPicFiles.length) {
         const fd = new FormData();
-
         newBoardCertFiles.forEach((f) => fd.append("board_cert_images[]", f));
-
         newIdPicFiles.forEach((f) => fd.append("id_pictures[]", f));
-
-        const res = await fetch(
-          "http://localhost:8000/api/doctor/upload-documents",
-          {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: fd,
-          },
-        );
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok) {
-          console.error("Upload error response:", data);
-          throw new Error(
-            data?.message || data?.error || "Document upload failed",
-          );
-        }
-
-        console.log("Upload success:", data);
+        await axiosClient
+          .post("/doctor/upload-documents", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+          })
+          .catch((e) => {
+            throw new Error(
+              e.response?.data?.message || "Document upload failed",
+            );
+          });
       }
 
-      /* ───────── SUCCESS ───────── */
       toast.success("Profile updated successfully!", toastSuccess);
+
+      // ✅ Dispatch event so DoctorSideBar re-fetches immediately — no refresh needed
+      window.dispatchEvent(
+        new CustomEvent("doctorProfileUpdated", { detail: null }),
+      );
 
       onSave?.();
       onClose();
@@ -1610,16 +1683,13 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
       console.error(err);
       toast.error(err.message || "Something went wrong.", toastError);
     } finally {
-      setSaving(false); // always stop loading
+      setSaving(false);
     }
   };
 
-  /* ── CSS keyframes for spinner ── */
-  const spinKeyframes = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
-
   return (
     <>
-      <style>{spinKeyframes}</style>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
       <div className={styles["profile-modal-overlay"]} onClick={onClose}>
         <div
@@ -1680,33 +1750,6 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                   />
                 </div>
                 <div className={styles["input-group"]}>
-                  <p className={styles["modal-label"]}>PRC License</p>
-                  <input
-                    className={styles["modal-input"]}
-                    value={formData.licenseNo}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "" || /^\d+$/.test(v))
-                        handleChange("licenseNo", v);
-                    }}
-                  />
-                </div>
-                <div className={styles["input-group"]}>
-                  <p className={styles["modal-label"]}>PRC Number</p>
-                  <input
-                    className={styles["modal-input"]}
-                    value={formData.prcNumber}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "" || isNumericOnly(v))
-                        handleChange("prcNumber", v);
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className={styles["grid-2"]}>
-                <div className={styles["input-group"]}>
                   <p className={styles["modal-label"]}>Specialty</p>
                   <select
                     className={styles["modal-input"]}
@@ -1736,7 +1779,16 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 </div>
               </div>
 
-              <div className={styles["grid-4"]}>
+              {/* ── PRC LICENSE NUMBERS (dynamic) ── */}
+              <div className={styles["input-group"]} style={{ marginTop: 8 }}>
+                <p className={styles["modal-label"]}>PRC License No.</p>
+                <LicenseNumbersInput
+                  licenseNumbers={licenseNumbers}
+                  onChange={setLicenseNumbers}
+                />
+              </div>
+
+              <div className={styles["grid-4"]} style={{ marginTop: 8 }}>
                 <div className={styles["input-group"]}>
                   <p className={styles["modal-label"]}>Contact Number</p>
                   <input
@@ -1802,15 +1854,13 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
                 options={subSpecOptions}
                 selected={subspecialty}
                 onAdd={(item) => {
-                  setSubspecialty((prev) =>
-                    prev.includes(item) ? prev : [...prev, item],
-                  );
-                  setSubSpecOptions((prev) =>
-                    prev.includes(item) ? prev : [...prev, item],
+                  setSubspecialty((p) => (p.includes(item) ? p : [...p, item]));
+                  setSubSpecOptions((p) =>
+                    p.includes(item) ? p : [...p, item],
                   );
                 }}
                 onRemove={(i) =>
-                  setSubspecialty((prev) => prev.filter((_, idx) => idx !== i))
+                  setSubspecialty((p) => p.filter((_, idx) => idx !== i))
                 }
               />
             </div>
@@ -1821,34 +1871,30 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               <ServicesDropdown
                 selected={services}
                 onAdd={(item) =>
-                  setServices((prev) =>
-                    prev.includes(item) ? prev : [...prev, item],
-                  )
+                  setServices((p) => (p.includes(item) ? p : [...p, item]))
                 }
                 onRemove={(i) =>
-                  setServices((prev) => prev.filter((_, idx) => idx !== i))
+                  setServices((p) => p.filter((_, idx) => idx !== i))
                 }
               />
             </div>
 
-            {/* ── BOARD CERTIFICATIONS (names) ── */}
+            {/* ── BOARD CERTIFICATIONS ── */}
             <div className={styles["modal-section"]}>
               <h4>Board Certifications</h4>
               <DropdownListInput
                 options={boardCertOpts}
                 selected={certifications}
                 onAdd={(item) => {
-                  setCertifications((prev) =>
-                    prev.includes(item) ? prev : [...prev, item],
+                  setCertifications((p) =>
+                    p.includes(item) ? p : [...p, item],
                   );
-                  setBoardCertOpts((prev) =>
-                    prev.includes(item) ? prev : [...prev, item],
+                  setBoardCertOpts((p) =>
+                    p.includes(item) ? p : [...p, item],
                   );
                 }}
                 onRemove={(i) =>
-                  setCertifications((prev) =>
-                    prev.filter((_, idx) => idx !== i),
-                  )
+                  setCertifications((p) => p.filter((_, idx) => idx !== i))
                 }
               />
             </div>
@@ -1858,16 +1904,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               label="Board Certification Documents"
               newFiles={newBoardCertFiles}
               existingUrls={existingBoardCerts}
-              onFileAdd={(f) => setNewBoardCertFiles((prev) => [...prev, f])}
+              onFileAdd={(f) => setNewBoardCertFiles((p) => [...p, f])}
               onFileRemove={(i) =>
-                setNewBoardCertFiles((prev) =>
-                  prev.filter((_, idx) => idx !== i),
-                )
+                setNewBoardCertFiles((p) => p.filter((_, idx) => idx !== i))
               }
               onExistingRemove={(i) =>
-                setExistingBoardCerts((prev) =>
-                  prev.filter((_, idx) => idx !== i),
-                )
+                setExistingBoardCerts((p) => p.filter((_, idx) => idx !== i))
               }
             />
 
@@ -1876,12 +1918,12 @@ function EditPersonalInfoModal({ show, onClose, doctorData, onSave }) {
               label="ID / Government Identification"
               newFiles={newIdPicFiles}
               existingUrls={existingIdPics}
-              onFileAdd={(f) => setNewIdPicFiles((prev) => [...prev, f])}
+              onFileAdd={(f) => setNewIdPicFiles((p) => [...p, f])}
               onFileRemove={(i) =>
-                setNewIdPicFiles((prev) => prev.filter((_, idx) => idx !== i))
+                setNewIdPicFiles((p) => p.filter((_, idx) => idx !== i))
               }
               onExistingRemove={(i) =>
-                setExistingIdPics((prev) => prev.filter((_, idx) => idx !== i))
+                setExistingIdPics((p) => p.filter((_, idx) => idx !== i))
               }
             />
           </div>

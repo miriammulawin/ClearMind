@@ -7,14 +7,22 @@ import { BiSolidUserCircle } from "react-icons/bi";
 import { RiDashboardFill } from "react-icons/ri";
 import styles from "../../AdminPages/AdminStyle/AdminSideBar.module.css";
 import logo from "../../assets/CMPS_Logo.png";
-
-const STORAGE_BASE = "http://127.0.0.1:8000/storage/";
+import axiosClient from "../../axiosClient"; // ✅ use axiosClient — no CORS, auth already set
 
 const resolveImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return STORAGE_BASE + path;
+  return "http://127.0.0.1:8000/storage/" + path;
 };
+
+const normalizeLicenses = (raw) =>
+  Array.isArray(raw)
+    ? raw.filter(
+        (n) => n !== null && n !== undefined && String(n).trim() !== "",
+      )
+    : raw && String(raw).trim() !== ""
+      ? [String(raw).trim()]
+      : [];
 
 function DoctorSideBar() {
   const [collapsed, setCollapsed] = useState(
@@ -29,53 +37,39 @@ function DoctorSideBar() {
   });
 
   const [doctorProfile, setDoctorProfile] = useState({
-    firstName:      "",
-    lastName:       "",
-    middleInitial:  "",
+    firstName: "",
+    lastName: "",
+    middleInitial: "",
     licenseNumbers: [],
     profilePicture: null,
   });
 
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // ── Fetch from /api/doctor/profile ──────────────────────────────────────
+  // ── Fetch profile via axiosClient ─────────────────────────────────────
   const fetchProfile = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:8000/api/doctor/profile", {
+      const { data: json } = await axiosClient.get("/doctor/profile", {
         headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
           "Cache-Control": "no-cache, no-store, must-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },
       });
 
-      if (!response.ok) throw new Error("Failed to fetch profile");
-
-      const json = await response.json();
       const data = json.data;
 
-      // Normalize license_numbers — always produce a clean string array
-      const rawLicenses = data.license_numbers;
-      const licenseNumbers = Array.isArray(rawLicenses)
-        ? rawLicenses.filter((n) => n !== null && n !== undefined && String(n).trim() !== "")
-        : rawLicenses && String(rawLicenses).trim() !== ""
-          ? [String(rawLicenses).trim()]   // legacy single-string fallback
-          : [];
-
       setDoctorProfile({
-        // API returns camelCase from the User model fields
-        firstName:      data.firstName     || "",
-        lastName:       data.lastName      || "",
-        middleInitial:  data.middleInitial || "",
-        licenseNumbers,
-        // API returns snake_case for the doctor table column
-        profilePicture: resolveImageUrl(data.profile_picture || data.profilePicture),
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        middleInitial: data.middleInitial || "",
+        licenseNumbers: normalizeLicenses(data.license_numbers),
+        profilePicture: resolveImageUrl(
+          data.profile_picture || data.profilePicture,
+        ),
       });
     } catch (error) {
       console.error("Error fetching doctor profile:", error);
@@ -84,7 +78,7 @@ function DoctorSideBar() {
     }
   }, []);
 
-  // ── On mount: clear stale cache then fetch ───────────────────────────────
+  // ── On mount ─────────────────────────────────────────────────────────
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
     if (currentUser?.id) {
@@ -94,28 +88,28 @@ function DoctorSideBar() {
     fetchProfile();
   }, [fetchProfile]);
 
-  // ── Real-time listener: fired by AccountSetupModal after save ────────────
+  // ── Listen for profile updates from modal ─────────────────────────────
+  // When detail is null  → re-fetch from server (most accurate, gets new license numbers)
+  // When detail has data → apply directly for instant UI update
   useEffect(() => {
     const handleProfileUpdated = (e) => {
       if (e.detail) {
-        const rawLicenses = e.detail.licenseNumbers ?? e.detail.license_numbers;
-        const licenseNumbers = Array.isArray(rawLicenses)
-          ? rawLicenses.filter((n) => n !== null && n !== undefined && String(n).trim() !== "")
-          : rawLicenses && String(rawLicenses).trim() !== ""
-            ? [String(rawLicenses).trim()]
-            : [];
-
+        // Instant update from event payload
         setDoctorProfile({
-          firstName:      e.detail.firstName     || "",
-          lastName:       e.detail.lastName      || "",
-          middleInitial:  e.detail.middleInitial || "",
-          licenseNumbers,
+          firstName: e.detail.firstName || "",
+          lastName: e.detail.lastName || "",
+          middleInitial: e.detail.middleInitial || "",
+          licenseNumbers: normalizeLicenses(
+            e.detail.licenseNumbers ?? e.detail.license_numbers,
+          ),
           profilePicture: resolveImageUrl(
-            e.detail.profile_picture || e.detail.profilePicture
+            e.detail.profile_picture || e.detail.profilePicture,
           ),
         });
         setLoadingProfile(false);
       } else {
+        // ✅ detail: null means "re-fetch" — modal dispatches this after saving
+        setLoadingProfile(true);
         fetchProfile();
       }
     };
@@ -125,7 +119,7 @@ function DoctorSideBar() {
       window.removeEventListener("doctorProfileUpdated", handleProfileUpdated);
   }, [fetchProfile]);
 
-  // ── Auto-collapse on small screens ──────────────────────────────────────
+  // ── Auto-collapse on small screens ───────────────────────────────────
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 965) {
@@ -139,11 +133,23 @@ function DoctorSideBar() {
   }, []);
 
   const menus = [
-    { name: "Dashboard",   icon: <RiDashboardFill />,    path: "/doctor/dashboard"   },
-    { name: "Appointment", icon: <FaCalendarDays />,      path: "/doctor/appointment" },
-    { name: "Schedule",    icon: <BsCalendarCheckFill />, path: "/doctor/schedule"    },
-    { name: "Patients",    icon: <BsPersonLinesFill />,   path: "/doctor/patient"     },
-    { name: "My Profile",  icon: <BiSolidUserCircle />,   path: "/doctor/profile"     },
+    { name: "Dashboard", icon: <RiDashboardFill />, path: "/doctor/dashboard" },
+    {
+      name: "Appointment",
+      icon: <FaCalendarDays />,
+      path: "/doctor/appointment",
+    },
+    {
+      name: "Schedule",
+      icon: <BsCalendarCheckFill />,
+      path: "/doctor/schedule",
+    },
+    { name: "Patients", icon: <BsPersonLinesFill />, path: "/doctor/patient" },
+    {
+      name: "My Profile",
+      icon: <BiSolidUserCircle />,
+      path: "/doctor/profile",
+    },
   ];
 
   const toggleCollapsed = (e) => {
@@ -157,46 +163,47 @@ function DoctorSideBar() {
 
   const handleMenuClick = (item) => navigate(item.path);
 
-  // ── Build display name ───────────────────────────────────────────────────
+  // ── Name display ──────────────────────────────────────────────────────
   const getDisplayName = () => {
     const { firstName, lastName, middleInitial } = doctorProfile;
     if (!firstName && !lastName) return "...";
 
-    // If firstName already contains the full name (has comma = "LastName, First MI")
-    // return it directly to avoid duplication
-    if (firstName.includes(",") || firstName === lastName) {
+    // Guard: if firstName already contains full name (comma = "LastName, First MI")
+    if (firstName.includes(",") || firstName === lastName)
       return firstName.trim();
-    }
 
     const rawMI = (middleInitial || "").trim();
     const mi = rawMI ? `${rawMI.charAt(0).toUpperCase()}.` : "";
 
-    return [firstName.trim(), mi, lastName.trim()]
-      .filter(Boolean)
-      .join(" ");
+    return [firstName.trim(), mi, lastName.trim()].filter(Boolean).join(" ");
   };
 
   const getInitials = () => {
     const f = doctorProfile.firstName?.trim().charAt(0).toUpperCase() || "";
-    const l = doctorProfile.lastName?.trim().charAt(0).toUpperCase()  || "";
+    const l = doctorProfile.lastName?.trim().charAt(0).toUpperCase() || "";
     return f + l || "?";
   };
 
-  const Shimmer = ({ width = "100%", height = "12px", borderRadius = "6px" }) => (
+  const Shimmer = ({
+    width = "100%",
+    height = "12px",
+    borderRadius = "6px",
+  }) => (
     <span
       style={{
-        display:         "block",
+        display: "block",
         width,
         height,
         borderRadius,
-        background:      "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
-        backgroundSize:  "200% 100%",
-        animation:       "sidebarShimmer 1.4s infinite",
+        background:
+          "linear-gradient(90deg,#e8dff5 0%,#d4c3ee 50%,#e8dff5 100%)",
+        backgroundSize: "200% 100%",
+        animation: "sidebarShimmer 1.4s infinite",
       }}
     />
   );
 
-  // ── Render license numbers ───────────────────────────────────────────────
+  // ── License number display ────────────────────────────────────────────
   const renderLicenseNumbers = () => {
     if (loadingProfile) return <Shimmer width="65%" height="10px" />;
 
@@ -206,29 +213,23 @@ function DoctorSideBar() {
       return <span>PRC License No.: N/A</span>;
     }
 
-    // Single or multiple — always join with ", "
-    return (
-      <span>PRC License No.: {licenseNumbers.join(", ")}</span>
-    );
+    return <span>PRC License No.: {licenseNumbers.join(", ")}</span>;
   };
 
   return (
     <>
       <div
-        className={`${styles.sidebarContainer} ${
-          collapsed ? styles.collapsed : ""
-        }`}
+        className={`${styles.sidebarContainer} ${collapsed ? styles.collapsed : ""}`}
       >
         <div className={styles.sidebar}>
-          {/* ── Header ── */}
+          {/* Header */}
           <div className={styles.sidebarHeader}>
             <img src={logo} alt="Logo" className={styles.sidebarLogo} />
             <FiMenu className={styles.menuIcon} onClick={toggleCollapsed} />
           </div>
 
-          {/* ── Profile Section ── */}
+          {/* Profile */}
           <div className={styles.profileSection}>
-            {/* Avatar */}
             <div className={styles.profilePic}>
               {loadingProfile ? (
                 <Shimmer width="100%" height="100%" borderRadius="50%" />
@@ -238,9 +239,9 @@ function DoctorSideBar() {
                   src={doctorProfile.profilePicture}
                   alt="Profile"
                   style={{
-                    width:        "100%",
-                    height:       "100%",
-                    objectFit:    "cover",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
                     borderRadius: "50%",
                   }}
                 />
@@ -249,7 +250,6 @@ function DoctorSideBar() {
               )}
             </div>
 
-            {/* Name + License Numbers */}
             <div className={styles.profileInfo}>
               <h5 className={styles.profileName}>
                 {loadingProfile ? (
@@ -258,11 +258,7 @@ function DoctorSideBar() {
                   getDisplayName()
                 )}
               </h5>
-
-              <p className={styles.profileContact}>
-                {renderLicenseNumbers()}
-              </p>
-
+              <p className={styles.profileContact}>{renderLicenseNumbers()}</p>
               <FiEdit
                 className={styles.editIcon}
                 onClick={(e) => {
@@ -274,22 +270,20 @@ function DoctorSideBar() {
             </div>
           </div>
 
-          {/* ── Menu ── */}
+          {/* Menu */}
           <div className={styles.sidebarMenu}>
             {menus.map((item) => (
               <div
                 key={item.name}
-                className={`${styles.menuItem} ${
-                  location.pathname === item.path ? styles.menuItemActive : ""
-                }`}
+                className={`${styles.menuItem} ${location.pathname === item.path ? styles.menuItemActive : ""}`}
                 onClick={() => handleMenuClick(item)}
                 onMouseEnter={(e) => {
                   if (!collapsed) return;
                   const rect = e.currentTarget.getBoundingClientRect();
                   setTooltip({
-                    text:    item.name,
-                    x:       rect.right + 10,
-                    y:       rect.top + rect.height / 2,
+                    text: item.name,
+                    x: rect.right + 10,
+                    y: rect.top + rect.height / 2,
                     visible: true,
                   });
                 }}
@@ -305,7 +299,6 @@ function DoctorSideBar() {
         </div>
       </div>
 
-      {/* ── Collapsed tooltip ── */}
       {tooltip.visible && (
         <div
           className={styles.tooltipOverlay}

@@ -23,51 +23,73 @@ class DoctorController extends Controller
  public function profile(Request $request): JsonResponse
 {
     $user   = $request->user();
-    $doctor = $user->doctor; // eager-load via the hasOne relation
-
-   return response()->json([
-    'data' => [
-        // ✅ USER FIELDS (ADD THESE)
-        'firstName'      => $user->firstName,
-        'lastName'       => $user->lastName,
-        'middleInitial'  => $user->middleInitial,
-        'email'          => $user->email,
-        'contactNo'      => $user->contactNo,
-        'dob'            => $user->dob,
-        'sex'            => $user->sex,
-        'genderIdentity' => $user->genderIdentity,
-        'address'        => $user->address,
-
-        // ✅ DOCTOR FIELDS
-        'professional_title'  => $doctor?->professional_title,
-        'description'         => $doctor?->description,
-       'license_numbers' => $doctor?->license_numbers ?? [],
-        'practicing_since'    => $doctor?->practicing_since,
-        'specializations' => $doctor?->specializations ?? [],
-        'sub_specializations' => $doctor?->sub_specializations ?? [],
-        'board_cert_names'    => $doctor?->board_cert_names ?? [],
-
-        'board_cert_images'   => array_map(
-            fn($p) => $p ? asset('storage/' . $p) : null,
-            $doctor?->board_cert_images ?? []
-        ),
-
-        'id_pictures' => array_map(
-            fn($p) => $p ? asset('storage/' . $p) : null,
-            $doctor?->id_pictures ?? []
-        ),
-
-        'services' => $doctor?->services ?? [],
-
-        // ✅ PROFILE PIC
-        'profile_picture' => $doctor?->profile_picture
-            ? asset('storage/' . $doctor->profile_picture)
-            : ($user->profilePicture
-                ? asset('storage/' . $user->profilePicture)
-                : null),
-    ]
-]);
+ 
+    // ✅ Use direct query (same as userPayload) instead of $user->doctor relation
+    // This guarantees the doctor record is found even if hasOne isn't defined on User
+    $doctor = Doctor::where('user_id', $user->id)->first();
+ 
+    // ✅ Safely decode license_numbers — model cast returns array, but guard anyway
+    $licenseNumbers = [];
+    if ($doctor && $doctor->license_numbers) {
+        $raw = $doctor->license_numbers;
+        // Cast already decodes JSON → PHP array, but if somehow still a string, decode it
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $licenseNumbers = is_array($decoded) ? $decoded : [$raw];
+        } elseif (is_array($raw)) {
+            $licenseNumbers = $raw;
+        }
+        // Filter out nulls and empty strings
+        $licenseNumbers = array_values(array_filter($licenseNumbers, fn($n) => !empty(trim((string)$n))));
+    }
+ 
+    return response()->json([
+        'data' => [
+            // ── USER FIELDS ──────────────────────────────────────
+            'firstName'      => $user->firstName,
+            'lastName'       => $user->lastName,
+            'middleInitial'  => $user->middleInitial,
+            'email'          => $user->email,
+            'contactNo'      => $user->contactNo,
+            'dob'            => $user->dob,
+            'sex'            => $user->sex,
+            'genderIdentity' => $user->genderIdentity,
+            'address'        => $user->address,
+ 
+            // ── DOCTOR FIELDS ─────────────────────────────────────
+            'professional_title'  => $doctor?->professional_title,
+            'description'         => $doctor?->description,
+ 
+            // ✅ Always returns a clean PHP array — never null
+            'license_numbers'     => $licenseNumbers,
+ 
+            'practicing_since'    => $doctor?->practicing_since,
+            'specializations'     => $doctor?->specializations     ?? [],
+            'sub_specializations' => $doctor?->sub_specializations ?? [],
+            'board_cert_names'    => $doctor?->board_cert_names    ?? [],
+ 
+            'board_cert_images' => array_map(
+                fn($p) => $p ? asset('storage/' . $p) : null,
+                $doctor?->board_cert_images ?? []
+            ),
+ 
+            'id_pictures' => array_map(
+                fn($p) => $p ? asset('storage/' . $p) : null,
+                $doctor?->id_pictures ?? []
+            ),
+ 
+            'services' => $doctor?->services ?? [],
+ 
+            // ── PROFILE PIC ───────────────────────────────────────
+            'profile_picture' => $doctor?->profile_picture
+                ? asset('storage/' . $doctor->profile_picture)
+                : ($user->profilePicture
+                    ? asset('storage/' . $user->profilePicture)
+                    : null),
+        ]
+    ]);
 }
+
     // ──────────────────────────────────────────────
     // PUT /api/doctor/profile
     // Update own profile
@@ -176,36 +198,36 @@ public function uploadDocuments(Request $request): JsonResponse
     ]);
 }
 
-    public function updateDoctorProfile(Request $request): JsonResponse
+   public function updateDoctorProfile(Request $request): JsonResponse
 {
-    $user = $request->user();
-    $doctor = $user->doctor;
-
+    $user   = $request->user();
+    $doctor = Doctor::where('user_id', $user->id)->first();
+ 
     if (!$doctor) {
         return response()->json([
             'success' => false,
             'message' => 'Doctor profile not found.',
         ], 404);
     }
-
-    dd($request->all()); 
-    
+ 
+    // ✅ Removed dd($request->all()) — that was causing the 500
+ 
     $validated = $request->validate([
-        'professional_title'  => 'sometimes|string|max:255',
-       
-    'license_numbers'   => 'sometimes|array',
-    'license_numbers.*' => 'string|max:100',
-
-        'main_specialty'      => 'sometimes|string|max:255',
-        'practicing_since'    => 'sometimes|string|max:50',
+        'professional_title'  => 'sometimes|nullable|string|max:255',
+        'license_numbers'     => 'sometimes|array',
+        'license_numbers.*'   => 'string|max:100',
+        'main_specialty'      => 'sometimes|nullable|string|max:255',
+        'practicing_since'    => 'sometimes|nullable|string|max:50',
         'sub_specializations' => 'sometimes|array',
+        'sub_specializations.*' => 'string',
         'services'            => 'sometimes|array',
+        'services.*'          => 'string',
         'board_cert_names'    => 'sometimes|array',
+        'board_cert_names.*'  => 'string',
     ]);
-
+ 
     $doctor->update($validated);
-    
-
+ 
     return response()->json([
         'success' => true,
         'message' => 'Doctor profile updated successfully.',
