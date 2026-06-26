@@ -415,7 +415,7 @@ const ComplainantFields = ({ patientForm = {}, setPatientForm }) => {
 
   return (
     <div className={styles.complainantCard}>
-      <div className={styles.complainantTitle}>Your Details (Complainant)</div>
+      <div className={styles.complainantTitle}>Your Details (Informant)</div>
 
       <div>
         <label className={styles.inputLabel}>

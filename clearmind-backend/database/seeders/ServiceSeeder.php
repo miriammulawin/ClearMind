@@ -1,55 +1,37 @@
 <?php
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 use App\Models\Service;
 use App\Models\AssessmentPurpose;
-
 class ServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Psychotherapy
-        Service::updateOrCreate(
-            ['service_name' => 'Psychotherapy'],
-            [
-                'description' => 'Helps individuals understand and manage their thoughts, emotions, and behaviors in a healthy way.',
-                'price' => 1000,
-                'is_available' => true,
-            ]
-        );
+        // Intake Consultation (first — required for new patients)
+        Service::create([
+            'service_name' => 'Intake Consultation',
+            'description'  => 'An initial meeting to gather information about the patient\'s concerns, background, and needs to determine the appropriate course of care.',
+            'price'        => 500,
+            'is_available' => true,
+        ]);
 
-        // 2. Psychological Assessment
-        Service::updateOrCreate(
-            ['service_name' => 'Psychological Assessment'],
-            [
-                'description' => 'Gathers and integrates data about a person\'s mental, emotional, cognitive, behavioral, personality, and social functioning.',
-                'price' => 1000,
-                'is_available' => true,
-            ]
-        );
+        // Psychotherapy
+        Service::create([
+            'service_name' => 'Psychotherapy and Counseling',
+            'description'  => 'Helps individuals understand and manage their thoughts, emotions, and behaviors in a healthy way.',
+            'price'        => 1000,
+            'is_available' => true,
+        ]);
 
-        // 3. Psychiatric Evaluation
-        Service::updateOrCreate(
-            ['service_name' => 'Psychiatric Evaluation'],
-            [
-                'description' => 'A clinical evaluation conducted by a psychiatrist to diagnose and manage mental health conditions, including medication management when needed.',
-                'price' => 1000,
-                'is_available' => true,
-            ]
-        );
+        // Psychological Assessment
+        $assessment = Service::create([
+            'service_name' => 'Psychological Assessment and Evaluation',
+            'description'  => 'Gathers and integrates data about a person\'s mental, emotional, cognitive, behavioral, personality, and social functioning.',
+            'price'        => 1000,
+            'is_available' => true,
+        ]);
 
-        // 4. Mental Health Certification (has sub-purposes)
-        $certification = Service::updateOrCreate(
-            ['service_name' => 'Mental Health Certification'],
-            [
-                'description' => 'Issuance of certification for various legal, academic, employment, or support purposes.',
-                'price' => 500,
-                'is_available' => true,
-            ]
-        );
-
-        // Purposes under Mental Health Certification
+        // Purposes
         $purposes = [
             'VAWC Purpose',
             'Adoption or Other Legal Purposes',
@@ -61,16 +43,20 @@ class ServiceSeeder extends Seeder
         ];
 
         foreach ($purposes as $p) {
-            AssessmentPurpose::updateOrCreate(
-                [
-                    'service_id' => $certification->service_id,
-                    'purpose_name' => $p,
-                ],
-                [
-                    'price' => 500,
-                    'is_active' => true,
-                ]
-            );
+            AssessmentPurpose::create([
+                'service_id'   => $assessment->service_id,
+                'purpose_name' => $p,
+                'price'        => 500,
+                'is_active'    => true,
+            ]);
         }
+
+        // Psychiatric Evaluation
+        Service::create([
+            'service_name' => 'Psychiatric Evaluation',
+            'description'  => 'A comprehensive assessment conducted by a psychiatrist to diagnose mental health conditions and determine appropriate treatment plans.',
+            'price'        => 1500,
+            'is_available' => true,
+        ]);
     }
 }

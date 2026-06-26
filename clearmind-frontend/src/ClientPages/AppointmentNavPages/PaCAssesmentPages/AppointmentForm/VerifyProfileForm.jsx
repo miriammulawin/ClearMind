@@ -1,15 +1,12 @@
 // VerifyProfileForm.jsx
-// Receives schedule summary props from SetAppointmentForm and
-// displays a booking summary banner at the top of Step 2.
-
 import React from "react";
 import FormHeader from "../../AppointmentComponents/FormHeader.jsx";
 import { useCurrentUser } from "../../../../hooks/userCurrentUser";
+import styles from "../../../ClientStyle/VerifyProfileForm.module.css";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatTimePH = (time24) => {
   if (!time24) return "—";
-  // Already formatted (e.g. "9:00 AM")
   if (time24.includes("AM") || time24.includes("PM")) return time24;
   const [hourStr, minuteStr] = time24.split(":");
   let hour = parseInt(hourStr, 10);
@@ -70,21 +67,13 @@ const ScheduleSummaryBanner = ({
   if (!consultationMode || !dateStr || !selectedTime) return null;
 
   const rows = [
-    {
-      label: "Doctor",
-      value: doctorData?.name || "—",
-      icon: "🩺",
-    },
+    { label: "Doctor", value: doctorData?.name || "—", icon: "🩺" },
     {
       label: "Mode",
       value: consultationMode === "VIRTUAL" ? "🖥 Virtual" : "On-Site",
       icon: null,
     },
-    {
-      label: "Date",
-      value: dateStr,
-      icon: "📅",
-    },
+    { label: "Date", value: dateStr, icon: "📅" },
     {
       label: "Time",
       value: `${formatTimePH(selectedTime)} – ${getEndTime(selectedTime)}`,
@@ -215,58 +204,6 @@ const VerifyProfileForm = ({
         doctorData={doctorData}
       />
 
-      {/* ── Declaration acknowledgement prompt ── */}
-      {!declarationAgreed && (
-        <div
-          style={{
-            margin: "0 0 18px",
-            padding: "14px 16px",
-            background: "#fff8f0",
-            border: "1.5px solid #fed7aa",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#9a3412",
-                marginBottom: "3px",
-              }}
-            >
-              ⚠ Declaration Required
-            </div>
-            <div style={{ fontSize: "12px", color: "#9a3412" }}>
-              Please read and acknowledge the Declaration of Participation to
-              continue.
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onOpenDeclaration}
-            style={{
-              padding: "8px 14px",
-              background: "#4D227C",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "12px",
-              fontWeight: 700,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            View &amp; Agree
-          </button>
-        </div>
-      )}
-
       {/* ── Reason for consultation ── */}
       <div style={{ marginBottom: "20px" }}>
         <label
@@ -322,6 +259,27 @@ const VerifyProfileForm = ({
         patientForm={formData}
         setPatientForm={setFormData}
       />
+
+      {/* ── Declaration acknowledgement — last item on the page ── */}
+      <div className={styles.acknowledgementRow}>
+        <input
+          type="radio"
+          checked={declarationAgreed}
+          onChange={() => onOpenDeclaration()}
+          className={styles.radioInput}
+        />
+        <span>
+          {" "}
+          I acknowledge and agree on the{" "}
+          <button
+            type="button"
+            className={styles.policyLink}
+            onClick={onOpenDeclaration}
+          >
+            Declaration of Participation
+          </button>
+        </span>
+      </div>
     </div>
   );
 };

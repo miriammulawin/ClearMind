@@ -9,20 +9,24 @@ use Illuminate\Http\Request;
 class ServiceController extends Controller
 {
     /**
-     * Services allowed per profession.
+     * Must match service_name values in ServiceSeeder exactly.
      */
     private const PROFESSION_SERVICES = [
         'Psychometrician' => [
-            'Psychological Assessment',
-            'Mental Health Certification',
+            'Intake Consultation',
+            'Psychological Assessment and Evaluation',
         ],
         'Psychologist' => [
-            'Psychotherapy',
+            'Intake Consultation',
+            'Psychological Assessment and Evaluation',
+            'Psychotherapy and Counseling',
         ],
         'Psychiatrist' => [
+            'Intake Consultation',
             'Psychiatric Evaluation',
         ],
     ];
+
     // GET /api/admin/services
     // Optional query param: ?profession=Psychologist
     public function index(Request $request): JsonResponse
