@@ -1,16 +1,107 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Button, Badge } from "react-bootstrap";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FaArrowLeft, FaFileAlt } from "react-icons/fa";
-import { useAppointments } from "../../../context/AppointmentContext";
+import axiosClient from "../../../axiosClient";
 import "./styles/AppointmentDetails.css";
+
+// Converts the raw API appointment (with nested patient/doctor) into the
+// flat shape this page renders.
+const mapAppointmentDetails = (apt) => {
+  const patient = apt.patient || {};
+  const doctor = apt.doctor;
+
+  const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+  const formatTime = (t) => {
+    if (!t) return "";
+    const [h, m] = t.split(":");
+    const hour = parseInt(h, 10);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12}:${m} ${suffix}`;
+  };
+
+  // "2026-07-30" -> "July 30, 2026 (Thursday)"
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date)) return dateString;
+    const formatted = date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    const weekday = date.toLocaleDateString("en-US", { weekday: "long" });
+    return `${formatted} (${weekday})`;
+  };
+
+  // "2000-05-14" -> "May 14, 2000" (no weekday needed for DOB)
+  const formatDob = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date)) return dateString;
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const receipts = apt.receipt_paths || [];
+
+  return {
+    id: apt.appointment_id,
+    status: capitalize(apt.status),
+    time:
+      apt.start_time && apt.end_time
+        ? `${formatTime(apt.start_time)} - ${formatTime(apt.end_time)}`
+        : formatTime(apt.start_time),
+    date: formatDate(apt.appointment_date),
+    doctor: doctor
+      ? `${doctor.firstName ?? ""} ${doctor.lastName ?? ""}`.trim() ||
+        doctor.name
+      : "Not yet assigned",
+    type: apt.visit_type === "virtual" ? "Virtual" : "Onsite",
+
+    patientName: `${patient.firstName ?? ""} ${patient.lastName ?? ""}`.trim(),
+    classification: patient.patientClassification,
+    sex: patient.sex,
+    dateOfBirth: formatDob(patient.dob),
+    contactNumber: patient.contactNo,
+    email: patient.email,
+    homeAddress: patient.address,
+
+    reason: apt.reason_for_consultation,
+
+    paymentMode: apt.payment_mode,
+    referenceNumber: apt.payment_reference,
+    totalAmount: apt.bill_amount != null ? Number(apt.bill_amount) : null,
+    proofFile: receipts.length > 0 ? receipts[receipts.length - 1] : null,
+
+    programId: apt.program_id ?? null,
+    progressionStatus: apt.progression_status ?? null,
+  };
+};
 
 const AppointmentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "upcoming";
 
-  const { getAppointmentById, discontinueProgram } = useAppointments();
-  const appointment = getAppointmentById(id);
+  const [appointment, setAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    axiosClient
+      .get(`/appointments/${id}`)
+      .then(({ data }) => {
+        setAppointment(mapAppointmentDetails(data.data));
+      })
+      .catch((e) => console.error("Fetch Appointment Error:", e))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const getStatusBadgeVariant = (status) => {
     const variants = {
@@ -23,19 +114,40 @@ const AppointmentDetails = () => {
     return variants[status] || "secondary";
   };
 
-  const location = useLocation();
-  const from = location.state?.from || "upcoming";
-
   const handleBack = () => navigate(`/client/appointment/${from}`);
+
   const handleCancel = () => {
-    if (window.confirm("Are you sure you want to cancel this appointment?")) {
-      alert("Appointment cancelled successfully!");
-      navigate(-1);
-    }
+    if (!window.confirm("Are you sure you want to cancel this appointment?"))
+      return;
+    axiosClient
+      .delete(`/appointments/${id}`)
+      .then(() => {
+        navigate(-1);
+      })
+      .catch((e) => {
+        console.error("Cancel Appointment Error:", e);
+        alert("Failed to cancel appointment. Please try again.");
+      });
   };
+
   const handleViewReceipt = () => {
-    alert("Receipt viewing will be implemented with backend");
+    if (!appointment?.proofFile) return;
+    window.open(`/storage/${appointment.proofFile}`, "_blank");
   };
+
+  if (loading) {
+    return (
+      <div className="ad-page">
+        <div className="ad-scroll-body">
+          <Container className="ad-container py-4">
+            <p style={{ color: "#888", textAlign: "center" }}>
+              Loading appointment…
+            </p>
+          </Container>
+        </div>
+      </div>
+    );
+  }
 
   if (!appointment) {
     return (
@@ -184,82 +296,6 @@ const AppointmentDetails = () => {
 
             <div className="ad-divider" />
 
-            {/* ── Service-Specific Details ── */}
-            {(appointment.employerName || appointment.assessmentPurpose) && (
-              <>
-                <div className="ad-divider" />
-                <div className="ad-group">
-                  <div className="ad-group-title">Pre-Employment Details</div>
-                  {appointment.employerName && (
-                    <div className="ad-row">
-                      <span className="ad-key">Employer / Company:</span>
-                      <span className="ad-val">{appointment.employerName}</span>
-                    </div>
-                  )}
-                  {appointment.assessmentPurpose && (
-                    <div className="ad-row">
-                      <span className="ad-key">Purpose of Assessment:</span>
-                      <span className="ad-val">
-                        {appointment.assessmentPurpose}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {(appointment.travelType || appointment.hasDiagnosis != null) && (
-              <>
-                <div className="ad-divider" />
-                <div className="ad-group">
-                  <div className="ad-group-title">ESA / Travel Details</div>
-                  {appointment.travelType && (
-                    <div className="ad-row">
-                      <span className="ad-key">Travel Type:</span>
-                      <span className="ad-val">{appointment.travelType}</span>
-                    </div>
-                  )}
-                  <div className="ad-row">
-                    <span className="ad-key">Existing Diagnosis:</span>
-                    <span className="ad-val">
-                      {appointment.hasDiagnosis ? "Yes" : "No"}
-                    </span>
-                  </div>
-                  {appointment.hasDiagnosis && appointment.diagnosisFile && (
-                    <div className="ad-row">
-                      <span className="ad-key">Diagnosis Document:</span>
-                      <Button variant="link" className="ad-receipt-link">
-                        <FaFileAlt /> {appointment.diagnosisFile}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {(appointment.schoolName || appointment.program) && (
-              <>
-                <div className="ad-divider" />
-                <div className="ad-group">
-                  <div className="ad-group-title">Internship Details</div>
-                  {appointment.schoolName && (
-                    <div className="ad-row">
-                      <span className="ad-key">School / University:</span>
-                      <span className="ad-val">{appointment.schoolName}</span>
-                    </div>
-                  )}
-                  {appointment.program && (
-                    <div className="ad-row">
-                      <span className="ad-key">Program / Course:</span>
-                      <span className="ad-val">{appointment.program}</span>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            <div className="ad-divider" />
-
             {/* ── Payment Details ── */}
             <div className="ad-group">
               <div className="ad-group-title">Payment Details</div>
@@ -274,52 +310,28 @@ const AppointmentDetails = () => {
                 </span>
               </div>
 
-              {/* Fee breakdown for Pre-Employment */}
               {appointment.totalAmount != null && (
-                <>
-                  {appointment.wantsPrintedReport != null && (
-                    <div className="ad-row">
-                      <span className="ad-key">Printed Report:</span>
-                      <span className="ad-val">
-                        {appointment.wantsPrintedReport
-                          ? "Yes (+₱1,500)"
-                          : "No"}
-                      </span>
-                    </div>
-                  )}
-                  <div className="ad-row">
-                    <span className="ad-key">Total Amount:</span>
-                    <span className="ad-val ad-total">
-                      ₱{appointment.totalAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </>
+                <div className="ad-row">
+                  <span className="ad-key">Total Amount:</span>
+                  <span className="ad-val ad-total">
+                    ₱{appointment.totalAmount.toLocaleString()}
+                  </span>
+                </div>
               )}
 
               <div className="ad-row">
-                <span className="ad-key">Proof of Payment:</span>
+                <span className="ad-key">Proof of Payment / Receipt:</span>
                 {appointment.proofFile ? (
                   <Button
                     variant="link"
                     className="ad-receipt-link"
                     onClick={handleViewReceipt}
                   >
-                    <FaFileAlt /> {appointment.proofFile}
+                    <FaFileAlt /> See attached receipt
                   </Button>
                 ) : (
                   <span className="ad-val">—</span>
                 )}
-              </div>
-
-              <div className="ad-row">
-                <span className="ad-key">Receipt:</span>
-                <Button
-                  variant="link"
-                  className="ad-receipt-link"
-                  onClick={handleViewReceipt}
-                >
-                  <FaFileAlt /> See attached receipt
-                </Button>
               </div>
             </div>
 
@@ -341,26 +353,6 @@ const AppointmentDetails = () => {
                   CANCEL
                 </button>
               )}
-
-              {/* Discontinue — session programs only */}
-              {appointment.programId &&
-                appointment.progressionStatus === "Active" && (
-                  <button
-                    className="ad-discontinue-btn"
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "Are you sure you want to discontinue your sessions?",
-                        )
-                      ) {
-                        discontinueProgram(appointment.programId);
-                        navigate(-1);
-                      }
-                    }}
-                  >
-                    DISCONTINUE SESSIONS
-                  </button>
-                )}
             </div>
           </div>
         </Container>

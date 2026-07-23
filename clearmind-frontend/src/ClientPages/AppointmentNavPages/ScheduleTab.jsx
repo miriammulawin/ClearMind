@@ -1,13 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Dropdown, Button, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarTimes, FaFilter, FaSort } from "react-icons/fa";
-import { MOCK_APPOINTMENTS } from "../../MockData/MockAppointment";
 import AppointmentCard from "./AppointmentComponents/AppointmentCard";
 import SessionCard from "./AppointmentComponents/SessionCard";
 import styles from "./styles/ScheduleTab.module.css";
+import axiosClient from "../../axiosClient";
 
 /* ── Helpers ─────────────────────────────────────────────── */
+
+const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+const mapAppointment = (apt) => ({
+  id: apt.appointment_id,
+  referenceNumber: apt.payment_reference,
+  status: capitalize(apt.status),
+  time: apt.start_time ? apt.start_time.slice(0, 5) : "",
+  date: apt.appointment_date,
+  type: apt.visit_type === "virtual" ? "Online" : "Clinic - CMPS",
+  serviceType: apt.service_type || "—",
+  doctor: apt.doctor
+    ? `${apt.doctor.firstName ?? ""} ${apt.doctor.lastName ?? ""}`.trim() ||
+      apt.doctor.name
+    : "Not yet assigned",
+  programId: apt.program_id ?? null,
+  sessionNumber: apt.session_number ?? null,
+  totalSessions: apt.total_sessions ?? null,
+  progressionStatus: apt.progression_status ?? null,
+});
 
 const groupAppointments = (appointments) => {
   const programs = {};
@@ -43,6 +63,8 @@ const getServicePrefix = (serviceType) => {
 const ScheduleTab = () => {
   const navigate = useNavigate();
 
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [sortOrder, setSortOrder] = useState("Newest First");
   const [showDateFilter, setShowDateFilter] = useState(false);
@@ -51,6 +73,16 @@ const ScheduleTab = () => {
 
   const statusOptions = ["All", "Confirmed", "Rescheduled"];
   const sortOptions = ["Newest First", "Oldest First"];
+
+  useEffect(() => {
+    axiosClient
+      .get("/appointments")
+      .then(({ data }) => {
+        setAppointments((data.data || []).map(mapAppointment));
+      })
+      .catch((e) => console.error("Fetch Appointments Error:", e))
+      .finally(() => setLoading(false));
+  }, []);
 
   const getEmptyMessage = (status) => {
     const messages = {
@@ -71,19 +103,21 @@ const ScheduleTab = () => {
   };
 
   // ── Filter + Sort ─────────────────────────────────────────
-  const filtered = MOCK_APPOINTMENTS.filter((apt) =>
-    selectedStatus === "All"
-      ? ["Confirmed", "Rescheduled"].includes(apt.status)
-      : apt.status === selectedStatus,
-  ).filter((apt) => {
-    if (!startDate && !endDate) return true;
-    const aptDate = new Date(apt.date);
-    const from = startDate ? new Date(startDate) : null;
-    const to = endDate ? new Date(endDate) : null;
-    if (from && aptDate < from) return false;
-    if (to && aptDate > to) return false;
-    return true;
-  });
+  const filtered = appointments
+    .filter((apt) =>
+      selectedStatus === "All"
+        ? ["Confirmed", "Rescheduled"].includes(apt.status)
+        : apt.status === selectedStatus,
+    )
+    .filter((apt) => {
+      if (!startDate && !endDate) return true;
+      const aptDate = new Date(apt.date);
+      const from = startDate ? new Date(startDate) : null;
+      const to = endDate ? new Date(endDate) : null;
+      if (from && aptDate < from) return false;
+      if (to && aptDate > to) return false;
+      return true;
+    });
 
   const { programs, standalones } = groupAppointments(filtered);
 
@@ -105,6 +139,16 @@ const ScheduleTab = () => {
       ? b.sortDate - a.sortDate
       : a.sortDate - b.sortDate,
   );
+
+  if (loading) {
+    return (
+      <Container className={`py-4 ${styles.scheduleContainer}`}>
+        <p style={{ color: "#888", textAlign: "center" }}>
+          Loading appointments…
+        </p>
+      </Container>
+    );
+  }
 
   return (
     <Container className={`py-4 ${styles.scheduleContainer}`}>
